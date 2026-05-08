@@ -5,43 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consultas y Buscador - Alcaldía</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
-        h1 { color: #E30613; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+        :root {
+            --rojo-oficial: #E30613;
+            --azul-oficial: #004a99;
+            --gris-fondo: #e9ecef;
+            --gris-borde: #ced4da;
+        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; }
+        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 1200px; margin: auto; border-top: 8px solid var(--rojo-oficial); }
         
-        .header-actions { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .btn-nav { background-color: #333; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;}
+        /* Encabezado Gubernamental */
+        .gob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-borde); padding-bottom: 20px; margin-bottom: 20px;}
+        .gob-header img { height: 70px; object-fit: contain; }
+        .header-titles { text-align: center; flex-grow: 1; padding: 0 20px;}
+        .header-titles h1 { color: var(--azul-oficial); margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
+        .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
+        
+        /* Botonera superior */
+        .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;}
+        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
         .btn-nav:hover { background-color: #555; }
-        #btnVolver { background-color: #4CAF50; }
+        #btnVolver { background-color: #28a745; }
         
         /* Buscador Avanzado */
-        .search-panel { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px;}
+        h2 { color: var(--rojo-oficial); margin-top: 0; font-size: 20px; text-transform: uppercase; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 5px;}
+        .search-panel { background: #fdfdfd; padding: 20px; border-radius: 8px; border: 1px solid var(--gris-borde); margin-bottom: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.02);}
         .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        label { font-weight: bold; font-size: 13px; color: #555; display: block; margin-bottom: 5px;}
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px;}
+        label { font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 5px;}
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; transition: 0.3s;}
+        input:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
         
         /* Tabla */
         .table-wrapper { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #004a99; color: white; }
+        th { background-color: var(--azul-oficial); color: white; text-transform: uppercase; font-size: 12px;}
         tr:nth-child(even) { background-color: #f2f2f2; }
         tr:hover { background-color: #e9ecef; }
         
-        .btn-delete { background: #E30613; color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px;}
-        .btn-edit { background: #4CAF50; color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; }
+        .btn-delete { background: var(--rojo-oficial); color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px; font-weight: bold;}
+        .btn-edit { background: #28a745; color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; font-weight: bold;}
         .hidden { display: none !important; }
-        .stats { margin-top: 15px; font-weight: bold; color: #E30613; font-size: 16px;}
+        .stats { margin-top: 15px; font-weight: bold; color: var(--rojo-oficial); font-size: 16px;}
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header-actions">
+        <div class="top-nav">
             <button type="button" id="btnVolver" class="btn-nav" onclick="location.href='registro.html'">← Volver a Registrar</button>
             <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
         </div>
 
-        <h1>Buscador Avanzado de Habitantes</h1>
+        <div class="gob-header">
+            <img src="psuv.jpg" alt="PSUV">
+            <div class="header-titles">
+                <h1>Módulo de Consultas y Búsqueda</h1>
+                <p>SISTEMA DE INTEGRACIÓN TERRITORIAL | ALCALDÍA DE CRISTÓBAL ROJAS</p>
+            </div>
+            <img src="escudo municipal.jpg" alt="Escudo Cristóbal Rojas">
+        </div>
+
+        <h2>Filtros Activos</h2>
         
         <div class="search-panel">
             <div class="search-grid">
