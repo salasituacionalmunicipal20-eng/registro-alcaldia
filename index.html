@@ -28,58 +28,14 @@
             text-align: center;
             border-top: 8px solid #E30613; /* Rojo PSUV */
         }
-        .logos {
-            margin-bottom: 20px;
-        }
-        .logos h2 {
-            color: #E30613;
-            margin: 0;
-            font-size: 24px;
-            text-transform: uppercase;
-        }
-        .logos p {
-            color: #555;
-            font-size: 14px;
-            margin-top: 5px;
-            font-weight: bold;
-        }
-        label {
-            display: block;
-            text-align: left;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #333;
-            margin-top: 15px;
-        }
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #E30613;
-            color: white;
-            padding: 15px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #b7050f;
-        }
-        .error-message {
-            color: red;
-            font-size: 14px;
-            margin-top: 10px;
-            display: none;
-        }
+        .logos { margin-bottom: 20px; }
+        .logos h2 { color: #E30613; margin: 0; font-size: 24px; text-transform: uppercase; }
+        .logos p { color: #555; font-size: 14px; margin-top: 5px; font-weight: bold; }
+        label { display: block; text-align: left; margin-bottom: 5px; font-weight: bold; color: #333; margin-top: 15px; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #E30613; color: white; padding: 15px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; font-weight: bold; margin-top: 10px; }
+        button:hover { background-color: #b7050f; }
+        .error-message { color: red; font-size: 14px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -107,7 +63,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-        // 1. TUS CREDENCIALES EXACTAS
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
             authDomain: "alcaldia-admin.firebaseapp.com",
@@ -122,10 +77,14 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // Si el usuario ya había iniciado sesión antes, lo pasamos directo al registro
+        // Policía de Tránsito: Revisa a dónde mandarlos si ya iniciaron sesión
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                window.location.href = "registro.html";
+                if (user.email === "carlos.admin@alcaldia.com") {
+                    window.location.href = "admin.html";
+                } else {
+                    window.location.href = "registro.html";
+                }
             }
         });
 
@@ -135,17 +94,18 @@
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             
-            // 2. EL TRUCO DEL CORREO INVISIBLE
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-
-            // Le pegamos el dominio falso por detrás
             const emailFalso = username + "@alcaldia.com";
 
-            // Mandamos el correo enmascarado a Firebase
             signInWithEmailAndPassword(auth, emailFalso, password)
                 .then((userCredential) => {
-                    window.location.href = "registro.html";
+                    // Policía de Tránsito: Revisa a dónde mandarlos al iniciar sesión
+                    if (userCredential.user.email === "carlos.admin@alcaldia.com") {
+                        window.location.href = "admin.html";
+                    } else {
+                        window.location.href = "registro.html";
+                    }
                 })
                 .catch((error) => {
                     console.error("Error al iniciar sesión:", error.message);

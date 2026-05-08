@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Alcaldía</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 500px; margin: auto; position: relative;}
+        h1 { text-align: center; color: #E30613; margin-top: 0;}
+        
+        .header-actions { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; width: 100%; margin-top: 15px;}
+        button:hover { background-color: #45a049; }
+        .btn-black { background-color: #333; width: auto; margin-top: 0;}
+        .btn-black:hover { background-color: #555; }
+        
+        label { display: block; margin-bottom: 5px; font-weight: bold; margin-top: 15px;}
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        .success-msg { color: green; font-weight: bold; text-align: center; margin-top: 15px; display: none; }
+        .error-msg { color: red; font-weight: bold; text-align: center; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-actions">
+            <button type="button" class="btn-black" id="btnIrRegistro">Ir al Formulario</button>
+            <button type="button" class="btn-black" id="btnCerrarSesion">Cerrar Sesión</button>
+        </div>
+
+        <h1>Panel de Administrador</h1>
+        <p style="text-align: center;">Creación de nuevos Operadores (Usuarios)</p>
+        
+        <form id="createUserForm">
+            <label for="newUsername">Nombre de Usuario (Sin @):</label>
+            <input type="text" id="newUsername" placeholder="Ejemplo: luis.operador" required>
+
+            <label for="newPassword">Contraseña (Mínimo 6 caracteres):</label>
+            <input type="password" id="newPassword" placeholder="******" required minlength="6">
+
+            <p class="success-msg" id="successMsg">¡Usuario creado exitosamente!</p>
+            <p class="error-msg" id="errorMsg">Hubo un error al crear el usuario.</p>
+
+            <button type="submit">Crear Usuario</button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+
+        // 1. App Principal: Verifica quién está logueado
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // 2. App Secundaria: El TRUCO para crear usuarios sin cerrar la sesión del admin
+        const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
+        const secondaryAuth = getAuth(secondaryApp);
+
+        // Seguridad: Si no es carlos.admin, lo sacamos de aquí
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== "carlos.admin@alcaldia.com") {
+                window.location.href = "index.html";
+            }
+        });
+
+        // Botones superiores
+        document.getElementById('btnCerrarSesion').addEventListener('click', () => {
+            signOut(auth).then(() => window.location.href = "index.html");
+        });
+        document.getElementById('btnIrRegistro').addEventListener('click', () => {
+            window.location.href = "registro.html"; // Por si Carlos también quiere llenar formularios
+        });
+
+        // Lógica para crear al usuario
+        const createForm = document.getElementById('createUserForm');
+        const successMsg = document.getElementById('successMsg');
+        const errorMsg = document.getElementById('errorMsg');
+
+        createForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            const newUsername = document.getElementById('newUsername').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const emailFalso = newUsername + "@alcaldia.com";
+
+            // Usamos la App Secundaria para crearlo
+            createUserWithEmailAndPassword(secondaryAuth, emailFalso, newPassword)
+                .then((userCredential) => {
+                    successMsg.style.display = 'block';
+                    createForm.reset();
+                    // Cerramos la sesión secundaria inmediatamente para que quede limpia
+                    signOut(secondaryAuth);
+                })
+                .catch((error) => {
+                    console.error("Error creando usuario:", error.message);
+                    errorMsg.style.display = 'block';
+                });
+        });
+    </script>
+</body>
+</html>

@@ -9,10 +9,11 @@
         .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; margin: auto; position: relative;}
         h1 { text-align: center; color: #333; margin-top: 0;}
         
-        /* Estilo para el botón de cerrar sesión */
-        .header-actions { text-align: right; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
-        #btnCerrarSesion { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; width: auto; margin-top: 0; font-weight: normal;}
-        #btnCerrarSesion:hover { background-color: #555; }
+        /* Estilo para el encabezado de acciones */
+        .header-actions { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: normal;}
+        .btn-nav:hover { background-color: #555; }
+        #btnAdminPanel { background-color: #E30613; } /* Rojo para resaltar panel admin */
 
         label { display: block; margin-bottom: 5px; font-weight: bold; margin-top: 15px;}
         input[type="text"], input[type="number"], input[type="date"], select, textarea {
@@ -45,7 +46,8 @@
     <div class="container">
         
         <div class="header-actions">
-            <button type="button" id="btnCerrarSesion">Cerrar Sesión</button>
+            <button type="button" id="btnAdminPanel" class="btn-nav hidden">Panel Admin</button>
+            <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
         </div>
 
         <h1>Registro de Habitantes</h1>
@@ -249,10 +251,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, push, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-        // IMPORTANTE: Importamos las herramientas de Autenticación
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-        // 1. CONFIGURACIÓN EXACTA DE TU FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
             authDomain: "alcaldia-admin.firebaseapp.com",
@@ -264,66 +264,58 @@
             measurementId: "G-P4QSQR0XGE"
         };
 
-        // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-        const auth = getAuth(app); // Inicializamos Autenticación
+        const auth = getAuth(app);
 
         // ==========================================
-        // SISTEMA DE SEGURIDAD (Protección de ruta)
+        // SISTEMA DE SEGURIDAD Y ROLES
         // ==========================================
         onAuthStateChanged(auth, (user) => {
             if (!user) {
-                // Si no hay nadie logueado, lo devuelve al login
                 window.location.href = "index.html";
+            } else {
+                // Si el usuario es carlos.admin, mostramos el botón para volver a su panel
+                if (user.email === "carlos.admin@alcaldia.com") {
+                    const btnAdmin = document.getElementById('btnAdminPanel');
+                    btnAdmin.classList.remove('hidden');
+                    btnAdmin.onclick = () => window.location.href = "admin.html";
+                }
             }
         });
 
-        // Funcionalidad del botón Cerrar Sesión
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
             signOut(auth).then(() => {
                 window.location.href = "index.html";
             });
         });
-        // ==========================================
 
-        // 2. LÓGICA PARA CARGAR COMUNAS Y COMUNIDADES DESDE FIREBASE
+        // ==========================================
+        // CARGA DE DATOS TERRITORIALES
+        // ==========================================
         const dbRef = ref(database);
         const comunaSelect = document.getElementById('comuna');
         const comunidadSelect = document.getElementById('comunidad');
         let datosTerritoriales = {};
 
-        // Extraer los datos de la base de datos al cargar la página
         get(child(dbRef, `filtros_territoriales`)).then((snapshot) => {
             if (snapshot.exists()) {
                 datosTerritoriales = snapshot.val();
-                
-                // Limpiar el select y agregar la opción por defecto
                 comunaSelect.innerHTML = '<option value="">Seleccione la Comuna / Circuito</option>';
-                
-                // Llenar el select con las comunas leídas
                 for (const comuna in datosTerritoriales) {
                     const option = document.createElement('option');
                     option.value = comuna;
                     option.textContent = comuna;
                     comunaSelect.appendChild(option);
                 }
-            } else {
-                comunaSelect.innerHTML = '<option value="">Error: No hay datos de comunas</option>';
             }
-        }).catch((error) => {
-            console.error("Error obteniendo comunas:", error);
-            comunaSelect.innerHTML = '<option value="">Error de conexión</option>';
         });
 
-        // Cuando el usuario cambia la comuna, se actualizan las comunidades
         comunaSelect.addEventListener('change', (e) => {
             const comunaSeleccionada = e.target.value;
             comunidadSelect.innerHTML = '<option value="">Seleccione la Comunidad</option>';
-            
             if (comunaSeleccionada && datosTerritoriales[comunaSeleccionada]) {
-                const listaComunidades = datosTerritoriales[comunaSeleccionada];
-                listaComunidades.forEach(comunidad => {
+                datosTerritoriales[comunaSeleccionada].forEach(comunidad => {
                     const option = document.createElement('option');
                     option.value = comunidad;
                     option.textContent = comunidad;
@@ -332,86 +324,61 @@
             }
         });
 
-        // 3. LÓGICA PARA CALCULAR LA EDAD EN TIEMPO REAL
+        // ==========================================
+        // CÁLCULO DE EDAD Y LÓGICA DE FORMULARIO
+        // ==========================================
         const inputFecha = document.getElementById('fecha_nacimiento');
         const displayEdad = document.getElementById('edadCalculada');
 
         inputFecha.addEventListener('change', (e) => {
-            if(!e.target.value) {
-                displayEdad.textContent = '';
-                return;
-            }
+            if(!e.target.value) return;
             const fechaNac = new Date(e.target.value);
             const hoy = new Date();
             let edad = hoy.getFullYear() - fechaNac.getFullYear();
             const mes = hoy.getMonth() - fechaNac.getMonth();
-            
-            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
-                edad--;
-            }
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
             displayEdad.textContent = `Edad calculada: ${edad} años`;
         });
 
-        // 4. LÓGICA CONDICIONAL (Mostrar campos ocultos si marcan "Sí")
-        const selectMedicamento = document.getElementById('toma_medicamento');
-        const divCualMedicamento = document.getElementById('cual_medicamento_wrapper');
-        const inputCualMedicamento = document.getElementById('cual_medicamento');
+        // Visibilidad condicional
+        const toggleHidden = (selectId, wrapperId, inputId) => {
+            const select = document.getElementById(selectId);
+            const wrapper = document.getElementById(wrapperId);
+            const input = document.getElementById(inputId);
+            select.addEventListener('change', (e) => {
+                if (e.target.value === 'si' || (selectId === 'vd_vb_vo_seleccion' && e.target.value !== '')) {
+                    wrapper.classList.remove('hidden');
+                    if(input) input.required = true;
+                } else {
+                    wrapper.classList.add('hidden');
+                    if(input) { input.required = false; input.value = ''; }
+                }
+            });
+        };
 
-        selectMedicamento.addEventListener('change', (e) => {
-            if (e.target.value === 'si') {
-                divCualMedicamento.classList.remove('hidden');
-                inputCualMedicamento.required = true;
-            } else {
-                divCualMedicamento.classList.add('hidden');
-                inputCualMedicamento.required = false;
-                inputCualMedicamento.value = ''; 
-            }
-        });
+        toggleHidden('toma_medicamento', 'cual_medicamento_wrapper', 'cual_medicamento');
+        toggleHidden('vd_vb_vo_seleccion', 'vd_vb_vo_detalle_wrapper', 'vd_vb_vo_detalle');
 
-        const selectVd = document.getElementById('vd_vb_vo_seleccion');
-        const divVdDetalle = document.getElementById('vd_vb_vo_detalle_wrapper');
-        const inputVdDetalle = document.getElementById('vd_vb_vo_detalle');
-
-        selectVd.addEventListener('change', (e) => {
-            // Si el valor no está vacío (es decir, seleccionaron VD, VB o VO)
-            if (e.target.value !== '') {
-                divVdDetalle.classList.remove('hidden');
-                inputVdDetalle.required = true;
-            } else {
-                divVdDetalle.classList.add('hidden');
-                inputVdDetalle.required = false;
-                inputVdDetalle.value = '';
-            }
-        });
-
-        // 5. GUARDAR EN FIREBASE AL ENVIAR EL FORMULARIO
+        // ==========================================
+        // ENVÍO DE DATOS
+        // ==========================================
         const form = document.getElementById('registroHabitanteForm');
-        
         form.addEventListener('submit', async (e) => {
             e.preventDefault(); 
-            
-            // Recoger todos los datos
             const formData = new FormData(form);
             const habitanteData = Object.fromEntries(formData.entries());
 
             try {
-                // Generar un nuevo registro en el nodo "habitantes"
                 const habitantesRef = ref(database, 'habitantes');
                 await push(habitantesRef, habitanteData);
-                
-                alert('¡Datos guardados con éxito en la base de datos de la Alcaldía!');
-                
-                // Reiniciar el formulario
+                alert('¡Datos guardados con éxito!');
                 form.reset();
                 displayEdad.textContent = '';
-                divCualMedicamento.classList.add('hidden');
-                divVdDetalle.classList.add('hidden');
-                comunidadSelect.innerHTML = '<option value="">Seleccione primero una comuna</option>';
-                window.scrollTo(0, 0); // Subir la pantalla al inicio
-                
+                document.getElementById('cual_medicamento_wrapper').classList.add('hidden');
+                document.getElementById('vd_vb_vo_detalle_wrapper').classList.add('hidden');
+                window.scrollTo(0, 0);
             } catch (error) {
-                console.error("Error al guardar:", error);
-                alert('Hubo un error al guardar los datos. Revisa la consola para más detalles.');
+                alert('Error al guardar.');
             }
         });
     </script>
