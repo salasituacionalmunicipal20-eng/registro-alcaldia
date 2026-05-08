@@ -51,7 +51,7 @@
             color: #333;
             margin-top: 15px;
         }
-        input[type="email"], input[type="password"] {
+        input[type="text"], input[type="password"] {
             width: 100%;
             padding: 12px;
             margin-bottom: 15px;
@@ -91,8 +91,8 @@
         </div>
         
         <form id="loginForm">
-            <label for="email">Usuario Institucional:</label>
-            <input type="email" id="email" placeholder="ejemplo@alcaldia.com" required>
+            <label for="username">Usuario Institucional:</label>
+            <input type="text" id="username" placeholder="Ejemplo: operador1" required>
 
             <label for="password">Contraseña:</label>
             <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
@@ -105,9 +105,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-        // Tus credenciales
+        // 1. TUS CREDENCIALES EXACTAS
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
             authDomain: "alcaldia-admin.firebaseapp.com",
@@ -115,29 +115,40 @@
             projectId: "alcaldia-admin",
             storageBucket: "alcaldia-admin.firebasestorage.app",
             messagingSenderId: "945828226894",
-            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+
+        // Si el usuario ya había iniciado sesión antes, lo pasamos directo al registro
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.href = "registro.html";
+            }
+        });
 
         const loginForm = document.getElementById('loginForm');
         const errorMsg = document.getElementById('errorMsg');
 
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
+            
+            // 2. EL TRUCO DEL CORREO INVISIBLE
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
-            // Intentar iniciar sesión
-            signInWithEmailAndPassword(auth, email, password)
+            // Le pegamos el dominio falso por detrás
+            const emailFalso = username + "@alcaldia.com";
+
+            // Mandamos el correo enmascarado a Firebase
+            signInWithEmailAndPassword(auth, emailFalso, password)
                 .then((userCredential) => {
-                    // Si es exitoso, redirigir a la página de registro
                     window.location.href = "registro.html";
                 })
                 .catch((error) => {
-                    // Si falla, mostrar error
-                    console.error(error.message);
+                    console.error("Error al iniciar sesión:", error.message);
                     errorMsg.style.display = "block";
                 });
         });
