@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Habitantes - Alcaldía</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 600px; margin: auto; position: relative;}
+        h1 { text-align: center; color: #333; margin-top: 0;}
+        
+        /* Estilo para el botón de cerrar sesión */
+        .header-actions { text-align: right; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+        #btnCerrarSesion { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; width: auto; margin-top: 0; font-weight: normal;}
+        #btnCerrarSesion:hover { background-color: #555; }
+
+        label { display: block; margin-bottom: 5px; font-weight: bold; margin-top: 15px;}
+        input[type="text"], input[type="number"], input[type="date"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        button:hover { background-color: #45a049; }
+        .hidden { display: none; }
+        .age-display { margin-bottom: 15px; font-weight: bold; color: #d32f2f; }
+        .section-title { margin-top: 25px; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; color: #4CAF50; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="header-actions">
+            <button type="button" id="btnCerrarSesion">Cerrar Sesión</button>
+        </div>
+
+        <h1>Registro de Habitantes</h1>
+        
+        <form id="registroHabitanteForm">
+            
+            <h3 class="section-title">1. Ubicación Territorial</h3>
+            <label for="codigo_sigue_actual">Código SIGUE Actual:</label>
+            <input type="text" id="codigo_sigue_actual" name="codigo_sigue_actual" required>
+
+            <label for="comuna">Comuna / Circuito:</label>
+            <select id="comuna" name="comuna" required>
+                <option value="">Cargando comunas...</option>
+            </select>
+
+            <label for="comunidad">Comunidad:</label>
+            <select id="comunidad" name="comunidad" required>
+                <option value="">Seleccione primero una comuna</option>
+            </select>
+
+            <label for="consejo_comunal">Consejo Comunal:</label>
+            <input type="text" id="consejo_comunal" name="consejo_comunal" required>
+
+            <h3 class="section-title">2. Datos de la Vivienda</h3>
+            <label for="calle">Calle:</label>
+            <input type="text" id="calle" name="calle" required>
+
+            <label for="numero_casa">Número de Casa:</label>
+            <input type="text" id="numero_casa" name="numero_casa" required>
+
+            <label for="tipo_vivienda">Tipo de Vivienda:</label>
+            <select id="tipo_vivienda" name="tipo_vivienda" required>
+                <option value="">Seleccione</option>
+                <option value="apto">Apto</option>
+                <option value="casa">Casa</option>
+                <option value="town house">Town House</option>
+            </select>
+
+            <label for="condiciones_vivienda">Condiciones de Vivienda:</label>
+            <select id="condiciones_vivienda" name="condiciones_vivienda" required>
+                <option value="">Seleccione</option>
+                <option value="bien">Bien</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+            </select>
+
+            <label for="responsabilidad_cbi_cm">Responsabilidad CBI/CM:</label>
+            <input type="text" id="responsabilidad_cbi_cm" name="responsabilidad_cbi_cm" required>
+
+            <label for="tipo_cilindro_gas">Tipo de Cilindro de Gas:</label>
+            <input type="text" id="tipo_cilindro_gas" name="tipo_cilindro_gas">
+
+            <h3 class="section-title">3. Datos Personales</h3>
+            <label for="nombre">Nombre:</label>
+            <input type="text" id="nombre" name="nombre" required>
+
+            <label for="apellido">Apellido:</label>
+            <input type="text" id="apellido" name="apellido" required>
+
+            <label for="cedula">Cédula:</label>
+            <input type="text" id="cedula" name="cedula" required>
+
+            <label for="telefono">Teléfono:</label>
+            <input type="text" id="telefono" name="telefono" required>
+
+            <label for="fecha_nacimiento">Fecha de Nacimiento:</label>
+            <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
+            <div class="age-display" id="edadCalculada"></div>
+
+            <label for="sexo">Sexo:</label>
+            <select id="sexo" name="sexo" required>
+                <option value="">Seleccione</option>
+                <option value="femenino">Femenino</option>
+                <option value="masculino">Masculino</option>
+            </select>
+
+            <label for="parentesco">Parentesco:</label>
+            <select id="parentesco" name="parentesco" required>
+                <option value="">Seleccione</option>
+                <option value="madre">Madre</option>
+                <option value="padre">Padre</option>
+                <option value="hijo">Hijo</option>
+                <option value="jefe de hogar">Jefe de hogar</option>
+                <option value="nieto">Nieto</option>
+                <option value="hermano">Hermano</option>
+                <option value="esposo">Esposo</option>
+                <option value="cónyuge">Cónyuge</option>
+                <option value="suegro">Suegro</option>
+            </select>
+
+            <label for="profesion">Profesión:</label>
+            <input type="text" id="profesion" name="profesion">
+
+            <label for="trabaja">Trabaja:</label>
+            <select id="trabaja" name="trabaja" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <label for="esta_escolarizado">Está Escolarizado:</label>
+            <select id="esta_escolarizado" name="esta_escolarizado" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <label for="esta_cedulado">Está Cedulado:</label>
+            <select id="esta_cedulado" name="esta_cedulado" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <h3 class="section-title">4. Salud</h3>
+            <label for="padece_enfermedad">Padece alguna enfermedad (Especifique o deje en blanco):</label>
+            <input type="text" id="padece_enfermedad" name="padece_enfermedad">
+
+            <label for="toma_medicamento">Toma Medicamento:</label>
+            <select id="toma_medicamento" name="toma_medicamento" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <div id="cual_medicamento_wrapper" class="hidden">
+                <label for="cual_medicamento">Cuál Medicamento:</label>
+                <input type="text" id="cual_medicamento" name="cual_medicamento">
+            </div>
+
+            <label for="discapacitado">Discapacitado:</label>
+            <select id="discapacitado" name="discapacitado" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <label for="embarazada">Embarazada:</label>
+            <select id="embarazada" name="embarazada" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <label for="lactancia_materna">Lactancia Materna:</label>
+            <select id="lactancia_materna" name="lactancia_materna" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <h3 class="section-title">5. Beneficios y Estatus Político</h3>
+            <label for="cobra_amor_mayor">Cobra Amor Mayor:</label>
+            <select id="cobra_amor_mayor" name="cobra_amor_mayor" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <label for="carnet_patria">Carnet de la Patria:</label>
+            <select id="carnet_patria" name="carnet_patria" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <label for="mision_jose_gregorio">Misión José Gregorio:</label>
+            <select id="mision_jose_gregorio" name="mision_jose_gregorio" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <label for="hogares_patria_bono">Hogares de la Patria (Bono único familiar):</label>
+            <select id="hogares_patria_bono" name="hogares_patria_bono" required>
+                <option value="">Seleccione</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+            </select>
+
+            <label for="donde_vota">Dónde Vota (Dirección):</label>
+            <input type="text" id="donde_vota" name="donde_vota">
+
+            <label for="vd_vb_vo_seleccion">VD / VB / VO Selección:</label>
+            <select id="vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required>
+                <option value="">Seleccione</option>
+                <option value="VD">VD</option>
+                <option value="VB">VB</option>
+                <option value="VO">VO</option>
+            </select>
+
+            <div id="vd_vb_vo_detalle_wrapper" class="hidden">
+                <label for="vd_vb_vo_detalle">Detalle (VD/VB/VO):</label>
+                <textarea id="vd_vb_vo_detalle" name="vd_vb_vo_detalle" rows="3"></textarea>
+            </div>
+
+            <button type="submit">Guardar Habitante</button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, push, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        // IMPORTANTE: Importamos las herramientas de Autenticación
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        // 1. CONFIGURACIÓN EXACTA DE TU FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app); // Inicializamos Autenticación
+
+        // ==========================================
+        // SISTEMA DE SEGURIDAD (Protección de ruta)
+        // ==========================================
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // Si no hay nadie logueado, lo devuelve al login
+                window.location.href = "index.html";
+            }
+        });
+
+        // Funcionalidad del botón Cerrar Sesión
+        document.getElementById('btnCerrarSesion').addEventListener('click', () => {
+            signOut(auth).then(() => {
+                window.location.href = "index.html";
+            });
+        });
+        // ==========================================
+
+        // 2. LÓGICA PARA CARGAR COMUNAS Y COMUNIDADES DESDE FIREBASE
+        const dbRef = ref(database);
+        const comunaSelect = document.getElementById('comuna');
+        const comunidadSelect = document.getElementById('comunidad');
+        let datosTerritoriales = {};
+
+        // Extraer los datos de la base de datos al cargar la página
+        get(child(dbRef, `filtros_territoriales`)).then((snapshot) => {
+            if (snapshot.exists()) {
+                datosTerritoriales = snapshot.val();
+                
+                // Limpiar el select y agregar la opción por defecto
+                comunaSelect.innerHTML = '<option value="">Seleccione la Comuna / Circuito</option>';
+                
+                // Llenar el select con las comunas leídas
+                for (const comuna in datosTerritoriales) {
+                    const option = document.createElement('option');
+                    option.value = comuna;
+                    option.textContent = comuna;
+                    comunaSelect.appendChild(option);
+                }
+            } else {
+                comunaSelect.innerHTML = '<option value="">Error: No hay datos de comunas</option>';
+            }
+        }).catch((error) => {
+            console.error("Error obteniendo comunas:", error);
+            comunaSelect.innerHTML = '<option value="">Error de conexión</option>';
+        });
+
+        // Cuando el usuario cambia la comuna, se actualizan las comunidades
+        comunaSelect.addEventListener('change', (e) => {
+            const comunaSeleccionada = e.target.value;
+            comunidadSelect.innerHTML = '<option value="">Seleccione la Comunidad</option>';
+            
+            if (comunaSeleccionada && datosTerritoriales[comunaSeleccionada]) {
+                const listaComunidades = datosTerritoriales[comunaSeleccionada];
+                listaComunidades.forEach(comunidad => {
+                    const option = document.createElement('option');
+                    option.value = comunidad;
+                    option.textContent = comunidad;
+                    comunidadSelect.appendChild(option);
+                });
+            }
+        });
+
+        // 3. LÓGICA PARA CALCULAR LA EDAD EN TIEMPO REAL
+        const inputFecha = document.getElementById('fecha_nacimiento');
+        const displayEdad = document.getElementById('edadCalculada');
+
+        inputFecha.addEventListener('change', (e) => {
+            if(!e.target.value) {
+                displayEdad.textContent = '';
+                return;
+            }
+            const fechaNac = new Date(e.target.value);
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - fechaNac.getFullYear();
+            const mes = hoy.getMonth() - fechaNac.getMonth();
+            
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+                edad--;
+            }
+            displayEdad.textContent = `Edad calculada: ${edad} años`;
+        });
+
+        // 4. LÓGICA CONDICIONAL (Mostrar campos ocultos si marcan "Sí")
+        const selectMedicamento = document.getElementById('toma_medicamento');
+        const divCualMedicamento = document.getElementById('cual_medicamento_wrapper');
+        const inputCualMedicamento = document.getElementById('cual_medicamento');
+
+        selectMedicamento.addEventListener('change', (e) => {
+            if (e.target.value === 'si') {
+                divCualMedicamento.classList.remove('hidden');
+                inputCualMedicamento.required = true;
+            } else {
+                divCualMedicamento.classList.add('hidden');
+                inputCualMedicamento.required = false;
+                inputCualMedicamento.value = ''; 
+            }
+        });
+
+        const selectVd = document.getElementById('vd_vb_vo_seleccion');
+        const divVdDetalle = document.getElementById('vd_vb_vo_detalle_wrapper');
+        const inputVdDetalle = document.getElementById('vd_vb_vo_detalle');
+
+        selectVd.addEventListener('change', (e) => {
+            // Si el valor no está vacío (es decir, seleccionaron VD, VB o VO)
+            if (e.target.value !== '') {
+                divVdDetalle.classList.remove('hidden');
+                inputVdDetalle.required = true;
+            } else {
+                divVdDetalle.classList.add('hidden');
+                inputVdDetalle.required = false;
+                inputVdDetalle.value = '';
+            }
+        });
+
+        // 5. GUARDAR EN FIREBASE AL ENVIAR EL FORMULARIO
+        const form = document.getElementById('registroHabitanteForm');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+            
+            // Recoger todos los datos
+            const formData = new FormData(form);
+            const habitanteData = Object.fromEntries(formData.entries());
+
+            try {
+                // Generar un nuevo registro en el nodo "habitantes"
+                const habitantesRef = ref(database, 'habitantes');
+                await push(habitantesRef, habitanteData);
+                
+                alert('¡Datos guardados con éxito en la base de datos de la Alcaldía!');
+                
+                // Reiniciar el formulario
+                form.reset();
+                displayEdad.textContent = '';
+                divCualMedicamento.classList.add('hidden');
+                divVdDetalle.classList.add('hidden');
+                comunidadSelect.innerHTML = '<option value="">Seleccione primero una comuna</option>';
+                window.scrollTo(0, 0); // Subir la pantalla al inicio
+                
+            } catch (error) {
+                console.error("Error al guardar:", error);
+                alert('Hubo un error al guardar los datos. Revisa la consola para más detalles.');
+            }
+        });
+    </script>
+</body>
+</html>
