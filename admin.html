@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Alcaldía</title>
+    <title>Panel de Administración Principal</title>
     <style>
         :root {
             --rojo-oficial: #E30613;
@@ -12,7 +12,7 @@
             --gris-borde: #ced4da;
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; }
-        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 800px; margin: auto; border-top: 8px solid var(--rojo-oficial); }
+        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 900px; margin: auto; border-top: 8px solid var(--rojo-oficial); }
         
         /* Encabezado Gubernamental */
         .gob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-borde); padding-bottom: 20px; margin-bottom: 20px;}
@@ -22,88 +22,76 @@
         .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
         
         /* Botonera superior */
-        .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;}
-        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
+        .top-nav { display: flex; justify-content: flex-end; margin-bottom: 20px;}
+        .btn-nav { background-color: #333; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; text-transform: uppercase;}
         .btn-nav:hover { background-color: #555; }
         
-        h2 { text-align: center; color: var(--rojo-oficial); margin-top: 10px; font-size: 20px; text-transform: uppercase;}
-        p.sub-title { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; font-weight: bold; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 10px;}
+        h2 { text-align: center; color: var(--rojo-oficial); margin-top: 10px; font-size: 22px; text-transform: uppercase;}
+        p.sub-title { text-align: center; color: #666; font-size: 15px; margin-bottom: 40px; font-weight: bold;}
 
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 20px; }
-        .full-width { grid-column: span 2; }
-
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; font-size: 14px; margin-top: 5px;}
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--gris-borde); border-radius: 5px; box-sizing: border-box; font-size: 14px; transition: 0.3s; background-color: #fdfdfd;}
-        input:focus, select:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
+        /* DASHBOARD CARDS */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 20px;}
         
-        button#btnCrear { background-color: var(--rojo-oficial); color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 30px; transition: 0.3s; text-transform: uppercase;}
-        button#btnCrear:hover { background-color: #b7050f; }
+        .card { background: #fdfdfd; border: 1px solid var(--gris-borde); border-radius: 8px; padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; overflow: hidden;}
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); border-color: var(--azul-oficial);}
+        
+        /* Línea decorativa superior en cada tarjeta */
+        .card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 5px; }
+        .card-operadores::before { background-color: var(--rojo-oficial); }
+        .card-registro::before { background-color: #28a745; }
+        .card-consulta::before { background-color: var(--azul-oficial); }
 
-        .success-msg { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 12px; border-radius: 5px; text-align: center; margin-top: 20px; display: none; font-weight: bold; }
-        .error-msg { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 12px; border-radius: 5px; text-align: center; margin-top: 20px; display: none; font-weight: bold; }
+        .card-icon { font-size: 50px; margin-bottom: 15px; display: block;}
+        .card-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; text-transform: uppercase;}
+        .card-desc { font-size: 13px; color: #666; }
+
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="top-nav">
-            <button type="button" class="btn-nav" onclick="location.href='registro.html'">Ir al Formulario</button>
-            <button type="button" class="btn-nav" id="btnCerrarSesion">Cerrar Sesión</button>
+            <button type="button" class="btn-nav" id="btnCerrarSesion">Cerrar Sesión Segura</button>
         </div>
 
         <div class="gob-header">
             <img src="psuv.jpg" alt="PSUV">
             <div class="header-titles">
-                <h1>Panel de Administración</h1>
+                <h1>Centro de Comando Administrativo</h1>
                 <p>SISTEMA DE INTEGRACIÓN TERRITORIAL | ALCALDÍA DE CRISTÓBAL ROJAS</p>
             </div>
             <img src="escudo municipal.jpg" alt="Escudo Cristóbal Rojas">
         </div>
 
-        <h2>Gestión de Operadores</h2>
-        <p class="sub-title">Alta de nuevo personal autorizado para Sala Situacional</p>
+        <h2>Bienvenido, Administrador</h2>
+        <p class="sub-title">Seleccione el módulo al que desea acceder</p>
         
-        <form id="createUserForm">
-            <div class="form-grid">
-                <div>
-                    <label for="nombre">Nombre:</label>
-                    <input type="text" id="nombre" placeholder="Ej: Juan" required>
-                </div>
-                <div>
-                    <label for="apellido">Apellido:</label>
-                    <input type="text" id="apellido" placeholder="Ej: Perez" required>
-                </div>
-                <div class="full-width">
-                    <label for="cargo">Cargo Institucional:</label>
-                    <select id="cargo" required>
-                        <option value="">Seleccione un cargo</option>
-                        <option value="Operador de Sala">Operador de Sala</option>
-                        <option value="Analista de Datos">Analista de Datos</option>
-                        <option value="Coordinador de Eje">Coordinador de Eje</option>
-                        <option value="Secretario Municipal">Secretario Municipal</option>
-                    </select>
-                </div>
-                <div class="full-width" style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 20px;">
-                    <label for="newUsername">ID de Usuario (Sin @):</label>
-                    <input type="text" id="newUsername" placeholder="Ej: juan.perez" required>
-                </div>
-                <div class="full-width">
-                    <label for="newPassword">Contraseña de Acceso Genérica:</label>
-                    <input type="password" id="newPassword" placeholder="Min. 6 caracteres" required minlength="6">
-                </div>
+        <div class="dashboard-grid">
+            
+            <div class="card card-operadores" onclick="location.href='crear-operador.html'">
+                <span class="card-icon">👨🏽‍💻</span>
+                <div class="card-title">Gestión de Operadores</div>
+                <div class="card-desc">Crear nuevos usuarios, asignar cargos y generar accesos genéricos para la Sala Situacional.</div>
             </div>
 
-            <p class="success-msg" id="successMsg">¡Operador registrado exitosamente en el sistema!</p>
-            <p class="error-msg" id="errorMsg">Error al crear usuario.</p>
+            <div class="card card-registro" onclick="location.href='registro.html'">
+                <span class="card-icon">📝</span>
+                <div class="card-title">Registro de Habitantes</div>
+                <div class="card-desc">Acceder al formulario oficial de recolección de datos y censo territorial del municipio.</div>
+            </div>
 
-            <button type="submit" id="btnCrear">REGISTRAR OPERADOR DE SISTEMA</button>
-        </form>
+            <div class="card card-consulta" onclick="location.href='consulta.html'">
+                <span class="card-icon">🔍</span>
+                <div class="card-title">Módulo de Consultas</div>
+                <div class="card-desc">Buscador avanzado. Visualizar, filtrar y auditar todos los registros existentes en la base de datos.</div>
+            </div>
+
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -117,11 +105,8 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const database = getDatabase(app);
 
-        const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
-        const secondaryAuth = getAuth(secondaryApp);
-
+        // Seguridad: Solo Carlos entra aquí
         onAuthStateChanged(auth, (user) => {
             if (!user || user.email !== "carlos.admin@alcaldia.com") {
                 window.location.href = "index.html";
@@ -130,48 +115,6 @@
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
             signOut(auth).then(() => window.location.href = "index.html");
-        });
-
-        const createForm = document.getElementById('createUserForm');
-        const successMsg = document.getElementById('successMsg');
-        const errorMsg = document.getElementById('errorMsg');
-
-        createForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            successMsg.style.display = 'none';
-            errorMsg.style.display = 'none';
-
-            const nombre = document.getElementById('nombre').value;
-            const apellido = document.getElementById('apellido').value;
-            const cargo = document.getElementById('cargo').value;
-            const newUsername = document.getElementById('newUsername').value.trim();
-            const newPassword = document.getElementById('newPassword').value;
-            const emailFalso = newUsername + "@alcaldia.com";
-
-            try {
-                // Crear en Firebase Auth
-                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, emailFalso, newPassword);
-                const uid = userCredential.user.uid;
-
-                // Guardado con la regla de oro: todos los datos intactos
-                await set(ref(database, 'operadores/' + uid), {
-                    nombre: nombre,
-                    apellido: apellido,
-                    cargo: cargo,
-                    usuario: newUsername,
-                    cambio_obligatorio: true,
-                    fecha_registro: new Date().toISOString()
-                });
-
-                successMsg.style.display = 'block';
-                createForm.reset();
-                await signOut(secondaryAuth);
-            } catch (error) {
-                console.error(error);
-                alert("SISTEMA BLOQUEÓ EL REGISTRO:\n" + error.message);
-                errorMsg.textContent = "Error: " + error.message;
-                errorMsg.style.display = 'block';
-            }
         });
     </script>
 </body>

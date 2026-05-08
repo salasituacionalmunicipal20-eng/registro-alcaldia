@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Operadores - Alcaldía</title>
+    <style>
+        :root {
+            --rojo-oficial: #E30613;
+            --azul-oficial: #004a99;
+            --gris-fondo: #e9ecef;
+            --gris-borde: #ced4da;
+        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; }
+        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 800px; margin: auto; border-top: 8px solid var(--rojo-oficial); }
+        
+        /* Encabezado Gubernamental */
+        .gob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-borde); padding-bottom: 20px; margin-bottom: 20px;}
+        .gob-header img { height: 70px; object-fit: contain; }
+        .header-titles { text-align: center; flex-grow: 1; padding: 0 20px;}
+        .header-titles h1 { color: var(--azul-oficial); margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
+        .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
+        
+        /* Botonera superior */
+        .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;}
+        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
+        .btn-nav:hover { background-color: #555; }
+        #btnVolver { background-color: var(--azul-oficial); }
+        
+        h2 { text-align: center; color: var(--rojo-oficial); margin-top: 10px; font-size: 20px; text-transform: uppercase;}
+        p.sub-title { text-align: center; color: #666; font-size: 14px; margin-bottom: 30px; font-weight: bold; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 10px;}
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 20px; }
+        .full-width { grid-column: span 2; }
+
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; font-size: 14px; margin-top: 5px;}
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--gris-borde); border-radius: 5px; box-sizing: border-box; font-size: 14px; transition: 0.3s; background-color: #fdfdfd;}
+        input:focus, select:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
+        
+        button#btnCrear { background-color: var(--rojo-oficial); color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 30px; transition: 0.3s; text-transform: uppercase;}
+        button#btnCrear:hover { background-color: #b7050f; }
+
+        .success-msg { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 12px; border-radius: 5px; text-align: center; margin-top: 20px; display: none; font-weight: bold; }
+        .error-msg { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 12px; border-radius: 5px; text-align: center; margin-top: 20px; display: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="top-nav">
+            <button type="button" class="btn-nav" id="btnVolver" onclick="location.href='admin.html'">← Volver al Panel Principal</button>
+            <button type="button" class="btn-nav" id="btnCerrarSesion">Cerrar Sesión</button>
+        </div>
+
+        <div class="gob-header">
+            <img src="psuv.jpg" alt="PSUV">
+            <div class="header-titles">
+                <h1>Alta de Operadores</h1>
+                <p>SISTEMA DE INTEGRACIÓN TERRITORIAL | ALCALDÍA DE CRISTÓBAL ROJAS</p>
+            </div>
+            <img src="escudo municipal.jpg" alt="Escudo Cristóbal Rojas">
+        </div>
+
+        <h2>Gestión de Personal</h2>
+        <p class="sub-title">Alta de nuevo personal autorizado para Sala Situacional</p>
+        
+        <form id="createUserForm">
+            <div class="form-grid">
+                <div>
+                    <label for="nombre">Nombre:</label>
+                    <input type="text" id="nombre" placeholder="Ej: Juan" required>
+                </div>
+                <div>
+                    <label for="apellido">Apellido:</label>
+                    <input type="text" id="apellido" placeholder="Ej: Perez" required>
+                </div>
+                <div class="full-width">
+                    <label for="cargo">Cargo Institucional:</label>
+                    <select id="cargo" required>
+                        <option value="">Seleccione un cargo</option>
+                        <option value="Operador de Sala">Operador de Sala</option>
+                        <option value="Analista de Datos">Analista de Datos</option>
+                        <option value="Coordinador de Eje">Coordinador de Eje</option>
+                        <option value="Secretario Municipal">Secretario Municipal</option>
+                    </select>
+                </div>
+                <div class="full-width" style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 20px;">
+                    <label for="newUsername">ID de Usuario (Sin @):</label>
+                    <input type="text" id="newUsername" placeholder="Ej: juan.perez" required>
+                </div>
+                <div class="full-width">
+                    <label for="newPassword">Contraseña de Acceso Genérica:</label>
+                    <input type="password" id="newPassword" placeholder="Min. 6 caracteres" required minlength="6">
+                </div>
+            </div>
+
+            <p class="success-msg" id="successMsg">¡Operador registrado exitosamente en el sistema!</p>
+            <p class="error-msg" id="errorMsg">Error al crear usuario.</p>
+
+            <button type="submit" id="btnCrear">REGISTRAR OPERADOR DE SISTEMA</button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
+        const secondaryAuth = getAuth(secondaryApp);
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== "carlos.admin@alcaldia.com") {
+                window.location.href = "index.html";
+            }
+        });
+
+        document.getElementById('btnCerrarSesion').addEventListener('click', () => {
+            signOut(auth).then(() => window.location.href = "index.html");
+        });
+
+        const createForm = document.getElementById('createUserForm');
+        const successMsg = document.getElementById('successMsg');
+        const errorMsg = document.getElementById('errorMsg');
+
+        createForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            const nombre = document.getElementById('nombre').value;
+            const apellido = document.getElementById('apellido').value;
+            const cargo = document.getElementById('cargo').value;
+            const newUsername = document.getElementById('newUsername').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const emailFalso = newUsername + "@alcaldia.com";
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, emailFalso, newPassword);
+                const uid = userCredential.user.uid;
+
+                await set(ref(database, 'operadores/' + uid), {
+                    nombre: nombre,
+                    apellido: apellido,
+                    cargo: cargo,
+                    usuario: newUsername,
+                    cambio_obligatorio: true,
+                    fecha_registro: new Date().toISOString()
+                });
+
+                successMsg.style.display = 'block';
+                createForm.reset();
+                await signOut(secondaryAuth);
+            } catch (error) {
+                console.error(error);
+                alert("SISTEMA BLOQUEÓ EL REGISTRO:\n" + error.message);
+                errorMsg.textContent = "Error: " + error.message;
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
