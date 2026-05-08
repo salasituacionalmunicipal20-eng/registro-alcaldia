@@ -24,7 +24,8 @@
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background-color: #f8f8f8; color: #333; }
         .search-box { padding: 10px; border: 2px solid #4CAF50; border-radius: 5px; width: 100%; margin-bottom: 15px; font-size: 15px; }
-        .btn-delete { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+        .btn-delete { background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px;}
+        .btn-edit { background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -65,21 +66,6 @@
                 <option value="town house">Town House</option>
             </select>
 
-            <label for="condiciones_vivienda">Condiciones de Vivienda:</label>
-            <select id="condiciones_vivienda" name="condiciones_vivienda" required>
-                <option value="">Seleccione</option>
-                <option value="bien">Bien</option>
-                <option value="regular">Regular</option>
-                <option value="malo">Malo</option>
-            </select>
-
-            <label for="responsabilidad_cbi_cm">Responsabilidad CBI/CM:</label>
-            <input type="text" id="responsabilidad_cbi_cm" name="responsabilidad_cbi_cm" required>
-
-            <label for="tipo_cilindro_gas">Tipo de Cilindro de Gas:</label>
-            <input type="text" id="tipo_cilindro_gas" name="tipo_cilindro_gas">
-
-            <h3 class="section-title">3. Datos Personales</h3>
             <label for="nombre">Nombre:</label>
             <input type="text" id="nombre" name="nombre" required>
 
@@ -89,63 +75,20 @@
             <label for="cedula">Cédula:</label>
             <input type="text" id="cedula" name="cedula" required>
 
-            <label for="telefono">Teléfono:</label>
-            <input type="text" id="telefono" name="telefono" required>
-
-            <label for="fecha_nacimiento">Fecha de Nacimiento:</label>
-            <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
-            <div class="age-display" id="edadCalculada"></div>
-
-            <label for="sexo">Sexo:</label>
-            <select id="sexo" name="sexo" required>
-                <option value="">Seleccione</option>
-                <option value="femenino">Femenino</option>
-                <option value="masculino">Masculino</option>
-            </select>
-
-            <label for="parentesco">Parentesco:</label>
-            <select id="parentesco" name="parentesco" required>
-                <option value="">Seleccione</option>
-                <option value="madre">Madre</option>
-                <option value="padre">Padre</option>
-                <option value="hijo">Hijo</option>
-                <option value="jefe de hogar">Jefe de hogar</option>
-                <option value="nieto">Nieto</option>
-                <option value="hermano">Hermano</option>
-                <option value="esposo">Esposo</option>
-                <option value="cónyuge">Cónyuge</option>
-                <option value="suegro">Suegro</option>
-            </select>
-
-            <label for="trabaja">Trabaja:</label>
-            <select id="trabaja" name="trabaja" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
-
-            <label for="esta_cedulado">Está Cedulado:</label>
-            <select id="esta_cedulado" name="esta_cedulado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
-
-            <h3 class="section-title">4. Salud</h3>
-            <label for="toma_medicamento">Toma Medicamento:</label>
-            <select id="toma_medicamento" name="toma_medicamento" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
-            
-            <div id="cual_medicamento_wrapper" class="hidden">
-                <label for="cual_medicamento">Cuál Medicamento:</label>
-                <input type="text" id="cual_medicamento" name="cual_medicamento">
-            </div>
-
             <button type="submit" id="btnGuardar">Guardar Habitante</button>
         </form>
 
         <div class="table-container">
-            <h3>Registros Existentes</h3>
-            <input type="text" id="searchInput" class="search-box" placeholder="Filtrar por nombre, cédula, comunidad...">
+            <h3>Registros de Sala Situacional</h3>
+            <input type="text" id="searchInput" class="search-box" placeholder="Buscador: escriba nombre, cédula o comunidad para filtrar...">
             <table>
                 <thead>
                     <tr>
-                        <th>Nombre</th>
+                        <th>Nombre y Apellido</th>
                         <th>Cédula</th>
                         <th>Comunidad</th>
-                        <th id="thResponsable" class="hidden">Responsable</th>
-                        <th>Acción</th>
+                        <th id="thResponsable" class="hidden">Responsable del Registro</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaCuerpo"></tbody>
@@ -176,10 +119,18 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
+            
             esAdmin = user.email === "carlos.admin@alcaldia.com";
+            
             if (esAdmin) {
-                document.getElementById('btnAdminPanel').classList.remove('hidden');
+                const btnAdmin = document.getElementById('btnAdminPanel');
+                btnAdmin.classList.remove('hidden');
                 document.getElementById('thResponsable').classList.remove('hidden');
+                
+                // CORRECCIÓN: Evento de clic para el botón Admin
+                btnAdmin.addEventListener('click', () => {
+                    window.location.href = "admin.html";
+                });
             }
             escucharRegistros();
         });
@@ -188,27 +139,27 @@
             signOut(auth).then(() => window.location.href = "index.html");
         });
 
-        // Trazabilidad y Guardado
+        // Guardar con Trazabilidad
         const form = document.getElementById('registroHabitanteForm');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const user = auth.currentUser;
             const userSnap = await get(child(ref(database), `operadores/${user.uid}`));
-            const respNombre = userSnap.exists() ? `${userSnap.val().nombre} ${userSnap.val().apellido}` : "Admin";
+            const respNombre = userSnap.exists() ? `${userSnap.val().nombre} ${userSnap.val().apellido}` : "Administrador";
 
             const habitanteData = {
                 ...Object.fromEntries(new FormData(form).entries()),
                 registrado_por_uid: user.uid,
                 registrado_por_nombre: respNombre,
-                fecha: new Date().toLocaleString()
+                fecha_registro: new Date().toLocaleString()
             };
 
             await push(ref(database, 'habitantes'), habitanteData);
-            alert('¡Guardado!');
+            alert('¡Habitante registrado con éxito!');
             form.reset();
         });
 
-        // Escuchar y Filtrar Tabla
+        // Tabla Dinámica y Filtros
         function escucharRegistros() {
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 const data = snapshot.val();
@@ -216,18 +167,21 @@
                 const tbody = document.getElementById('tablaCuerpo');
                 tbody.innerHTML = "";
 
+                if (!data) return;
+
                 for (let id in data) {
                     const h = data[id];
                     const filaTexto = `${h.nombre} ${h.apellido} ${h.cedula} ${h.comunidad}`.toLowerCase();
+                    
                     if (filaTexto.includes(filtro)) {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${h.nombre} ${h.apellido}</td>
                             <td>${h.cedula}</td>
-                            <td>${h.comunidad}</td>
+                            <td>${h.comunidad || 'No especificada'}</td>
                             ${esAdmin ? `<td><strong>${h.registrado_por_nombre}</strong></td>` : ""}
                             <td>
-                                <button onclick="window.editar('${id}')">Ver/Editar</button>
+                                <button class="btn-edit" onclick="window.editar('${id}')">Ver</button>
                                 ${esAdmin ? `<button class="btn-delete" onclick="window.eliminar('${id}')">Borrar</button>` : ""}
                             </td>
                         `;
@@ -240,10 +194,16 @@
         document.getElementById('searchInput').addEventListener('input', escucharRegistros);
 
         window.eliminar = (id) => {
-            if(confirm("¿Borrar definitivamente?")) remove(ref(database, `habitantes/${id}`));
+            if(confirm("¿Seguro que desea eliminar este registro de la base de datos?")) {
+                remove(ref(database, `habitantes/${id}`));
+            }
         };
 
-        // Lógica territorial básica
+        window.editar = (id) => {
+            alert("Función de edición en desarrollo para el ID: " + id);
+        };
+
+        // Carga de Comunas
         const comunaSelect = document.getElementById('comuna');
         get(child(ref(database), 'filtros_territoriales')).then(snap => {
             if(snap.exists()) {
