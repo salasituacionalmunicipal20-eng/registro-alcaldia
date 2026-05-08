@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultas y Buscador - Alcaldía</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
+        h1 { color: #E30613; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+        
+        .header-actions { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .btn-nav { background-color: #333; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;}
+        .btn-nav:hover { background-color: #555; }
+        #btnVolver { background-color: #4CAF50; }
+        
+        /* Buscador Avanzado */
+        .search-panel { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px;}
+        .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        label { font-weight: bold; font-size: 13px; color: #555; display: block; margin-bottom: 5px;}
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px;}
+        
+        /* Tabla */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #004a99; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        tr:hover { background-color: #e9ecef; }
+        
+        .btn-delete { background: #E30613; color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px;}
+        .btn-edit { background: #4CAF50; color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; }
+        .hidden { display: none !important; }
+        .stats { margin-top: 15px; font-weight: bold; color: #E30613; font-size: 16px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-actions">
+            <button type="button" id="btnVolver" class="btn-nav" onclick="location.href='registro.html'">← Volver a Registrar</button>
+            <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
+        </div>
+
+        <h1>Buscador Avanzado de Habitantes</h1>
+        
+        <div class="search-panel">
+            <div class="search-grid">
+                <div>
+                    <label>Buscar por Nombre / Apellido:</label>
+                    <input type="text" id="fNombre" placeholder="Escriba el nombre...">
+                </div>
+                <div>
+                    <label>Buscar por Cédula:</label>
+                    <input type="text" id="fCedula" placeholder="Escriba la cédula...">
+                </div>
+                <div>
+                    <label>Buscar por Comuna:</label>
+                    <input type="text" id="fComuna" placeholder="Escriba la comuna...">
+                </div>
+                <div>
+                    <label>Buscar por Comunidad:</label>
+                    <input type="text" id="fComunidad" placeholder="Escriba la comunidad...">
+                </div>
+                <div>
+                    <label>Buscar por Calle:</label>
+                    <input type="text" id="fCalle" placeholder="Escriba la calle...">
+                </div>
+            </div>
+            <div class="stats" id="totalResultados">Cargando base de datos...</div>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombres y Apellidos</th>
+                        <th>Cédula</th>
+                        <th>Comuna</th>
+                        <th>Comunidad</th>
+                        <th>Calle</th>
+                        <th>Teléfono</th>
+                        <th id="thResponsable" class="hidden">Responsable (Admin)</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCuerpo">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+        
+        let esAdmin = false;
+        let baseDeDatosHabitantes = {}; // Caché local para búsquedas rápidas
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = "index.html"; return; }
+            
+            esAdmin = user.email === "carlos.admin@alcaldia.com";
+            if (esAdmin) {
+                document.getElementById('thResponsable').classList.remove('hidden');
+            }
+            
+            cargarDatos();
+        });
+
+        document.getElementById('btnCerrarSesion').addEventListener('click', () => {
+            signOut(auth).then(() => window.location.href = "index.html");
+        });
+
+        // 1. Descargar todos los habitantes a memoria
+        function cargarDatos() {
+            onValue(ref(database, 'habitantes'), (snapshot) => {
+                baseDeDatosHabitantes = snapshot.val() || {};
+                filtrarTabla(); // Llena la tabla por primera vez
+            });
+        }
+
+        // 2. Función maestra de filtrado cruzado
+        function filtrarTabla() {
+            const fNom = document.getElementById('fNombre').value.toLowerCase();
+            const fCed = document.getElementById('fCedula').value.toLowerCase();
+            const fComuna = document.getElementById('fComuna').value.toLowerCase();
+            const fComunidad = document.getElementById('fComunidad').value.toLowerCase();
+            const fCalle = document.getElementById('fCalle').value.toLowerCase();
+
+            const tbody = document.getElementById('tablaCuerpo');
+            tbody.innerHTML = "";
+            let contador = 0;
+
+            for (let id in baseDeDatosHabitantes) {
+                const h = baseDeDatosHabitantes[id];
+                const nombreCompleto = `${h.nombre || ''} ${h.apellido || ''}`.toLowerCase();
+                
+                // Evaluar si la fila cumple con todos los filtros actuales
+                const cumpleNom = nombreCompleto.includes(fNom);
+                const cumpleCed = (h.cedula || '').toLowerCase().includes(fCed);
+                const cumpleComuna = (h.comuna || '').toLowerCase().includes(fComuna);
+                const cumpleComunidad = (h.comunidad || '').toLowerCase().includes(fComunidad);
+                const cumpleCalle = (h.calle || '').toLowerCase().includes(fCalle);
+
+                if (cumpleNom && cumpleCed && cumpleComuna && cumpleComunidad && cumpleCalle) {
+                    contador++;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${h.nombre} ${h.apellido}</strong></td>
+                        <td>${h.cedula}</td>
+                        <td>${h.comuna}</td>
+                        <td>${h.comunidad}</td>
+                        <td>${h.calle}</td>
+                        <td>${h.telefono}</td>
+                        ${esAdmin ? `<td style="color:#E30613; font-weight:bold;">${h.registrado_por_nombre || 'Desconocido'}</td>` : ""}
+                        <td>
+                            <button class="btn-edit" onclick="alert('Función Ver Detalles en desarrollo.')">Detalle</button>
+                            ${esAdmin ? `<button class="btn-delete" onclick="window.eliminarRegistro('${id}')">Borrar</button>` : ""}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            }
+            document.getElementById('totalResultados').textContent = `Total de registros encontrados: ${contador}`;
+        }
+
+        // Conectar los inputs al motor de búsqueda
+        document.querySelectorAll('.search-grid input').forEach(input => {
+            input.addEventListener('input', filtrarTabla);
+        });
+
+        // Borrado solo para administradores
+        window.eliminarRegistro = (id) => {
+            if(confirm("ALERTA DE SEGURIDAD: ¿Seguro que desea eliminar permanentemente este habitante?")) {
+                remove(ref(database, `habitantes/${id}`))
+                .catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
+            }
+        };
+    </script>
+</body>
+</html>
