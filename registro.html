@@ -3,270 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Habitantes - Alcaldía</title>
+    <title>Registro de Habitantes - Portal Institucional</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 900px; margin: auto; position: relative;}
-        h1 { text-align: center; color: #333; margin-top: 0;}
+        :root {
+            --rojo-oficial: #E30613;
+            --azul-oficial: #004a99;
+            --gris-fondo: #e9ecef;
+            --gris-borde: #ced4da;
+        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; }
+        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 900px; margin: auto; position: relative; border-top: 8px solid var(--rojo-oficial);}
         
-        /* Estilo para el encabezado de acciones */
-        .header-actions { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
-        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: normal;}
+        /* Encabezado Gubernamental */
+        .gob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-borde); padding-bottom: 20px; margin-bottom: 20px;}
+        .gob-header img { height: 70px; object-fit: contain; }
+        .header-titles { text-align: center; flex-grow: 1; padding: 0 20px;}
+        .header-titles h1 { color: var(--azul-oficial); margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
+        .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
+        
+        /* Botonera superior */
+        .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 30px;}
+        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
         .btn-nav:hover { background-color: #555; }
-        #btnAdminPanel { background-color: #E30613; } /* Rojo para resaltar panel admin */
-        #btnConsultas { background-color: #004a99; }
+        #btnAdminPanel { background-color: var(--rojo-oficial); }
+        #btnConsultas { background-color: var(--azul-oficial); }
 
-        label { display: block; margin-bottom: 5px; font-weight: bold; margin-top: 15px;}
-        input[type="text"], input[type="number"], input[type="date"], input[type="password"], select, textarea {
+        /* Barra de progreso oficial */
+        .progress-wrapper { position: relative; margin: 30px 0 50px 0; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .progress-line { position: absolute; top: 50%; left: 0; width: 100%; height: 4px; background-color: var(--gris-borde); transform: translateY(-50%); z-index: 1;}
+        .progress-fill { position: absolute; top: 50%; left: 0; width: 0%; height: 4px; background-color: var(--azul-oficial); transform: translateY(-50%); z-index: 2; transition: 0.4s ease;}
+        .step-circles { position: relative; z-index: 3; display: flex; justify-content: space-between; }
+        .step-circle { width: 35px; height: 35px; background-color: white; border: 3px solid var(--gris-borde); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #777; transition: 0.4s ease; }
+        .step-circle.active { border-color: var(--azul-oficial); background-color: var(--azul-oficial); color: white; box-shadow: 0 0 10px rgba(0, 74, 153, 0.3);}
+        
+        .step-title-indicator { text-align: center; color: var(--rojo-oficial); font-weight: bold; margin-bottom: 30px; font-size: 18px;}
+
+        /* Formularios estilo oficial */
+        label { display: block; margin-bottom: 8px; font-weight: 600; margin-top: 20px; color: #333; font-size: 14px;}
+        input[type="text"], input[type="number"], input[type="date"], select, textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px 15px;
             margin-bottom: 5px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--gris-borde);
             border-radius: 4px;
             box-sizing: border-box;
+            font-size: 15px;
+            background-color: #fdfdfd;
+            transition: border-color 0.3s;
         }
+        input:focus, select:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
         
         .hidden { display: none !important; }
-        .age-display { margin-bottom: 15px; font-weight: bold; color: #d32f2f; }
-        .section-title { margin-top: 25px; border-bottom: 2px solid #4CAF50; padding-bottom: 5px; color: #4CAF50; }
+        .age-display { margin-top: 5px; font-weight: bold; color: var(--rojo-oficial); font-size: 13px;}
+        .section-title { margin-top: 10px; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 8px; color: var(--azul-oficial); font-size: 20px; text-transform: uppercase;}
 
         /* Estilos del Wizard (Pantallas) */
         .step { display: none; animation: fadeIn 0.4s; }
         .step.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .step-indicator { text-align: center; font-weight: bold; color: #E30613; margin-bottom: 20px; font-size: 18px; }
-        
-        .wizard-buttons { display: flex; justify-content: space-between; margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px;}
-        .btn-wizard { padding: 15px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; color: white; }
-        .btn-prev { background-color: #777; }
-        .btn-prev:hover { background-color: #555; }
-        .btn-next { background-color: #004a99; }
+        .wizard-buttons { display: flex; justify-content: space-between; margin-top: 40px; border-top: 2px solid var(--gris-borde); padding-top: 20px;}
+        .btn-wizard { padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; color: white; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;}
+        .btn-prev { background-color: #6c757d; }
+        .btn-prev:hover { background-color: #5a6268; }
+        .btn-next { background-color: var(--azul-oficial); }
         .btn-next:hover { background-color: #003366; }
-        button#btnGuardar { background-color: #4CAF50; color: white; padding: 15px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; margin-top: 0; font-weight: bold; }
-        button#btnGuardar:hover { background-color: #45a049; }
+        button#btnGuardar { background-color: #28a745; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; width: 100%; margin-top: 0; font-weight: bold; text-transform: uppercase;}
+        button#btnGuardar:hover { background-color: #218838; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+        .full-width { grid-column: span 2; }
+        
+        /* Responsive adjustments */
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
     </style>
 </head>
 <body>
     <div class="container">
         
-        <div class="header-actions">
-            <div>
-                <button type="button" id="btnAdminPanel" class="btn-nav hidden">Panel Admin</button>
-                <button type="button" id="btnConsultas" class="btn-nav" onclick="location.href='consulta.html'">Ir al Buscador General</button>
-            </div>
+        <div class="top-nav">
+            <button type="button" id="btnAdminPanel" class="btn-nav hidden">⚙ Panel Admin</button>
+            <button type="button" id="btnConsultas" class="btn-nav" onclick="location.href='consulta.html'">🔍 Módulo de Consultas</button>
             <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
         </div>
 
-        <h1>Registro de Habitantes</h1>
-        <div class="step-indicator" id="stepIndicator">Paso 1 de 5</div>
+        <div class="gob-header">
+            <img src="psuv.jpg" alt="PSUV">
+            <div class="header-titles">
+                <h1>Sistema de Integración Territorial</h1>
+                <p>ALCALDÍA DEL MUNICIPIO BOLIVARIANO CRISTÓBAL ROJAS</p>
+            </div>
+            <img src="escudo municipal.jpg" alt="Escudo Cristóbal Rojas">
+        </div>
+
+        <div class="progress-wrapper">
+            <div class="progress-line"></div>
+            <div class="progress-fill" id="progressFill"></div>
+            <div class="step-circles">
+                <div class="step-circle active" id="circle-1">1</div>
+                <div class="step-circle" id="circle-2">2</div>
+                <div class="step-circle" id="circle-3">3</div>
+                <div class="step-circle" id="circle-4">4</div>
+                <div class="step-circle" id="circle-5">5</div>
+            </div>
+        </div>
+        
+        <div class="step-title-indicator" id="stepTitleIndicator">MÓDULO I: UBICACIÓN TERRITORIAL</div>
         
         <form id="registroHabitanteForm">
             
             <div class="step active" data-step="1">
                 <h3 class="section-title">1. Ubicación Territorial</h3>
-                <label for="codigo_sigue_actual">Código SIGUE Actual:</label>
-                <input type="text" id="codigo_sigue_actual" name="codigo_sigue_actual" required>
-
-                <label for="comuna">Comuna / Circuito:</label>
-                <select id="comuna" name="comuna" required>
-                    <option value="">Cargando comunas...</option>
-                </select>
-
-                <label for="comunidad">Comunidad:</label>
-                <select id="comunidad" name="comunidad" required>
-                    <option value="">Seleccione primero una comuna</option>
-                </select>
-
-                <label for="consejo_comunal">Consejo Comunal:</label>
-                <input type="text" id="consejo_comunal" name="consejo_comunal" required>
+                <div class="form-grid">
+                    <div class="full-width">
+                        <label for="codigo_sigue_actual">Código SIGUE Actual:</label>
+                        <input type="text" id="codigo_sigue_actual" name="codigo_sigue_actual" placeholder="Ingrese el código institucional" required>
+                    </div>
+                    <div>
+                        <label for="comuna">Comuna / Circuito:</label>
+                        <select id="comuna" name="comuna" required><option value="">Cargando datos...</option></select>
+                    </div>
+                    <div>
+                        <label for="comunidad">Comunidad:</label>
+                        <select id="comunidad" name="comunidad" required><option value="">Seleccione primero una comuna</option></select>
+                    </div>
+                    <div class="full-width">
+                        <label for="consejo_comunal">Consejo Comunal:</label>
+                        <input type="text" id="consejo_comunal" name="consejo_comunal" placeholder="Nombre del Consejo Comunal" required>
+                    </div>
+                </div>
             </div>
 
             <div class="step" data-step="2">
                 <h3 class="section-title">2. Datos de la Vivienda</h3>
-                <label for="calle">Calle:</label>
-                <input type="text" id="calle" name="calle" required>
-
-                <label for="numero_casa">Número de Casa:</label>
-                <input type="text" id="numero_casa" name="numero_casa" required>
-
-                <label for="tipo_vivienda">Tipo de Vivienda:</label>
-                <select id="tipo_vivienda" name="tipo_vivienda" required>
-                    <option value="">Seleccione</option>
-                    <option value="apto">Apto</option>
-                    <option value="casa">Casa</option>
-                    <option value="town house">Town House</option>
-                </select>
-
-                <label for="condiciones_vivienda">Condiciones de Vivienda:</label>
-                <select id="condiciones_vivienda" name="condiciones_vivienda" required>
-                    <option value="">Seleccione</option>
-                    <option value="bien">Bien</option>
-                    <option value="regular">Regular</option>
-                    <option value="malo">Malo</option>
-                </select>
-
-                <label for="responsabilidad_cbi_cm">Responsabilidad CBI/CM:</label>
-                <input type="text" id="responsabilidad_cbi_cm" name="responsabilidad_cbi_cm" required>
-
-                <label for="tipo_cilindro_gas">Tipo de Cilindro de Gas:</label>
-                <input type="text" id="tipo_cilindro_gas" name="tipo_cilindro_gas">
+                <div class="form-grid">
+                    <div>
+                        <label for="calle">Calle / Sector:</label>
+                        <input type="text" id="calle" name="calle" required>
+                    </div>
+                    <div>
+                        <label for="numero_casa">Número de Casa / Apto:</label>
+                        <input type="text" id="numero_casa" name="numero_casa" required>
+                    </div>
+                    <div>
+                        <label for="tipo_vivienda">Tipo de Vivienda:</label>
+                        <select id="tipo_vivienda" name="tipo_vivienda" required>
+                            <option value="">Seleccione</option><option value="apto">Apartamento</option><option value="casa">Casa</option><option value="town house">Town House</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="condiciones_vivienda">Condiciones de Vivienda:</label>
+                        <select id="condiciones_vivienda" name="condiciones_vivienda" required>
+                            <option value="">Seleccione</option><option value="bien">Óptimas (Bien)</option><option value="regular">Regulares</option><option value="malo">Malas / Precarias</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="responsabilidad_cbi_cm">Responsabilidad CBI/CM:</label>
+                        <input type="text" id="responsabilidad_cbi_cm" name="responsabilidad_cbi_cm" required>
+                    </div>
+                    <div>
+                        <label for="tipo_cilindro_gas">Tipo de Cilindro de Gas:</label>
+                        <input type="text" id="tipo_cilindro_gas" name="tipo_cilindro_gas" placeholder="Ej. 10kg, 18kg, 43kg">
+                    </div>
+                </div>
             </div>
 
             <div class="step" data-step="3">
                 <h3 class="section-title">3. Datos Personales</h3>
-                <label for="nombre">Nombre:</label>
-                <input type="text" id="nombre" name="nombre" required>
-
-                <label for="apellido">Apellido:</label>
-                <input type="text" id="apellido" name="apellido" required>
-
-                <label for="cedula">Cédula:</label>
-                <input type="text" id="cedula" name="cedula" required>
-
-                <label for="telefono">Teléfono:</label>
-                <input type="text" id="telefono" name="telefono" required>
-
-                <label for="fecha_nacimiento">Fecha de Nacimiento:</label>
-                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
-                <div class="age-display" id="edadCalculada"></div>
-
-                <label for="sexo">Sexo:</label>
-                <select id="sexo" name="sexo" required>
-                    <option value="">Seleccione</option>
-                    <option value="femenino">Femenino</option>
-                    <option value="masculino">Masculino</option>
-                </select>
-
-                <label for="parentesco">Parentesco:</label>
-                <select id="parentesco" name="parentesco" required>
-                    <option value="">Seleccione</option>
-                    <option value="madre">Madre</option>
-                    <option value="padre">Padre</option>
-                    <option value="hijo">Hijo</option>
-                    <option value="jefe de hogar">Jefe de hogar</option>
-                    <option value="nieto">Nieto</option>
-                    <option value="hermano">Hermano</option>
-                    <option value="esposo">Esposo</option>
-                    <option value="cónyuge">Cónyuge</option>
-                    <option value="suegro">Suegro</option>
-                </select>
-
-                <label for="profesion">Profesión:</label>
-                <input type="text" id="profesion" name="profesion">
-
-                <label for="trabaja">Trabaja:</label>
-                <select id="trabaja" name="trabaja" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
-
-                <label for="esta_escolarizado">Está Escolarizado:</label>
-                <select id="esta_escolarizado" name="esta_escolarizado" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
-
-                <label for="esta_cedulado">Está Cedulado:</label>
-                <select id="esta_cedulado" name="esta_cedulado" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
+                <div class="form-grid">
+                    <div>
+                        <label for="nombre">Nombres:</label>
+                        <input type="text" id="nombre" name="nombre" required>
+                    </div>
+                    <div>
+                        <label for="apellido">Apellidos:</label>
+                        <input type="text" id="apellido" name="apellido" required>
+                    </div>
+                    <div>
+                        <label for="cedula">Cédula de Identidad:</label>
+                        <input type="text" id="cedula" name="cedula" required>
+                    </div>
+                    <div>
+                        <label for="telefono">Teléfono de Contacto:</label>
+                        <input type="text" id="telefono" name="telefono" required>
+                    </div>
+                    <div>
+                        <label for="fecha_nacimiento">Fecha de Nacimiento:</label>
+                        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
+                        <div class="age-display" id="edadCalculada"></div>
+                    </div>
+                    <div>
+                        <label for="sexo">Sexo:</label>
+                        <select id="sexo" name="sexo" required><option value="">Seleccione</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select>
+                    </div>
+                    <div>
+                        <label for="parentesco">Parentesco con el Jefe de Hogar:</label>
+                        <select id="parentesco" name="parentesco" required>
+                            <option value="">Seleccione</option><option value="madre">Madre</option><option value="padre">Padre</option><option value="hijo">Hijo</option><option value="jefe de hogar">Jefe de Hogar</option><option value="nieto">Nieto</option><option value="hermano">Hermano</option><option value="esposo">Esposo</option><option value="cónyuge">Cónyuge</option><option value="suegro">Suegro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="profesion">Profesión / Oficio:</label>
+                        <input type="text" id="profesion" name="profesion">
+                    </div>
+                    <div>
+                        <label for="trabaja">¿Trabaja Actualmente?:</label>
+                        <select id="trabaja" name="trabaja" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                    <div>
+                        <label for="esta_escolarizado">¿Está Escolarizado?:</label>
+                        <select id="esta_escolarizado" name="esta_escolarizado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                    <div class="full-width">
+                        <label for="esta_cedulado">¿Posee Cédula Física?:</label>
+                        <select id="esta_cedulado" name="esta_cedulado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                </div>
             </div>
 
             <div class="step" data-step="4">
-                <h3 class="section-title">4. Salud</h3>
-                <label for="padece_enfermedad">Padece alguna enfermedad (Especifique o deje en blanco):</label>
-                <input type="text" id="padece_enfermedad" name="padece_enfermedad">
-
-                <label for="toma_medicamento">Toma Medicamento:</label>
-                <select id="toma_medicamento" name="toma_medicamento" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
-
-                <div id="cual_medicamento_wrapper" class="hidden">
-                    <label for="cual_medicamento">Cuál Medicamento:</label>
-                    <input type="text" id="cual_medicamento" name="cual_medicamento">
+                <h3 class="section-title">4. Estatus de Salud</h3>
+                <div class="form-grid">
+                    <div class="full-width">
+                        <label for="padece_enfermedad">¿Padece alguna enfermedad? (Especifique o deje en blanco):</label>
+                        <input type="text" id="padece_enfermedad" name="padece_enfermedad">
+                    </div>
+                    <div>
+                        <label for="toma_medicamento">¿Requiere tratamiento médico continuo?:</label>
+                        <select id="toma_medicamento" name="toma_medicamento" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                    <div id="cual_medicamento_wrapper" class="hidden">
+                        <label for="cual_medicamento">Especifique el medicamento:</label>
+                        <input type="text" id="cual_medicamento" name="cual_medicamento">
+                    </div>
+                    <div>
+                        <label for="discapacitado">¿Presenta alguna discapacidad?:</label>
+                        <select id="discapacitado" name="discapacitado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                    <div>
+                        <label for="embarazada">¿En estado de gestación (Embarazada)?:</label>
+                        <select id="embarazada" name="embarazada" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                    <div>
+                        <label for="lactancia_materna">¿En período de Lactancia Materna?:</label>
+                        <select id="lactancia_materna" name="lactancia_materna" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
                 </div>
-
-                <label for="discapacitado">Discapacitado:</label>
-                <select id="discapacitado" name="discapacitado" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
-
-                <label for="embarazada">Embarazada:</label>
-                <select id="embarazada" name="embarazada" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
-
-                <label for="lactancia_materna">Lactancia Materna:</label>
-                <select id="lactancia_materna" name="lactancia_materna" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
             </div>
 
             <div class="step" data-step="5">
                 <h3 class="section-title">5. Beneficios y Estatus Político</h3>
-                <label for="cobra_amor_mayor">Cobra Amor Mayor:</label>
-                <select id="cobra_amor_mayor" name="cobra_amor_mayor" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
-
-                <label for="carnet_patria">Carnet de la Patria:</label>
-                <select id="carnet_patria" name="carnet_patria" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
-
-                <label for="mision_jose_gregorio">Misión José Gregorio:</label>
-                <select id="mision_jose_gregorio" name="mision_jose_gregorio" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
-
-                <label for="hogares_patria_bono">Hogares de la Patria (Bono único familiar):</label>
-                <select id="hogares_patria_bono" name="hogares_patria_bono" required>
-                    <option value="">Seleccione</option>
-                    <option value="si">Sí</option>
-                    <option value="no">No</option>
-                </select>
-
-                <label for="donde_vota">Dónde Vota (Dirección):</label>
-                <input type="text" id="donde_vota" name="donde_vota">
-
-                <label for="vd_vb_vo_seleccion">VD / VB / VO Selección:</label>
-                <select id="vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required>
-                    <option value="">Seleccione</option>
-                    <option value="VD">VD</option>
-                    <option value="VB">VB</option>
-                    <option value="VO">VO</option>
-                </select>
-
-                <div id="vd_vb_vo_detalle_wrapper" class="hidden">
-                    <label for="vd_vb_vo_detalle">Detalle (VD/VB/VO):</label>
-                    <textarea id="vd_vb_vo_detalle" name="vd_vb_vo_detalle" rows="3"></textarea>
+                <div class="form-grid">
+                    <div>
+                        <label for="cobra_amor_mayor">Pensión Amor Mayor:</label>
+                        <select id="cobra_amor_mayor" name="cobra_amor_mayor" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                    <div>
+                        <label for="carnet_patria">Carnet de la Patria:</label>
+                        <select id="carnet_patria" name="carnet_patria" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                    <div>
+                        <label for="mision_jose_gregorio">Misión José Gregorio Hernández:</label>
+                        <select id="mision_jose_gregorio" name="mision_jose_gregorio" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                    <div>
+                        <label for="hogares_patria_bono">Hogares de la Patria (Bono jefe familiar):</label>
+                        <select id="hogares_patria_bono" name="hogares_patria_bono" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
+                    </div>
+                    <div class="full-width">
+                        <label for="donde_vota">Centro de Votación (Dirección exacta):</label>
+                        <input type="text" id="donde_vota" name="donde_vota">
+                    </div>
+                    <div class="full-width">
+                        <label for="vd_vb_vo_seleccion">Estatus Electoral (VD / VB / VO):</label>
+                        <select id="vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required><option value="">Seleccione el estatus</option><option value="VD">VD (Voto Duro)</option><option value="VB">VB (Voto Blando)</option><option value="VO">VO (Voto Opositor)</option></select>
+                    </div>
+                    <div id="vd_vb_vo_detalle_wrapper" class="hidden full-width">
+                        <label for="vd_vb_vo_detalle">Observaciones Electorales (Detalle):</label>
+                        <textarea id="vd_vb_vo_detalle" name="vd_vb_vo_detalle" rows="3"></textarea>
+                    </div>
                 </div>
             </div>
 
             <div class="wizard-buttons">
-                <button type="button" id="btnPrev" class="btn-wizard btn-prev hidden">Anterior</button>
-                <button type="button" id="btnNext" class="btn-wizard btn-next">Siguiente Pantalla</button>
-                <button type="submit" id="btnGuardar" class="hidden">Guardar Habitante</button>
+                <button type="button" id="btnPrev" class="btn-wizard btn-prev hidden">← Paso Anterior</button>
+                <div style="flex-grow: 1;"></div>
+                <button type="button" id="btnNext" class="btn-wizard btn-next">Continuar →</button>
+                <div id="btnGuardarWrapper" class="hidden" style="width: 250px;">
+                    <button type="submit" id="btnGuardar">Guardar Registro ✔</button>
+                </div>
             </div>
         </form>
     </div>
@@ -318,14 +343,39 @@
         const steps = document.querySelectorAll('.step');
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
-        const btnGuardar = document.getElementById('btnGuardar');
-        const indicator = document.getElementById('stepIndicator');
+        const btnGuardarWrapper = document.getElementById('btnGuardarWrapper');
+        const titleIndicator = document.getElementById('stepTitleIndicator');
+        const progressFill = document.getElementById('progressFill');
+        
+        const titulosModulos = [
+            "MÓDULO I: UBICACIÓN TERRITORIAL",
+            "MÓDULO II: DATOS DE LA VIVIENDA",
+            "MÓDULO III: DATOS PERSONALES",
+            "MÓDULO IV: ESTATUS DE SALUD",
+            "MÓDULO V: BENEFICIOS Y ESTATUS POLÍTICO"
+        ];
 
         function updateWizard() {
             steps.forEach(step => step.classList.remove('active'));
             document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
-            indicator.textContent = `Paso ${currentStep} de ${totalSteps}`;
+            
+            // Actualizar Título Oficial
+            titleIndicator.textContent = titulosModulos[currentStep - 1];
 
+            // Actualizar Barra de Progreso
+            const progressPercentage = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            progressFill.style.width = progressPercentage + '%';
+            
+            // Actualizar Círculos
+            document.querySelectorAll('.step-circle').forEach((circle, index) => {
+                if (index < currentStep) {
+                    circle.classList.add('active');
+                } else {
+                    circle.classList.remove('active');
+                }
+            });
+
+            // Botones
             if (currentStep === 1) {
                 btnPrev.classList.add('hidden');
             } else {
@@ -334,15 +384,14 @@
 
             if (currentStep === totalSteps) {
                 btnNext.classList.add('hidden');
-                btnGuardar.classList.remove('hidden');
+                btnGuardarWrapper.classList.remove('hidden');
             } else {
                 btnNext.classList.remove('hidden');
-                btnGuardar.classList.add('hidden');
+                btnGuardarWrapper.classList.add('hidden');
             }
-            window.scrollTo(0, 0); // Sube la pantalla arriba
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Valida que los campos requeridos estén llenos antes de pasar a la siguiente pantalla
         btnNext.addEventListener('click', () => {
             const currentDiv = document.querySelector(`.step[data-step="${currentStep}"]`);
             const inputs = currentDiv.querySelectorAll('input[required], select[required]');
@@ -350,7 +399,7 @@
             
             inputs.forEach(input => {
                 if (!input.closest('.hidden') && !input.value) {
-                    input.reportValidity(); // Muestra el mensaje rojo del navegador
+                    input.reportValidity(); 
                     allValid = false;
                 }
             });
@@ -449,12 +498,10 @@
             e.preventDefault(); 
             
             try {
-                // Obtener el responsable actual
                 const user = auth.currentUser;
                 const userSnap = await get(child(ref(database), `operadores/${user.uid}`));
                 const respNombre = userSnap.exists() ? `${userSnap.val().nombre} ${userSnap.val().apellido}` : "Administrador";
 
-                // Empaquetar todo
                 const formData = new FormData(form);
                 const habitanteData = Object.fromEntries(formData.entries());
                 habitanteData.registrado_por_uid = user.uid;
@@ -464,13 +511,12 @@
                 const habitantesRef = ref(database, 'habitantes');
                 await push(habitantesRef, habitanteData);
                 
-                alert('¡Datos guardados con éxito!');
+                alert('¡Datos guardados con éxito en el Sistema Gubernamental!');
                 form.reset();
                 displayEdad.textContent = '';
                 document.getElementById('cual_medicamento_wrapper').classList.add('hidden');
                 document.getElementById('vd_vb_vo_detalle_wrapper').classList.add('hidden');
                 
-                // Reiniciar el Wizard a la pantalla 1
                 currentStep = 1;
                 updateWizard();
             } catch (error) {
