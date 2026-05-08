@@ -32,7 +32,6 @@
             text-align: center;
             border-top: 10px solid var(--rojo-psuv);
         }
-        /* Actualizamos para usar tus fotos locales */
         .gob-header {
             display: flex;
             justify-content: space-around;
@@ -43,16 +42,13 @@
             height: 80px; 
             object-fit: contain;
         }
-
         .institucion-titulo {
             border-bottom: 2px solid #eee;
             margin-bottom: 20px;
             padding-bottom: 10px;
         }
-
         h2 { color: #333; margin: 5px 0; font-size: 24px; letter-spacing: 1px; font-weight: 800; }
         .slogan { color: var(--rojo-psuv); font-weight: bold; font-size: 14px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 0.5px; }
-        
         label { display: block; text-align: left; margin-top: 15px; font-weight: bold; color: #444; font-size: 14px; }
         input {
             width: 100%;
@@ -78,7 +74,6 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         button:hover { background-color: #b7050f; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.2); }
-        
         .footer {
             margin-top: 30px;
             font-size: 11px;
@@ -127,8 +122,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        // REGLA DE ORO: Agregamos imports para verificar datos del operador
+        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-        // CONFIGURACIÓN DE TU FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
             authDomain: "alcaldia-admin.firebaseapp.com",
@@ -142,15 +138,30 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const database = getDatabase(app);
 
-        // Lógica de redirección basada en roles (Manteniendo Regla de Oro)
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                if (user.email === "carlos.admin@alcaldia.com") {
-                    window.location.href = "admin.html";
-                } else {
+        // REGLA DE ORO: Modificamos la redirección para detectar cambio de clave obligatorio
+        async function dirigirUsuario(user) {
+            if (user.email === "carlos.admin@alcaldia.com") {
+                window.location.href = "admin.html";
+            } else {
+                const dbRef = ref(database);
+                try {
+                    const snapshot = await get(child(dbRef, `operadores/${user.uid}`));
+                    if (snapshot.exists() && snapshot.val().cambio_obligatorio) {
+                        window.location.href = "password.html";
+                    } else {
+                        window.location.href = "registro.html";
+                    }
+                } catch (e) {
                     window.location.href = "registro.html";
                 }
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                dirigirUsuario(user);
             }
         });
 
@@ -161,17 +172,11 @@
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            
-            // Enmascaramiento de correo para Firebase
             const emailFalso = username + "@alcaldia.com";
 
             signInWithEmailAndPassword(auth, emailFalso, password)
                 .then((userCredential) => {
-                    if (userCredential.user.email === "carlos.admin@alcaldia.com") {
-                        window.location.href = "admin.html";
-                    } else {
-                        window.location.href = "registro.html";
-                    }
+                    dirigirUsuario(userCredential.user);
                 })
                 .catch((error) => {
                     errorMsg.style.display = "block";
