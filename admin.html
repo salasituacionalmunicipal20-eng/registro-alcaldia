@@ -5,51 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - Alcaldía</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 500px; margin: auto; position: relative;}
-        h1 { text-align: center; color: #E30613; margin-top: 0;}
+        :root { --rojo-psuv: #E30613; --azul: #004a99; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background-color: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 550px; margin: auto; position: relative;}
+        h1 { text-align: center; color: var(--rojo-psuv); margin-top: 0; font-size: 24px;}
         
         .header-actions { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
-        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; width: 100%; margin-top: 15px;}
-        button:hover { background-color: #45a049; }
-        .btn-black { background-color: #333; width: auto; margin-top: 0;}
-        .btn-black:hover { background-color: #555; }
+        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;}
         
-        label { display: block; margin-bottom: 5px; font-weight: bold; margin-top: 15px;}
-        input[type="text"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: span 2; }
+
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #444; font-size: 14px; margin-top: 10px;}
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
         
-        .success-msg { color: green; font-weight: bold; text-align: center; margin-top: 15px; display: none; }
-        .error-msg { color: red; font-weight: bold; text-align: center; margin-top: 15px; display: none; }
+        button#btnCrear { background-color: var(--rojo-psuv); color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 20px; transition: 0.3s;}
+        button#btnCrear:hover { background-color: #b7050f; }
+
+        .success-msg { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; border-radius: 5px; text-align: center; margin-top: 15px; display: none; }
+        .error-msg { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 5px; text-align: center; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header-actions">
-            <button type="button" class="btn-black" id="btnIrRegistro">Ir al Formulario</button>
-            <button type="button" class="btn-black" id="btnCerrarSesion">Cerrar Sesión</button>
+            <button type="button" class="btn-nav" onclick="location.href='registro.html'">Ir al Formulario</button>
+            <button type="button" class="btn-nav" id="btnCerrarSesion">Cerrar Sesión</button>
         </div>
 
-        <h1>Panel de Administrador</h1>
-        <p style="text-align: center;">Creación de nuevos Operadores (Usuarios)</p>
+        <h1>Gestión de Operadores</h1>
+        <p style="text-align: center; color: #666; font-size: 14px;">Registrar nuevo personal de la Sala Situacional</p>
         
         <form id="createUserForm">
-            <label for="newUsername">Nombre de Usuario (Sin @):</label>
-            <input type="text" id="newUsername" placeholder="Ejemplo: luis.operador" required>
+            <div class="form-grid">
+                <div>
+                    <label for="nombre">Nombre:</label>
+                    <input type="text" id="nombre" placeholder="Ej: Juan" required>
+                </div>
+                <div>
+                    <label for="apellido">Apellido:</label>
+                    <input type="text" id="apellido" placeholder="Ej: Perez" required>
+                </div>
+                <div class="full-width">
+                    <label for="cargo">Cargo Institucional:</label>
+                    <select id="cargo" required>
+                        <option value="">Seleccione un cargo</option>
+                        <option value="Operador de Sala">Operador de Sala</option>
+                        <option value="Analista de Datos">Analista de Datos</option>
+                        <option value="Coordinador de Eje">Coordinador de Eje</option>
+                        <option value="Secretario Municipal">Secretario Municipal</option>
+                    </select>
+                </div>
+                <div class="full-width" style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px;">
+                    <label for="newUsername">ID de Usuario (Sin @):</label>
+                    <input type="text" id="newUsername" placeholder="Ej: juan.perez" required>
+                </div>
+                <div class="full-width">
+                    <label for="newPassword">Contraseña de Acceso:</label>
+                    <input type="password" id="newPassword" placeholder="Min. 6 caracteres" required minlength="6">
+                </div>
+            </div>
 
-            <label for="newPassword">Contraseña (Mínimo 6 caracteres):</label>
-            <input type="password" id="newPassword" placeholder="******" required minlength="6">
+            <p class="success-msg" id="successMsg">¡Operador registrado y perfil guardado!</p>
+            <p class="error-msg" id="errorMsg">Error al crear usuario.</p>
 
-            <p class="success-msg" id="successMsg">¡Usuario creado exitosamente!</p>
-            <p class="error-msg" id="errorMsg">Hubo un error al crear el usuario.</p>
-
-            <button type="submit">Crear Usuario</button>
+            <button type="submit" id="btnCrear">REGISTRAR OPERADOR</button>
         </form>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -61,55 +89,61 @@
             appId: "1:945828226894:web:0efeebeb270357e6f5201f"
         };
 
-        // 1. App Principal: Verifica quién está logueado
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const database = getDatabase(app);
 
-        // 2. App Secundaria: El TRUCO para crear usuarios sin cerrar la sesión del admin
         const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
         const secondaryAuth = getAuth(secondaryApp);
 
-        // Seguridad: Si no es carlos.admin, lo sacamos de aquí
         onAuthStateChanged(auth, (user) => {
             if (!user || user.email !== "carlos.admin@alcaldia.com") {
                 window.location.href = "index.html";
             }
         });
 
-        // Botones superiores
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
             signOut(auth).then(() => window.location.href = "index.html");
         });
-        document.getElementById('btnIrRegistro').addEventListener('click', () => {
-            window.location.href = "registro.html"; // Por si Carlos también quiere llenar formularios
-        });
 
-        // Lógica para crear al usuario
         const createForm = document.getElementById('createUserForm');
         const successMsg = document.getElementById('successMsg');
         const errorMsg = document.getElementById('errorMsg');
 
-        createForm.addEventListener('submit', (e) => {
+        createForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             successMsg.style.display = 'none';
             errorMsg.style.display = 'none';
 
+            const nombre = document.getElementById('nombre').value;
+            const apellido = document.getElementById('apellido').value;
+            const cargo = document.getElementById('cargo').value;
             const newUsername = document.getElementById('newUsername').value.trim();
             const newPassword = document.getElementById('newPassword').value;
             const emailFalso = newUsername + "@alcaldia.com";
 
-            // Usamos la App Secundaria para crearlo
-            createUserWithEmailAndPassword(secondaryAuth, emailFalso, newPassword)
-                .then((userCredential) => {
-                    successMsg.style.display = 'block';
-                    createForm.reset();
-                    // Cerramos la sesión secundaria inmediatamente para que quede limpia
-                    signOut(secondaryAuth);
-                })
-                .catch((error) => {
-                    console.error("Error creando usuario:", error.message);
-                    errorMsg.style.display = 'block';
+            try {
+                // 1. Crear el usuario en Firebase Authentication
+                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, emailFalso, newPassword);
+                const uid = userCredential.user.uid;
+
+                // 2. Guardar los datos extra en la Realtime Database (NUEVO)
+                await set(ref(database, 'operadores/' + uid), {
+                    nombre: nombre,
+                    apellido: apellido,
+                    cargo: cargo,
+                    usuario: newUsername,
+                    fecha_registro: new Date().toISOString()
                 });
+
+                successMsg.style.display = 'block';
+                createForm.reset();
+                await signOut(secondaryAuth);
+            } catch (error) {
+                console.error(error);
+                errorMsg.textContent = "Error: " + error.message;
+                errorMsg.style.display = 'block';
+            }
         });
     </script>
 </body>
