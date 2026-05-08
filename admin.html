@@ -9,39 +9,67 @@
         body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f4f4f4; }
         .container { background-color: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 550px; margin: auto; position: relative;}
         h1 { text-align: center; color: var(--rojo-psuv); margin-top: 0; font-size: 24px;}
+        
         .header-actions { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
         .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px;}
+        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .full-width { grid-column: span 2; }
+
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #444; font-size: 14px; margin-top: 10px;}
         input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
+        
         button#btnCrear { background-color: var(--rojo-psuv); color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 20px; transition: 0.3s;}
+        button#btnCrear:hover { background-color: #b7050f; }
+
         .success-msg { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; border-radius: 5px; text-align: center; margin-top: 15px; display: none; }
+        .error-msg { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 5px; text-align: center; margin-top: 15px; display: none; }
     </style>
 </head>
 <body>
+
     <div class="container">
         <div class="header-actions">
-            <button type="button" class="btn-nav" onclick="location.href='registro.html'">Ver Registros</button>
+            <button type="button" class="btn-nav" onclick="location.href='registro.html'">Ir al Formulario</button>
             <button type="button" class="btn-nav" id="btnCerrarSesion">Cerrar Sesión</button>
         </div>
 
         <h1>Gestión de Operadores</h1>
+        <p style="text-align: center; color: #666; font-size: 14px;">Registrar nuevo personal de la Sala Situacional</p>
+        
         <form id="createUserForm">
             <div class="form-grid">
-                <div><label>Nombre:</label><input type="text" id="nombre" required></div>
-                <div><label>Apellido:</label><input type="text" id="apellido" required></div>
+                <div>
+                    <label for="nombre">Nombre:</label>
+                    <input type="text" id="nombre" placeholder="Ej: Juan" required>
+                </div>
+                <div>
+                    <label for="apellido">Apellido:</label>
+                    <input type="text" id="apellido" placeholder="Ej: Perez" required>
+                </div>
                 <div class="full-width">
-                    <label>Cargo:</label>
+                    <label for="cargo">Cargo Institucional:</label>
                     <select id="cargo" required>
+                        <option value="">Seleccione un cargo</option>
                         <option value="Operador de Sala">Operador de Sala</option>
+                        <option value="Analista de Datos">Analista de Datos</option>
                         <option value="Coordinador de Eje">Coordinador de Eje</option>
+                        <option value="Secretario Municipal">Secretario Municipal</option>
                     </select>
                 </div>
-                <div class="full-width"><label>ID Usuario (sin @):</label><input type="text" id="newUsername" required></div>
-                <div class="full-width"><label>Clave Genérica:</label><input type="password" id="newPassword" required minlength="6"></div>
+                <div class="full-width" style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px;">
+                    <label for="newUsername">ID de Usuario (Sin @):</label>
+                    <input type="text" id="newUsername" placeholder="Ej: juan.perez" required>
+                </div>
+                <div class="full-width">
+                    <label for="newPassword">Contraseña de Acceso:</label>
+                    <input type="password" id="newPassword" placeholder="Min. 6 caracteres" required minlength="6">
+                </div>
             </div>
-            <p class="success-msg" id="successMsg">¡Operador creado!</p>
+
+            <p class="success-msg" id="successMsg">¡Operador registrado y perfil guardado!</p>
+            <p class="error-msg" id="errorMsg">Error al crear usuario.</p>
+
             <button type="submit" id="btnCrear">REGISTRAR OPERADOR</button>
         </form>
     </div>
@@ -64,36 +92,59 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const database = getDatabase(app);
+
         const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
         const secondaryAuth = getAuth(secondaryApp);
 
         onAuthStateChanged(auth, (user) => {
-            if (!user || user.email !== "carlos.admin@alcaldia.com") window.location.href = "index.html";
+            if (!user || user.email !== "carlos.admin@alcaldia.com") {
+                window.location.href = "index.html";
+            }
         });
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
             signOut(auth).then(() => window.location.href = "index.html");
         });
 
-        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+        const createForm = document.getElementById('createUserForm');
+        const successMsg = document.getElementById('successMsg');
+        const errorMsg = document.getElementById('errorMsg');
+
+        createForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const u = document.getElementById('newUsername').value.trim();
-            const p = document.getElementById('newPassword').value;
-            
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+
+            const nombre = document.getElementById('nombre').value;
+            const apellido = document.getElementById('apellido').value;
+            const cargo = document.getElementById('cargo').value;
+            const newUsername = document.getElementById('newUsername').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const emailFalso = newUsername + "@alcaldia.com";
+
             try {
-                const res = await createUserWithEmailAndPassword(secondaryAuth, u + "@alcaldia.com", p);
-                await set(ref(database, 'operadores/' + res.user.uid), {
-                    nombre: document.getElementById('nombre').value,
-                    apellido: document.getElementById('apellido').value,
-                    cargo: document.getElementById('cargo').value,
-                    usuario: u,
+                // Crear en Firebase Auth
+                const userCredential = await createUserWithEmailAndPassword(secondaryAuth, emailFalso, newPassword);
+                const uid = userCredential.user.uid;
+
+                // Guardado con la regla de oro: todos los datos intactos
+                await set(ref(database, 'operadores/' + uid), {
+                    nombre: nombre,
+                    apellido: apellido,
+                    cargo: cargo,
+                    usuario: newUsername,
                     cambio_obligatorio: true,
                     fecha_registro: new Date().toISOString()
                 });
-                document.getElementById('successMsg').style.display = 'block';
-                e.target.reset();
+
+                successMsg.style.display = 'block';
+                createForm.reset();
                 await signOut(secondaryAuth);
-            } catch (err) { alert(err.message); }
+            } catch (error) {
+                console.error(error);
+                errorMsg.textContent = "Error: " + error.message;
+                errorMsg.style.display = 'block';
+            }
         });
     </script>
 </body>
