@@ -34,8 +34,8 @@
         .search-panel { background: #fdfdfd; padding: 20px; border-radius: 8px; border: 1px solid var(--gris-borde); margin-bottom: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.02);}
         .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         label { font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 5px;}
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; transition: 0.3s;}
-        input:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; transition: 0.3s;}
+        input:focus, select:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
         
         /* Tabla */
         .table-wrapper { overflow-x: auto; }
@@ -81,12 +81,16 @@
                     <input type="text" id="fCedula" placeholder="Escriba la cédula...">
                 </div>
                 <div>
-                    <label>Buscar por Comuna:</label>
-                    <input type="text" id="fComuna" placeholder="Escriba la comuna...">
+                    <label>Filtrar por Comuna:</label>
+                    <select id="fComuna">
+                        <option value="">Cargando comunas...</option>
+                    </select>
                 </div>
                 <div>
-                    <label>Buscar por Comunidad:</label>
-                    <input type="text" id="fComunidad" placeholder="Escriba la comunidad...">
+                    <label>Filtrar por Comunidad:</label>
+                    <select id="fComunidad">
+                        <option value="">Todas las comunidades...</option>
+                    </select>
                 </div>
                 <div>
                     <label>Buscar por Calle:</label>
@@ -117,8 +121,9 @@
     </div>
 
     <script type="module">
+        // REGLA DE ORO: Agregados get y child a los imports para poder leer las comunas
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, remove, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -137,6 +142,7 @@
         
         let esAdmin = false;
         let baseDeDatosHabitantes = {}; // Caché local para búsquedas rápidas
+        let datosTerritoriales = {}; // REGLA DE ORO: Caché para las comunas
 
         onAuthStateChanged(auth, (user) => {
             if (!user) { window.location.href = "index.html"; return; }
@@ -146,12 +152,52 @@
                 document.getElementById('thResponsable').classList.remove('hidden');
             }
             
-            cargarDatos();
+            cargarFiltrosTerritoriales(); // Primero cargamos los select
+            cargarDatos(); // Luego cargamos la tabla
         });
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
             signOut(auth).then(() => window.location.href = "index.html");
         });
+
+        // REGLA DE ORO: Nueva función para cargar las listas desplegables
+        function cargarFiltrosTerritoriales() {
+            const fComuna = document.getElementById('fComuna');
+            const fComunidad = document.getElementById('fComunidad');
+
+            get(child(ref(database), `filtros_territoriales`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    datosTerritoriales = snapshot.val();
+                    fComuna.innerHTML = '<option value="">Todas las comunas...</option>';
+                    for (const comuna in datosTerritoriales) {
+                        const option = document.createElement('option');
+                        option.value = comuna;
+                        option.textContent = comuna;
+                        fComuna.appendChild(option);
+                    }
+                } else {
+                    fComuna.innerHTML = '<option value="">No hay comunas registradas</option>';
+                }
+            });
+
+            // Al cambiar la comuna, actualizamos la lista de comunidades y aplicamos el filtro
+            fComuna.addEventListener('change', (e) => {
+                const comunaSeleccionada = e.target.value;
+                fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>';
+                
+                if (comunaSeleccionada && datosTerritoriales[comunaSeleccionada]) {
+                    datosTerritoriales[comunaSeleccionada].forEach(comunidad => {
+                        const option = document.createElement('option');
+                        option.value = comunidad;
+                        option.textContent = comunidad;
+                        fComunidad.appendChild(option);
+                    });
+                }
+                filtrarTabla(); // Filtrar inmediatamente al cambiar
+            });
+
+            fComunidad.addEventListener('change', filtrarTabla);
+        }
 
         // 1. Descargar todos los habitantes a memoria
         function cargarDatos() {
@@ -206,9 +252,9 @@
             document.getElementById('totalResultados').textContent = `Total de registros encontrados: ${contador}`;
         }
 
-        // Conectar los inputs al motor de búsqueda
-        document.querySelectorAll('.search-grid input').forEach(input => {
-            input.addEventListener('input', filtrarTabla);
+        // Conectar los inputs al motor de búsqueda (ahora incluye select)
+        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => {
+            element.addEventListener('input', filtrarTabla);
         });
 
         // Borrado solo para administradores
