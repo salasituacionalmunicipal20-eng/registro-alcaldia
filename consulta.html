@@ -22,7 +22,7 @@
         .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
         
         /* Botonera superior */
-        .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;}
+        .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
         .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
         .btn-nav:hover { background-color: #555; }
         #btnVolver { background-color: #28a745; }
@@ -34,8 +34,9 @@
         .search-panel { background: #fdfdfd; padding: 20px; border-radius: 8px; border: 1px solid var(--gris-borde); margin-bottom: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.02);}
         .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         label { font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 5px;}
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; transition: 0.3s;}
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; transition: 0.3s;}
         input:focus, select:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
+        input:disabled, select:disabled { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; border-color: #ddd;}
         
         /* Tabla */
         .table-wrapper { overflow-x: auto; }
@@ -49,6 +50,18 @@
         .btn-edit { background: #28a745; color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; font-weight: bold;}
         .hidden { display: none !important; }
         .stats { margin-top: 15px; font-weight: bold; color: var(--rojo-oficial); font-size: 16px;}
+
+        /* Panel de Edición */
+        .edit-panel { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid var(--azul-oficial); box-shadow: 0 0 15px rgba(0,0,0,0.1); margin-top: 20px;}
+        .section-title { margin-top: 25px; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 5px; color: var(--azul-oficial); font-size: 18px; text-transform: uppercase;}
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: span 2; }
+        .edit-actions { display: flex; justify-content: space-between; margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px;}
+        .btn-guardar-cambios { background-color: var(--azul-oficial); color: white; padding: 12px 25px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px; text-transform: uppercase;}
+        .btn-guardar-cambios:hover { background-color: #003366; }
+        .btn-cancelar { background-color: #6c757d; color: white; padding: 12px 25px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px;}
+        .btn-cancelar:hover { background-color: #5a6268; }
+        .lock-warning { color: var(--rojo-oficial); font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 10px; display: none;}
     </style>
 </head>
 <body>
@@ -68,62 +81,126 @@
             <img src="escudo municipal.jpg" alt="Escudo Cristóbal Rojas">
         </div>
 
-        <h2>Filtros Activos</h2>
-        
-        <div class="search-panel">
-            <div class="search-grid">
-                <div>
-                    <label>Buscar por Nombre / Apellido:</label>
-                    <input type="text" id="fNombre" placeholder="Escriba el nombre...">
+        <div id="vistaConsultas">
+            <h2>Filtros Activos</h2>
+            <div class="search-panel">
+                <div class="search-grid">
+                    <div>
+                        <label>Buscar por Nombre / Apellido:</label>
+                        <input type="text" id="fNombre" placeholder="Escriba el nombre...">
+                    </div>
+                    <div>
+                        <label>Buscar por Cédula:</label>
+                        <input type="text" id="fCedula" placeholder="Escriba la cédula...">
+                    </div>
+                    <div>
+                        <label>Filtrar por Comuna:</label>
+                        <select id="fComuna"><option value="">Cargando comunas...</option></select>
+                    </div>
+                    <div>
+                        <label>Filtrar por Comunidad:</label>
+                        <select id="fComunidad"><option value="">Todas las comunidades...</option></select>
+                    </div>
+                    <div>
+                        <label>Buscar por Calle:</label>
+                        <input type="text" id="fCalle" placeholder="Escriba la calle...">
+                    </div>
                 </div>
-                <div>
-                    <label>Buscar por Cédula:</label>
-                    <input type="text" id="fCedula" placeholder="Escriba la cédula...">
-                </div>
-                <div>
-                    <label>Filtrar por Comuna:</label>
-                    <select id="fComuna">
-                        <option value="">Cargando comunas...</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Filtrar por Comunidad:</label>
-                    <select id="fComunidad">
-                        <option value="">Todas las comunidades...</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Buscar por Calle:</label>
-                    <input type="text" id="fCalle" placeholder="Escriba la calle...">
-                </div>
+                <div class="stats" id="totalResultados">Cargando base de datos...</div>
             </div>
-            <div class="stats" id="totalResultados">Cargando base de datos...</div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombres y Apellidos</th>
+                            <th>Cédula</th>
+                            <th>Comuna</th>
+                            <th>Comunidad</th>
+                            <th>Calle</th>
+                            <th>Teléfono</th>
+                            <th id="thResponsable" class="hidden">Responsable (Admin)</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaCuerpo"></tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nombres y Apellidos</th>
-                        <th>Cédula</th>
-                        <th>Comuna</th>
-                        <th>Comunidad</th>
-                        <th>Calle</th>
-                        <th>Teléfono</th>
-                        <th id="thResponsable" class="hidden">Responsable (Admin)</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaCuerpo">
-                    </tbody>
-            </table>
+        <div id="vistaEdicion" class="edit-panel hidden">
+            <h2>EXPEDIENTE DEL HABITANTE</h2>
+            <p id="avisoBloqueo" class="lock-warning">🔒 Los datos personales están bloqueados por seguridad. Solo el Administrador puede modificarlos.</p>
+            
+            <form id="formEdicion">
+                
+                <h3 class="section-title">1. Ubicación Territorial</h3>
+                <div class="form-grid">
+                    <div class="full-width"><label>Código SIGUE Actual:</label><input type="text" id="e_codigo_sigue_actual" name="codigo_sigue_actual" required></div>
+                    <div><label>Comuna / Circuito:</label><select id="e_comuna" name="comuna" required><option value="">Seleccione</option></select></div>
+                    <div><label>Comunidad:</label><select id="e_comunidad" name="comunidad" required><option value="">Seleccione</option></select></div>
+                    <div class="full-width"><label>Consejo Comunal:</label><input type="text" id="e_consejo_comunal" name="consejo_comunal" required></div>
+                </div>
+
+                <h3 class="section-title">2. Datos de la Vivienda</h3>
+                <div class="form-grid">
+                    <div><label>Calle / Sector:</label><input type="text" id="e_calle" name="calle" required></div>
+                    <div><label>Número de Casa / Apto:</label><input type="text" id="e_numero_casa" name="numero_casa" required></div>
+                    <div><label>Tipo de Vivienda:</label><select id="e_tipo_vivienda" name="tipo_vivienda" required><option value="">Seleccione</option><option value="apto">Apartamento</option><option value="casa">Casa</option><option value="town house">Town House</option></select></div>
+                    <div><label>Condiciones de Vivienda:</label><select id="e_condiciones_vivienda" name="condiciones_vivienda" required><option value="">Seleccione</option><option value="bien">Óptimas (Bien)</option><option value="regular">Regulares</option><option value="malo">Malas / Precarias</option></select></div>
+                    <div><label>Responsabilidad CBI/CM:</label><input type="text" id="e_responsabilidad_cbi_cm" name="responsabilidad_cbi_cm" required></div>
+                    <div><label>Tipo de Cilindro de Gas:</label><input type="text" id="e_tipo_cilindro_gas" name="tipo_cilindro_gas"></div>
+                </div>
+
+                <h3 class="section-title">3. Datos Personales</h3>
+                <div class="form-grid">
+                    <div><label>Nombres:</label><input type="text" id="e_nombre" name="nombre" required></div>
+                    <div><label>Apellidos:</label><input type="text" id="e_apellido" name="apellido" required></div>
+                    <div><label>Cédula de Identidad:</label><input type="text" id="e_cedula" name="cedula" required></div>
+                    <div><label>Teléfono de Contacto:</label><input type="text" id="e_telefono" name="telefono" required></div>
+                    <div><label>Fecha de Nacimiento:</label><input type="date" id="e_fecha_nacimiento" name="fecha_nacimiento" required></div>
+                    <div><label>Sexo:</label><select id="e_sexo" name="sexo" required><option value="">Seleccione</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
+                    <div><label>Parentesco con Jefe de Hogar:</label><select id="e_parentesco" name="parentesco" required><option value="">Seleccione</option><option value="madre">Madre</option><option value="padre">Padre</option><option value="hijo">Hijo</option><option value="jefe de hogar">Jefe de Hogar</option><option value="nieto">Nieto</option><option value="hermano">Hermano</option><option value="esposo">Esposo</option><option value="cónyuge">Cónyuge</option><option value="suegro">Suegro</option></select></div>
+                    <div><label>Profesión / Oficio:</label><input type="text" id="e_profesion" name="profesion"></div>
+                    <div><label>¿Trabaja Actualmente?:</label><select id="e_trabaja" name="trabaja" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>¿Está Escolarizado?:</label><select id="e_esta_escolarizado" name="esta_escolarizado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div class="full-width"><label>¿Posee Cédula Física?:</label><select id="e_esta_cedulado" name="esta_cedulado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                </div>
+
+                <h3 class="section-title">4. Estatus de Salud</h3>
+                <div class="form-grid">
+                    <div class="full-width"><label>¿Padece alguna enfermedad?:</label><input type="text" id="e_padece_enfermedad" name="padece_enfermedad"></div>
+                    <div><label>¿Requiere tratamiento médico continuo?:</label><select id="e_toma_medicamento" name="toma_medicamento" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div id="e_cual_medicamento_wrapper" class="hidden"><label>Especifique el medicamento:</label><input type="text" id="e_cual_medicamento" name="cual_medicamento"></div>
+                    <div><label>¿Presenta alguna discapacidad?:</label><select id="e_discapacitado" name="discapacitado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>¿Embarazada?:</label><select id="e_embarazada" name="embarazada" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>¿En Lactancia Materna?:</label><select id="e_lactancia_materna" name="lactancia_materna" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                </div>
+
+                <h3 class="section-title">5. Beneficios y Estatus Político</h3>
+                <div class="form-grid">
+                    <div><label>Pensión Amor Mayor:</label><select id="e_cobra_amor_mayor" name="cobra_amor_mayor" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>Carnet de la Patria:</label><select id="e_carnet_patria" name="carnet_patria" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>Misión José Gregorio Hernández:</label><select id="e_mision_jose_gregorio" name="mision_jose_gregorio" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>Hogares de la Patria (Bono jefe familiar):</label><select id="e_hogares_patria_bono" name="hogares_patria_bono" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div class="full-width"><label>Centro de Votación:</label><input type="text" id="e_donde_vota" name="donde_vota"></div>
+                    <div class="full-width"><label>Estatus Electoral (VD / VB / VO):</label><select id="e_vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required><option value="">Seleccione</option><option value="VD">VD (Voto Duro)</option><option value="VB">VB (Voto Blando)</option><option value="VO">VO (Voto Opositor)</option></select></div>
+                    <div id="e_vd_vb_vo_detalle_wrapper" class="hidden full-width"><label>Observaciones Electorales:</label><textarea id="e_vd_vb_vo_detalle" name="vd_vb_vo_detalle" rows="3"></textarea></div>
+                </div>
+
+                <div class="edit-actions">
+                    <button type="button" class="btn-cancelar" onclick="cerrarEdicion()">✖ Cancelar / Volver</button>
+                    <button type="submit" class="btn-guardar-cambios">💾 Guardar Modificaciones</button>
+                </div>
+            </form>
         </div>
+
     </div>
 
     <script type="module">
-        // REGLA DE ORO: Agregados get y child a los imports para poder leer las comunas
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue, remove, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        // REGLA DE ORO: Agregado 'update' al import
+        import { getDatabase, ref, onValue, remove, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -141,73 +218,69 @@
         const auth = getAuth(app);
         
         let esAdmin = false;
-        let baseDeDatosHabitantes = {}; // Caché local para búsquedas rápidas
-        let datosTerritoriales = {}; // REGLA DE ORO: Caché para las comunas
+        let baseDeDatosHabitantes = {}; 
+        let datosTerritoriales = {}; 
+        let idActualEdicion = null; // Guardará el ID del registro que se está editando
 
         onAuthStateChanged(auth, (user) => {
             if (!user) { window.location.href = "index.html"; return; }
-            
             esAdmin = user.email === "carlos.admin@alcaldia.com";
-            if (esAdmin) {
-                document.getElementById('thResponsable').classList.remove('hidden');
-            }
+            if (esAdmin) document.getElementById('thResponsable').classList.remove('hidden');
             
-            cargarFiltrosTerritoriales(); // Primero cargamos los select
-            cargarDatos(); // Luego cargamos la tabla
+            cargarFiltrosTerritoriales(); 
+            cargarDatos(); 
         });
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
             signOut(auth).then(() => window.location.href = "index.html");
         });
 
-        // REGLA DE ORO: Nueva función para cargar las listas desplegables
         function cargarFiltrosTerritoriales() {
             const fComuna = document.getElementById('fComuna');
             const fComunidad = document.getElementById('fComunidad');
+            const eComuna = document.getElementById('e_comuna');
 
             get(child(ref(database), `filtros_territoriales`)).then((snapshot) => {
                 if (snapshot.exists()) {
                     datosTerritoriales = snapshot.val();
                     fComuna.innerHTML = '<option value="">Todas las comunas...</option>';
+                    eComuna.innerHTML = '<option value="">Seleccione</option>';
                     for (const comuna in datosTerritoriales) {
-                        const option = document.createElement('option');
-                        option.value = comuna;
-                        option.textContent = comuna;
-                        fComuna.appendChild(option);
+                        fComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
+                        eComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
                     }
-                } else {
-                    fComuna.innerHTML = '<option value="">No hay comunas registradas</option>';
                 }
             });
 
-            // Al cambiar la comuna, actualizamos la lista de comunidades y aplicamos el filtro
+            // Lógica para el buscador
             fComuna.addEventListener('change', (e) => {
-                const comunaSeleccionada = e.target.value;
+                const sel = e.target.value;
                 fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>';
-                
-                if (comunaSeleccionada && datosTerritoriales[comunaSeleccionada]) {
-                    datosTerritoriales[comunaSeleccionada].forEach(comunidad => {
-                        const option = document.createElement('option');
-                        option.value = comunidad;
-                        option.textContent = comunidad;
-                        fComunidad.appendChild(option);
-                    });
+                if (sel && datosTerritoriales[sel]) {
+                    datosTerritoriales[sel].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
                 }
-                filtrarTabla(); // Filtrar inmediatamente al cambiar
+                filtrarTabla(); 
             });
-
             fComunidad.addEventListener('change', filtrarTabla);
+
+            // Lógica para el formulario de edición
+            eComuna.addEventListener('change', (e) => {
+                const sel = e.target.value;
+                const eComunidad = document.getElementById('e_comunidad');
+                eComunidad.innerHTML = '<option value="">Seleccione</option>';
+                if (sel && datosTerritoriales[sel]) {
+                    datosTerritoriales[sel].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+                }
+            });
         }
 
-        // 1. Descargar todos los habitantes a memoria
         function cargarDatos() {
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
-                filtrarTabla(); // Llena la tabla por primera vez
+                filtrarTabla(); 
             });
         }
 
-        // 2. Función maestra de filtrado cruzado
         function filtrarTabla() {
             const fNom = document.getElementById('fNombre').value.toLowerCase();
             const fCed = document.getElementById('fCedula').value.toLowerCase();
@@ -223,7 +296,6 @@
                 const h = baseDeDatosHabitantes[id];
                 const nombreCompleto = `${h.nombre || ''} ${h.apellido || ''}`.toLowerCase();
                 
-                // Evaluar si la fila cumple con todos los filtros actuales
                 const cumpleNom = nombreCompleto.includes(fNom);
                 const cumpleCed = (h.cedula || '').toLowerCase().includes(fCed);
                 const cumpleComuna = (h.comuna || '').toLowerCase().includes(fComuna);
@@ -242,7 +314,7 @@
                         <td>${h.telefono}</td>
                         ${esAdmin ? `<td style="color:#E30613; font-weight:bold;">${h.registrado_por_nombre || 'Desconocido'}</td>` : ""}
                         <td>
-                            <button class="btn-edit" onclick="alert('Función Ver Detalles en desarrollo.')">Detalle</button>
+                            <button class="btn-edit" onclick="window.editarRegistro('${id}')">Detalle</button>
                             ${esAdmin ? `<button class="btn-delete" onclick="window.eliminarRegistro('${id}')">Borrar</button>` : ""}
                         </td>
                     `;
@@ -252,18 +324,147 @@
             document.getElementById('totalResultados').textContent = `Total de registros encontrados: ${contador}`;
         }
 
-        // Conectar los inputs al motor de búsqueda (ahora incluye select)
         document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => {
             element.addEventListener('input', filtrarTabla);
         });
 
-        // Borrado solo para administradores
         window.eliminarRegistro = (id) => {
             if(confirm("ALERTA DE SEGURIDAD: ¿Seguro que desea eliminar permanentemente este habitante?")) {
                 remove(ref(database, `habitantes/${id}`))
                 .catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
             }
         };
+
+        // ==========================================
+        // LÓGICA DE DETALLE Y EDICIÓN (NUEVO)
+        // ==========================================
+        window.editarRegistro = (id) => {
+            idActualEdicion = id;
+            const h = baseDeDatosHabitantes[id];
+
+            // 1. Mostrar/Ocultar Vistas
+            document.getElementById('vistaConsultas').classList.add('hidden');
+            document.getElementById('vistaEdicion').classList.remove('hidden');
+
+            // 2. Control de Permisos (RBAC) - Bloquear campos personales si no es admin
+            const camposPersonales = ['e_nombre', 'e_apellido', 'e_cedula', 'e_telefono', 'e_fecha_nacimiento', 'e_sexo', 'e_parentesco', 'e_profesion', 'e_trabaja', 'e_esta_escolarizado', 'e_esta_cedulado'];
+            
+            if (!esAdmin) {
+                document.getElementById('avisoBloqueo').style.display = 'block';
+                camposPersonales.forEach(campoId => {
+                    document.getElementById(campoId).disabled = true;
+                });
+            } else {
+                document.getElementById('avisoBloqueo').style.display = 'none';
+                camposPersonales.forEach(campoId => {
+                    document.getElementById(campoId).disabled = false;
+                });
+            }
+
+            // 3. Llenar el formulario con los datos existentes
+            const llenarCampo = (idElemento, valor) => { if (document.getElementById(idElemento)) document.getElementById(idElemento).value = valor || ''; };
+            
+            llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual);
+            llenarCampo('e_comuna', h.comuna);
+            
+            // Forzar carga de comunidades de la comuna seleccionada
+            const eComunidad = document.getElementById('e_comunidad');
+            eComunidad.innerHTML = '<option value="">Seleccione</option>';
+            if (h.comuna && datosTerritoriales[h.comuna]) {
+                datosTerritoriales[h.comuna].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+            }
+            llenarCampo('e_comunidad', h.comunidad);
+            llenarCampo('e_consejo_comunal', h.consejo_comunal);
+            llenarCampo('e_calle', h.calle);
+            llenarCampo('e_numero_casa', h.numero_casa);
+            llenarCampo('e_tipo_vivienda', h.tipo_vivienda);
+            llenarCampo('e_condiciones_vivienda', h.condiciones_vivienda);
+            llenarCampo('e_responsabilidad_cbi_cm', h.responsabilidad_cbi_cm);
+            llenarCampo('e_tipo_cilindro_gas', h.tipo_cilindro_gas);
+            
+            llenarCampo('e_nombre', h.nombre);
+            llenarCampo('e_apellido', h.apellido);
+            llenarCampo('e_cedula', h.cedula);
+            llenarCampo('e_telefono', h.telefono);
+            llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento);
+            llenarCampo('e_sexo', h.sexo);
+            llenarCampo('e_parentesco', h.parentesco);
+            llenarCampo('e_profesion', h.profesion);
+            llenarCampo('e_trabaja', h.trabaja);
+            llenarCampo('e_esta_escolarizado', h.esta_escolarizado);
+            llenarCampo('e_esta_cedulado', h.esta_cedulado);
+            
+            llenarCampo('e_padece_enfermedad', h.padece_enfermedad);
+            llenarCampo('e_toma_medicamento', h.toma_medicamento);
+            llenarCampo('e_cual_medicamento', h.cual_medicamento);
+            llenarCampo('e_discapacitado', h.discapacitado);
+            llenarCampo('e_embarazada', h.embarazada);
+            llenarCampo('e_lactancia_materna', h.lactancia_materna);
+            
+            llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor);
+            llenarCampo('e_carnet_patria', h.carnet_patria);
+            llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio);
+            llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono);
+            llenarCampo('e_donde_vota', h.donde_vota);
+            llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion);
+            llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
+
+            // Manejar los divs ocultos en base a la data cargada
+            if(h.toma_medicamento === 'si') document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden');
+            else document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
+
+            if(h.vd_vb_vo_seleccion) document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden');
+            else document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.cerrarEdicion = () => {
+            document.getElementById('vistaEdicion').classList.add('hidden');
+            document.getElementById('vistaConsultas').classList.remove('hidden');
+            idActualEdicion = null;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // Lógica para divs condicionales en el modo edición
+        const toggleHiddenEdit = (selectId, wrapperId, inputId) => {
+            document.getElementById(selectId).addEventListener('change', (e) => {
+                const wrapper = document.getElementById(wrapperId);
+                const input = document.getElementById(inputId);
+                if (e.target.value === 'si' || (selectId === 'e_vd_vb_vo_seleccion' && e.target.value !== '')) {
+                    wrapper.classList.remove('hidden');
+                    if(input) input.required = true;
+                } else {
+                    wrapper.classList.add('hidden');
+                    if(input) { input.required = false; input.value = ''; }
+                }
+            });
+        };
+        toggleHiddenEdit('e_toma_medicamento', 'e_cual_medicamento_wrapper', 'e_cual_medicamento');
+        toggleHiddenEdit('e_vd_vb_vo_seleccion', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_detalle');
+
+        // Función para guardar los cambios
+        document.getElementById('formEdicion').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Los campos "disabled" no se incluyen en FormData, así que fusionamos la data vieja con la nueva
+            const formData = new FormData(e.target);
+            const datosEditados = Object.fromEntries(formData.entries());
+            
+            // Mezclamos: Primero la data original, y sobrescribimos con lo que sí se pudo editar
+            const dataFinal = {
+                ...baseDeDatosHabitantes[idActualEdicion],
+                ...datosEditados
+            };
+
+            try {
+                await update(ref(database, `habitantes/${idActualEdicion}`), dataFinal);
+                alert('¡Expediente actualizado exitosamente!');
+                window.cerrarEdicion();
+            } catch (error) {
+                alert('Error al actualizar: ' + error.message);
+            }
+        });
     </script>
 </body>
 </html>
