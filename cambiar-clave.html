@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cambiar Contraseña - Alcaldía</title>
+    <style>
+        :root {
+            --rojo-oficial: #E30613;
+            --azul-oficial: #004a99;
+            --gris-fondo: #e9ecef;
+            --gris-borde: #ced4da;
+        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--gris-fondo); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px;}
+        .container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); width: 100%; max-width: 500px; border-top: 8px solid var(--rojo-oficial); text-align: center;}
+        
+        /* Encabezado Gubernamental */
+        .gob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-borde); padding-bottom: 20px; margin-bottom: 20px;}
+        .gob-header img { height: 60px; object-fit: contain; }
+        .header-titles { text-align: center; flex-grow: 1; padding: 0 10px;}
+        .header-titles h1 { color: var(--azul-oficial); margin: 0; font-size: 18px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
+        .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 11px; font-weight: bold; }
+
+        .top-nav { display: flex; justify-content: flex-start; margin-bottom: 20px;}
+        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
+        .btn-nav:hover { background-color: #555; }
+
+        h2 { color: var(--rojo-oficial); text-transform: uppercase; font-size: 20px;}
+        p.info { color: #444; font-size: 14px; margin-bottom: 25px; font-weight: bold;}
+
+        label { display: block; text-align: left; font-weight: bold; font-size: 13px; color: #333; margin-top: 15px; margin-bottom: 5px;}
+        input { width: 100%; padding: 12px; border: 1px solid var(--gris-borde); border-radius: 5px; box-sizing: border-box; font-size: 14px; background-color: #fdfdfd;}
+        input:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
+        
+        button#btnActualizar { background-color: var(--azul-oficial); color: white; padding: 15px; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; font-size: 15px; margin-top: 25px; text-transform: uppercase; transition: 0.3s;}
+        button#btnActualizar:hover { background-color: #003366; }
+        
+        .footer { margin-top: 30px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 15px; line-height: 1.5; text-align: center;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="top-nav">
+            <button type="button" class="btn-nav" onclick="location.href='registro.html'">← Volver</button>
+        </div>
+
+        <div class="gob-header">
+            <img src="psuv.jpg" alt="PSUV">
+            <div class="header-titles">
+                <h1>Gestión de Credenciales</h1>
+                <p>ALCALDÍA DE CRISTÓBAL ROJAS</p>
+            </div>
+            <img src="escudo municipal.jpg" alt="Escudo Cristóbal Rojas">
+        </div>
+
+        <h2>Modificar Contraseña</h2>
+        <p class="info">Complete los campos para actualizar su clave de acceso al sistema.</p>
+        
+        <form id="pwForm">
+            <label for="oldPw">Contraseña Actual:</label>
+            <input type="password" id="oldPw" placeholder="Ingrese su clave actual" required>
+
+            <label for="newPw">Nueva Contraseña:</label>
+            <input type="password" id="newPw" placeholder="Mínimo 6 caracteres" required minlength="6">
+
+            <label for="confirmPw">Confirmar Nueva Contraseña:</label>
+            <input type="password" id="confirmPw" placeholder="Repita su nueva clave" required minlength="6">
+            
+            <p id="errorMsg" style="color: red; display: none; font-weight: bold; font-size: 13px; margin-top: 15px;"></p>
+            
+            <button type="submit" id="btnActualizar">Actualizar Contraseña</button>
+        </form>
+
+        <div class="footer">
+            MUNICIPIO BOLIVARIANO CRISTÓBAL ROJAS - CHARALLAVE <br>
+            <strong>SECRETARÍA DE COMUNAS Y GESTIÓN SOCIAL</strong>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) window.location.href = "index.html";
+        });
+
+        const errorMsg = document.getElementById('errorMsg');
+
+        document.getElementById('pwForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMsg.style.display = 'none';
+
+            const oldPw = document.getElementById('oldPw').value;
+            const newPw = document.getElementById('newPw').value;
+            const confirmPw = document.getElementById('confirmPw').value;
+
+            if (newPw !== confirmPw) {
+                errorMsg.textContent = "Las nuevas contraseñas no coinciden.";
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            try {
+                const user = auth.currentUser;
+                // 1. Reautenticar (verificar que la clave vieja sea correcta)
+                const credential = EmailAuthProvider.credential(user.email, oldPw);
+                await reauthenticateWithCredential(user, credential);
+
+                // 2. Actualizar a la nueva clave
+                await updatePassword(user, newPw);
+                
+                alert("¡Su contraseña ha sido actualizada con éxito!");
+                window.location.href = "registro.html";
+                
+            } catch (error) {
+                console.error(error);
+                if (error.code === 'auth/wrong-password') {
+                    errorMsg.textContent = "La contraseña actual es incorrecta.";
+                } else {
+                    errorMsg.textContent = "Error del sistema: " + error.message;
+                }
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
