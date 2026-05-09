@@ -99,7 +99,7 @@
                     </div>
                     <div>
                         <label>Filtrar por Comunidad:</label>
-                        <select id="fComunidad"><option value="">Todas las comunidades...</option></select>
+                        <select id="fComunidad" disabled><option value="">Seleccione primero una comuna...</option></select>
                     </div>
                     <div>
                         <label>Buscar por Calle:</label>
@@ -199,7 +199,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        // REGLA DE ORO: Agregado 'update' al import
         import { getDatabase, ref, onValue, remove, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
@@ -220,7 +219,7 @@
         let esAdmin = false;
         let baseDeDatosHabitantes = {}; 
         let datosTerritoriales = {}; 
-        let idActualEdicion = null; // Guardará el ID del registro que se está editando
+        let idActualEdicion = null; 
 
         onAuthStateChanged(auth, (user) => {
             if (!user) { window.location.href = "index.html"; return; }
@@ -252,12 +251,16 @@
                 }
             });
 
-            // Lógica para el buscador
+            // REGLA DE ORO APLICADA: Lógica para bloquear/desbloquear select en el buscador
             fComuna.addEventListener('change', (e) => {
                 const sel = e.target.value;
-                fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>';
                 if (sel && datosTerritoriales[sel]) {
+                    fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>';
+                    fComunidad.disabled = false; // Se habilita
                     datosTerritoriales[sel].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+                } else {
+                    fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>';
+                    fComunidad.disabled = true; // Se bloquea si no hay comuna seleccionada
                 }
                 filtrarTabla(); 
             });
@@ -335,18 +338,13 @@
             }
         };
 
-        // ==========================================
-        // LÓGICA DE DETALLE Y EDICIÓN (NUEVO)
-        // ==========================================
         window.editarRegistro = (id) => {
             idActualEdicion = id;
             const h = baseDeDatosHabitantes[id];
 
-            // 1. Mostrar/Ocultar Vistas
             document.getElementById('vistaConsultas').classList.add('hidden');
             document.getElementById('vistaEdicion').classList.remove('hidden');
 
-            // 2. Control de Permisos (RBAC) - Bloquear campos personales si no es admin
             const camposPersonales = ['e_nombre', 'e_apellido', 'e_cedula', 'e_telefono', 'e_fecha_nacimiento', 'e_sexo', 'e_parentesco', 'e_profesion', 'e_trabaja', 'e_esta_escolarizado', 'e_esta_cedulado'];
             
             if (!esAdmin) {
@@ -361,13 +359,11 @@
                 });
             }
 
-            // 3. Llenar el formulario con los datos existentes
             const llenarCampo = (idElemento, valor) => { if (document.getElementById(idElemento)) document.getElementById(idElemento).value = valor || ''; };
             
             llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual);
             llenarCampo('e_comuna', h.comuna);
             
-            // Forzar carga de comunidades de la comuna seleccionada
             const eComunidad = document.getElementById('e_comunidad');
             eComunidad.innerHTML = '<option value="">Seleccione</option>';
             if (h.comuna && datosTerritoriales[h.comuna]) {
@@ -409,7 +405,6 @@
             llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion);
             llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
 
-            // Manejar los divs ocultos en base a la data cargada
             if(h.toma_medicamento === 'si') document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden');
             else document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
 
@@ -426,7 +421,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // Lógica para divs condicionales en el modo edición
         const toggleHiddenEdit = (selectId, wrapperId, inputId) => {
             document.getElementById(selectId).addEventListener('change', (e) => {
                 const wrapper = document.getElementById(wrapperId);
@@ -443,15 +437,11 @@
         toggleHiddenEdit('e_toma_medicamento', 'e_cual_medicamento_wrapper', 'e_cual_medicamento');
         toggleHiddenEdit('e_vd_vb_vo_seleccion', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_detalle');
 
-        // Función para guardar los cambios
         document.getElementById('formEdicion').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // Los campos "disabled" no se incluyen en FormData, así que fusionamos la data vieja con la nueva
             const formData = new FormData(e.target);
             const datosEditados = Object.fromEntries(formData.entries());
             
-            // Mezclamos: Primero la data original, y sobrescribimos con lo que sí se pudo editar
             const dataFinal = {
                 ...baseDeDatosHabitantes[idActualEdicion],
                 ...datosEditados
