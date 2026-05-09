@@ -11,7 +11,8 @@
             --gris-fondo: #e9ecef;
             --gris-borde: #ced4da;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; padding-top: 30px;}
+        .cintillo-gob { width: 100%; background-color: #222; color: #fff; text-align: center; padding: 6px 0; font-size: 11px; font-weight: bold; letter-spacing: 1px; position: fixed; top: 0; left: 0; z-index: 1000; }
         .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 1200px; margin: auto; border-top: 8px solid var(--rojo-oficial); }
         
         /* Encabezado Gubernamental */
@@ -28,6 +29,8 @@
         #btnVolver { background-color: #28a745; }
         #btnCambiarClave { background-color: #ff9800; color: #000; }
         #btnCambiarClave:hover { background-color: #e68a00; }
+        .btn-reporte { background-color: #17a2b8; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
+        .btn-reporte:hover { background-color: #138496; }
         
         /* Buscador Avanzado */
         h2 { color: var(--rojo-oficial); margin-top: 0; font-size: 20px; text-transform: uppercase; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 5px;}
@@ -62,11 +65,22 @@
         .btn-cancelar { background-color: #6c757d; color: white; padding: 12px 25px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px;}
         .btn-cancelar:hover { background-color: #5a6268; }
         .lock-warning { color: var(--rojo-oficial); font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 10px; display: none;}
+
+        @media print {
+            .cintillo-gob, .top-nav, .search-panel, h2, .edit-panel, .no-print { display: none !important; }
+            body { background-color: white; padding: 0;}
+            .container { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%;}
+            table { font-size: 11px; width: 100%; }
+            th { background-color: #ccc !important; color: black !important; }
+        }
     </style>
 </head>
 <body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA | ESTADO MIRANDA | ALCALDÍA DE CRISTÓBAL ROJAS</div>
     <div class="container">
         <div class="top-nav">
+            <button type="button" class="btn-reporte" onclick="window.imprimirTabla()">🖨 Imprimir</button>
+            <button type="button" class="btn-reporte" onclick="window.exportarCSV()">📥 Exportar Excel</button>
             <button type="button" id="btnVolver" class="btn-nav" onclick="location.href='registro.html'">← Volver a Registrar</button>
             <button type="button" id="btnCambiarClave" class="btn-nav" onclick="location.href='cambiar-clave.html'">🔑 Cambiar Contraseña</button>
             <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
@@ -120,7 +134,7 @@
                             <th>Calle</th>
                             <th>Teléfono</th>
                             <th id="thResponsable" class="hidden">Responsable (Admin)</th>
-                            <th>Acciones</th>
+                            <th class="no-print">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tablaCuerpo"></tbody>
@@ -221,6 +235,23 @@
         let datosTerritoriales = {}; 
         let idActualEdicion = null; 
 
+        document.querySelectorAll('input[type="text"], textarea').forEach(input => {
+            input.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+        });
+
+        let inactivityTime = function () {
+            let time;
+            window.onload = resetTimer;
+            document.onmousemove = resetTimer;
+            document.onkeypress = resetTimer;
+            function logout() {
+                alert("Sesión expirada por inactividad. Por seguridad, debe ingresar nuevamente.");
+                signOut(auth).then(() => window.location.href = 'index.html');
+            }
+            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
+        };
+        inactivityTime();
+
         onAuthStateChanged(auth, (user) => {
             if (!user) { window.location.href = "index.html"; return; }
             esAdmin = user.email === "carlos.admin@alcaldia.com";
@@ -233,6 +264,24 @@
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
             signOut(auth).then(() => window.location.href = "index.html");
         });
+
+        window.imprimirTabla = () => { window.print(); };
+
+        window.exportarCSV = () => {
+            let csv = 'Nombres y Apellidos,Cedula,Comuna,Comunidad,Calle,Telefono\\n';
+            const filas = document.querySelectorAll('#tablaCuerpo tr');
+            filas.forEach(fila => {
+                const cols = fila.querySelectorAll('td');
+                if(cols.length > 0) {
+                    csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText},${cols[4].innerText},${cols[5].innerText}\\n`;
+                }
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', ''); a.setAttribute('href', url); a.setAttribute('download', 'censo_habitantes_alcaldia.csv');
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        };
 
         function cargarFiltrosTerritoriales() {
             const fComuna = document.getElementById('fComuna');
@@ -251,22 +300,20 @@
                 }
             });
 
-            // REGLA DE ORO APLICADA: Lógica para bloquear/desbloquear select en el buscador
             fComuna.addEventListener('change', (e) => {
                 const sel = e.target.value;
                 if (sel && datosTerritoriales[sel]) {
                     fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>';
-                    fComunidad.disabled = false; // Se habilita
+                    fComunidad.disabled = false;
                     datosTerritoriales[sel].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
                 } else {
                     fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>';
-                    fComunidad.disabled = true; // Se bloquea si no hay comuna seleccionada
+                    fComunidad.disabled = true;
                 }
                 filtrarTabla(); 
             });
             fComunidad.addEventListener('change', filtrarTabla);
 
-            // Lógica para el formulario de edición
             eComuna.addEventListener('change', (e) => {
                 const sel = e.target.value;
                 const eComunidad = document.getElementById('e_comunidad');
@@ -316,7 +363,7 @@
                         <td>${h.calle}</td>
                         <td>${h.telefono}</td>
                         ${esAdmin ? `<td style="color:#E30613; font-weight:bold;">${h.registrado_por_nombre || 'Desconocido'}</td>` : ""}
-                        <td>
+                        <td class="no-print">
                             <button class="btn-edit" onclick="window.editarRegistro('${id}')">Detalle</button>
                             ${esAdmin ? `<button class="btn-delete" onclick="window.eliminarRegistro('${id}')">Borrar</button>` : ""}
                         </td>

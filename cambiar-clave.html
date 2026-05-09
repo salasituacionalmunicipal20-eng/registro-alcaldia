@@ -11,7 +11,8 @@
             --gris-fondo: #e9ecef;
             --gris-borde: #ced4da;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--gris-fondo); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px;}
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--gris-fondo); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; padding-top: 30px;}
+        .cintillo-gob { width: 100%; background-color: #222; color: #fff; text-align: center; padding: 6px 0; font-size: 11px; font-weight: bold; letter-spacing: 1px; position: fixed; top: 0; left: 0; z-index: 1000; }
         .container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); width: 100%; max-width: 500px; border-top: 8px solid var(--rojo-oficial); text-align: center;}
         
         /* Encabezado Gubernamental */
@@ -39,6 +40,8 @@
     </style>
 </head>
 <body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA | ESTADO MIRANDA | ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
     <div class="container">
         
         <div class="top-nav">
@@ -80,7 +83,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, updatePassword, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -94,6 +97,19 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+
+        let inactivityTime = function () {
+            let time;
+            window.onload = resetTimer;
+            document.onmousemove = resetTimer;
+            document.onkeypress = resetTimer;
+            function logout() {
+                alert("Sesión expirada por inactividad. Por seguridad, debe ingresar nuevamente.");
+                signOut(auth).then(() => window.location.href = 'index.html');
+            }
+            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
+        };
+        inactivityTime();
 
         onAuthStateChanged(auth, (user) => {
             if (!user) window.location.href = "index.html";
