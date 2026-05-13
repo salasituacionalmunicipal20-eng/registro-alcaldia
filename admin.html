@@ -102,6 +102,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        // REGLA DE ORO: Agregada base de datos para verificar el rol
+        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -115,11 +117,19 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const database = getDatabase(app);
 
-        // Seguridad: Solo Carlos entra aquí
-        onAuthStateChanged(auth, (user) => {
-            if (!user || user.email !== "carlos.admin@alcaldia.com") {
+        // REGLA DE ORO: Seguridad actualizada para aceptar el rol 'admin'
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
                 window.location.href = "index.html";
+            } else {
+                if (user.email !== "carlos.admin@alcaldia.com") {
+                    const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
+                    if (!snapshot.exists() || snapshot.val().rol !== "admin") {
+                        window.location.href = "index.html";
+                    }
+                }
             }
         });
 

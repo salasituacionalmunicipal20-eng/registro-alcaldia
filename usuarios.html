@@ -70,6 +70,7 @@
                     <tr>
                         <th>Nombres y Apellidos</th>
                         <th>Cargo</th>
+                        <th>Rol (Nivel)</th>
                         <th>ID Usuario</th>
                         <th>Estado de Clave</th>
                         <th>Acciones</th>
@@ -82,18 +83,36 @@
     </div>
 
     <script type="module">
-        import { app } from "./firebase-config.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, remove, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+
+        const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        // Seguridad: Solo Admin
-        onAuthStateChanged(auth, (user) => {
-            if (!user || user.email !== "carlos.admin@alcaldia.com") {
+        // REGLA DE ORO: Seguridad actualizada para que funcione y se vea la tabla
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
                 window.location.href = "index.html";
             } else {
+                if (user.email !== "carlos.admin@alcaldia.com") {
+                    const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
+                    if (!snapshot.exists() || snapshot.val().rol !== "admin") {
+                        window.location.href = "index.html";
+                        return;
+                    }
+                }
                 cargarListaUsuarios();
             }
         });
@@ -117,10 +136,14 @@
                         const estadoClave = user.cambio_obligatorio 
                             ? '<span class="status-badge status-pending">Pendiente por cambiar</span>' 
                             : '<span class="status-badge status-active">Clave Personalizada</span>';
+                            
+                        // REGLA DE ORO: Muestra si es admin u operador    
+                        const nivel = user.rol === "admin" ? "Administrador" : "Operador";
 
                         tr.innerHTML = `
                             <td><strong>${user.nombre} ${user.apellido}</strong></td>
                             <td>${user.cargo}</td>
+                            <td style="color:#004a99; font-weight:bold;">${nivel}</td>
                             <td><code>${user.usuario}</code></td>
                             <td>${estadoClave}</td>
                             <td>
@@ -130,7 +153,7 @@
                         tbody.appendChild(tr);
                     }
                 } else {
-                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay operadores registrados.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>No hay operadores registrados.</td></tr>";
                 }
             });
         }
@@ -143,7 +166,6 @@
             }
         };
 
-        // Timeout por inactividad (15 min)
         let inactivityTime = function () {
             let time;
             window.onload = resetTimer; document.onmousemove = resetTimer; document.onkeypress = resetTimer;

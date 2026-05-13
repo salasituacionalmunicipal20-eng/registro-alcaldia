@@ -148,10 +148,7 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        document.getElementById('togglePw').addEventListener('change', function() {
-            document.getElementById('password').type = this.checked ? 'text' : 'password';
-        });
-
+        // REGLA DE ORO: Se agregó lectura del nuevo rol "admin" para mandarlo al dashboard
         async function dirigirUsuario(user) {
             if (user.email === "carlos.admin@alcaldia.com") {
                 window.location.href = "admin.html";
@@ -159,16 +156,26 @@
                 const dbRef = ref(database);
                 try {
                     const snapshot = await get(child(dbRef, `operadores/${user.uid}`));
-                    if (snapshot.exists() && snapshot.val().cambio_obligatorio) {
-                        window.location.href = "password.html";
-                    } else {
-                        window.location.href = "registro.html";
+                    if (snapshot.exists()) {
+                        const userData = snapshot.val();
+                        
+                        if (userData.rol === "admin") {
+                            window.location.href = "admin.html";
+                        } else if (userData.cambio_obligatorio) {
+                            window.location.href = "password.html";
+                        } else {
+                            window.location.href = "registro.html";
+                        }
                     }
                 } catch (e) {
                     window.location.href = "registro.html";
                 }
             }
         }
+
+        document.getElementById('togglePw').addEventListener('change', function() {
+            document.getElementById('password').type = this.checked ? 'text' : 'password';
+        });
 
         onAuthStateChanged(auth, (user) => {
             if (user) {

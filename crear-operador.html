@@ -86,6 +86,15 @@
                         <option value="Secretario Municipal">Secretario Municipal</option>
                     </select>
                 </div>
+                
+                <div class="full-width">
+                    <label for="rol">Nivel de Acceso (Privilegios):</label>
+                    <select id="rol" required>
+                        <option value="operador">Personal Normal (Solo Registro)</option>
+                        <option value="admin">Administrador (Acceso al Panel Admin)</option>
+                    </select>
+                </div>
+
                 <div class="full-width" style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 20px;">
                     <label for="newUsername">ID de Usuario (Sin @):</label>
                     <input type="text" id="newUsername" placeholder="Ej: juan.perez" required>
@@ -147,7 +156,7 @@
         inactivityTime();
 
         onAuthStateChanged(auth, (user) => {
-            if (!user || user.email !== "carlos.admin@alcaldia.com") {
+            if (!user) {
                 window.location.href = "index.html";
             }
         });
@@ -168,6 +177,7 @@
             const nombre = document.getElementById('nombre').value;
             const apellido = document.getElementById('apellido').value;
             const cargo = document.getElementById('cargo').value;
+            const rol = document.getElementById('rol').value; // REGLA DE ORO: Se agregó lectura del nuevo select
             const newUsername = document.getElementById('newUsername').value.trim();
             const newPassword = document.getElementById('newPassword').value;
             const emailFalso = newUsername + "@alcaldia.com";
@@ -180,6 +190,7 @@
                     nombre: nombre,
                     apellido: apellido,
                     cargo: cargo,
+                    rol: rol, // REGLA DE ORO: Se guarda el rol seleccionado
                     usuario: newUsername,
                     cambio_obligatorio: true,
                     fecha_registro: new Date().toISOString()
