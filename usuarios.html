@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Usuarios - Alcaldía</title>
+    <style>
+        :root {
+            --rojo-oficial: #E30613;
+            --azul-oficial: #004a99;
+            --gris-fondo: #e9ecef;
+            --gris-borde: #ced4da;
+        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; padding-top: 30px; }
+        .cintillo-gob { width: 100%; background-color: #222; color: #fff; text-align: center; padding: 6px 0; font-size: 11px; font-weight: bold; letter-spacing: 1px; position: fixed; top: 0; left: 0; z-index: 1000; }
+        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 1000px; margin: 40px auto; border-top: 8px solid var(--rojo-oficial); }
+        
+        .gob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-borde); padding-bottom: 20px; margin-bottom: 20px;}
+        .gob-header img { height: 70px; object-fit: contain; }
+        .header-titles { text-align: center; flex-grow: 1; padding: 0 20px;}
+        .header-titles h1 { color: var(--azul-oficial); margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
+        .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
+        
+        .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px;}
+        .btn-nav { background-color: #333; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; text-transform: uppercase;}
+        .btn-nav:hover { background-color: #555; }
+        #btnVolver { background-color: var(--azul-oficial); }
+
+        h2 { color: var(--rojo-oficial); text-transform: uppercase; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 5px; margin-top: 30px;}
+
+        /* Tabla de Usuarios */
+        .table-wrapper { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: var(--azul-oficial); color: white; text-transform: uppercase; font-size: 12px; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+
+        .btn-delete { background-color: var(--rojo-oficial); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-delete:hover { background-color: #b7050f; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .status-active { background-color: #d4edda; color: #155724; }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+
+    </style>
+</head>
+<body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA | ESTADO MIRANDA | ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
+    <div class="container">
+        <div class="top-nav">
+            <button type="button" class="btn-nav" id="btnVolver" onclick="location.href='admin.html'">← Volver al Panel</button>
+            <button type="button" class="btn-nav" id="btnCerrarSesion">Cerrar Sesión</button>
+        </div>
+
+        <div class="gob-header">
+            <img src="psuv.jpg" alt="PSUV">
+            <div class="header-titles">
+                <h1>Gestión de Personal Autorizado</h1>
+                <p>SISTEMA DE INTEGRACIÓN TERRITORIAL | ALCALDÍA DE CRISTÓBAL ROJAS</p>
+            </div>
+            <img src="escudo municipal.jpg" alt="Escudo Cristóbal Rojas">
+        </div>
+
+        <h2>Operadores Registrados</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombres y Apellidos</th>
+                        <th>Cargo</th>
+                        <th>ID Usuario</th>
+                        <th>Estado de Clave</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaUsuarios">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { app } from "./firebase-config.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Seguridad: Solo Admin
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== "carlos.admin@alcaldia.com") {
+                window.location.href = "index.html";
+            } else {
+                cargarListaUsuarios();
+            }
+        });
+
+        document.getElementById('btnCerrarSesion').addEventListener('click', () => {
+            signOut(auth).then(() => window.location.href = "index.html");
+        });
+
+        function cargarListaUsuarios() {
+            const usuariosRef = ref(database, 'operadores');
+            onValue(usuariosRef, (snapshot) => {
+                const data = snapshot.val();
+                const tbody = document.getElementById('tablaUsuarios');
+                tbody.innerHTML = "";
+
+                if (data) {
+                    for (let uid in data) {
+                        const user = data[uid];
+                        const tr = document.createElement('tr');
+                        
+                        const estadoClave = user.cambio_obligatorio 
+                            ? '<span class="status-badge status-pending">Pendiente por cambiar</span>' 
+                            : '<span class="status-badge status-active">Clave Personalizada</span>';
+
+                        tr.innerHTML = `
+                            <td><strong>${user.nombre} ${user.apellido}</strong></td>
+                            <td>${user.cargo}</td>
+                            <td><code>${user.usuario}</code></td>
+                            <td>${estadoClave}</td>
+                            <td>
+                                <button class="btn-delete" onclick="window.eliminarUsuario('${uid}', '${user.nombre} ${user.apellido}')">Dar de Baja</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+                } else {
+                    tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>No hay operadores registrados.</td></tr>";
+                }
+            });
+        }
+
+        window.eliminarUsuario = (uid, nombre) => {
+            if (confirm(`ATENCIÓN: ¿Está seguro que desea revocar el acceso a ${nombre}? Esta acción eliminará su perfil de operador del sistema.`)) {
+                remove(ref(database, 'operadores/' + uid))
+                    .then(() => alert("Operador dado de baja exitosamente."))
+                    .catch((error) => alert("Error al eliminar: " + error.message));
+            }
+        };
+
+        // Timeout por inactividad (15 min)
+        let inactivityTime = function () {
+            let time;
+            window.onload = resetTimer; document.onmousemove = resetTimer; document.onkeypress = resetTimer;
+            function logout() { signOut(auth).then(() => window.location.href = 'index.html'); }
+            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
+        };
+        inactivityTime();
+    </script>
+</body>
+</html>

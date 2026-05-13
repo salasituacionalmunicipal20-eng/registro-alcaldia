@@ -41,6 +41,8 @@
         .card-operadores::before { background-color: var(--rojo-oficial); }
         .card-registro::before { background-color: #28a745; }
         .card-consulta::before { background-color: var(--azul-oficial); }
+        /* REGLA DE ORO: Agregado el color de la nueva tarjeta sin borrar nada */
+        .card-usuarios::before { background-color: #ff9800; }
 
         .card-icon { font-size: 50px; margin-bottom: 15px; display: block;}
         .card-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; text-transform: uppercase;}
@@ -74,6 +76,12 @@
                 <span class="card-icon">👨🏽‍💻</span>
                 <div class="card-title">Gestión de Operadores</div>
                 <div class="card-desc">Crear nuevos usuarios, asignar cargos y generar accesos genéricos para la Sala Situacional.</div>
+            </div>
+
+            <div class="card card-usuarios" onclick="location.href='usuarios.html'">
+                <span class="card-icon">👥</span>
+                <div class="card-title">Control de Usuarios</div>
+                <div class="card-desc">Ver listado de personal activo y dar de baja a operadores.</div>
             </div>
 
             <div class="card card-registro" onclick="location.href='registro.html'">
