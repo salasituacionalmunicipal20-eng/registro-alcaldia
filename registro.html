@@ -321,29 +321,27 @@
         const database = getDatabase(app);
         const auth = getAuth(app);
 
-        document.querySelectorAll('input[type="text"], textarea').forEach(input => {
-            input.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
-        });
-
-        let inactivityTime = function () {
-            let time;
-            window.onload = resetTimer;
-            document.onmousemove = resetTimer;
-            document.onkeypress = resetTimer;
-            function logout() {
-                alert("Sesión expirada por inactividad. Por seguridad, debe ingresar nuevamente.");
-                signOut(auth).then(() => window.location.href = 'index.html');
-            }
-            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
-        };
-        inactivityTime();
-
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = "index.html";
                 return;
             }
+            
+            let esAdmin = false;
             if (user.email === "carlos.admin@alcaldia.com") {
+                esAdmin = true;
+            } else {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    if (snap.exists() && snap.val().rol === "admin") {
+                        esAdmin = true;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            if (esAdmin) {
                 const btnAdmin = document.getElementById('btnAdminPanel');
                 btnAdmin.classList.remove('hidden');
                 btnAdmin.addEventListener('click', () => { window.location.href = "admin.html"; });

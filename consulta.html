@@ -79,6 +79,7 @@
     <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA | ESTADO MIRANDA | ALCALDÍA DE CRISTÓBAL ROJAS</div>
     <div class="container">
         <div class="top-nav">
+            <button type="button" id="btnAdminPanel" class="btn-nav hidden" style="background-color: var(--rojo-oficial);">⚙ Panel Admin</button>
             <button type="button" class="btn-reporte" onclick="window.imprimirTabla()">🖨 Imprimir</button>
             <button type="button" class="btn-reporte" onclick="window.exportarCSV()">📥 Exportar Excel</button>
             <button type="button" id="btnVolver" class="btn-nav" onclick="location.href='registro.html'">← Volver a Registrar</button>
@@ -235,27 +236,31 @@
         let datosTerritoriales = {}; 
         let idActualEdicion = null; 
 
-        document.querySelectorAll('input[type="text"], textarea').forEach(input => {
-            input.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
-        });
-
-        let inactivityTime = function () {
-            let time;
-            window.onload = resetTimer;
-            document.onmousemove = resetTimer;
-            document.onkeypress = resetTimer;
-            function logout() {
-                alert("Sesión expirada por inactividad. Por seguridad, debe ingresar nuevamente.");
-                signOut(auth).then(() => window.location.href = 'index.html');
-            }
-            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
-        };
-        inactivityTime();
-
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
-            esAdmin = user.email === "carlos.admin@alcaldia.com";
-            if (esAdmin) document.getElementById('thResponsable').classList.remove('hidden');
+            
+            esAdmin = false;
+            if (user.email === "carlos.admin@alcaldia.com") {
+                esAdmin = true;
+            } else {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    if (snap.exists() && snap.val().rol === "admin") {
+                        esAdmin = true;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            if (esAdmin) {
+                document.getElementById('thResponsable').classList.remove('hidden');
+                const btnAdmin = document.getElementById('btnAdminPanel');
+                if (btnAdmin) {
+                    btnAdmin.classList.remove('hidden');
+                    btnAdmin.addEventListener('click', () => { window.location.href = "admin.html"; });
+                }
+            }
             
             cargarFiltrosTerritoriales(); 
             cargarDatos(); 
