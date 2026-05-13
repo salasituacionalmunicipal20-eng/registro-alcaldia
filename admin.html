@@ -41,7 +41,6 @@
         .card-operadores::before { background-color: var(--rojo-oficial); }
         .card-registro::before { background-color: #28a745; }
         .card-consulta::before { background-color: var(--azul-oficial); }
-        /* REGLA DE ORO: Agregado el color de la nueva tarjeta sin borrar nada */
         .card-usuarios::before { background-color: #ff9800; }
 
         .card-icon { font-size: 50px; margin-bottom: 15px; display: block;}
@@ -102,7 +101,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        // REGLA DE ORO: Agregada base de datos para verificar el rol
         import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -119,7 +117,6 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        // REGLA DE ORO: Seguridad actualizada para aceptar el rol 'admin'
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = "index.html";
@@ -128,6 +125,11 @@
                     const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
                     if (!snapshot.exists() || snapshot.val().rol !== "admin") {
                         window.location.href = "index.html";
+                        return;
+                    }
+                    // REGLA DE ORO APLICADA: Candado de seguridad para que el admin NO salte el cambio de clave desde la URL
+                    if (snapshot.val().cambio_obligatorio) {
+                        window.location.href = "password.html";
                     }
                 }
             }

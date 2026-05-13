@@ -148,7 +148,6 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        // REGLA DE ORO: Se agregó lectura del nuevo rol "admin" para mandarlo al dashboard
         async function dirigirUsuario(user) {
             if (user.email === "carlos.admin@alcaldia.com") {
                 window.location.href = "admin.html";
@@ -159,10 +158,11 @@
                     if (snapshot.exists()) {
                         const userData = snapshot.val();
                         
-                        if (userData.rol === "admin") {
-                            window.location.href = "admin.html";
-                        } else if (userData.cambio_obligatorio) {
+                        // REGLA DE ORO APLICADA: Ahora verifica PRIMERO si debe cambiar la clave
+                        if (userData.cambio_obligatorio) {
                             window.location.href = "password.html";
+                        } else if (userData.rol === "admin") {
+                            window.location.href = "admin.html";
                         } else {
                             window.location.href = "registro.html";
                         }
