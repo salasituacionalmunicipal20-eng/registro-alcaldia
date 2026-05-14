@@ -11,6 +11,7 @@
             --gris-fondo: #e9ecef; 
             --gris-borde: #ced4da; 
         }
+        
         body { 
             font-family: 'Segoe UI', Arial, sans-serif; 
             margin: 0; 
@@ -18,6 +19,7 @@
             padding: 20px 0; 
             padding-top: 30px;
         }
+        
         .cintillo-gob { 
             width: 100%; 
             background-color: #222; 
@@ -32,6 +34,7 @@
             left: 0; 
             z-index: 1000; 
         }
+        
         .container { 
             background-color: #fff; 
             padding: 40px; 
@@ -51,63 +54,284 @@
             padding-bottom: 20px; 
             margin-bottom: 20px;
         }
-        .gob-header img { height: 70px; object-fit: contain; }
-        .header-titles { text-align: center; flex-grow: 1; padding: 0 20px;}
-        .header-titles h1 { color: var(--azul-oficial); margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
-        .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
+        
+        .gob-header img { 
+            height: 70px; 
+            object-fit: contain; 
+        }
+        
+        .header-titles { 
+            text-align: center; 
+            flex-grow: 1; 
+            padding: 0 20px;
+        }
+        
+        .header-titles h1 { 
+            color: var(--azul-oficial); 
+            margin: 0; 
+            font-size: 24px; 
+            text-transform: uppercase; 
+            font-weight: 900; 
+            letter-spacing: 1px;
+        }
+        
+        .header-titles p { 
+            color: #555; 
+            margin: 5px 0 0 0; 
+            font-size: 14px; 
+            font-weight: bold; 
+        }
         
         /* Botonera superior */
-        .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
-        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
+        .top-nav { 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            flex-wrap: wrap;
+        }
+        
+        .btn-nav { 
+            background-color: #333; 
+            color: white; 
+            padding: 8px 15px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+        }
+        
         .btn-nav:hover { background-color: #555; }
         #btnAdminPanel { background-color: var(--rojo-oficial); }
         #btnEstadisticas { background-color: #17a2b8; }
         #btnVolver { background-color: #28a745; }
         #btnCambiarClave { background-color: #ff9800; color: #000; }
         #btnCambiarClave:hover { background-color: #e68a00; }
-        .btn-reporte { background-color: #17a2b8; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
-        .btn-reporte:hover { background-color: #138496; }
+        
+        .btn-reporte { 
+            background-color: #17a2b8; 
+            color: white; 
+            padding: 8px 15px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+        }
+        
+        .btn-reporte:hover { 
+            background-color: #138496; 
+        }
         
         /* Buscador Avanzado */
-        h2 { color: var(--rojo-oficial); margin-top: 0; font-size: 20px; text-transform: uppercase; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 5px;}
-        .search-panel { background: #fdfdfd; padding: 20px; border-radius: 8px; border: 1px solid var(--gris-borde); margin-bottom: 20px; box-shadow: inset 0 0 10px rgba(0,0,0,0.02);}
-        .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        label { font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 5px;}
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; transition: 0.3s;}
-        input:focus, select:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
-        input:disabled, select:disabled { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; border-color: #ddd;}
+        h2 { 
+            color: var(--rojo-oficial); 
+            margin-top: 0; 
+            font-size: 20px; 
+            text-transform: uppercase; 
+            border-bottom: 2px solid var(--azul-oficial); 
+            padding-bottom: 5px;
+        }
+        
+        .search-panel { 
+            background: #fdfdfd; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border: 1px solid var(--gris-borde); 
+            margin-bottom: 20px; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+        }
+        
+        .search-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+        }
+        
+        label { 
+            font-weight: bold; 
+            font-size: 13px; 
+            color: #333; 
+            display: block; 
+            margin-bottom: 5px;
+        }
+        
+        input, select, textarea { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            font-size: 14px; 
+            transition: 0.3s;
+        }
+        
+        input:focus, select:focus { 
+            outline: none; 
+            border-color: var(--azul-oficial); 
+            box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); 
+        }
+        
+        input:disabled, select:disabled { 
+            background-color: #e9ecef; 
+            color: #6c757d; 
+            cursor: not-allowed; 
+            border-color: #ddd;
+        }
         
         /* Tabla */
         .table-wrapper { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: var(--azul-oficial); color: white; text-transform: uppercase; font-size: 12px;}
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 10px; 
+            font-size: 13px; 
+        }
+        
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            text-align: left; 
+        }
+        
+        th { 
+            background-color: var(--azul-oficial); 
+            color: white; 
+            text-transform: uppercase; 
+            font-size: 12px;
+        }
+        
         tr:nth-child(even) { background-color: #f2f2f2; }
         tr:hover { background-color: #e9ecef; }
         
-        .btn-delete { background: var(--rojo-oficial); color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; margin-left: 5px; font-weight: bold;}
-        .btn-edit { background: #28a745; color: white; border: none; padding: 6px 10px; border-radius: 3px; cursor: pointer; font-weight: bold;}
+        .btn-delete { 
+            background: var(--rojo-oficial); 
+            color: white; 
+            border: none; 
+            padding: 6px 10px; 
+            border-radius: 3px; 
+            cursor: pointer; 
+            margin-left: 5px; 
+            font-weight: bold;
+        }
+        
+        .btn-edit { 
+            background: #28a745; 
+            color: white; 
+            border: none; 
+            padding: 6px 10px; 
+            border-radius: 3px; 
+            cursor: pointer; 
+            font-weight: bold;
+        }
+        
         .hidden { display: none !important; }
-        .stats { margin-top: 15px; font-weight: bold; color: var(--rojo-oficial); font-size: 16px;}
+        
+        .stats { 
+            margin-top: 15px; 
+            font-weight: bold; 
+            color: var(--rojo-oficial); 
+            font-size: 16px;
+        }
 
         /* Panel de Edición */
-        .edit-panel { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid var(--azul-oficial); box-shadow: 0 0 15px rgba(0,0,0,0.1); margin-top: 20px;}
-        .section-title { margin-top: 25px; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 5px; color: var(--azul-oficial); font-size: 18px; text-transform: uppercase;}
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .edit-panel { 
+            background: #fff; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border: 1px solid var(--azul-oficial); 
+            box-shadow: 0 0 15px rgba(0,0,0,0.1); 
+            margin-top: 20px;
+        }
+        
+        .section-title { 
+            margin-top: 25px; 
+            border-bottom: 2px solid var(--azul-oficial); 
+            padding-bottom: 5px; 
+            color: var(--azul-oficial); 
+            font-size: 18px; 
+            text-transform: uppercase;
+        }
+        
+        .form-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+        }
+        
         .full-width { grid-column: span 2; }
-        .edit-actions { display: flex; justify-content: space-between; margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px;}
-        .btn-guardar-cambios { background-color: var(--azul-oficial); color: white; padding: 12px 25px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px; text-transform: uppercase;}
+        
+        .edit-actions { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 30px; 
+            border-top: 2px solid #eee; 
+            padding-top: 20px;
+        }
+        
+        .btn-guardar-cambios { 
+            background-color: var(--azul-oficial); 
+            color: white; 
+            padding: 12px 25px; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 15px; 
+            text-transform: uppercase;
+        }
+        
         .btn-guardar-cambios:hover { background-color: #003366; }
-        .btn-cancelar { background-color: #6c757d; color: white; padding: 12px 25px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px;}
+        
+        .btn-cancelar { 
+            background-color: #6c757d; 
+            color: white; 
+            padding: 12px 25px; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 15px;
+        }
+        
         .btn-cancelar:hover { background-color: #5a6268; }
-        .lock-warning { color: var(--rojo-oficial); font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 10px; display: none;}
+        
+        .lock-warning { 
+            color: var(--rojo-oficial); 
+            font-size: 12px; 
+            font-weight: bold; 
+            margin-top: -5px; 
+            margin-bottom: 10px; 
+            display: none;
+        }
 
-        .grupo-familiar-box { background: #f4f6f9; padding: 15px; border-radius: 6px; border: 2px dashed #004a99; margin-top: 15px; }
+        .grupo-familiar-box { 
+            background: #f4f6f9; 
+            padding: 15px; 
+            border-radius: 6px; 
+            border: 2px dashed #004a99; 
+            margin-top: 15px; 
+        }
 
         @media print {
-            .cintillo-gob, .top-nav, .search-panel, h2, .edit-panel, .no-print { display: none !important; }
-            body { background-color: white; padding: 0;}
-            .container { box-shadow: none; border: none; padding: 0; margin: 0; max-width: 100%;}
+            .cintillo-gob, .top-nav, .search-panel, h2, .edit-panel, .no-print { 
+                display: none !important; 
+            }
+            body { 
+                background-color: white; 
+                padding: 0;
+            }
+            .container { 
+                box-shadow: none; 
+                border: none; 
+                padding: 0; 
+                margin: 0; 
+                max-width: 100%;
+            }
             table { font-size: 11px; width: 100%; }
             th { background-color: #ccc !important; color: black !important; }
         }
@@ -149,11 +373,15 @@
                     </div>
                     <div>
                         <label>Filtrar por Comuna:</label>
-                        <select id="fComuna"><option value="">Cargando comunas...</option></select>
+                        <select id="fComuna">
+                            <option value="">Cargando comunas...</option>
+                        </select>
                     </div>
                     <div>
                         <label>Filtrar por Comunidad:</label>
-                        <select id="fComunidad" disabled><option value="">Seleccione primero una comuna...</option></select>
+                        <select id="fComunidad" disabled>
+                            <option value="">Seleccione primero una comuna...</option>
+                        </select>
                     </div>
                     <div>
                         <label>Buscar por Calle:</label>
@@ -194,13 +422,23 @@
                         <label>Código SIGUE Actual:</label>
                         <input type="text" id="e_codigo_sigue_actual" name="codigo_sigue_actual" required>
                     </div>
+                    
+                    <div class="full-width">
+                        <label>UBCH a la que pertenece:</label>
+                        <input type="text" id="e_ubch" name="ubch" required>
+                    </div>
+
                     <div>
                         <label>Comuna / Circuito:</label>
-                        <select id="e_comuna" name="comuna" required><option value="">Seleccione</option></select>
+                        <select id="e_comuna" name="comuna" required>
+                            <option value="">Seleccione</option>
+                        </select>
                     </div>
                     <div>
                         <label>Comunidad:</label>
-                        <select id="e_comunidad" name="comunidad" required><option value="">Seleccione</option></select>
+                        <select id="e_comunidad" name="comunidad" required>
+                            <option value="">Seleccione</option>
+                        </select>
                     </div>
                     <div class="full-width">
                         <label>Consejo Comunal:</label>
@@ -509,8 +747,9 @@
             window.onload = resetTimer; 
             document.onmousemove = resetTimer; 
             document.onkeypress = resetTimer;
+            
             function logout() { 
-                alert("Sesión expirada por inactividad. Por seguridad, debe ingresar nuevamente."); 
+                alert("Sesión expirada por inactividad."); 
                 signOut(auth).then(() => window.location.href = 'index.html'); 
             }
             function resetTimer() { 
@@ -527,6 +766,7 @@
             }
             
             esAdmin = false;
+            
             if (user.email === "carlos.admin@alcaldia.com") {
                 esAdmin = true;
             } else {
@@ -556,26 +796,28 @@
         document.getElementById('btnCerrarSesion').addEventListener('click', () => { 
             signOut(auth).then(() => window.location.href = "index.html"); 
         });
-        
-        window.imprimirTabla = () => { 
-            window.print(); 
-        };
+
+        window.imprimirTabla = () => { window.print(); };
 
         window.exportarCSV = () => {
             let csv = 'Nombres y Apellidos,Cedula,Comuna,Comunidad,Calle,Telefono\\n';
             const filas = document.querySelectorAll('#tablaCuerpo tr');
+            
             filas.forEach(fila => {
                 const cols = fila.querySelectorAll('td');
                 if(cols.length > 0) { 
                     csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText},${cols[4].innerText},${cols[5].innerText}\\n`; 
                 }
             });
+            
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
+            
             a.setAttribute('hidden', ''); 
             a.setAttribute('href', url); 
             a.setAttribute('download', 'censo_habitantes_alcaldia.csv');
+            
             document.body.appendChild(a); 
             a.click(); 
             document.body.removeChild(a);
@@ -591,6 +833,7 @@
                     datosTerritoriales = snapshot.val();
                     fComuna.innerHTML = '<option value="">Todas las comunas...</option>';
                     eComuna.innerHTML = '<option value="">Seleccione</option>';
+                    
                     for (const comuna in datosTerritoriales) {
                         fComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
                         eComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
@@ -617,6 +860,7 @@
                 const sel = e.target.value;
                 const eComunidad = document.getElementById('e_comunidad');
                 eComunidad.innerHTML = '<option value="">Seleccione</option>';
+                
                 if (sel && datosTerritoriales[sel]) {
                     datosTerritoriales[sel].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
                 }
@@ -661,14 +905,13 @@
                 if (cumpleNom && cumpleCed && cumpleComuna && cumpleComunidad && cumpleCalle) {
                     contador++;
                     
-                    // Formatear cédula en la tabla general
-                    const nac = h.nacionalidad || 'V';
-                    const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                    const nac = h.nacionalidad ? h.nacionalidad + '-' : 'V-';
+                    const cedFinal = h.cedula ? (nac + h.cedula) : 'S/C';
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><strong>${h.nombre} ${h.apellido}</strong></td>
-                        <td>${cedStr}</td>
+                        <td>${cedFinal}</td>
                         <td>${h.comuna}</td>
                         <td>${h.comunidad}</td>
                         <td>${h.calle}</td>
@@ -743,33 +986,34 @@
 
         function checkEdadElectoral(fechaNac, wrapDondeVota, wrapEstatus, wrapDetalle, selEstatus, inpDondeVota) {
             if(!fechaNac) return;
-            const fecha = new Date(fechaNac);
+            const fecha = new Date(fechaNac); 
             const hoy = new Date();
             let edad = hoy.getFullYear() - fecha.getFullYear();
             const mes = hoy.getMonth() - fecha.getMonth();
+            
             if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
                 edad--;
             }
 
-            const wDonde = document.getElementById(wrapDondeVota);
+            const wDonde = document.getElementById(wrapDondeVota); 
             const wEstatus = document.getElementById(wrapEstatus);
-            const wDetalle = document.getElementById(wrapDetalle);
+            const wDetalle = document.getElementById(wrapDetalle); 
             const sEstatus = document.getElementById(selEstatus);
             const iDonde = document.getElementById(inpDondeVota);
 
             if (edad < 18) {
-                if (wDonde) wDonde.classList.add('hidden');
-                if (wEstatus) wEstatus.classList.add('hidden');
+                if (wDonde) wDonde.classList.add('hidden'); 
+                if (wEstatus) wEstatus.classList.add('hidden'); 
                 if (wDetalle) wDetalle.classList.add('hidden');
                 if (sEstatus) { 
                     sEstatus.required = false; 
                     sEstatus.value = ""; 
-                }
+                } 
                 if (iDonde) iDonde.value = "NO APLICA (MENOR DE EDAD)";
             } else {
-                if (wDonde) wDonde.classList.remove('hidden');
+                if (wDonde) wDonde.classList.remove('hidden'); 
                 if (wEstatus) wEstatus.classList.remove('hidden');
-                if (sEstatus) sEstatus.required = true;
+                if (sEstatus) sEstatus.required = true; 
                 if (iDonde && iDonde.value === "NO APLICA (MENOR DE EDAD)") {
                     iDonde.value = "";
                 }
@@ -811,7 +1055,10 @@
                 }
             };
             
-            llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual);
+            // REGLA DE ORO: Campo UBCH al editar
+            llenarCampo('e_ubch', h.ubch);
+            
+            llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual); 
             llenarCampo('e_comuna', h.comuna);
             
             const eComunidad = document.getElementById('e_comunidad');
@@ -820,19 +1067,19 @@
                 datosTerritoriales[h.comuna].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
             }
             
-            llenarCampo('e_comunidad', h.comunidad);
-            llenarCampo('e_consejo_comunal', h.consejo_comunal);
-            llenarCampo('e_calle', h.calle);
-            llenarCampo('e_numero_casa', h.numero_casa);
-            llenarCampo('e_tipo_vivienda', h.tipo_vivienda);
-            llenarCampo('e_condiciones_vivienda', h.condiciones_vivienda);
+            llenarCampo('e_comunidad', h.comunidad); 
+            llenarCampo('e_consejo_comunal', h.consejo_comunal); 
+            llenarCampo('e_calle', h.calle); 
+            llenarCampo('e_numero_casa', h.numero_casa); 
+            llenarCampo('e_tipo_vivienda', h.tipo_vivienda); 
+            llenarCampo('e_condiciones_vivienda', h.condiciones_vivienda); 
             llenarCampo('e_responsabilidad_cbi_cm', h.responsabilidad_cbi_cm);
             
-            llenarCampo('e_tiene_gas', h.tiene_gas);
+            llenarCampo('e_tiene_gas', h.tiene_gas); 
             llenarCampo('e_tipo_cilindro_gas', h.tipo_cilindro_gas);
             
-            llenarCampo('e_nombre', h.nombre);
-            llenarCampo('e_apellido', h.apellido);
+            llenarCampo('e_nombre', h.nombre); 
+            llenarCampo('e_apellido', h.apellido); 
             
             let tieneCedVal = h.tiene_cedula;
             if (!tieneCedVal && h.cedula) tieneCedVal = 'si';
@@ -841,30 +1088,30 @@
             llenarCampo('e_nacionalidad', h.nacionalidad || 'V');
             llenarCampo('e_cedula', h.cedula);
             
-            llenarCampo('e_telefono', h.telefono);
-            llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento);
-            llenarCampo('e_sexo', h.sexo);
-            llenarCampo('e_parentesco', h.parentesco);
-            llenarCampo('e_profesion', h.profesion);
-            llenarCampo('e_trabaja', h.trabaja);
-            llenarCampo('e_esta_escolarizado', h.esta_escolarizado);
+            llenarCampo('e_telefono', h.telefono); 
+            llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento); 
+            llenarCampo('e_sexo', h.sexo); 
+            llenarCampo('e_parentesco', h.parentesco); 
+            llenarCampo('e_profesion', h.profesion); 
+            llenarCampo('e_trabaja', h.trabaja); 
+            llenarCampo('e_esta_escolarizado', h.esta_escolarizado); 
             llenarCampo('e_esta_cedulado', h.esta_cedulado);
             
-            llenarCampo('e_padece_enfermedad', h.padece_enfermedad);
-            llenarCampo('e_toma_medicamento', h.toma_medicamento);
-            llenarCampo('e_cual_medicamento', h.cual_medicamento);
-            llenarCampo('e_discapacitado', h.discapacitado);
-            llenarCampo('e_embarazada', h.embarazada);
+            llenarCampo('e_padece_enfermedad', h.padece_enfermedad); 
+            llenarCampo('e_toma_medicamento', h.toma_medicamento); 
+            llenarCampo('e_cual_medicamento', h.cual_medicamento); 
+            llenarCampo('e_discapacitado', h.discapacitado); 
+            llenarCampo('e_embarazada', h.embarazada); 
             llenarCampo('e_lactancia_materna', h.lactancia_materna);
             
             llenarCampo('e_tipo_discapacidad', h.tipo_discapacidad);
 
-            llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor);
-            llenarCampo('e_carnet_patria', h.carnet_patria);
-            llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio);
-            llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono);
-            llenarCampo('e_donde_vota', h.donde_vota);
-            llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion);
+            llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor); 
+            llenarCampo('e_carnet_patria', h.carnet_patria); 
+            llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio); 
+            llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono); 
+            llenarCampo('e_donde_vota', h.donde_vota); 
+            llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion); 
             llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
 
             if(tieneCedVal === 'si') {
@@ -914,22 +1161,22 @@
             const el = document.getElementById(selectId);
             if(el){
                 el.addEventListener('change', (e) => {
-                    const wrapper = document.getElementById(wrapperId);
+                    const wrapper = document.getElementById(wrapperId); 
                     const input = document.getElementById(inputId);
-                    if (e.target.value === 'si' || (selectId === 'e_vd_vb_vo_seleccion' && e.target.value !== '')) {
-                        wrapper.classList.remove('hidden');
-                        if(input) input.required = true;
-                    } else {
-                        wrapper.classList.add('hidden');
+                    if (e.target.value === 'si' || (selectId === 'e_vd_vb_vo_seleccion' && e.target.value !== '')) { 
+                        wrapper.classList.remove('hidden'); 
+                        if(input) input.required = true; 
+                    } else { 
+                        wrapper.classList.add('hidden'); 
                         if(input) { 
                             input.required = false; 
                             input.value = ''; 
-                        }
+                        } 
                     }
                 });
             }
         };
-
+        
         toggleHiddenEdit('e_tiene_cedula', 'e_cedula_wrapper', 'e_cedula');
         toggleHiddenEdit('e_toma_medicamento', 'e_cual_medicamento_wrapper', 'e_cual_medicamento');
         toggleHiddenEdit('e_vd_vb_vo_seleccion', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_detalle');
@@ -941,28 +1188,26 @@
             const formData = new FormData(e.target);
             const datosEditados = Object.fromEntries(formData.entries());
             
-            const dataFinal = {
-                ...baseDeDatosHabitantes[idActualEdicion],
-                ...datosEditados
+            const dataFinal = { 
+                ...baseDeDatosHabitantes[idActualEdicion], 
+                ...datosEditados 
             };
 
             try {
-                // Actualiza al habitante
                 await update(ref(database, `habitantes/${idActualEdicion}`), dataFinal);
                 
-                // Procesar la vinculación de familiares seleccionados (Si es jefe de hogar)
                 const selectLibres = document.getElementById('e_dependientes_libres');
                 if (selectLibres && !document.getElementById('e_grupo_familiar_wrapper').classList.contains('hidden')) {
                     const seleccionados = Array.from(selectLibres.selectedOptions).map(opt => opt.value);
-                    for (const depId of seleccionados) {
-                        await update(ref(database, `habitantes/${depId}`), { jefe_hogar_id: idActualEdicion });
+                    for (const depId of seleccionados) { 
+                        await update(ref(database, `habitantes/${depId}`), { jefe_hogar_id: idActualEdicion }); 
                     }
                 }
                 
                 alert('¡Expediente y Grupo Familiar actualizados exitosamente!');
                 window.cerrarEdicion();
-            } catch (error) {
-                alert('Error al actualizar: ' + error.message);
+            } catch (error) { 
+                alert('Error al actualizar: ' + error.message); 
             }
         });
     </script>
