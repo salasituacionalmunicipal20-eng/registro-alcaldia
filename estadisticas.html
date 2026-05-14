@@ -66,7 +66,6 @@
         
         .search-panel { background: #fdfdfd; padding: 20px; border-radius: 8px; border: 1px solid var(--gris-borde); margin-bottom: 30px; box-shadow: inset 0 0 10px rgba(0,0,0,0.02);}
         
-        /* REGLA DE ORO: Cuadrícula ajustada para acomodar todos los filtros nuevos */
         .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
         
         label { font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 5px;}
@@ -76,7 +75,7 @@
 
         /* Tarjetas de Estadísticas Expandido */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;}
-        .stat-card { background: white; border: 1px solid var(--gris-borde); border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; overflow: hidden;}
+        .stat-card { background: white; border: 1px solid var(--gris-borde); border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center;}
         .stat-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 5px; }
         
         .c-1::before { background-color: #007bff; } .c-2::before { background-color: #6f42c1; } 
@@ -88,13 +87,29 @@
 
         .stat-icon { font-size: 30px; margin-bottom: 5px; display: block;}
         .stat-number { font-size: 28px; font-weight: 900; color: #333; margin-bottom: 2px;}
-        .stat-title { font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase;}
+        .stat-title { font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 10px;}
+
+        /* REGLA DE ORO: Estilos del botón de PDF individual */
+        .btn-metric-print {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.3s;
+            align-self: center;
+        }
+        .btn-metric-print:hover { background-color: #555; }
 
         .print-only { display: none; }
 
         @media print {
             body { background: white; padding: 0; font-family: Arial, sans-serif;}
-            .cintillo-gob, .top-nav, .search-panel, h2 { display: none !important; }
+            .cintillo-gob, .top-nav, .search-panel, h2, .btn-metric-print { display: none !important; }
             .container { box-shadow: none; border: none; max-width: 100%; padding: 0; margin: 0;}
             
             .gob-header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;}
@@ -105,7 +120,7 @@
             .stat-card::before { display: none; }
             .stat-icon { font-size: 20px; }
             .stat-number { font-size: 18px; }
-            .stat-title { font-size: 9px; }
+            .stat-title { font-size: 9px; margin-bottom: 0;}
 
             .print-only { display: block; }
             
@@ -121,7 +136,7 @@
     <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA | ESTADO MIRANDA | ALCALDÍA DE CRISTÓBAL ROJAS</div>
     <div class="container">
         <div class="top-nav">
-            <button type="button" class="btn-nav btn-pdf" onclick="window.print()">🖨 Generar Reporte PDF</button>
+            <button type="button" class="btn-nav btn-pdf" onclick="window.print()">🖨 Generar Reporte PDF (Global)</button>
             <button type="button" id="btnAdminPanel" class="btn-nav hidden" style="background-color: var(--rojo-oficial);">⚙ Panel Admin</button>
             <button type="button" id="btnVolver" class="btn-nav" onclick="location.href='registro.html'">← Volver a Registro</button>
             <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
@@ -193,20 +208,20 @@
 
         <h2>Métricas Actualizadas</h2>
         <div class="stats-grid">
-            <div class="stat-card c-1"><span class="stat-icon">👥</span><div class="stat-number" id="statTotal">0</div><div class="stat-title">Total Personas</div></div>
-            <div class="stat-card c-2"><span class="stat-icon">👑</span><div class="stat-number" id="statJefes">0</div><div class="stat-title">Jefes de Hogar</div></div>
-            <div class="stat-card c-3"><span class="stat-icon">🔥</span><div class="stat-number" id="statGas">0</div><div class="stat-title">Hogares con Gas</div></div>
-            <div class="stat-card c-4"><span class="stat-icon">🧓🏽</span><div class="stat-number" id="statAdultos">0</div><div class="stat-title">Adultos (60+)</div></div>
+            <div class="stat-card c-1"><span class="stat-icon">👥</span><div class="stat-number" id="statTotal">0</div><div class="stat-title">Total Personas</div><button class="btn-metric-print" onclick="imprimirMetrica('total')">🖨 Reporte</button></div>
+            <div class="stat-card c-2"><span class="stat-icon">👑</span><div class="stat-number" id="statJefes">0</div><div class="stat-title">Jefes de Hogar</div><button class="btn-metric-print" onclick="imprimirMetrica('jefes')">🖨 Reporte</button></div>
+            <div class="stat-card c-3"><span class="stat-icon">🔥</span><div class="stat-number" id="statGas">0</div><div class="stat-title">Hogares con Gas</div><button class="btn-metric-print" onclick="imprimirMetrica('gas')">🖨 Reporte</button></div>
+            <div class="stat-card c-4"><span class="stat-icon">🧓🏽</span><div class="stat-number" id="statAdultos">0</div><div class="stat-title">Adultos (60+)</div><button class="btn-metric-print" onclick="imprimirMetrica('adultos')">🖨 Reporte</button></div>
             
-            <div class="stat-card c-5"><span class="stat-icon">👦🏽</span><div class="stat-number" id="statNinos">0</div><div class="stat-title">Menores (< 18)</div></div>
-            <div class="stat-card c-6"><span class="stat-icon">💼</span><div class="stat-number" id="statTrabajan">0</div><div class="stat-title">Población Activa</div></div>
-            <div class="stat-card c-7"><span class="stat-icon">🎒</span><div class="stat-number" id="statEscolarizados">0</div><div class="stat-title">Escolarizados</div></div>
-            <div class="stat-card c-8"><span class="stat-icon">💊</span><div class="stat-number" id="statEnfermos">0</div><div class="stat-title">Enfermedades crónicas</div></div>
+            <div class="stat-card c-5"><span class="stat-icon">👦🏽</span><div class="stat-number" id="statNinos">0</div><div class="stat-title">Menores (< 18)</div><button class="btn-metric-print" onclick="imprimirMetrica('ninos')">🖨 Reporte</button></div>
+            <div class="stat-card c-6"><span class="stat-icon">💼</span><div class="stat-number" id="statTrabajan">0</div><div class="stat-title">Población Activa</div><button class="btn-metric-print" onclick="imprimirMetrica('trabajan')">🖨 Reporte</button></div>
+            <div class="stat-card c-7"><span class="stat-icon">🎒</span><div class="stat-number" id="statEscolarizados">0</div><div class="stat-title">Escolarizados</div><button class="btn-metric-print" onclick="imprimirMetrica('escolarizados')">🖨 Reporte</button></div>
+            <div class="stat-card c-8"><span class="stat-icon">💊</span><div class="stat-number" id="statEnfermos">0</div><div class="stat-title">Enfermedades</div><button class="btn-metric-print" onclick="imprimirMetrica('enfermos')">🖨 Reporte</button></div>
             
-            <div class="stat-card c-9"><span class="stat-icon">♿</span><div class="stat-number" id="statDiscapacidad">0</div><div class="stat-title">Discapacidad</div></div>
-            <div class="stat-card c-10"><span class="stat-icon">🪪</span><div class="stat-number" id="statPatria">0</div><div class="stat-title">Carnet de la Patria</div></div>
-            <div class="stat-card c-11"><span class="stat-icon">👴🏽</span><div class="stat-number" id="statAmor">0</div><div class="stat-title">Pensión Amor Mayor</div></div>
-            <div class="stat-card c-12"><span class="stat-icon">🔴</span><div class="stat-number" id="statVD">0</div><div class="stat-title">Voto Duro (VD)</div></div>
+            <div class="stat-card c-9"><span class="stat-icon">♿</span><div class="stat-number" id="statDiscapacidad">0</div><div class="stat-title">Discapacidad</div><button class="btn-metric-print" onclick="imprimirMetrica('discapacidad')">🖨 Reporte</button></div>
+            <div class="stat-card c-10"><span class="stat-icon">🪪</span><div class="stat-number" id="statPatria">0</div><div class="stat-title">Carnet de la Patria</div><button class="btn-metric-print" onclick="imprimirMetrica('patria')">🖨 Reporte</button></div>
+            <div class="stat-card c-11"><span class="stat-icon">👴🏽</span><div class="stat-number" id="statAmor">0</div><div class="stat-title">Amor Mayor</div><button class="btn-metric-print" onclick="imprimirMetrica('amor')">🖨 Reporte</button></div>
+            <div class="stat-card c-12"><span class="stat-icon">🔴</span><div class="stat-number" id="statVD">0</div><div class="stat-title">Voto Duro (VD)</div><button class="btn-metric-print" onclick="imprimirMetrica('vd')">🖨 Reporte</button></div>
         </div>
 
         <div class="print-only">
@@ -305,7 +320,6 @@
             fComunidad.addEventListener('change', calcularEstadisticas);
         }
 
-        // REGLA DE ORO: Vincular los nuevos filtros a la funcion de calculo
         document.getElementById('fSexo').addEventListener('change', calcularEstadisticas);
         document.getElementById('fVoto').addEventListener('change', calcularEstadisticas);
         document.getElementById('fBeneficio').addEventListener('change', calcularEstadisticas);
@@ -320,28 +334,25 @@
 
         function calcularEdad(fecha) {
             if(!fecha) return 0;
-            const hoy = new Date(); 
-            const cumpleanos = new Date(fecha);
+            const hoy = new Date(); const cumpleanos = new Date(fecha);
             let edad = hoy.getFullYear() - cumpleanos.getFullYear();
             const m = hoy.getMonth() - cumpleanos.getMonth();
             if (m < 0 || (m === 0 && hoy.getDate() < cumpleanos.getDate())) edad--;
             return edad;
         }
 
+        // FUNCION PRINCIPAL DE CONTEO Y GENERACIÓN DE REPORTE GLOBAL
         function calcularEstadisticas() {
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
-            
-            // Valores de los nuevos filtros
             const fSexo = document.getElementById('fSexo').value.toLowerCase();
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
             const fBeneficio = document.getElementById('fBeneficio').value.toLowerCase();
             const fCondicion = document.getElementById('fCondicion').value.toLowerCase();
 
-            // Metricas
             let cTotal = 0, cAdultos = 0, cEnfermos = 0, cDiscapacidad = 0, cJefes = 0;
             let cNinos = 0, cTrabajan = 0, cEscolarizados = 0;
-            let cPatria = 0, cAmor = 0, cVD = 0;
+            let cPatria = 0, cAmor = 0, cVD = 0, cEmbarazadas = 0;
             
             let hogaresConGasUnicos = new Set();
             let filasReporte = '';
@@ -351,13 +362,11 @@
                 const comunaStr = (h.comuna || '').toUpperCase();
                 const comunidadStr = (h.comunidad || '').toUpperCase();
 
-                // === APLICAR TODOS LOS FILTROS DE BÚSQUEDA CRUZADA ===
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
                 if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
                 if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
                 
-                // Filtro Beneficios
                 if (fBeneficio) {
                     if (fBeneficio === 'amor_mayor' && (h.cobra_amor_mayor || '').toLowerCase() !== 'si') continue;
                     if (fBeneficio === 'carnet_patria' && (h.carnet_patria || '').toLowerCase() !== 'si') continue;
@@ -365,7 +374,6 @@
                     if (fBeneficio === 'hogares_patria_bono' && (h.hogares_patria_bono || '').toLowerCase() !== 'si') continue;
                 }
 
-                // Filtro Condición
                 if (fCondicion) {
                     if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
@@ -374,7 +382,6 @@
                         if (!enf || enf === 'NO' || enf === 'NINGUNA' || enf === 'N/A') continue;
                     }
                 }
-                // ====================================================
 
                 cTotal++;
 
@@ -391,16 +398,15 @@
                 const enf = (h.padece_enfermedad || '').trim().toUpperCase();
                 if (enf !== '' && enf !== 'NO' && enf !== 'NINGUNA' && enf !== 'N/A') cEnfermos++;
                 if ((h.discapacitado || '').toUpperCase() === 'SI') cDiscapacidad++;
+                if ((h.embarazada || '').toUpperCase() === 'SI') cEmbarazadas++;
                 
                 if ((h.trabaja || '').toUpperCase() === 'SI') cTrabajan++;
                 if ((h.esta_escolarizado || '').toUpperCase() === 'SI') cEscolarizados++;
                 
                 if ((h.carnet_patria || '').toUpperCase() === 'SI') cPatria++;
                 if ((h.cobra_amor_mayor || '').toUpperCase() === 'SI') cAmor++;
-                
                 if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VD') cVD++;
 
-                // Llenar tabla de impresion del PDF
                 const nac = h.nacionalidad || 'V';
                 const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
                 filasReporte += `
@@ -428,39 +434,125 @@
             document.getElementById('statAmor').textContent = cAmor;
             document.getElementById('statVD').textContent = cVD;
 
-            // Construir el Titulo Inteligente de la hoja impresa del PDF
-            let tituloHoja = "Listado de Habitantes: Consolidado Municipal";
-            
+            let tituloHoja = "Listado de Habitantes: Consolidado Municipal (Reporte General)";
             if (fComuna) tituloHoja = `Reporte Demográfico: Comuna ${fComuna}`;
             if (fComunidad) tituloHoja = `Reporte Demográfico: Comunidad ${fComunidad} - ${fComuna}`;
             
-            // Añadir al título los filtros si se seleccionaron
             let subFiltros = [];
             if (fSexo) subFiltros.push(`Género: ${fSexo.toUpperCase()}`);
             if (fVoto) subFiltros.push(`Electoral: ${fVoto}`);
             if (fBeneficio) subFiltros.push(`Beneficio: ${fBeneficio.toUpperCase().replace(/_/g, ' ')}`);
             if (fCondicion) subFiltros.push(`Condición: ${fCondicion.toUpperCase()}`);
-
-            if (subFiltros.length > 0) {
-                tituloHoja += ` | Filtros: [${subFiltros.join(' / ')}]`;
-            }
+            if (subFiltros.length > 0) tituloHoja += ` | Filtros: [${subFiltros.join(' / ')}]`;
 
             document.getElementById('tituloReporte').textContent = tituloHoja;
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
         }
 
+        // REGLA DE ORO: FUNCIÓN PARA GENERAR EL REPORTE ESPECÍFICO DE UNA MÉTRICA (EJ: Solo Gas, Solo Niños)
+        window.imprimirMetrica = (tipo) => {
+            const fComuna = document.getElementById('fComuna').value.toUpperCase();
+            const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
+            const fSexo = document.getElementById('fSexo').value.toLowerCase();
+            const fVoto = document.getElementById('fVoto').value.toUpperCase();
+            const fBeneficio = document.getElementById('fBeneficio').value.toLowerCase();
+            const fCondicion = document.getElementById('fCondicion').value.toLowerCase();
+
+            let filasReporte = '';
+            let hogaresGasImpresos = new Set();
+            let nombreMetrica = '';
+
+            for (let id in baseDeDatosHabitantes) {
+                const h = baseDeDatosHabitantes[id];
+                const comunaStr = (h.comuna || '').toUpperCase();
+                const comunidadStr = (h.comunidad || '').toUpperCase();
+
+                if (fComuna && !comunaStr.includes(fComuna)) continue;
+                if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
+                if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
+                if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
+                if (fBeneficio) {
+                    if (fBeneficio === 'amor_mayor' && (h.cobra_amor_mayor || '').toLowerCase() !== 'si') continue;
+                    if (fBeneficio === 'carnet_patria' && (h.carnet_patria || '').toLowerCase() !== 'si') continue;
+                    if (fBeneficio === 'mision_jose_gregorio' && (h.mision_jose_gregorio || '').toLowerCase() !== 'si') continue;
+                    if (fBeneficio === 'hogares_patria_bono' && (h.hogares_patria_bono || '').toLowerCase() !== 'si') continue;
+                }
+                if (fCondicion) {
+                    if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
+                    if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
+                    if (fCondicion === 'enfermedad') {
+                        const enf = (h.padece_enfermedad || '').trim().toUpperCase();
+                        if (!enf || enf === 'NO' || enf === 'NINGUNA' || enf === 'N/A') continue;
+                    }
+                }
+
+                let pasaMetrica = false;
+                const edad = calcularEdad(h.fecha_nacimiento);
+
+                switch(tipo) {
+                    case 'total':
+                        pasaMetrica = true; nombreMetrica = 'Total Personas'; break;
+                    case 'jefes':
+                        if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') pasaMetrica = true;
+                        nombreMetrica = 'Jefes de Hogar'; break;
+                    case 'gas':
+                        if ((h.tiene_gas || '').toLowerCase() === 'si') {
+                            const dirUnica = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
+                            const idHogar = h.jefe_hogar_id ? h.jefe_hogar_id : dirUnica;
+                            if(!hogaresGasImpresos.has(idHogar)) { hogaresGasImpresos.add(idHogar); pasaMetrica = true; }
+                        }
+                        nombreMetrica = 'Representantes de Hogares con Gas (Deduplicados)'; break;
+                    case 'adultos':
+                        if (edad >= 60) pasaMetrica = true; nombreMetrica = 'Adultos Mayores (60+)'; break;
+                    case 'ninos':
+                        if (edad < 18) pasaMetrica = true; nombreMetrica = 'Menores de Edad (< 18)'; break;
+                    case 'trabajan':
+                        if ((h.trabaja || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Población Activa (Trabajan)'; break;
+                    case 'escolarizados':
+                        if ((h.esta_escolarizado || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Población Escolarizada'; break;
+                    case 'enfermos':
+                        const enf2 = (h.padece_enfermedad || '').trim().toUpperCase();
+                        if (enf2 !== '' && enf2 !== 'NO' && enf2 !== 'NINGUNA' && enf2 !== 'N/A') pasaMetrica = true;
+                        nombreMetrica = 'Con Enfermedad Crónica'; break;
+                    case 'discapacidad':
+                        if ((h.discapacitado || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Con Discapacidad'; break;
+                    case 'patria':
+                        if ((h.carnet_patria || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Carnet de la Patria'; break;
+                    case 'amor':
+                        if ((h.cobra_amor_mayor || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Pensión Amor Mayor'; break;
+                    case 'vd':
+                        if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VD') pasaMetrica = true; nombreMetrica = 'Voto Duro (VD)'; break;
+                }
+
+                if (!pasaMetrica) continue;
+
+                const nac = h.nacionalidad || 'V';
+                const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                filasReporte += `
+                    <tr>
+                        <td>${h.nombre} ${h.apellido}</td>
+                        <td>${cedStr}</td>
+                        <td>${edad}</td>
+                        <td>${h.comunidad}</td>
+                        <td>${h.calle}, Casa ${h.numero_casa}</td>
+                        <td>${h.telefono || ''}</td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById('tituloReporte').textContent = `REPORTE ESPECÍFICO: ${nombreMetrica.toUpperCase()}`;
+            document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
+
+            setTimeout(() => {
+                window.print();
+                calcularEstadisticas(); // Restaura la tabla a su estado global después de imprimir
+            }, 300);
+        };
+
         let inactivityTime = function () {
-            let time; 
-            window.onload = resetTimer; 
-            document.onmousemove = resetTimer; 
-            document.onkeypress = resetTimer;
-            function logout() { 
-                signOut(auth).then(() => window.location.href = 'index.html'); 
-            }
-            function resetTimer() { 
-                clearTimeout(time); 
-                time = setTimeout(logout, 900000); 
-            }
+            let time; window.onload = resetTimer; document.onmousemove = resetTimer; document.onkeypress = resetTimer;
+            function logout() { signOut(auth).then(() => window.location.href = 'index.html'); }
+            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
         };
         inactivityTime();
     </script>
