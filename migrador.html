@@ -12,33 +12,38 @@
             padding: 40px; 
             text-align: center; 
         }
+        
         .container { 
             background: white; 
             padding: 40px; 
             border-radius: 8px; 
-            max-width: 700px; 
+            max-width: 800px; 
             margin: auto; 
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
             border-top: 8px solid #E30613; 
         }
+        
         h1 { 
             color: #004a99; 
             margin-top: 0; 
             text-transform: uppercase; 
         }
+        
         .instrucciones { 
             text-align: left; 
             background: #fdfdfd; 
             padding: 20px; 
             border-left: 4px solid #ff9800; 
             font-size: 14px; 
-            margin-bottom: 30px; 
+            margin-bottom: 20px; 
         }
+        
         input[type="file"] { 
             margin: 20px 0; 
             padding: 10px; 
             font-size: 16px; 
         }
+        
         button { 
             background-color: #28a745; 
             color: white; 
@@ -51,19 +56,38 @@
             text-transform: uppercase; 
             transition: 0.3s; 
         }
+        
         button:hover { 
             background-color: #218838; 
         }
+        
         button:disabled { 
             background-color: #ccc; 
             cursor: not-allowed; 
         }
-        #estado { 
-            margin-top: 20px; 
-            font-weight: bold; 
-            font-size: 18px; 
-            color: #333; 
+        
+        /* REGLA DE ORO: Estilos del nuevo panel de consola / Terminal en tiempo real */
+        .consola-wrapper {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            text-align: left;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            height: 250px;
+            overflow-y: auto;
+            margin-top: 20px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            border: 2px solid #333;
         }
+
+        .consola-linea { margin-bottom: 5px; }
+        .log-error { color: #ff4c4c; }
+        .log-success { color: #00ff00; }
+        .log-info { color: #00d2ff; }
+        .log-warning { color: #ffc107; }
+
         .progress-bar { 
             width: 100%; 
             background-color: #ddd; 
@@ -71,13 +95,27 @@
             margin-top: 20px; 
             overflow: hidden; 
             display: none; 
+            border: 1px solid #bbb;
         }
+        
         .progress-fill { 
-            height: 20px; 
+            height: 25px; 
             background-color: #004a99; 
             width: 0%; 
-            transition: 0.2s; 
+            transition: width 0.3s ease; 
         }
+
+        .stats-panel {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+            display: none;
+        }
+
+        .eta-text { color: #E30613; }
     </style>
 </head>
 <body>
@@ -98,12 +136,21 @@
         <div class="progress-bar" id="barraWrapper">
             <div class="progress-fill" id="barraProgreso"></div>
         </div>
-        <div id="estado">Comprobando permisos de seguridad...</div>
+        
+        <div class="stats-panel" id="statsPanel">
+            <span id="txtCompletados">Procesados: 0 / 0</span>
+            <span id="txtPorcentaje">0%</span>
+            <span id="txtEta" class="eta-text">Tiempo estimado: Calculando...</span>
+        </div>
+
+        <div class="consola-wrapper" id="consolaLog">
+            <div class="consola-linea">Iniciando sistema de migración...</div>
+            <div class="consola-linea log-info">Estableciendo conexión con Firebase Realtime Database...</div>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        // REGLA DE ORO: Agregamos "update" para subir los datos en super paquetes
         import { getDatabase, ref, push, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
@@ -123,180 +170,230 @@
 
         let usuarioActivo = null;
 
+        // Función para escribir en la consola virtual
+        function escribirLog(mensaje, tipo = "log-success") {
+            const consola = document.getElementById('consolaLog');
+            const linea = document.createElement('div');
+            linea.className = `consola-linea ${tipo}`;
+            
+            // Añadimos hora exacta al log
+            const hora = new Date().toLocaleTimeString('es-VE', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+            linea.textContent = `[${hora}] > ${mensaje}`;
+            
+            consola.appendChild(linea);
+            // Hacer scroll automático hacia abajo
+            consola.scrollTop = consola.scrollHeight;
+        }
+
         // VERIFICAMOS SI ES CARLOS ADMIN EXACTAMENTE
         onAuthStateChanged(auth, (user) => {
             if (user && user.email === "carlos.admin@alcaldia.com") {
                 usuarioActivo = user;
                 document.getElementById('btnSubir').disabled = false;
                 document.getElementById('btnSubir').textContent = "Iniciar Migración Masiva 🚀";
-                document.getElementById('estado').innerHTML = "<span style='color:green;'>Conectado como Súper Administrador (Carlos). Listo para subir.</span>";
+                escribirLog(`Conexión exitosa. Autenticado como Súper Administrador: ${user.email}`, "log-success");
             } else {
                 usuarioActivo = null;
                 document.getElementById('btnSubir').disabled = true;
                 document.getElementById('btnSubir').textContent = "Acceso Denegado";
-                document.getElementById('estado').innerHTML = "<span style='color:red;'>⚠️ ACCESO DENEGADO: Debes iniciar sesión como carlos.admin@alcaldia.com en otra pestaña y luego recargar aquí.</span>";
+                escribirLog("⚠️ ACCESO DENEGADO: No se detecta la sesión de carlos.admin@alcaldia.com.", "log-error");
+                escribirLog("Por favor inicie sesión en otra pestaña y recargue la página.", "log-warning");
             }
         });
 
+        // Formateador de tiempo para el ETA
+        function formatoTiempo(milisegundos) {
+            if (milisegundos < 0 || !isFinite(milisegundos)) return "Calculando...";
+            let segundosTotales = Math.floor(milisegundos / 1000);
+            let minutos = Math.floor(segundosTotales / 60);
+            let segundos = segundosTotales % 60;
+            return `${minutos} min ${segundos} seg`;
+        }
+
         window.procesarCSV = function() {
             if (!usuarioActivo || usuarioActivo.email !== "carlos.admin@alcaldia.com") {
-                alert("Acceso denegado. Herramienta exclusiva de Carlos.");
+                escribirLog("Error crítico: Intento de subida sin permisos.", "log-error");
                 return;
             }
 
             const archivo = document.getElementById('archivoCSV').files[0];
             if (!archivo) {
                 alert("Por favor, selecciona un archivo CSV primero.");
+                escribirLog("Archivo no seleccionado.", "log-warning");
                 return;
             }
             
             if (typeof Papa === 'undefined') {
-                document.getElementById('estado').innerHTML = "<span style='color:red;'>⚠️ Error: No se pudo cargar el lector de archivos. Revisa tu internet o apaga tu bloqueador de anuncios.</span>";
+                escribirLog("Error: Librería de lectura CSV no disponible. Revise su conexión.", "log-error");
                 return;
             }
 
             document.getElementById('btnSubir').disabled = true;
-            document.getElementById('estado').textContent = "Paso 1: Analizando estructura del archivo Excel...";
             document.getElementById('barraWrapper').style.display = "block";
+            document.getElementById('statsPanel').style.display = "flex";
+            
+            escribirLog(`Iniciando lectura del archivo: ${archivo.name}`, "log-info");
 
-            // Usamos un ligero retraso para que la pantalla logre mostrar el mensaje anterior
+            // Pausa obligatoria para que el navegador dibuje la interfaz antes de bloquearse leyendo el archivo
             setTimeout(() => {
-                try {
-                    Papa.parse(archivo, {
-                        header: true,
-                        skipEmptyLines: true,
-                        complete: async function(results) {
-                            const datos = results.data;
-                            document.getElementById('estado').textContent = `Paso 2: Se detectaron ${datos.length} filas. Empaquetando y subiendo...`;
+                Papa.parse(archivo, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: async function(results) {
+                        const datos = results.data;
+                        const totalDatos = datos.length;
+                        
+                        escribirLog(`Lectura completada. Se encontraron ${totalDatos} filas en el Excel.`, "log-info");
+                        escribirLog("Iniciando estructuración de datos y empaquetado...", "log-info");
+                        
+                        let subidos = 0;
+                        const dbRef = ref(database);
+                        let paqueteDeSubida = {}; 
+                        const TAMAÑO_LOTE = 500; // Subiremos de 500 en 500 para no ahogar el internet
+
+                        const tiempoInicio = Date.now();
+
+                        for (let i = 0; i < totalDatos; i++) {
+                            let fila = datos[i];
                             
-                            let subidos = 0;
-                            const dbRef = ref(database);
-                            let paqueteDeSubida = {}; // Aquí guardaremos los lotes de 500
-                            const TAMAÑO_LOTE = 500;
+                            // Si la fila está completamente vacía de nombre, la ignoramos
+                            if (!fila['NOMBRE Y APELLIDO']) continue;
+                            
+                            try {
+                                // 1. Nombres y Apellidos
+                                let nombreCompleto = (fila['NOMBRE Y APELLIDO'] || '').trim().split(' ');
+                                let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
+                                let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
 
-                            for (let i = 0; i < datos.length; i++) {
-                                let fila = datos[i];
-                                
-                                // Si la fila está completamente vacía de nombre, la ignoramos
-                                if (!fila['NOMBRE Y APELLIDO']) continue;
-                                
-                                try {
-                                    // 1. Nombres y Apellidos
-                                    let nombreCompleto = (fila['NOMBRE Y APELLIDO'] || '').trim().split(' ');
-                                    let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
-                                    let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
+                                // 2. Sexo
+                                let sexoParsed = "";
+                                if (fila['FEMENINA'] && fila['FEMENINA'].trim() !== '') sexoParsed = "femenino";
+                                else if (fila['MASCULINO'] && fila['MASCULINO'].trim() !== '') sexoParsed = "masculino";
 
-                                    // 2. Sexo
-                                    let sexoParsed = "";
-                                    if (fila['FEMENINA'] && fila['FEMENINA'].trim() !== '') sexoParsed = "femenino";
-                                    else if (fila['MASCULINO'] && fila['MASCULINO'].trim() !== '') sexoParsed = "masculino";
+                                // 3. Voto Duro, Blando, Opositor
+                                let votoParsed = "";
+                                if (fila['VD'] && fila['VD'].trim() !== '') votoParsed = "VD";
+                                else if (fila['VB'] && fila['VB'].trim() !== '') votoParsed = "VB";
+                                else if (fila['VO'] && fila['VO'].trim() !== '') votoParsed = "VO";
 
-                                    // 3. Voto Duro, Blando, Opositor
-                                    let votoParsed = "";
-                                    if (fila['VD'] && fila['VD'].trim() !== '') votoParsed = "VD";
-                                    else if (fila['VB'] && fila['VB'].trim() !== '') votoParsed = "VB";
-                                    else if (fila['VO'] && fila['VO'].trim() !== '') votoParsed = "VO";
+                                // 4. Parentesco
+                                let parentescoParsed = "otro";
+                                let resp = (fila['RESPONSABILIDAD CBI, CM'] || '').toUpperCase();
+                                if (resp.includes("JEFE")) parentescoParsed = "jefe de hogar";
+                                else if (fila['MADRE'] && fila['MADRE'].trim() !== '') parentescoParsed = "madre";
+                                else if (fila['PADRE'] && fila['PADRE'].trim() !== '') parentescoParsed = "padre";
+                                else if (fila['HIJO'] && fila['HIJO'].trim() !== '') parentescoParsed = "hijo";
 
-                                    // 4. Parentesco
-                                    let parentescoParsed = "otro";
-                                    let resp = (fila['RESPONSABILIDAD CBI, CM'] || '').toUpperCase();
-                                    if (resp.includes("JEFE")) parentescoParsed = "jefe de hogar";
-                                    else if (fila['MADRE'] && fila['MADRE'].trim() !== '') parentescoParsed = "madre";
-                                    else if (fila['PADRE'] && fila['PADRE'].trim() !== '') parentescoParsed = "padre";
-                                    else if (fila['HIJO'] && fila['HIJO'].trim() !== '') parentescoParsed = "hijo";
+                                // 5. Gas
+                                let gasParsed = (fila['TIPO DE CILINDRO'] && fila['TIPO DE CILINDRO'].trim() !== '') ? "si" : "no";
 
-                                    // 5. Gas
-                                    let gasParsed = (fila['TIPO DE CILINDRO'] && fila['TIPO DE CILINDRO'].trim() !== '') ? "si" : "no";
-
-                                    // Construir el objeto listo para el sistema
-                                    let habitanteTraducido = {
-                                        ubch: fila['UBCH A LA QUE PERTENECE'] || '',
-                                        codigo_sigue_actual: fila['CODIGO SITUR ACTUAL'] || '',
-                                        comuna: fila['COMUNA'] || '',
-                                        consejo_comunal: fila['NOMBRE DEL CONSEJO COMUNAL'] || '',
-                                        comunidad: fila['COMUNIDAD'] || '',
-                                        calle: fila['CALLE'] || '',
-                                        numero_casa: fila['NUMERO DE CASA'] || 'S/N',
-                                        tipo_vivienda: fila['TIPO DE VIVIENDA'] || '',
-                                        condiciones_vivienda: fila['CONDICIONES DE LA VIVIENDA'] || '',
-                                        responsabilidad_cbi_cm: fila['RESPONSABILIDAD CBI, CM'] || '',
-                                        
-                                        tiene_gas: gasParsed,
-                                        tipo_cilindro_gas: fila['TIPO DE CILINDRO'] || '',
-                                        
-                                        nombre: nombreParsed.toUpperCase(),
-                                        apellido: apellidoParsed.toUpperCase(),
-                                        tiene_cedula: fila['CEDULA'] ? "si" : "no",
-                                        nacionalidad: "V", 
-                                        cedula: fila['CEDULA'] || '',
-                                        telefono: fila['TELEFONO'] || '',
-                                        fecha_nacimiento: fila['FECHA DE NACIMIENTO'] || '',
-                                        sexo: sexoParsed,
-                                        parentesco: parentescoParsed,
-                                        profesion: fila['PROFESION'] || '',
-                                        trabaja: fila['TRABAJA?'] || 'no',
-                                        esta_escolarizado: fila['ESTA ESCOLARIZADO?'] || 'no',
-                                        esta_cedulado: fila['ESTA CEDULADO?'] || 'si',
-
-                                        padece_enfermedad: fila['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.'] || '',
-                                        toma_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] ? 'si' : 'no',
-                                        cual_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] || '',
-                                        discapacitado: fila['DISCAPACITADO?'] || 'no',
-                                        tipo_discapacidad: '',
-                                        embarazada: fila['EMBARAZADA?'] || 'no',
-                                        lactancia_materna: fila['LACTANCIA MATERNA?'] || 'no',
-
-                                        cobra_amor_mayor: fila['COBRA AMOR MAYOR'] || 'no',
-                                        carnet_patria: fila['POSEE CARNET DE LA PATRIA?'] || 'no',
-                                        mision_jose_gregorio: fila['MISION JOSE GREGORIO'] || 'no',
-                                        hogares_patria_bono: fila['HOGARES DE LA PATRIA BONO UNICO FAMILIAR'] || 'no',
-                                        donde_vota: fila['DONDE VOTA'] || '',
-                                        vd_vb_vo_seleccion: votoParsed,
-                                        vd_vb_vo_detalle: '',
-                                        
-                                        registrado_por_uid: usuarioActivo.uid,
-                                        registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN EXCEL)",
-                                        fecha_registro: new Date().toLocaleString()
-                                    };
-
-                                    // Generamos un ID único en Firebase para esta persona
-                                    const nuevoId = push(child(dbRef, 'habitantes')).key;
+                                // Construir el objeto listo para el sistema
+                                let habitanteTraducido = {
+                                    ubch: fila['UBCH A LA QUE PERTENECE'] || '',
+                                    codigo_sigue_actual: fila['CODIGO SITUR ACTUAL'] || '',
+                                    comuna: fila['COMUNA'] || '',
+                                    consejo_comunal: fila['NOMBRE DEL CONSEJO COMUNAL'] || '',
+                                    comunidad: fila['COMUNIDAD'] || '',
+                                    calle: fila['CALLE'] || '',
+                                    numero_casa: fila['NUMERO DE CASA'] || 'S/N',
+                                    tipo_vivienda: fila['TIPO DE VIVIENDA'] || '',
+                                    condiciones_vivienda: fila['CONDICIONES DE LA VIVIENDA'] || '',
+                                    responsabilidad_cbi_cm: fila['RESPONSABILIDAD CBI, CM'] || '',
                                     
-                                    // Añadimos a la persona al paquete de subida
-                                    paqueteDeSubida[`habitantes/${nuevoId}`] = habitanteTraducido;
-                                    subidos++;
+                                    tiene_gas: gasParsed,
+                                    tipo_cilindro_gas: fila['TIPO DE CILINDRO'] || '',
                                     
-                                    // Si el paquete ya tiene 500 personas, las disparamos a Firebase de un solo golpe
-                                    if (subidos % TAMAÑO_LOTE === 0) {
-                                        await update(dbRef, paqueteDeSubida);
-                                        paqueteDeSubida = {}; // Vaciamos la caja para las siguientes 500
-                                        
-                                        // Actualizamos la barra visual
-                                        let porcentaje = (subidos / datos.length) * 100;
-                                        document.getElementById('barraProgreso').style.width = Math.min(porcentaje, 100) + "%";
-                                        document.getElementById('estado').textContent = `Progreso Turbo: ${subidos} de ${datos.length} enviados...`;
-                                    }
+                                    nombre: nombreParsed.toUpperCase(),
+                                    apellido: apellidoParsed.toUpperCase(),
+                                    tiene_cedula: fila['CEDULA'] ? "si" : "no",
+                                    nacionalidad: "V", 
+                                    cedula: fila['CEDULA'] || '',
+                                    telefono: fila['TELEFONO'] || '',
+                                    fecha_nacimiento: fila['FECHA DE NACIMIENTO'] || '',
+                                    sexo: sexoParsed,
+                                    parentesco: parentescoParsed,
+                                    profesion: fila['PROFESION'] || '',
+                                    trabaja: fila['TRABAJA?'] || 'no',
+                                    esta_escolarizado: fila['ESTA ESCOLARIZADO?'] || 'no',
+                                    esta_cedulado: fila['ESTA CEDULADO?'] || 'si',
 
-                                } catch (error_fila) {
-                                    console.error("Error al procesar la fila " + i, error_fila);
+                                    padece_enfermedad: fila['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.'] || '',
+                                    toma_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] ? 'si' : 'no',
+                                    cual_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] || '',
+                                    discapacitado: fila['DISCAPACITADO?'] || 'no',
+                                    tipo_discapacidad: '',
+                                    embarazada: fila['EMBARAZADA?'] || 'no',
+                                    lactancia_materna: fila['LACTANCIA MATERNA?'] || 'no',
+
+                                    cobra_amor_mayor: fila['COBRA AMOR MAYOR'] || 'no',
+                                    carnet_patria: fila['POSEE CARNET DE LA PATRIA?'] || 'no',
+                                    mision_jose_gregorio: fila['MISION JOSE GREGORIO'] || 'no',
+                                    hogares_patria_bono: fila['HOGARES DE LA PATRIA BONO UNICO FAMILIAR'] || 'no',
+                                    donde_vota: fila['DONDE VOTA'] || '',
+                                    vd_vb_vo_seleccion: votoParsed,
+                                    vd_vb_vo_detalle: '',
+                                    
+                                    registrado_por_uid: usuarioActivo.uid,
+                                    registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN EXCEL)",
+                                    fecha_registro: new Date().toLocaleString()
+                                };
+
+                                // Generamos un ID único
+                                const nuevoId = push(child(dbRef, 'habitantes')).key;
+                                
+                                // Añadimos al paquete
+                                paqueteDeSubida[`habitantes/${nuevoId}`] = habitanteTraducido;
+                                subidos++;
+                                
+                                // Cada 500 registros enviamos el paquete a Firebase
+                                if (subidos % TAMAÑO_LOTE === 0) {
+                                    escribirLog(`Preparando lote de ${TAMAÑO_LOTE} registros... enviando a Firebase.`, "log-info");
+                                    
+                                    // Enviamos a la nube
+                                    await update(dbRef, paqueteDeSubida);
+                                    
+                                    escribirLog(`Lote enviado exitosamente. Total asegurado: ${subidos}/${totalDatos}`, "log-success");
+                                    paqueteDeSubida = {}; // Vaciamos para el siguiente lote
+                                    
+                                    // Cálculos matemáticos de la barra de progreso y el Tiempo Restante (ETA)
+                                    let porcentaje = (subidos / totalDatos) * 100;
+                                    let tiempoTranscurrido = Date.now() - tiempoInicio;
+                                    let velocidad = subidos / tiempoTranscurrido; // registros por milisegundo
+                                    let registrosFaltantes = totalDatos - subidos;
+                                    let etaMs = registrosFaltantes / velocidad;
+
+                                    // Actualizar Pantalla (DOM)
+                                    document.getElementById('barraProgreso').style.width = porcentaje + "%";
+                                    document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
+                                    document.getElementById('txtPorcentaje').textContent = `${Math.floor(porcentaje)}%`;
+                                    document.getElementById('txtEta').textContent = `Tiempo estimado: ${formatoTiempo(etaMs)}`;
+                                    
+                                    // Le damos un respiro de 10 milisegundos al navegador para que dibuje la interfaz
+                                    await new Promise(resolve => setTimeout(resolve, 10));
                                 }
-                            }
 
-                            // Subimos las últimas personas que quedaron sueltas (ej: si eran 4,300, aquí suben las últimas 300)
-                            if (Object.keys(paqueteDeSubida).length > 0) {
-                                await update(dbRef, paqueteDeSubida);
+                            } catch (error_fila) {
+                                escribirLog(`Fallo al formatear la fila ${i+1}. Omitiendo. Detalle: ${error_fila.message}`, "log-warning");
                             }
-
-                            document.getElementById('barraProgreso').style.width = "100%";
-                            document.getElementById('estado').innerHTML = `<span style='color:green;'>¡Migración Exitosa! Se alojaron ${subidos} habitantes en la nube.</span>`;
-                            alert("¡Operación completada! Ya puedes ver tu base de datos en el Módulo de Consultas.");
-                            
                         }
-                    });
-                } catch (error_general) {
-                    document.getElementById('estado').innerHTML = `<span style='color:red;'>⚠️ Ocurrió un fallo en el archivo: ${error_general.message}</span>`;
-                }
-            }, 500); // 500 ms de pausa para dejar que el navegador respire
+
+                        // Subimos las últimas personas (el remanente del último lote)
+                        if (Object.keys(paqueteDeSubida).length > 0) {
+                            escribirLog(`Enviando lote final con ${Object.keys(paqueteDeSubida).length} registros...`, "log-info");
+                            await update(dbRef, paqueteDeSubida);
+                        }
+
+                        // Finalización Visual
+                        document.getElementById('barraProgreso').style.width = "100%";
+                        document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
+                        document.getElementById('txtPorcentaje').textContent = `100%`;
+                        document.getElementById('txtEta').textContent = `Completado en ${formatoTiempo(Date.now() - tiempoInicio)}`;
+                        
+                        escribirLog(`✅ MIGRACIÓN TOTALMENTE FINALIZADA. Se alojaron ${subidos} registros perfectos.`, "log-success");
+                        alert("¡Operación completada con éxito! Ya puedes revisar la base de datos.");
+                    }
+                });
+            }, 500); // Pequeña pausa inicial
         };
     </script>
 </body>
