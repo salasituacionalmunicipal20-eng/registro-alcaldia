@@ -41,6 +41,10 @@
         .card-enfermedad::before { background-color: #E30613; }
         .card-discapacidad::before { background-color: #ffc107; }
         .card-embarazadas::before { background-color: #e83e8c; }
+        
+        /* REGLA DE ORO: Colores de las nuevas tarjetas */
+        .card-jefes::before { background-color: #6f42c1; } 
+        .card-gas::before { background-color: #fd7e14; }
 
         .stat-icon { font-size: 40px; margin-bottom: 10px; display: block;}
         .stat-number { font-size: 35px; font-weight: 900; color: #333; margin-bottom: 5px;}
@@ -87,6 +91,19 @@
                 <div class="stat-number" id="statTotal">0</div>
                 <div class="stat-title">Total Registrados</div>
             </div>
+            
+            <div class="stat-card card-jefes">
+                <span class="stat-icon">👑</span>
+                <div class="stat-number" id="statJefes">0</div>
+                <div class="stat-title">Jefes de Hogar</div>
+            </div>
+
+            <div class="stat-card card-gas">
+                <span class="stat-icon">🔥</span>
+                <div class="stat-number" id="statGas">0</div>
+                <div class="stat-title">Hogares con Gas</div>
+            </div>
+
             <div class="stat-card card-adultos">
                 <span class="stat-icon">🧓🏽</span>
                 <div class="stat-number" id="statAdultos">0</div>
@@ -216,25 +233,45 @@
             let cEnfermos = 0;
             let cDiscapacidad = 0;
             let cEmbarazadas = 0;
+            
+            // Nuevas métricas
+            let cJefes = 0;
+            // Usamos un SET (Conjunto) para guardar direcciones u hogares únicos y no contar el gas doble
+            let hogaresConGasUnicos = new Set();
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
                 const comunaStr = (h.comuna || '').toUpperCase();
                 const comunidadStr = (h.comunidad || '').toUpperCase();
 
-                // Aplicar filtros
+                // Aplicar filtros demográficos en vivo
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
 
-                // Si pasa los filtros, sumamos
+                // Suma General
                 cTotal++;
+
+                // Jefe de Hogar
+                if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') {
+                    cJefes++;
+                }
+
+                // Familias con Gas deduplicadas
+                if ((h.tiene_gas || '').toLowerCase() === 'si') {
+                    // Creamos un código único combinando los datos de la casa para agruparlos
+                    const direccionUnica = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
+                    // Si tiene un ID de jefe de hogar, lo agrupa por esa familia, si no, lo agrupa por dirección
+                    const identificadorHogar = h.jefe_hogar_id ? h.jefe_hogar_id : direccionUnica;
+                    
+                    hogaresConGasUnicos.add(identificadorHogar);
+                }
 
                 // Adultos mayores (>= 60 años)
                 if (calcularEdad(h.fecha_nacimiento) >= 60) {
                     cAdultos++;
                 }
 
-                // Enfermedades (Si llenaron el campo especificando algo diferente a 'NO' o vacio)
+                // Enfermedades
                 const enf = (h.padece_enfermedad || '').trim().toUpperCase();
                 if (enf !== '' && enf !== 'NO' && enf !== 'NINGUNA' && enf !== 'N/A') {
                     cEnfermos++;
@@ -253,6 +290,9 @@
 
             // Actualizar la pantalla
             document.getElementById('statTotal').textContent = cTotal;
+            document.getElementById('statJefes').textContent = cJefes;
+            document.getElementById('statGas').textContent = hogaresConGasUnicos.size; // Mostramos el tamaño del Set único
+            
             document.getElementById('statAdultos').textContent = cAdultos;
             document.getElementById('statEnfermos').textContent = cEnfermos;
             document.getElementById('statDiscapacidad').textContent = cDiscapacidad;
