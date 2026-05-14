@@ -187,7 +187,23 @@
                     <div><label>Sexo:</label><select id="e_sexo" name="sexo" required><option value="">Seleccione</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
                     <div>
                         <label>Parentesco con Jefe de Hogar:</label>
-                        <select id="e_parentesco" name="parentesco" required><option value="">Seleccione</option><option value="madre">Madre</option><option value="padre">Padre</option><option value="hijo">Hijo</option><option value="jefe de hogar">Jefe de Hogar</option><option value="nieto">Nieto</option><option value="hermano">Hermano</option><option value="esposo">Esposo</option><option value="cónyuge">Cónyuge</option><option value="suegro">Suegro</option></select>
+                        <select id="e_parentesco" name="parentesco" required>
+                            <option value="">Seleccione</option>
+                            <option value="madre">Madre</option>
+                            <option value="padre">Padre</option>
+                            <option value="hijo">Hijo</option>
+                            <option value="hija">Hija</option>
+                            <option value="jefe de hogar">Jefe de Hogar</option>
+                            <option value="nieto">Nieto</option>
+                            <option value="nieta">Nieta</option>
+                            <option value="hermano">Hermano</option>
+                            <option value="hermana">Hermana</option>
+                            <option value="esposo">Esposo</option>
+                            <option value="esposa">Esposa</option>
+                            <option value="cónyuge">Cónyuge</option>
+                            <option value="suegro">Suegro</option>
+                            <option value="suegra">Suegra</option>
+                        </select>
                     </div>
                     <div><label>Profesión / Oficio:</label><input type="text" id="e_profesion" name="profesion"></div>
                     <div><label>¿Trabaja Actualmente?:</label><select id="e_trabaja" name="trabaja" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
@@ -345,7 +361,9 @@
                 const sel = e.target.value;
                 const eComunidad = document.getElementById('e_comunidad');
                 eComunidad.innerHTML = '<option value="">Seleccione</option>';
-                if (sel && datosTerritoriales[sel]) { datosTerritoriales[sel].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`); }
+                if (sel && datosTerritoriales[sel]) {
+                    datosTerritoriales[sel].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+                }
                 if (idActualEdicion) actualizarVistaFamiliares();
             });
             
@@ -493,7 +511,6 @@
             llenarCampo('e_nombre', h.nombre); llenarCampo('e_apellido', h.apellido); llenarCampo('e_cedula', h.cedula); llenarCampo('e_telefono', h.telefono); llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento); llenarCampo('e_sexo', h.sexo); llenarCampo('e_parentesco', h.parentesco); llenarCampo('e_profesion', h.profesion); llenarCampo('e_trabaja', h.trabaja); llenarCampo('e_esta_escolarizado', h.esta_escolarizado); llenarCampo('e_esta_cedulado', h.esta_cedulado);
             llenarCampo('e_padece_enfermedad', h.padece_enfermedad); llenarCampo('e_toma_medicamento', h.toma_medicamento); llenarCampo('e_cual_medicamento', h.cual_medicamento); llenarCampo('e_discapacitado', h.discapacitado); llenarCampo('e_embarazada', h.embarazada); llenarCampo('e_lactancia_materna', h.lactancia_materna);
             
-            // Llenar el nuevo campo
             llenarCampo('e_tipo_discapacidad', h.tipo_discapacidad);
 
             llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor); llenarCampo('e_carnet_patria', h.carnet_patria); llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio); llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono); llenarCampo('e_donde_vota', h.donde_vota); llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion); llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
@@ -501,8 +518,6 @@
             if(h.toma_medicamento === 'si') document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden'); else document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
             if(h.vd_vb_vo_seleccion) document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden'); else document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
             if(h.tiene_gas === 'si') document.getElementById('e_tipo_cilindro_gas_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_cilindro_gas_wrapper').classList.add('hidden');
-            
-            // Mostrar ocultar nuevo campo
             if(h.discapacitado === 'si') document.getElementById('e_tipo_discapacidad_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_discapacidad_wrapper').classList.add('hidden');
             
             actualizarVistaFamiliares();
@@ -548,10 +563,8 @@
             };
 
             try {
-                // Actualiza al jefe de hogar
                 await update(ref(database, `habitantes/${idActualEdicion}`), dataFinal);
                 
-                // Procesar la vinculación de familiares seleccionados
                 const selectLibres = document.getElementById('e_dependientes_libres');
                 if (selectLibres && !document.getElementById('e_grupo_familiar_wrapper').classList.contains('hidden')) {
                     const seleccionados = Array.from(selectLibres.selectedOptions).map(opt => opt.value);
