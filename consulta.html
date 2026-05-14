@@ -5,13 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consultas y Buscador - Alcaldía</title>
     <style>
-        :root { --rojo-oficial: #E30613; --azul-oficial: #004a99; --gris-fondo: #e9ecef; --gris-borde: #ced4da; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; padding-top: 30px;}
-        .cintillo-gob { width: 100%; background-color: #222; color: #fff; text-align: center; padding: 6px 0; font-size: 11px; font-weight: bold; letter-spacing: 1px; position: fixed; top: 0; left: 0; z-index: 1000; }
-        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 1200px; margin: auto; border-top: 8px solid var(--rojo-oficial); }
+        :root { 
+            --rojo-oficial: #E30613; 
+            --azul-oficial: #004a99; 
+            --gris-fondo: #e9ecef; 
+            --gris-borde: #ced4da; 
+        }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 0; 
+            background-color: var(--gris-fondo); 
+            padding: 20px 0; 
+            padding-top: 30px;
+        }
+        .cintillo-gob { 
+            width: 100%; 
+            background-color: #222; 
+            color: #fff; 
+            text-align: center; 
+            padding: 6px 0; 
+            font-size: 11px; 
+            font-weight: bold; 
+            letter-spacing: 1px; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            z-index: 1000; 
+        }
+        .container { 
+            background-color: #fff; 
+            padding: 40px; 
+            border-radius: 8px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15); 
+            max-width: 1200px; 
+            margin: auto; 
+            border-top: 8px solid var(--rojo-oficial); 
+        }
         
         /* Encabezado Gubernamental */
-        .gob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-borde); padding-bottom: 20px; margin-bottom: 20px;}
+        .gob-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid var(--gris-borde); 
+            padding-bottom: 20px; 
+            margin-bottom: 20px;
+        }
         .gob-header img { height: 70px; object-fit: contain; }
         .header-titles { text-align: center; flex-grow: 1; padding: 0 20px;}
         .header-titles h1 { color: var(--azul-oficial); margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
@@ -151,24 +190,63 @@
                 
                 <h3 class="section-title">1. Ubicación Territorial</h3>
                 <div class="form-grid">
-                    <div class="full-width"><label>Código SIGUE Actual:</label><input type="text" id="e_codigo_sigue_actual" name="codigo_sigue_actual" required></div>
-                    <div><label>Comuna / Circuito:</label><select id="e_comuna" name="comuna" required><option value="">Seleccione</option></select></div>
-                    <div><label>Comunidad:</label><select id="e_comunidad" name="comunidad" required><option value="">Seleccione</option></select></div>
-                    <div class="full-width"><label>Consejo Comunal:</label><input type="text" id="e_consejo_comunal" name="consejo_comunal" required></div>
+                    <div class="full-width">
+                        <label>Código SIGUE Actual:</label>
+                        <input type="text" id="e_codigo_sigue_actual" name="codigo_sigue_actual" required>
+                    </div>
+                    <div>
+                        <label>Comuna / Circuito:</label>
+                        <select id="e_comuna" name="comuna" required><option value="">Seleccione</option></select>
+                    </div>
+                    <div>
+                        <label>Comunidad:</label>
+                        <select id="e_comunidad" name="comunidad" required><option value="">Seleccione</option></select>
+                    </div>
+                    <div class="full-width">
+                        <label>Consejo Comunal:</label>
+                        <input type="text" id="e_consejo_comunal" name="consejo_comunal" required>
+                    </div>
                 </div>
 
                 <h3 class="section-title">2. Datos de la Vivienda</h3>
                 <div class="form-grid">
-                    <div><label>Calle / Sector:</label><input type="text" id="e_calle" name="calle" required></div>
-                    <div><label>Número de Casa / Apto:</label><input type="text" id="e_numero_casa" name="numero_casa" required></div>
-                    <div><label>Tipo de Vivienda:</label><select id="e_tipo_vivienda" name="tipo_vivienda" required><option value="">Seleccione</option><option value="apto">Apartamento</option><option value="casa">Casa</option><option value="town house">Town House</option></select></div>
-                    <div><label>Condiciones de Vivienda:</label><select id="e_condiciones_vivienda" name="condiciones_vivienda" required><option value="">Seleccione</option><option value="bien">Óptimas (Bien)</option><option value="regular">Regulares</option><option value="malo">Malas / Precarias</option></select></div>
-                    <div><label>Responsabilidad CBI/CM:</label><input type="text" id="e_responsabilidad_cbi_cm" name="responsabilidad_cbi_cm" required></div>
+                    <div>
+                        <label>Calle / Sector:</label>
+                        <input type="text" id="e_calle" name="calle" required>
+                    </div>
+                    <div>
+                        <label>Número de Casa / Apto:</label>
+                        <input type="text" id="e_numero_casa" name="numero_casa" required>
+                    </div>
+                    <div>
+                        <label>Tipo de Vivienda:</label>
+                        <select id="e_tipo_vivienda" name="tipo_vivienda" required>
+                            <option value="">Seleccione</option>
+                            <option value="apto">Apartamento</option>
+                            <option value="casa">Casa</option>
+                            <option value="town house">Town House</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Condiciones de Vivienda:</label>
+                        <select id="e_condiciones_vivienda" name="condiciones_vivienda" required>
+                            <option value="">Seleccione</option>
+                            <option value="bien">Óptimas (Bien)</option>
+                            <option value="regular">Regulares</option>
+                            <option value="malo">Malas / Precarias</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Responsabilidad CBI/CM:</label>
+                        <input type="text" id="e_responsabilidad_cbi_cm" name="responsabilidad_cbi_cm" required>
+                    </div>
                     
                     <div>
                         <label for="e_tiene_gas">¿Posee Cilindro de Gas?:</label>
                         <select id="e_tiene_gas" name="tiene_gas" required>
-                            <option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
                         </select>
                     </div>
                     <div id="e_tipo_cilindro_gas_wrapper" class="hidden">
@@ -179,23 +257,51 @@
 
                 <h3 class="section-title">3. Datos Personales</h3>
                 <div class="form-grid">
-                    <div><label>Nombres:</label><input type="text" id="e_nombre" name="nombre" required></div>
-                    <div><label>Apellidos:</label><input type="text" id="e_apellido" name="apellido" required></div>
+                    <div>
+                        <label>Nombres:</label>
+                        <input type="text" id="e_nombre" name="nombre" required>
+                    </div>
+                    <div>
+                        <label>Apellidos:</label>
+                        <input type="text" id="e_apellido" name="apellido" required>
+                    </div>
                     
                     <div>
                         <label>¿Tiene Cédula de Identidad?:</label>
                         <select id="e_tiene_cedula" name="tiene_cedula" required>
-                            <option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
                         </select>
                     </div>
+                    
                     <div id="e_cedula_wrapper" class="hidden">
-                        <label>Número de Cédula:</label>
-                        <input type="text" id="e_cedula" name="cedula">
+                        <label>Nacionalidad y Número:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="e_nacionalidad" name="nacionalidad" style="width: 80px;">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input type="text" id="e_cedula" name="cedula" style="flex-grow: 1;">
+                        </div>
                     </div>
 
-                    <div><label>Teléfono de Contacto:</label><input type="text" id="e_telefono" name="telefono" required></div>
-                    <div><label>Fecha de Nacimiento:</label><input type="date" id="e_fecha_nacimiento" name="fecha_nacimiento" required></div>
-                    <div><label>Sexo:</label><select id="e_sexo" name="sexo" required><option value="">Seleccione</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
+                    <div>
+                        <label>Teléfono de Contacto:</label>
+                        <input type="text" id="e_telefono" name="telefono" required>
+                    </div>
+                    <div>
+                        <label>Fecha de Nacimiento:</label>
+                        <input type="date" id="e_fecha_nacimiento" name="fecha_nacimiento" required>
+                    </div>
+                    <div>
+                        <label>Sexo:</label>
+                        <select id="e_sexo" name="sexo" required>
+                            <option value="">Seleccione</option>
+                            <option value="femenino">Femenino</option>
+                            <option value="masculino">Masculino</option>
+                        </select>
+                    </div>
                     <div>
                         <label>Parentesco con Jefe de Hogar:</label>
                         <select id="e_parentesco" name="parentesco" required>
@@ -216,10 +322,34 @@
                             <option value="suegra">Suegra</option>
                         </select>
                     </div>
-                    <div><label>Profesión / Oficio:</label><input type="text" id="e_profesion" name="profesion"></div>
-                    <div><label>¿Trabaja Actualmente?:</label><select id="e_trabaja" name="trabaja" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div><label>¿Está Escolarizado?:</label><select id="e_esta_escolarizado" name="esta_escolarizado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div class="full-width"><label>¿Posee Cédula Física?:</label><select id="e_esta_cedulado" name="esta_cedulado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div>
+                        <label>Profesión / Oficio:</label>
+                        <input type="text" id="e_profesion" name="profesion">
+                    </div>
+                    <div>
+                        <label>¿Trabaja Actualmente?:</label>
+                        <select id="e_trabaja" name="trabaja" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>¿Está Escolarizado?:</label>
+                        <select id="e_esta_escolarizado" name="esta_escolarizado" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div class="full-width">
+                        <label>¿Posee Cédula Física?:</label>
+                        <select id="e_esta_cedulado" name="esta_cedulado" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div id="e_grupo_familiar_wrapper" class="hidden full-width grupo-familiar-box">
@@ -232,28 +362,107 @@
 
                 <h3 class="section-title">4. Estatus de Salud</h3>
                 <div class="form-grid">
-                    <div class="full-width"><label>¿Padece alguna enfermedad?:</label><input type="text" id="e_padece_enfermedad" name="padece_enfermedad"></div>
+                    <div class="full-width">
+                        <label>¿Padece alguna enfermedad?:</label>
+                        <input type="text" id="e_padece_enfermedad" name="padece_enfermedad">
+                    </div>
                     
-                    <div><label>¿Requiere tratamiento médico continuo?:</label><select id="e_toma_medicamento" name="toma_medicamento" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div id="e_cual_medicamento_wrapper" class="hidden"><label>Especifique el medicamento:</label><input type="text" id="e_cual_medicamento" name="cual_medicamento"></div>
+                    <div>
+                        <label>¿Requiere tratamiento médico continuo?:</label>
+                        <select id="e_toma_medicamento" name="toma_medicamento" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div id="e_cual_medicamento_wrapper" class="hidden">
+                        <label>Especifique el medicamento:</label>
+                        <input type="text" id="e_cual_medicamento" name="cual_medicamento">
+                    </div>
                     
-                    <div><label>¿Presenta alguna discapacidad?:</label><select id="e_discapacitado" name="discapacitado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div id="e_tipo_discapacidad_wrapper" class="hidden"><label>Especifique la discapacidad:</label><input type="text" id="e_tipo_discapacidad" name="tipo_discapacidad"></div>
+                    <div>
+                        <label>¿Presenta alguna discapacidad?:</label>
+                        <select id="e_discapacitado" name="discapacitado" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div id="e_tipo_discapacidad_wrapper" class="hidden">
+                        <label>Especifique la discapacidad:</label>
+                        <input type="text" id="e_tipo_discapacidad" name="tipo_discapacidad">
+                    </div>
 
-                    <div><label>¿Embarazada?:</label><select id="e_embarazada" name="embarazada" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div><label>¿En Lactancia Materna?:</label><select id="e_lactancia_materna" name="lactancia_materna" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div>
+                        <label>¿Embarazada?:</label>
+                        <select id="e_embarazada" name="embarazada" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>¿En Lactancia Materna?:</label>
+                        <select id="e_lactancia_materna" name="lactancia_materna" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
                 </div>
 
                 <h3 class="section-title">5. Beneficios y Estatus Político</h3>
                 <div class="form-grid">
-                    <div><label>Pensión Amor Mayor:</label><select id="e_cobra_amor_mayor" name="cobra_amor_mayor" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div><label>Carnet de la Patria:</label><select id="e_carnet_patria" name="carnet_patria" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div><label>Misión José Gregorio Hernández:</label><select id="e_mision_jose_gregorio" name="mision_jose_gregorio" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div><label>Hogares de la Patria (Bono jefe familiar):</label><select id="e_hogares_patria_bono" name="hogares_patria_bono" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div>
+                        <label>Pensión Amor Mayor:</label>
+                        <select id="e_cobra_amor_mayor" name="cobra_amor_mayor" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Carnet de la Patria:</label>
+                        <select id="e_carnet_patria" name="carnet_patria" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Misión José Gregorio Hernández:</label>
+                        <select id="e_mision_jose_gregorio" name="mision_jose_gregorio" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Hogares de la Patria (Bono jefe familiar):</label>
+                        <select id="e_hogares_patria_bono" name="hogares_patria_bono" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
                     
-                    <div class="full-width" id="e_donde_vota_wrapper"><label>Centro de Votación:</label><input type="text" id="e_donde_vota" name="donde_vota"></div>
-                    <div class="full-width" id="e_estatus_electoral_wrapper"><label>Estatus Electoral (VD / VB / VO):</label><select id="e_vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required><option value="">Seleccione</option><option value="VD">VD (Voto Duro)</option><option value="VB">VB (Voto Blando)</option><option value="VO">VO (Voto Opositor)</option></select></div>
-                    <div id="e_vd_vb_vo_detalle_wrapper" class="hidden full-width"><label>Observaciones Electorales:</label><textarea id="e_vd_vb_vo_detalle" name="vd_vb_vo_detalle" rows="3"></textarea></div>
+                    <div class="full-width" id="e_donde_vota_wrapper">
+                        <label>Centro de Votación:</label>
+                        <input type="text" id="e_donde_vota" name="donde_vota">
+                    </div>
+                    <div class="full-width" id="e_estatus_electoral_wrapper">
+                        <label>Estatus Electoral (VD / VB / VO):</label>
+                        <select id="e_vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required>
+                            <option value="">Seleccione</option>
+                            <option value="VD">VD (Voto Duro)</option>
+                            <option value="VB">VB (Voto Blando)</option>
+                            <option value="VO">VO (Voto Opositor)</option>
+                        </select>
+                    </div>
+                    <div id="e_vd_vb_vo_detalle_wrapper" class="hidden full-width">
+                        <label>Observaciones Electorales:</label>
+                        <textarea id="e_vd_vb_vo_detalle" name="vd_vb_vo_detalle" rows="3"></textarea>
+                    </div>
                 </div>
 
                 <div class="edit-actions">
@@ -290,19 +499,32 @@
         let idActualEdicion = null; 
 
         document.querySelectorAll('input[type="text"], textarea').forEach(input => {
-            input.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+            input.addEventListener('input', function() { 
+                this.value = this.value.toUpperCase(); 
+            });
         });
 
         let inactivityTime = function () {
             let time;
-            window.onload = resetTimer; document.onmousemove = resetTimer; document.onkeypress = resetTimer;
-            function logout() { alert("Sesión expirada por inactividad. Por seguridad, debe ingresar nuevamente."); signOut(auth).then(() => window.location.href = 'index.html'); }
-            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
+            window.onload = resetTimer; 
+            document.onmousemove = resetTimer; 
+            document.onkeypress = resetTimer;
+            function logout() { 
+                alert("Sesión expirada por inactividad. Por seguridad, debe ingresar nuevamente."); 
+                signOut(auth).then(() => window.location.href = 'index.html'); 
+            }
+            function resetTimer() { 
+                clearTimeout(time); 
+                time = setTimeout(logout, 900000); 
+            }
         };
         inactivityTime();
 
         onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href = "index.html"; return; }
+            if (!user) { 
+                window.location.href = "index.html"; 
+                return; 
+            }
             
             esAdmin = false;
             if (user.email === "carlos.admin@alcaldia.com") {
@@ -310,34 +532,53 @@
             } else {
                 try {
                     const snap = await get(child(ref(database), `operadores/${user.uid}`));
-                    if (snap.exists() && snap.val().rol === "admin") { esAdmin = true; }
-                } catch (e) { console.error(e); }
+                    if (snap.exists() && snap.val().rol === "admin") { 
+                        esAdmin = true; 
+                    }
+                } catch (e) { 
+                    console.error(e); 
+                }
             }
 
             if (esAdmin) {
                 document.getElementById('thResponsable').classList.remove('hidden');
                 const btnAdmin = document.getElementById('btnAdminPanel');
-                if (btnAdmin) { btnAdmin.classList.remove('hidden'); btnAdmin.addEventListener('click', () => { window.location.href = "admin.html"; }); }
+                if (btnAdmin) { 
+                    btnAdmin.classList.remove('hidden'); 
+                    btnAdmin.addEventListener('click', () => { window.location.href = "admin.html"; }); 
+                }
             }
             
-            cargarFiltrosTerritoriales(); cargarDatos(); 
+            cargarFiltrosTerritoriales(); 
+            cargarDatos(); 
         });
 
-        document.getElementById('btnCerrarSesion').addEventListener('click', () => { signOut(auth).then(() => window.location.href = "index.html"); });
-        window.imprimirTabla = () => { window.print(); };
+        document.getElementById('btnCerrarSesion').addEventListener('click', () => { 
+            signOut(auth).then(() => window.location.href = "index.html"); 
+        });
+        
+        window.imprimirTabla = () => { 
+            window.print(); 
+        };
 
         window.exportarCSV = () => {
             let csv = 'Nombres y Apellidos,Cedula,Comuna,Comunidad,Calle,Telefono\\n';
             const filas = document.querySelectorAll('#tablaCuerpo tr');
             filas.forEach(fila => {
                 const cols = fila.querySelectorAll('td');
-                if(cols.length > 0) { csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText},${cols[4].innerText},${cols[5].innerText}\\n`; }
+                if(cols.length > 0) { 
+                    csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText},${cols[4].innerText},${cols[5].innerText}\\n`; 
+                }
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.setAttribute('hidden', ''); a.setAttribute('href', url); a.setAttribute('download', 'censo_habitantes_alcaldia.csv');
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            a.setAttribute('hidden', ''); 
+            a.setAttribute('href', url); 
+            a.setAttribute('download', 'censo_habitantes_alcaldia.csv');
+            document.body.appendChild(a); 
+            a.click(); 
+            document.body.removeChild(a);
         };
 
         function cargarFiltrosTerritoriales() {
@@ -360,13 +601,16 @@
             fComuna.addEventListener('change', (e) => {
                 const sel = e.target.value;
                 if (sel && datosTerritoriales[sel]) {
-                    fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; fComunidad.disabled = false;
+                    fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; 
+                    fComunidad.disabled = false;
                     datosTerritoriales[sel].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
                 } else {
-                    fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; fComunidad.disabled = true;
+                    fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; 
+                    fComunidad.disabled = true;
                 }
                 filtrarTabla(); 
             });
+            
             fComunidad.addEventListener('change', filtrarTabla);
 
             eComuna.addEventListener('change', (e) => {
@@ -376,10 +620,14 @@
                 if (sel && datosTerritoriales[sel]) {
                     datosTerritoriales[sel].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
                 }
-                if (idActualEdicion) actualizarVistaFamiliares();
+                if (idActualEdicion) {
+                    actualizarVistaFamiliares();
+                }
             });
             
-            document.getElementById('e_comunidad').addEventListener('change', () => { if (idActualEdicion) actualizarVistaFamiliares(); });
+            document.getElementById('e_comunidad').addEventListener('change', () => { 
+                if (idActualEdicion) actualizarVistaFamiliares(); 
+            });
         }
 
         function cargarDatos() {
@@ -397,7 +645,8 @@
             const fCalle = document.getElementById('fCalle').value.toLowerCase();
 
             const tbody = document.getElementById('tablaCuerpo');
-            tbody.innerHTML = ""; let contador = 0;
+            tbody.innerHTML = ""; 
+            let contador = 0;
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -411,10 +660,15 @@
 
                 if (cumpleNom && cumpleCed && cumpleComuna && cumpleComunidad && cumpleCalle) {
                     contador++;
+                    
+                    // Formatear cédula en la tabla general
+                    const nac = h.nacionalidad || 'V';
+                    const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><strong>${h.nombre} ${h.apellido}</strong></td>
-                        <td>${h.cedula || ''}</td>
+                        <td>${cedStr}</td>
                         <td>${h.comuna}</td>
                         <td>${h.comunidad}</td>
                         <td>${h.calle}</td>
@@ -431,11 +685,14 @@
             document.getElementById('totalResultados').textContent = `Total de registros encontrados: ${contador}`;
         }
 
-        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { element.addEventListener('input', filtrarTabla); });
+        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
+            element.addEventListener('input', filtrarTabla); 
+        });
 
         window.eliminarRegistro = (id) => {
             if(confirm("ALERTA DE SEGURIDAD: ¿Seguro que desea eliminar permanentemente este habitante?")) {
-                remove(ref(database, `habitantes/${id}`)).catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
+                remove(ref(database, `habitantes/${id}`))
+                .catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
             }
         };
 
@@ -460,18 +717,20 @@
                     if (id === idActualEdicion) continue;
 
                     if (h.jefe_hogar_id === idActualEdicion) {
-                        htmlActuales += `<li>${h.nombre} ${h.apellido} - C.I: ${h.cedula || 'N/A'} (${h.parentesco})</li>`;
+                        htmlActuales += `<li>${h.nombre} ${h.apellido} - C.I: ${h.cedula ? (h.nacionalidad||'V')+'-'+h.cedula : 'S/C'} (${h.parentesco})</li>`;
                         tieneActuales = true;
                     } 
                     else if (h.comuna === comunaActual && h.comunidad === comunidadActual && h.parentesco !== 'jefe de hogar' && !h.jefe_hogar_id) {
                         const opt = document.createElement('option');
                         opt.value = id;
-                        opt.textContent = `${h.nombre} ${h.apellido} - C.I: ${h.cedula || 'N/A'} (${h.parentesco || 'Sin parentesco'})`;
+                        opt.textContent = `${h.nombre} ${h.apellido} - C.I: ${h.cedula ? (h.nacionalidad||'V')+'-'+h.cedula : 'S/C'} (${h.parentesco || 'Sin parentesco'})`;
                         selectLibres.appendChild(opt);
                     }
                 }
 
-                if(!tieneActuales) htmlActuales += '<li>Ninguno registrado</li>';
+                if(!tieneActuales) {
+                    htmlActuales += '<li>Ninguno registrado</li>';
+                }
                 htmlActuales += '</ul>';
                 divActuales.innerHTML = htmlActuales;
 
@@ -482,14 +741,15 @@
 
         document.getElementById('e_parentesco').addEventListener('change', actualizarVistaFamiliares);
 
-        // REGLA DE ORO: Función para verificar edad y ocultar datos electorales en edición
         function checkEdadElectoral(fechaNac, wrapDondeVota, wrapEstatus, wrapDetalle, selEstatus, inpDondeVota) {
             if(!fechaNac) return;
             const fecha = new Date(fechaNac);
             const hoy = new Date();
             let edad = hoy.getFullYear() - fecha.getFullYear();
             const mes = hoy.getMonth() - fecha.getMonth();
-            if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) edad--;
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
+                edad--;
+            }
 
             const wDonde = document.getElementById(wrapDondeVota);
             const wEstatus = document.getElementById(wrapEstatus);
@@ -501,13 +761,18 @@
                 if (wDonde) wDonde.classList.add('hidden');
                 if (wEstatus) wEstatus.classList.add('hidden');
                 if (wDetalle) wDetalle.classList.add('hidden');
-                if (sEstatus) { sEstatus.required = false; sEstatus.value = ""; }
+                if (sEstatus) { 
+                    sEstatus.required = false; 
+                    sEstatus.value = ""; 
+                }
                 if (iDonde) iDonde.value = "NO APLICA (MENOR DE EDAD)";
             } else {
                 if (wDonde) wDonde.classList.remove('hidden');
                 if (wEstatus) wEstatus.classList.remove('hidden');
                 if (sEstatus) sEstatus.required = true;
-                if (iDonde && iDonde.value === "NO APLICA (MENOR DE EDAD)") iDonde.value = "";
+                if (iDonde && iDonde.value === "NO APLICA (MENOR DE EDAD)") {
+                    iDonde.value = "";
+                }
             }
         }
 
@@ -522,17 +787,29 @@
             document.getElementById('vistaConsultas').classList.add('hidden');
             document.getElementById('vistaEdicion').classList.remove('hidden');
 
-            const camposPersonales = ['e_tiene_cedula', 'e_nombre', 'e_apellido', 'e_cedula', 'e_telefono', 'e_fecha_nacimiento', 'e_sexo', 'e_parentesco', 'e_profesion', 'e_trabaja', 'e_esta_escolarizado', 'e_esta_cedulado'];
+            const camposPersonales = [
+                'e_tiene_cedula', 'e_nacionalidad', 'e_nombre', 'e_apellido', 
+                'e_cedula', 'e_telefono', 'e_fecha_nacimiento', 'e_sexo', 
+                'e_parentesco', 'e_profesion', 'e_trabaja', 'e_esta_escolarizado', 'e_esta_cedulado'
+            ];
             
             if (!esAdmin) {
                 document.getElementById('avisoBloqueo').style.display = 'block';
-                camposPersonales.forEach(campoId => { document.getElementById(campoId).disabled = true; });
+                camposPersonales.forEach(campoId => { 
+                    document.getElementById(campoId).disabled = true; 
+                });
             } else {
                 document.getElementById('avisoBloqueo').style.display = 'none';
-                camposPersonales.forEach(campoId => { document.getElementById(campoId).disabled = false; });
+                camposPersonales.forEach(campoId => { 
+                    document.getElementById(campoId).disabled = false; 
+                });
             }
 
-            const llenarCampo = (idElemento, valor) => { if (document.getElementById(idElemento)) document.getElementById(idElemento).value = valor || ''; };
+            const llenarCampo = (idElemento, valor) => { 
+                if (document.getElementById(idElemento)) {
+                    document.getElementById(idElemento).value = valor || ''; 
+                }
+            };
             
             llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual);
             llenarCampo('e_comuna', h.comuna);
@@ -542,6 +819,7 @@
             if (h.comuna && datosTerritoriales[h.comuna]) {
                 datosTerritoriales[h.comuna].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
             }
+            
             llenarCampo('e_comunidad', h.comunidad);
             llenarCampo('e_consejo_comunal', h.consejo_comunal);
             llenarCampo('e_calle', h.calle);
@@ -553,27 +831,72 @@
             llenarCampo('e_tiene_gas', h.tiene_gas);
             llenarCampo('e_tipo_cilindro_gas', h.tipo_cilindro_gas);
             
-            llenarCampo('e_nombre', h.nombre); llenarCampo('e_apellido', h.apellido); 
+            llenarCampo('e_nombre', h.nombre);
+            llenarCampo('e_apellido', h.apellido);
             
             let tieneCedVal = h.tiene_cedula;
             if (!tieneCedVal && h.cedula) tieneCedVal = 'si';
+            
             llenarCampo('e_tiene_cedula', tieneCedVal);
+            llenarCampo('e_nacionalidad', h.nacionalidad || 'V');
             llenarCampo('e_cedula', h.cedula);
             
-            llenarCampo('e_telefono', h.telefono); llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento); llenarCampo('e_sexo', h.sexo); llenarCampo('e_parentesco', h.parentesco); llenarCampo('e_profesion', h.profesion); llenarCampo('e_trabaja', h.trabaja); llenarCampo('e_esta_escolarizado', h.esta_escolarizado); llenarCampo('e_esta_cedulado', h.esta_cedulado);
-            llenarCampo('e_padece_enfermedad', h.padece_enfermedad); llenarCampo('e_toma_medicamento', h.toma_medicamento); llenarCampo('e_cual_medicamento', h.cual_medicamento); llenarCampo('e_discapacitado', h.discapacitado); llenarCampo('e_embarazada', h.embarazada); llenarCampo('e_lactancia_materna', h.lactancia_materna);
+            llenarCampo('e_telefono', h.telefono);
+            llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento);
+            llenarCampo('e_sexo', h.sexo);
+            llenarCampo('e_parentesco', h.parentesco);
+            llenarCampo('e_profesion', h.profesion);
+            llenarCampo('e_trabaja', h.trabaja);
+            llenarCampo('e_esta_escolarizado', h.esta_escolarizado);
+            llenarCampo('e_esta_cedulado', h.esta_cedulado);
+            
+            llenarCampo('e_padece_enfermedad', h.padece_enfermedad);
+            llenarCampo('e_toma_medicamento', h.toma_medicamento);
+            llenarCampo('e_cual_medicamento', h.cual_medicamento);
+            llenarCampo('e_discapacitado', h.discapacitado);
+            llenarCampo('e_embarazada', h.embarazada);
+            llenarCampo('e_lactancia_materna', h.lactancia_materna);
             
             llenarCampo('e_tipo_discapacidad', h.tipo_discapacidad);
 
-            llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor); llenarCampo('e_carnet_patria', h.carnet_patria); llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio); llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono); llenarCampo('e_donde_vota', h.donde_vota); llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion); llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
+            llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor);
+            llenarCampo('e_carnet_patria', h.carnet_patria);
+            llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio);
+            llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono);
+            llenarCampo('e_donde_vota', h.donde_vota);
+            llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion);
+            llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
 
-            if(tieneCedVal === 'si') document.getElementById('e_cedula_wrapper').classList.remove('hidden'); else document.getElementById('e_cedula_wrapper').classList.add('hidden');
-            if(h.toma_medicamento === 'si') document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden'); else document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
-            if(h.vd_vb_vo_seleccion) document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden'); else document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
-            if(h.tiene_gas === 'si') document.getElementById('e_tipo_cilindro_gas_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_cilindro_gas_wrapper').classList.add('hidden');
-            if(h.discapacitado === 'si') document.getElementById('e_tipo_discapacidad_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_discapacidad_wrapper').classList.add('hidden');
+            if(tieneCedVal === 'si') {
+                document.getElementById('e_cedula_wrapper').classList.remove('hidden');
+            } else {
+                document.getElementById('e_cedula_wrapper').classList.add('hidden');
+            }
             
-            // Validar la edad para ocultar los datos de votación
+            if(h.toma_medicamento === 'si') {
+                document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden');
+            } else {
+                document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
+            }
+            
+            if(h.vd_vb_vo_seleccion) {
+                document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden');
+            } else {
+                document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
+            }
+            
+            if(h.tiene_gas === 'si') {
+                document.getElementById('e_tipo_cilindro_gas_wrapper').classList.remove('hidden');
+            } else {
+                document.getElementById('e_tipo_cilindro_gas_wrapper').classList.add('hidden');
+            }
+            
+            if(h.discapacitado === 'si') {
+                document.getElementById('e_tipo_discapacidad_wrapper').classList.remove('hidden');
+            } else {
+                document.getElementById('e_tipo_discapacidad_wrapper').classList.add('hidden');
+            }
+            
             checkEdadElectoral(h.fecha_nacimiento, 'e_donde_vota_wrapper', 'e_estatus_electoral_wrapper', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_seleccion', 'e_donde_vota');
             
             actualizarVistaFamiliares();
@@ -598,11 +921,15 @@
                         if(input) input.required = true;
                     } else {
                         wrapper.classList.add('hidden');
-                        if(input) { input.required = false; input.value = ''; }
+                        if(input) { 
+                            input.required = false; 
+                            input.value = ''; 
+                        }
                     }
                 });
             }
         };
+
         toggleHiddenEdit('e_tiene_cedula', 'e_cedula_wrapper', 'e_cedula');
         toggleHiddenEdit('e_toma_medicamento', 'e_cual_medicamento_wrapper', 'e_cual_medicamento');
         toggleHiddenEdit('e_vd_vb_vo_seleccion', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_detalle');
@@ -620,10 +947,10 @@
             };
 
             try {
-                // Actualiza al jefe de hogar
+                // Actualiza al habitante
                 await update(ref(database, `habitantes/${idActualEdicion}`), dataFinal);
                 
-                // Procesar la vinculación de familiares seleccionados
+                // Procesar la vinculación de familiares seleccionados (Si es jefe de hogar)
                 const selectLibres = document.getElementById('e_dependientes_libres');
                 if (selectLibres && !document.getElementById('e_grupo_familiar_wrapper').classList.contains('hidden')) {
                     const seleccionados = Array.from(selectLibres.selectedOptions).map(opt => opt.value);
