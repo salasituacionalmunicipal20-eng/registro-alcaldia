@@ -11,42 +11,183 @@
             --gris-fondo: #e9ecef;
             --gris-borde: #ced4da;
         }
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; padding-top: 30px; }
-        .cintillo-gob { width: 100%; background-color: #222; color: #fff; text-align: center; padding: 6px 0; font-size: 11px; font-weight: bold; letter-spacing: 1px; position: fixed; top: 0; left: 0; z-index: 1000; }
-        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 900px; margin: auto; border-top: 8px solid var(--rojo-oficial); }
+        
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            margin: 0; 
+            background-color: var(--gris-fondo); 
+            padding: 20px 0; 
+            padding-top: 30px; 
+        }
+        
+        .cintillo-gob { 
+            width: 100%; 
+            background-color: #222; 
+            color: #fff; 
+            text-align: center; 
+            padding: 6px 0; 
+            font-size: 11px; 
+            font-weight: bold; 
+            letter-spacing: 1px; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            z-index: 1000; 
+        }
+        
+        .container { 
+            background-color: #fff; 
+            padding: 40px; 
+            border-radius: 8px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15); 
+            max-width: 1000px; 
+            margin: auto; 
+            border-top: 8px solid var(--rojo-oficial); 
+        }
         
         /* Encabezado Gubernamental */
-        .gob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-borde); padding-bottom: 20px; margin-bottom: 20px;}
-        .gob-header img { height: 70px; object-fit: contain; }
-        .header-titles { text-align: center; flex-grow: 1; padding: 0 20px;}
-        .header-titles h1 { color: var(--azul-oficial); margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
-        .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
+        .gob-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid var(--gris-borde); 
+            padding-bottom: 20px; 
+            margin-bottom: 20px;
+        }
+        
+        .gob-header img { 
+            height: 70px; 
+            object-fit: contain; 
+        }
+        
+        .header-titles { 
+            text-align: center; 
+            flex-grow: 1; 
+            padding: 0 20px;
+        }
+        
+        .header-titles h1 { 
+            color: var(--azul-oficial); 
+            margin: 0; 
+            font-size: 24px; 
+            text-transform: uppercase; 
+            font-weight: 900; 
+            letter-spacing: 1px;
+        }
+        
+        .header-titles p { 
+            color: #555; 
+            margin: 5px 0 0 0; 
+            font-size: 14px; 
+            font-weight: bold; 
+        }
         
         /* Botonera superior */
-        .top-nav { display: flex; justify-content: flex-end; margin-bottom: 20px;}
-        .btn-nav { background-color: #333; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; text-transform: uppercase;}
+        .top-nav { 
+            display: flex; 
+            justify-content: flex-end; 
+            margin-bottom: 20px;
+        }
+        
+        .btn-nav { 
+            background-color: #333; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 13px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+        }
+        
         .btn-nav:hover { background-color: #555; }
         
-        h2 { text-align: center; color: var(--rojo-oficial); margin-top: 10px; font-size: 22px; text-transform: uppercase;}
-        p.sub-title { text-align: center; color: #666; font-size: 15px; margin-bottom: 40px; font-weight: bold;}
+        h2 { 
+            text-align: center; 
+            color: var(--rojo-oficial); 
+            margin-top: 10px; 
+            font-size: 22px; 
+            text-transform: uppercase;
+        }
+        
+        p.sub-title { 
+            text-align: center; 
+            color: #666; 
+            font-size: 15px; 
+            margin-bottom: 40px; 
+            font-weight: bold;
+        }
 
         /* DASHBOARD CARDS */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 20px;}
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 25px; 
+            margin-top: 20px;
+        }
         
-        .card { background: #fdfdfd; border: 1px solid var(--gris-borde); border-radius: 8px; padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; overflow: hidden;}
-        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); border-color: var(--azul-oficial);}
+        .card { 
+            background: #fdfdfd; 
+            border: 1px solid var(--gris-borde); 
+            border-radius: 8px; 
+            padding: 30px 20px; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            position: relative; 
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
         
-        /* Línea decorativa superior en cada tarjeta */
-        .card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 5px; }
+        .card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1); 
+            border-color: var(--azul-oficial);
+        }
+        
+        /* Líneas decorativas superiores */
+        .card::before { 
+            content: ""; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 5px; 
+        }
+        
         .card-operadores::before { background-color: var(--rojo-oficial); }
         .card-registro::before { background-color: #28a745; }
         .card-consulta::before { background-color: var(--azul-oficial); }
         .card-usuarios::before { background-color: #ff9800; }
-        .card-estadisticas::before { background-color: #17a2b8; } /* REGLA DE ORO: Nuevo color estadística */
+        .card-estadisticas::before { background-color: #17a2b8; }
+        
+        /* REGLA DE ORO: Color de la nueva tarjeta de migración */
+        .card-migracion::before { background-color: #6c757d; }
 
-        .card-icon { font-size: 50px; margin-bottom: 15px; display: block;}
-        .card-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; text-transform: uppercase;}
-        .card-desc { font-size: 13px; color: #666; }
+        .card-icon { 
+            font-size: 50px; 
+            margin-bottom: 15px; 
+            display: block;
+        }
+        
+        .card-title { 
+            font-size: 18px; 
+            font-weight: bold; 
+            color: #333; 
+            margin-bottom: 10px; 
+            text-transform: uppercase;
+        }
+        
+        .card-desc { 
+            font-size: 13px; 
+            color: #666; 
+        }
+
+        .hidden { display: none !important; }
 
     </style>
 </head>
@@ -75,31 +216,37 @@
             <div class="card card-operadores" onclick="location.href='crear-operador.html'">
                 <span class="card-icon">👨🏽‍💻</span>
                 <div class="card-title">Gestión de Operadores</div>
-                <div class="card-desc">Crear nuevos usuarios, asignar cargos y generar accesos genéricos para la Sala Situacional.</div>
+                <div class="card-desc">Crear nuevos usuarios, asignar cargos y generar accesos genéricos.</div>
             </div>
 
             <div class="card card-usuarios" onclick="location.href='usuarios.html'">
                 <span class="card-icon">👥</span>
                 <div class="card-title">Control de Usuarios</div>
-                <div class="card-desc">Ver listado de personal activo y dar de baja a operadores.</div>
+                <div class="card-desc">Ver listado de personal activo y dar de baja a operadores del sistema.</div>
             </div>
 
             <div class="card card-registro" onclick="location.href='registro.html'">
                 <span class="card-icon">📝</span>
                 <div class="card-title">Registro de Habitantes</div>
-                <div class="card-desc">Acceder al formulario oficial de recolección de datos y censo territorial del municipio.</div>
+                <div class="card-desc">Acceder al formulario oficial de censo territorial del municipio.</div>
             </div>
 
             <div class="card card-consulta" onclick="location.href='consulta.html'">
                 <span class="card-icon">🔍</span>
                 <div class="card-title">Módulo de Consultas</div>
-                <div class="card-desc">Buscador avanzado. Visualizar, filtrar y auditar todos los registros existentes en la base de datos.</div>
+                <div class="card-desc">Buscador avanzado. Visualizar, filtrar y auditar todos los registros.</div>
             </div>
 
             <div class="card card-estadisticas" onclick="location.href='estadisticas.html'">
                 <span class="card-icon">📊</span>
                 <div class="card-title">Estadísticas</div>
-                <div class="card-desc">Panel de conteo analítico demográfico y métricas municipales en tiempo real.</div>
+                <div class="card-desc">Panel de analíticas, métricas municipales y generación de reportes PDF.</div>
+            </div>
+
+            <div id="cardMigracion" class="card card-migracion hidden" onclick="location.href='migrador.html'">
+                <span class="card-icon">🚀</span>
+                <div class="card-title">Migración Masiva</div>
+                <div class="card-desc">Carga de base de datos externa desde archivos Excel/CSV. (Solo Carlos).</div>
             </div>
 
         </div>
@@ -128,7 +275,11 @@
             if (!user) {
                 window.location.href = "index.html";
             } else {
-                if (user.email !== "carlos.admin@alcaldia.com") {
+                // REGLA DE ORO: Si es Carlos Admin, desbloquea la herramienta de migración masiva
+                if (user.email === "carlos.admin@alcaldia.com") {
+                    document.getElementById('cardMigracion').classList.remove('hidden');
+                } else {
+                    // Si no es Carlos, validamos que al menos sea un administrador general
                     const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
                     if (!snapshot.exists() || snapshot.val().rol !== "admin") {
                         window.location.href = "index.html";
@@ -138,19 +289,26 @@
         });
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
-            signOut(auth).then(() => window.location.href = "index.html");
+            signOut(auth).then(() => {
+                window.location.href = "index.html";
+            });
         });
 
         let inactivityTime = function () {
             let time;
-            window.onload = resetTimer;
-            document.onmousemove = resetTimer;
+            window.onload = resetTimer; 
+            document.onmousemove = resetTimer; 
             document.onkeypress = resetTimer;
-            function logout() {
-                alert("Sesión expirada por inactividad. Por seguridad, debe ingresar nuevamente.");
-                signOut(auth).then(() => window.location.href = 'index.html');
+            
+            function logout() { 
+                alert("Sesión expirada por inactividad."); 
+                signOut(auth).then(() => window.location.href = 'index.html'); 
             }
-            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
+            
+            function resetTimer() { 
+                clearTimeout(time); 
+                time = setTimeout(logout, 900000); 
+            }
         };
         inactivityTime();
     </script>
