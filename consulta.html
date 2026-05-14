@@ -63,7 +63,6 @@
         .btn-cancelar:hover { background-color: #5a6268; }
         .lock-warning { color: var(--rojo-oficial); font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 10px; display: none;}
 
-        /* REGLA DE ORO: Estilos Grupo Familiar */
         .grupo-familiar-box { background: #f4f6f9; padding: 15px; border-radius: 6px; border: 2px dashed #004a99; margin-top: 15px; }
 
         @media print {
@@ -207,9 +206,13 @@
                 <h3 class="section-title">4. Estatus de Salud</h3>
                 <div class="form-grid">
                     <div class="full-width"><label>¿Padece alguna enfermedad?:</label><input type="text" id="e_padece_enfermedad" name="padece_enfermedad"></div>
+                    
                     <div><label>¿Requiere tratamiento médico continuo?:</label><select id="e_toma_medicamento" name="toma_medicamento" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
                     <div id="e_cual_medicamento_wrapper" class="hidden"><label>Especifique el medicamento:</label><input type="text" id="e_cual_medicamento" name="cual_medicamento"></div>
+                    
                     <div><label>¿Presenta alguna discapacidad?:</label><select id="e_discapacitado" name="discapacitado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div id="e_tipo_discapacidad_wrapper" class="hidden"><label>Especifique la discapacidad:</label><input type="text" id="e_tipo_discapacidad" name="tipo_discapacidad"></div>
+
                     <div><label>¿Embarazada?:</label><select id="e_embarazada" name="embarazada" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
                     <div><label>¿En Lactancia Materna?:</label><select id="e_lactancia_materna" name="lactancia_materna" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
                 </div>
@@ -342,9 +345,7 @@
                 const sel = e.target.value;
                 const eComunidad = document.getElementById('e_comunidad');
                 eComunidad.innerHTML = '<option value="">Seleccione</option>';
-                if (sel && datosTerritoriales[sel]) {
-                    datosTerritoriales[sel].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
-                }
+                if (sel && datosTerritoriales[sel]) { datosTerritoriales[sel].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`); }
                 if (idActualEdicion) actualizarVistaFamiliares();
             });
             
@@ -408,7 +409,6 @@
             }
         };
 
-        // LÓGICA DE GRUPO FAMILIAR EN EDICIÓN
         function actualizarVistaFamiliares() {
             const parentesco = document.getElementById('e_parentesco').value;
             const wrapper = document.getElementById('e_grupo_familiar_wrapper');
@@ -429,12 +429,10 @@
                     const h = baseDeDatosHabitantes[id];
                     if (id === idActualEdicion) continue;
 
-                    // Si ya es familiar de este jefe
                     if (h.jefe_hogar_id === idActualEdicion) {
                         htmlActuales += `<li>${h.nombre} ${h.apellido} - C.I: ${h.cedula} (${h.parentesco})</li>`;
                         tieneActuales = true;
                     } 
-                    // Si está en la misma comunidad, NO es jefe y NO tiene jefe asignado
                     else if (h.comuna === comunaActual && h.comunidad === comunidadActual && h.parentesco !== 'jefe de hogar' && !h.jefe_hogar_id) {
                         const opt = document.createElement('option');
                         opt.value = id;
@@ -494,11 +492,18 @@
             
             llenarCampo('e_nombre', h.nombre); llenarCampo('e_apellido', h.apellido); llenarCampo('e_cedula', h.cedula); llenarCampo('e_telefono', h.telefono); llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento); llenarCampo('e_sexo', h.sexo); llenarCampo('e_parentesco', h.parentesco); llenarCampo('e_profesion', h.profesion); llenarCampo('e_trabaja', h.trabaja); llenarCampo('e_esta_escolarizado', h.esta_escolarizado); llenarCampo('e_esta_cedulado', h.esta_cedulado);
             llenarCampo('e_padece_enfermedad', h.padece_enfermedad); llenarCampo('e_toma_medicamento', h.toma_medicamento); llenarCampo('e_cual_medicamento', h.cual_medicamento); llenarCampo('e_discapacitado', h.discapacitado); llenarCampo('e_embarazada', h.embarazada); llenarCampo('e_lactancia_materna', h.lactancia_materna);
+            
+            // Llenar el nuevo campo
+            llenarCampo('e_tipo_discapacidad', h.tipo_discapacidad);
+
             llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor); llenarCampo('e_carnet_patria', h.carnet_patria); llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio); llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono); llenarCampo('e_donde_vota', h.donde_vota); llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion); llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
 
             if(h.toma_medicamento === 'si') document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden'); else document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
             if(h.vd_vb_vo_seleccion) document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden'); else document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
             if(h.tiene_gas === 'si') document.getElementById('e_tipo_cilindro_gas_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_cilindro_gas_wrapper').classList.add('hidden');
+            
+            // Mostrar ocultar nuevo campo
+            if(h.discapacitado === 'si') document.getElementById('e_tipo_discapacidad_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_discapacidad_wrapper').classList.add('hidden');
             
             actualizarVistaFamiliares();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -530,6 +535,7 @@
         toggleHiddenEdit('e_toma_medicamento', 'e_cual_medicamento_wrapper', 'e_cual_medicamento');
         toggleHiddenEdit('e_vd_vb_vo_seleccion', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_detalle');
         toggleHiddenEdit('e_tiene_gas', 'e_tipo_cilindro_gas_wrapper', 'e_tipo_cilindro_gas');
+        toggleHiddenEdit('e_discapacitado', 'e_tipo_discapacidad_wrapper', 'e_tipo_discapacidad');
 
         document.getElementById('formEdicion').addEventListener('submit', async (e) => {
             e.preventDefault();
