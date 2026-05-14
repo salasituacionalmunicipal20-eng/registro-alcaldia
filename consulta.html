@@ -181,7 +181,18 @@
                 <div class="form-grid">
                     <div><label>Nombres:</label><input type="text" id="e_nombre" name="nombre" required></div>
                     <div><label>Apellidos:</label><input type="text" id="e_apellido" name="apellido" required></div>
-                    <div><label>Cédula de Identidad:</label><input type="text" id="e_cedula" name="cedula" required></div>
+                    
+                    <div>
+                        <label>¿Tiene Cédula de Identidad?:</label>
+                        <select id="e_tiene_cedula" name="tiene_cedula" required>
+                            <option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option>
+                        </select>
+                    </div>
+                    <div id="e_cedula_wrapper" class="hidden">
+                        <label>Número de Cédula:</label>
+                        <input type="text" id="e_cedula" name="cedula">
+                    </div>
+
                     <div><label>Teléfono de Contacto:</label><input type="text" id="e_telefono" name="telefono" required></div>
                     <div><label>Fecha de Nacimiento:</label><input type="date" id="e_fecha_nacimiento" name="fecha_nacimiento" required></div>
                     <div><label>Sexo:</label><select id="e_sexo" name="sexo" required><option value="">Seleccione</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
@@ -402,7 +413,7 @@
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><strong>${h.nombre} ${h.apellido}</strong></td>
-                        <td>${h.cedula}</td>
+                        <td>${h.cedula || ''}</td>
                         <td>${h.comuna}</td>
                         <td>${h.comunidad}</td>
                         <td>${h.calle}</td>
@@ -448,13 +459,13 @@
                     if (id === idActualEdicion) continue;
 
                     if (h.jefe_hogar_id === idActualEdicion) {
-                        htmlActuales += `<li>${h.nombre} ${h.apellido} - C.I: ${h.cedula} (${h.parentesco})</li>`;
+                        htmlActuales += `<li>${h.nombre} ${h.apellido} - C.I: ${h.cedula || 'N/A'} (${h.parentesco})</li>`;
                         tieneActuales = true;
                     } 
                     else if (h.comuna === comunaActual && h.comunidad === comunidadActual && h.parentesco !== 'jefe de hogar' && !h.jefe_hogar_id) {
                         const opt = document.createElement('option');
                         opt.value = id;
-                        opt.textContent = `${h.nombre} ${h.apellido} - C.I: ${h.cedula} (${h.parentesco || 'Sin parentesco'})`;
+                        opt.textContent = `${h.nombre} ${h.apellido} - C.I: ${h.cedula || 'N/A'} (${h.parentesco || 'Sin parentesco'})`;
                         selectLibres.appendChild(opt);
                     }
                 }
@@ -477,7 +488,7 @@
             document.getElementById('vistaConsultas').classList.add('hidden');
             document.getElementById('vistaEdicion').classList.remove('hidden');
 
-            const camposPersonales = ['e_nombre', 'e_apellido', 'e_cedula', 'e_telefono', 'e_fecha_nacimiento', 'e_sexo', 'e_parentesco', 'e_profesion', 'e_trabaja', 'e_esta_escolarizado', 'e_esta_cedulado'];
+            const camposPersonales = ['e_tiene_cedula', 'e_nombre', 'e_apellido', 'e_cedula', 'e_telefono', 'e_fecha_nacimiento', 'e_sexo', 'e_parentesco', 'e_profesion', 'e_trabaja', 'e_esta_escolarizado', 'e_esta_cedulado'];
             
             if (!esAdmin) {
                 document.getElementById('avisoBloqueo').style.display = 'block';
@@ -508,13 +519,22 @@
             llenarCampo('e_tiene_gas', h.tiene_gas);
             llenarCampo('e_tipo_cilindro_gas', h.tipo_cilindro_gas);
             
-            llenarCampo('e_nombre', h.nombre); llenarCampo('e_apellido', h.apellido); llenarCampo('e_cedula', h.cedula); llenarCampo('e_telefono', h.telefono); llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento); llenarCampo('e_sexo', h.sexo); llenarCampo('e_parentesco', h.parentesco); llenarCampo('e_profesion', h.profesion); llenarCampo('e_trabaja', h.trabaja); llenarCampo('e_esta_escolarizado', h.esta_escolarizado); llenarCampo('e_esta_cedulado', h.esta_cedulado);
+            llenarCampo('e_nombre', h.nombre); llenarCampo('e_apellido', h.apellido); 
+            
+            // REGLA DE ORO: Validar registros antiguos para que no queden en blanco
+            let tieneCedVal = h.tiene_cedula;
+            if (!tieneCedVal && h.cedula) tieneCedVal = 'si';
+            llenarCampo('e_tiene_cedula', tieneCedVal);
+            llenarCampo('e_cedula', h.cedula);
+            
+            llenarCampo('e_telefono', h.telefono); llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento); llenarCampo('e_sexo', h.sexo); llenarCampo('e_parentesco', h.parentesco); llenarCampo('e_profesion', h.profesion); llenarCampo('e_trabaja', h.trabaja); llenarCampo('e_esta_escolarizado', h.esta_escolarizado); llenarCampo('e_esta_cedulado', h.esta_cedulado);
             llenarCampo('e_padece_enfermedad', h.padece_enfermedad); llenarCampo('e_toma_medicamento', h.toma_medicamento); llenarCampo('e_cual_medicamento', h.cual_medicamento); llenarCampo('e_discapacitado', h.discapacitado); llenarCampo('e_embarazada', h.embarazada); llenarCampo('e_lactancia_materna', h.lactancia_materna);
             
             llenarCampo('e_tipo_discapacidad', h.tipo_discapacidad);
 
             llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor); llenarCampo('e_carnet_patria', h.carnet_patria); llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio); llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono); llenarCampo('e_donde_vota', h.donde_vota); llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion); llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
 
+            if(tieneCedVal === 'si') document.getElementById('e_cedula_wrapper').classList.remove('hidden'); else document.getElementById('e_cedula_wrapper').classList.add('hidden');
             if(h.toma_medicamento === 'si') document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden'); else document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
             if(h.vd_vb_vo_seleccion) document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden'); else document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
             if(h.tiene_gas === 'si') document.getElementById('e_tipo_cilindro_gas_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_cilindro_gas_wrapper').classList.add('hidden');
@@ -547,6 +567,7 @@
                 });
             }
         };
+        toggleHiddenEdit('e_tiene_cedula', 'e_cedula_wrapper', 'e_cedula');
         toggleHiddenEdit('e_toma_medicamento', 'e_cual_medicamento_wrapper', 'e_cual_medicamento');
         toggleHiddenEdit('e_vd_vb_vo_seleccion', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_detalle');
         toggleHiddenEdit('e_tiene_gas', 'e_tipo_cilindro_gas_wrapper', 'e_tipo_cilindro_gas');
@@ -563,8 +584,10 @@
             };
 
             try {
+                // Actualiza al jefe de hogar
                 await update(ref(database, `habitantes/${idActualEdicion}`), dataFinal);
                 
+                // Procesar la vinculación de familiares seleccionados
                 const selectLibres = document.getElementById('e_dependientes_libres');
                 if (selectLibres && !document.getElementById('e_grupo_familiar_wrapper').classList.contains('hidden')) {
                     const seleccionados = Array.from(selectLibres.selectedOptions).map(opt => opt.value);

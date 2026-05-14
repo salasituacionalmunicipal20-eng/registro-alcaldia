@@ -194,10 +194,20 @@
                         <label for="apellido">Apellidos:</label>
                         <input type="text" id="apellido" name="apellido" required>
                     </div>
+
                     <div>
-                        <label for="cedula">Cédula de Identidad:</label>
-                        <input type="text" id="cedula" name="cedula" required>
+                        <label for="tiene_cedula">¿Tiene Cédula de Identidad?:</label>
+                        <select id="tiene_cedula" name="tiene_cedula" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
                     </div>
+                    <div id="cedula_wrapper" class="hidden">
+                        <label for="cedula">Número de Cédula:</label>
+                        <input type="text" id="cedula" name="cedula" placeholder="Ej: 12345678">
+                    </div>
+
                     <div>
                         <label for="telefono">Teléfono de Contacto:</label>
                         <input type="text" id="telefono" name="telefono" required>
@@ -347,7 +357,10 @@
                 <div class="form-grid">
                     <div><label>Nombres:</label><input type="text" name="nombre" required></div>
                     <div><label>Apellidos:</label><input type="text" name="apellido" required></div>
-                    <div><label>Cédula de Identidad:</label><input type="text" name="cedula" required></div>
+                    
+                    <div><label>¿Tiene Cédula?:</label><select id="m_tiene_cedula" name="tiene_cedula" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div id="m_cedula_wrapper" class="hidden"><label>Número de Cédula:</label><input type="text" id="m_cedula" name="cedula"></div>
+
                     <div><label>Teléfono de Contacto:</label><input type="text" name="telefono" required></div>
                     <div><label>Fecha de Nacimiento:</label><input type="date" name="fecha_nacimiento" required></div>
                     <div><label>Sexo:</label><select name="sexo" required><option value="">Seleccione</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
@@ -587,6 +600,10 @@
             }
         };
 
+        // REGLA DE ORO: Conexión del nuevo campo "tiene_cedula"
+        toggleHidden('tiene_cedula', 'cedula_wrapper', 'cedula');
+        toggleHidden('m_tiene_cedula', 'm_cedula_wrapper', 'm_cedula');
+        
         toggleHidden('toma_medicamento', 'cual_medicamento_wrapper', 'cual_medicamento');
         toggleHidden('vd_vb_vo_seleccion', 'vd_vb_vo_detalle_wrapper', 'vd_vb_vo_detalle');
         toggleHidden('tiene_gas', 'tipo_cilindro_gas_wrapper', 'tipo_cilindro_gas');
@@ -615,6 +632,7 @@
         window.cerrarModalDependiente = () => {
             document.getElementById('modalDependiente').classList.add('hidden');
             document.getElementById('formDependiente').reset();
+            document.getElementById('m_cedula_wrapper').classList.add('hidden');
             document.getElementById('m_cual_medicamento_wrapper').classList.add('hidden');
             document.getElementById('m_tipo_discapacidad_wrapper').classList.add('hidden');
             document.getElementById('m_vd_vb_vo_detalle_wrapper').classList.add('hidden');
@@ -687,6 +705,7 @@
                 document.getElementById('btnAgregarDepWrapper').classList.add('hidden');
                 
                 displayEdad.textContent = '';
+                document.getElementById('cedula_wrapper').classList.add('hidden');
                 document.getElementById('cual_medicamento_wrapper').classList.add('hidden');
                 document.getElementById('tipo_discapacidad_wrapper').classList.add('hidden');
                 document.getElementById('vd_vb_vo_detalle_wrapper').classList.add('hidden');
