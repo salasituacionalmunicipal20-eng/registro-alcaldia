@@ -26,6 +26,8 @@
         .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
         .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
         .btn-nav:hover { background-color: #555; }
+        #btnAdminPanel { background-color: var(--rojo-oficial); }
+        #btnEstadisticas { background-color: #17a2b8; }
         #btnVolver { background-color: #28a745; }
         #btnCambiarClave { background-color: #ff9800; color: #000; }
         #btnCambiarClave:hover { background-color: #e68a00; }
@@ -79,7 +81,8 @@
     <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA | ESTADO MIRANDA | ALCALDÍA DE CRISTÓBAL ROJAS</div>
     <div class="container">
         <div class="top-nav">
-            <button type="button" id="btnAdminPanel" class="btn-nav hidden" style="background-color: var(--rojo-oficial);">⚙ Panel Admin</button>
+            <button type="button" id="btnAdminPanel" class="btn-nav hidden">⚙ Panel Admin</button>
+            <button type="button" id="btnEstadisticas" class="btn-nav" onclick="location.href='estadisticas.html'">📊 Estadísticas</button>
             <button type="button" class="btn-reporte" onclick="window.imprimirTabla()">🖨 Imprimir</button>
             <button type="button" class="btn-reporte" onclick="window.exportarCSV()">📥 Exportar Excel</button>
             <button type="button" id="btnVolver" class="btn-nav" onclick="location.href='registro.html'">← Volver a Registrar</button>

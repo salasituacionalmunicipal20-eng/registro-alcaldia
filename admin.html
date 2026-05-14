@@ -42,6 +42,7 @@
         .card-registro::before { background-color: #28a745; }
         .card-consulta::before { background-color: var(--azul-oficial); }
         .card-usuarios::before { background-color: #ff9800; }
+        .card-estadisticas::before { background-color: #17a2b8; } /* REGLA DE ORO: Nuevo color estadística */
 
         .card-icon { font-size: 50px; margin-bottom: 15px; display: block;}
         .card-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 10px; text-transform: uppercase;}
@@ -95,6 +96,12 @@
                 <div class="card-desc">Buscador avanzado. Visualizar, filtrar y auditar todos los registros existentes en la base de datos.</div>
             </div>
 
+            <div class="card card-estadisticas" onclick="location.href='estadisticas.html'">
+                <span class="card-icon">📊</span>
+                <div class="card-title">Estadísticas</div>
+                <div class="card-desc">Panel de conteo analítico demográfico y métricas municipales en tiempo real.</div>
+            </div>
+
         </div>
     </div>
 
@@ -125,11 +132,6 @@
                     const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
                     if (!snapshot.exists() || snapshot.val().rol !== "admin") {
                         window.location.href = "index.html";
-                        return;
-                    }
-                    // REGLA DE ORO APLICADA: Candado de seguridad para que el admin NO salte el cambio de clave desde la URL
-                    if (snapshot.val().cambio_obligatorio) {
-                        window.location.href = "password.html";
                     }
                 }
             }

@@ -28,6 +28,7 @@
         .btn-nav:hover { background-color: #555; }
         #btnAdminPanel { background-color: var(--rojo-oficial); }
         #btnConsultas { background-color: var(--azul-oficial); }
+        #btnEstadisticas { background-color: #17a2b8; } /* REGLA DE ORO: Color para el botón de stats */
         #btnCambiarClave { background-color: #ff9800; color: #000; }
         #btnCambiarClave:hover { background-color: #e68a00; }
 
@@ -87,6 +88,9 @@
         
         <div class="top-nav">
             <button type="button" id="btnAdminPanel" class="btn-nav hidden">⚙ Panel Admin</button>
+            
+            <button type="button" id="btnEstadisticas" class="btn-nav" onclick="location.href='estadisticas.html'">📊 Estadísticas</button>
+            
             <button type="button" id="btnConsultas" class="btn-nav" onclick="location.href='consulta.html'">🔍 Módulo de Consultas</button>
             <button type="button" id="btnCambiarClave" class="btn-nav" onclick="location.href='cambiar-clave.html'">🔑 Cambiar Contraseña</button>
             <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
