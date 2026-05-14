@@ -321,11 +321,12 @@
                         <label for="hogares_patria_bono">Hogares de la Patria (Bono jefe familiar):</label>
                         <select id="hogares_patria_bono" name="hogares_patria_bono" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select>
                     </div>
-                    <div class="full-width">
+                    
+                    <div class="full-width" id="donde_vota_wrapper">
                         <label for="donde_vota">Centro de Votación (Dirección exacta):</label>
                         <input type="text" id="donde_vota" name="donde_vota">
                     </div>
-                    <div class="full-width">
+                    <div class="full-width" id="estatus_electoral_wrapper">
                         <label for="vd_vb_vo_seleccion">Estatus Electoral (VD / VB / VO):</label>
                         <select id="vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required><option value="">Seleccione el estatus</option><option value="VD">VD (Voto Duro)</option><option value="VB">VB (Voto Blando)</option><option value="VO">VO (Voto Opositor)</option></select>
                     </div>
@@ -362,7 +363,7 @@
                     <div id="m_cedula_wrapper" class="hidden"><label>Número de Cédula:</label><input type="text" id="m_cedula" name="cedula"></div>
 
                     <div><label>Teléfono de Contacto:</label><input type="text" name="telefono" required></div>
-                    <div><label>Fecha de Nacimiento:</label><input type="date" name="fecha_nacimiento" required></div>
+                    <div><label>Fecha de Nacimiento:</label><input type="date" id="m_fecha_nacimiento" name="fecha_nacimiento" required></div>
                     <div><label>Sexo:</label><select name="sexo" required><option value="">Seleccione</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
                     <div>
                         <label>Parentesco (con el Jefe):</label>
@@ -403,8 +404,9 @@
                     <div><label>Carnet de la Patria:</label><select name="carnet_patria" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
                     <div><label>Misión José Gregorio:</label><select name="mision_jose_gregorio" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
                     <div><label>Hogares de la Patria:</label><select name="hogares_patria_bono" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div class="full-width"><label>Centro de Votación:</label><input type="text" name="donde_vota"></div>
-                    <div class="full-width"><label>Estatus Electoral (VD/VB/VO):</label><select id="m_vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required><option value="">Seleccione</option><option value="VD">VD</option><option value="VB">VB</option><option value="VO">VO</option></select></div>
+                    
+                    <div class="full-width" id="m_donde_vota_wrapper"><label>Centro de Votación:</label><input type="text" name="donde_vota" id="m_donde_vota"></div>
+                    <div class="full-width" id="m_estatus_electoral_wrapper"><label>Estatus Electoral (VD/VB/VO):</label><select id="m_vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required><option value="">Seleccione</option><option value="VD">VD</option><option value="VB">VB</option><option value="VO">VO</option></select></div>
                     <div id="m_vd_vb_vo_detalle_wrapper" class="hidden full-width"><label>Observaciones:</label><textarea id="m_vd_vb_vo_detalle" name="vd_vb_vo_detalle" rows="2"></textarea></div>
                 </div>
                 
@@ -568,6 +570,35 @@
             }
         });
 
+        // REGLA DE ORO: Función para verificar edad y ocultar datos electorales
+        function checkEdadElectoral(fechaNac, wrapDondeVota, wrapEstatus, wrapDetalle, selEstatus, inpDondeVota) {
+            if(!fechaNac) return;
+            const fecha = new Date(fechaNac);
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - fecha.getFullYear();
+            const mes = hoy.getMonth() - fecha.getMonth();
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) edad--;
+
+            const wDonde = document.getElementById(wrapDondeVota);
+            const wEstatus = document.getElementById(wrapEstatus);
+            const wDetalle = document.getElementById(wrapDetalle);
+            const sEstatus = document.getElementById(selEstatus);
+            const iDonde = document.getElementById(inpDondeVota);
+
+            if (edad < 18) {
+                if (wDonde) wDonde.classList.add('hidden');
+                if (wEstatus) wEstatus.classList.add('hidden');
+                if (wDetalle) wDetalle.classList.add('hidden');
+                if (sEstatus) { sEstatus.required = false; sEstatus.value = ""; }
+                if (iDonde) iDonde.value = "NO APLICA (MENOR DE EDAD)";
+            } else {
+                if (wDonde) wDonde.classList.remove('hidden');
+                if (wEstatus) wEstatus.classList.remove('hidden');
+                if (sEstatus) sEstatus.required = true;
+                if (iDonde && iDonde.value === "NO APLICA (MENOR DE EDAD)") iDonde.value = "";
+            }
+        }
+
         // CALCULOS Y OCULTOS
         const inputFecha = document.getElementById('fecha_nacimiento');
         const displayEdad = document.getElementById('edadCalculada');
@@ -580,6 +611,14 @@
             const mes = hoy.getMonth() - fechaNac.getMonth();
             if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
             displayEdad.textContent = `Edad calculada: ${edad} años`;
+            
+            // Llama a la validación electoral
+            checkEdadElectoral(e.target.value, 'donde_vota_wrapper', 'estatus_electoral_wrapper', 'vd_vb_vo_detalle_wrapper', 'vd_vb_vo_seleccion', 'donde_vota');
+        });
+        
+        // Validación electoral para el Modal
+        document.getElementById('m_fecha_nacimiento').addEventListener('change', (e) => {
+            checkEdadElectoral(e.target.value, 'm_donde_vota_wrapper', 'm_estatus_electoral_wrapper', 'm_vd_vb_vo_detalle_wrapper', 'm_vd_vb_vo_seleccion', 'm_donde_vota');
         });
 
         const toggleHidden = (selectId, wrapperId, inputId) => {
@@ -600,7 +639,6 @@
             }
         };
 
-        // REGLA DE ORO: Conexión del nuevo campo "tiene_cedula"
         toggleHidden('tiene_cedula', 'cedula_wrapper', 'cedula');
         toggleHidden('m_tiene_cedula', 'm_cedula_wrapper', 'm_cedula');
         
@@ -636,6 +674,11 @@
             document.getElementById('m_cual_medicamento_wrapper').classList.add('hidden');
             document.getElementById('m_tipo_discapacidad_wrapper').classList.add('hidden');
             document.getElementById('m_vd_vb_vo_detalle_wrapper').classList.add('hidden');
+            
+            // Aseguramos que los campos electorales vuelvan a mostrarse limpios para el proximo registro
+            document.getElementById('m_donde_vota_wrapper').classList.remove('hidden');
+            document.getElementById('m_estatus_electoral_wrapper').classList.remove('hidden');
+            document.getElementById('m_vd_vb_vo_seleccion').required = true;
         };
 
         document.getElementById('formDependiente').addEventListener('submit', (e) => {
@@ -710,6 +753,10 @@
                 document.getElementById('tipo_discapacidad_wrapper').classList.add('hidden');
                 document.getElementById('vd_vb_vo_detalle_wrapper').classList.add('hidden');
                 document.getElementById('tipo_cilindro_gas_wrapper').classList.add('hidden');
+                
+                document.getElementById('donde_vota_wrapper').classList.remove('hidden');
+                document.getElementById('estatus_electoral_wrapper').classList.remove('hidden');
+                document.getElementById('vd_vb_vo_seleccion').required = true;
                 
                 currentStep = 1;
                 updateWizard();

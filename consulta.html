@@ -250,8 +250,9 @@
                     <div><label>Carnet de la Patria:</label><select id="e_carnet_patria" name="carnet_patria" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
                     <div><label>Misión José Gregorio Hernández:</label><select id="e_mision_jose_gregorio" name="mision_jose_gregorio" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
                     <div><label>Hogares de la Patria (Bono jefe familiar):</label><select id="e_hogares_patria_bono" name="hogares_patria_bono" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
-                    <div class="full-width"><label>Centro de Votación:</label><input type="text" id="e_donde_vota" name="donde_vota"></div>
-                    <div class="full-width"><label>Estatus Electoral (VD / VB / VO):</label><select id="e_vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required><option value="">Seleccione</option><option value="VD">VD (Voto Duro)</option><option value="VB">VB (Voto Blando)</option><option value="VO">VO (Voto Opositor)</option></select></div>
+                    
+                    <div class="full-width" id="e_donde_vota_wrapper"><label>Centro de Votación:</label><input type="text" id="e_donde_vota" name="donde_vota"></div>
+                    <div class="full-width" id="e_estatus_electoral_wrapper"><label>Estatus Electoral (VD / VB / VO):</label><select id="e_vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required><option value="">Seleccione</option><option value="VD">VD (Voto Duro)</option><option value="VB">VB (Voto Blando)</option><option value="VO">VO (Voto Opositor)</option></select></div>
                     <div id="e_vd_vb_vo_detalle_wrapper" class="hidden full-width"><label>Observaciones Electorales:</label><textarea id="e_vd_vb_vo_detalle" name="vd_vb_vo_detalle" rows="3"></textarea></div>
                 </div>
 
@@ -481,6 +482,39 @@
 
         document.getElementById('e_parentesco').addEventListener('change', actualizarVistaFamiliares);
 
+        // REGLA DE ORO: Función para verificar edad y ocultar datos electorales en edición
+        function checkEdadElectoral(fechaNac, wrapDondeVota, wrapEstatus, wrapDetalle, selEstatus, inpDondeVota) {
+            if(!fechaNac) return;
+            const fecha = new Date(fechaNac);
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - fecha.getFullYear();
+            const mes = hoy.getMonth() - fecha.getMonth();
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) edad--;
+
+            const wDonde = document.getElementById(wrapDondeVota);
+            const wEstatus = document.getElementById(wrapEstatus);
+            const wDetalle = document.getElementById(wrapDetalle);
+            const sEstatus = document.getElementById(selEstatus);
+            const iDonde = document.getElementById(inpDondeVota);
+
+            if (edad < 18) {
+                if (wDonde) wDonde.classList.add('hidden');
+                if (wEstatus) wEstatus.classList.add('hidden');
+                if (wDetalle) wDetalle.classList.add('hidden');
+                if (sEstatus) { sEstatus.required = false; sEstatus.value = ""; }
+                if (iDonde) iDonde.value = "NO APLICA (MENOR DE EDAD)";
+            } else {
+                if (wDonde) wDonde.classList.remove('hidden');
+                if (wEstatus) wEstatus.classList.remove('hidden');
+                if (sEstatus) sEstatus.required = true;
+                if (iDonde && iDonde.value === "NO APLICA (MENOR DE EDAD)") iDonde.value = "";
+            }
+        }
+
+        document.getElementById('e_fecha_nacimiento').addEventListener('change', (e) => {
+            checkEdadElectoral(e.target.value, 'e_donde_vota_wrapper', 'e_estatus_electoral_wrapper', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_seleccion', 'e_donde_vota');
+        });
+
         window.editarRegistro = (id) => {
             idActualEdicion = id;
             const h = baseDeDatosHabitantes[id];
@@ -521,7 +555,6 @@
             
             llenarCampo('e_nombre', h.nombre); llenarCampo('e_apellido', h.apellido); 
             
-            // REGLA DE ORO: Validar registros antiguos para que no queden en blanco
             let tieneCedVal = h.tiene_cedula;
             if (!tieneCedVal && h.cedula) tieneCedVal = 'si';
             llenarCampo('e_tiene_cedula', tieneCedVal);
@@ -539,6 +572,9 @@
             if(h.vd_vb_vo_seleccion) document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden'); else document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
             if(h.tiene_gas === 'si') document.getElementById('e_tipo_cilindro_gas_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_cilindro_gas_wrapper').classList.add('hidden');
             if(h.discapacitado === 'si') document.getElementById('e_tipo_discapacidad_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_discapacidad_wrapper').classList.add('hidden');
+            
+            // Validar la edad para ocultar los datos de votación
+            checkEdadElectoral(h.fecha_nacimiento, 'e_donde_vota_wrapper', 'e_estatus_electoral_wrapper', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_seleccion', 'e_donde_vota');
             
             actualizarVistaFamiliares();
             window.scrollTo({ top: 0, behavior: 'smooth' });
