@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migrador Masivo de Datos - Alcaldía</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; padding: 40px; text-align: center; }
+        .container { background: white; padding: 40px; border-radius: 8px; max-width: 700px; margin: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-top: 8px solid #E30613; }
+        h1 { color: #004a99; margin-top: 0; text-transform: uppercase; }
+        .instrucciones { text-align: left; background: #fdfdfd; padding: 20px; border-left: 4px solid #ff9800; font-size: 14px; margin-bottom: 30px; }
+        input[type="file"] { margin: 20px 0; padding: 10px; font-size: 16px; }
+        button { background-color: #28a745; color: white; border: none; padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        button:hover { background-color: #218838; }
+        #estado { margin-top: 20px; font-weight: bold; font-size: 18px; color: #333; }
+        .progress-bar { width: 100%; background-color: #ddd; border-radius: 5px; margin-top: 20px; overflow: hidden; display: none; }
+        .progress-fill { height: 20px; background-color: #004a99; width: 0%; transition: 0.2s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Migrador de Base de Datos Excel a Firebase</h1>
+        
+        <div class="instrucciones">
+            <strong>Instrucciones Importantes:</strong><br><br>
+            1. Asegúrate de guardar tu archivo de Excel ("UNIFICADO EJE 2.xlsx") en formato <b>CSV (Delimitado por comas)</b>.<br>
+            2. La primera fila de tu archivo debe contener los títulos exactos de las columnas (N°, UBCH, COMUNA, etc.).<br>
+            3. Selecciona el archivo y haz clic en "Iniciar Migración". No cierres la ventana hasta que llegue al 100%.
+        </div>
+
+        <input type="file" id="archivoCSV" accept=".csv">
+        <br>
+        <button id="btnSubir" onclick="procesarCSV()">Iniciar Migración Masiva 🚀</button>
+
+        <div class="progress-bar" id="barraWrapper">
+            <div class="progress-fill" id="barraProgreso"></div>
+        </div>
+        <div id="estado">Esperando archivo...</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        // Configuración de tu base de datos
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        window.procesarCSV = function() {
+            const archivo = document.getElementById('archivoCSV').files[0];
+            if (!archivo) {
+                alert("Por favor, selecciona un archivo CSV primero.");
+                return;
+            }
+
+            document.getElementById('btnSubir').disabled = true;
+            document.getElementById('estado').textContent = "Leyendo archivo Excel...";
+            document.getElementById('barraWrapper').style.display = "block";
+
+            Papa.parse(archivo, {
+                header: true, // Usa la primera fila como nombres de las variables
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const datos = results.data;
+                    document.getElementById('estado').textContent = `Se encontraron ${datos.length} habitantes. Iniciando subida a Firebase...`;
+                    
+                    let subidos = 0;
+                    const habitantesRef = ref(database, 'habitantes');
+
+                    for (let i = 0; i < datos.length; i++) {
+                        let fila = datos[i];
+                        
+                        // Traductor inteligente: De formato viejo Excel a Formato Nuevo Firebase
+                        
+                        // 1. Separar Nombres y Apellidos (Aproximación asumiendo Nombre Apellido)
+                        let nombreCompleto = (fila['NOMBRE Y APELLIDO'] || '').trim().split(' ');
+                        let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
+                        let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
+
+                        // 2. Determinar Sexo
+                        let sexoParsed = "";
+                        if (fila['FEMENINA']) sexoParsed = "femenino";
+                        else if (fila['MASCULINO']) sexoParsed = "masculino";
+
+                        // 3. Voto Duro, Blando, Opositor
+                        let votoParsed = "";
+                        if (fila['VD'] && fila['VD'].trim() !== '') votoParsed = "VD";
+                        else if (fila['VB'] && fila['VB'].trim() !== '') votoParsed = "VB";
+                        else if (fila['VO'] && fila['VO'].trim() !== '') votoParsed = "VO";
+
+                        // 4. Determinar Parentesco (Madre, padre, jefe, etc)
+                        let parentescoParsed = "otro";
+                        let resp = (fila['RESPONSABILIDAD CBI, CM'] || '').toUpperCase();
+                        if (resp.includes("JEFE")) parentescoParsed = "jefe de hogar";
+                        else if (fila['MADRE']) parentescoParsed = "madre";
+                        else if (fila['PADRE']) parentescoParsed = "padre";
+                        else if (fila['HIJO']) parentescoParsed = "hijo";
+
+                        // 5. Normalizar Gas
+                        let gasParsed = (fila['TIPO DE CILINDRO'] && fila['TIPO DE CILINDRO'].trim() !== '') ? "si" : "no";
+
+                        // 6. Construir el objeto exacto de nuestro sistema actual
+                        let habitanteTraducido = {
+                            ubch: fila['UBCH A LA QUE PERTENECE'] || '', // Agregaremos esto luego al registro web
+                            codigo_sigue_actual: fila['CODIGO SITUR ACTUAL'] || '',
+                            comuna: fila['COMUNA'] || '',
+                            consejo_comunal: fila['NOMBRE DEL CONSEJO COMUNAL'] || '',
+                            comunidad: fila['COMUNIDAD'] || '',
+                            calle: fila['CALLE'] || '',
+                            numero_casa: fila['NUMERO DE CASA'] || 'S/N',
+                            tipo_vivienda: fila['TIPO DE VIVIENDA'] || '',
+                            condiciones_vivienda: fila['CONDICIONES DE LA VIVIENDA'] || '',
+                            responsabilidad_cbi_cm: fila['RESPONSABILIDAD CBI, CM'] || '',
+                            
+                            tiene_gas: gasParsed,
+                            tipo_cilindro_gas: fila['TIPO DE CILINDRO'] || '',
+                            
+                            nombre: nombreParsed.toUpperCase(),
+                            apellido: apellidoParsed.toUpperCase(),
+                            tiene_cedula: fila['CEDULA'] ? "si" : "no",
+                            nacionalidad: "V", // Asumido V por defecto
+                            cedula: fila['CEDULA'] || '',
+                            telefono: fila['TELEFONO'] || '',
+                            fecha_nacimiento: fila['FECHA DE NACIMIENTO'] || '',
+                            sexo: sexoParsed,
+                            parentesco: parentescoParsed,
+                            profesion: fila['PROFESION'] || '',
+                            trabaja: fila['TRABAJA?'] || 'no',
+                            esta_escolarizado: fila['ESTA ESCOLARIZADO?'] || 'no',
+                            esta_cedulado: fila['ESTA CEDULADO?'] || 'si',
+
+                            padece_enfermedad: fila['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.'] || '',
+                            toma_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] ? 'si' : 'no',
+                            cual_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] || '',
+                            discapacitado: fila['DISCAPACITADO?'] || 'no',
+                            embarazada: fila['EMBARAZADA?'] || 'no',
+                            lactancia_materna: fila['LACTANCIA MATERNA?'] || 'no',
+
+                            cobra_amor_mayor: fila['COBRA AMOR MAYOR'] || 'no',
+                            carnet_patria: fila['POSEE CARNET DE LA PATRIA?'] || 'no',
+                            mision_jose_gregorio: fila['MISION JOSE GREGORIO'] || 'no',
+                            hogares_patria_bono: fila['HOGARES DE LA PATRIA BONO UNICO FAMILIAR'] || 'no',
+                            donde_vota: fila['DONDE VOTA'] || '',
+                            vd_vb_vo_seleccion: votoParsed,
+                            vd_vb_vo_detalle: '',
+                            
+                            registrado_por_nombre: "MIGRACIÓN MASIVA EXCEL",
+                            fecha_registro: new Date().toLocaleString()
+                        };
+
+                        // Enviar a Firebase
+                        try {
+                            await push(habitantesRef, habitanteTraducido);
+                            subidos++;
+                            
+                            // Actualizar barra visual
+                            let porcentaje = (subidos / datos.length) * 100;
+                            document.getElementById('barraProgreso').style.width = porcentaje + "%";
+                            document.getElementById('estado').textContent = `Migrando: ${subidos} de ${datos.length} completados...`;
+                        } catch (error) {
+                            console.error("Error en la fila " + i, error);
+                        }
+                    }
+
+                    document.getElementById('estado').innerHTML = `<span style='color:green;'>¡Migración Exitosa! Se transfirieron ${subidos} registros a la base de datos.</span>`;
+                    alert("¡Todos los datos del Excel han sido guardados en el sistema!");
+                }
+            });
+        };
+    </script>
+</body>
+</html>
