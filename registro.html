@@ -28,7 +28,6 @@
         .btn-nav:hover { background-color: #555; }
         #btnAdminPanel { background-color: var(--rojo-oficial); }
         #btnConsultas { background-color: var(--azul-oficial); }
-        #btnEstadisticas { background-color: #17a2b8; } /* REGLA DE ORO: Color para el botón de stats */
         #btnCambiarClave { background-color: #ff9800; color: #000; }
         #btnCambiarClave:hover { background-color: #e68a00; }
 
@@ -88,9 +87,6 @@
         
         <div class="top-nav">
             <button type="button" id="btnAdminPanel" class="btn-nav hidden">⚙ Panel Admin</button>
-            
-            <button type="button" id="btnEstadisticas" class="btn-nav" onclick="location.href='estadisticas.html'">📊 Estadísticas</button>
-            
             <button type="button" id="btnConsultas" class="btn-nav" onclick="location.href='consulta.html'">🔍 Módulo de Consultas</button>
             <button type="button" id="btnCambiarClave" class="btn-nav" onclick="location.href='cambiar-clave.html'">🔑 Cambiar Contraseña</button>
             <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
@@ -170,8 +166,17 @@
                         <label for="responsabilidad_cbi_cm">Responsabilidad CBI/CM:</label>
                         <input type="text" id="responsabilidad_cbi_cm" name="responsabilidad_cbi_cm" required>
                     </div>
+                    
                     <div>
-                        <label for="tipo_cilindro_gas">Tipo de Cilindro de Gas:</label>
+                        <label for="tiene_gas">¿Posee Cilindro de Gas?:</label>
+                        <select id="tiene_gas" name="tiene_gas" required>
+                            <option value="">Seleccione</option>
+                            <option value="si">Sí</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+                    <div id="tipo_cilindro_gas_wrapper" class="hidden">
+                        <label for="tipo_cilindro_gas">Tipo de Cilindro de Gas (Kg):</label>
                         <input type="text" id="tipo_cilindro_gas" name="tipo_cilindro_gas" placeholder="Ej. 10kg, 18kg, 43kg">
                     </div>
                 </div>
@@ -472,19 +477,25 @@
             const select = document.getElementById(selectId);
             const wrapper = document.getElementById(wrapperId);
             const input = document.getElementById(inputId);
-            select.addEventListener('change', (e) => {
-                if (e.target.value === 'si' || (selectId === 'vd_vb_vo_seleccion' && e.target.value !== '')) {
-                    wrapper.classList.remove('hidden');
-                    if(input) input.required = true;
-                } else {
-                    wrapper.classList.add('hidden');
-                    if(input) { input.required = false; input.value = ''; }
-                }
-            });
+            
+            if (select) {
+                select.addEventListener('change', (e) => {
+                    if (e.target.value === 'si' || (selectId === 'vd_vb_vo_seleccion' && e.target.value !== '')) {
+                        wrapper.classList.remove('hidden');
+                        if(input) input.required = true;
+                    } else {
+                        wrapper.classList.add('hidden');
+                        if(input) { input.required = false; input.value = ''; }
+                    }
+                });
+            }
         };
 
         toggleHidden('toma_medicamento', 'cual_medicamento_wrapper', 'cual_medicamento');
         toggleHidden('vd_vb_vo_seleccion', 'vd_vb_vo_detalle_wrapper', 'vd_vb_vo_detalle');
+        
+        // REGLA DE ORO: Agregada la función del gas para que aparezca/desaparezca
+        toggleHidden('tiene_gas', 'tipo_cilindro_gas_wrapper', 'tipo_cilindro_gas');
 
         // ENVIO
         const form = document.getElementById('registroHabitanteForm');
@@ -509,6 +520,9 @@
                 displayEdad.textContent = '';
                 document.getElementById('cual_medicamento_wrapper').classList.add('hidden');
                 document.getElementById('vd_vb_vo_detalle_wrapper').classList.add('hidden');
+                
+                // REGLA DE ORO: Se asegura de ocultar el gas al limpiar
+                document.getElementById('tipo_cilindro_gas_wrapper').classList.add('hidden');
                 
                 currentStep = 1;
                 updateWizard();
