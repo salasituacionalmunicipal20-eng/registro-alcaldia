@@ -28,6 +28,7 @@
         .btn-nav:hover { background-color: #555; }
         #btnAdminPanel { background-color: var(--rojo-oficial); }
         #btnConsultas { background-color: var(--azul-oficial); }
+        #btnEstadisticas { background-color: #17a2b8; } 
         #btnCambiarClave { background-color: #ff9800; color: #000; }
         #btnCambiarClave:hover { background-color: #e68a00; }
 
@@ -44,15 +45,7 @@
         /* Formularios estilo oficial */
         label { display: block; margin-bottom: 8px; font-weight: 600; margin-top: 20px; color: #333; font-size: 14px;}
         input[type="text"], input[type="number"], input[type="date"], select, textarea {
-            width: 100%;
-            padding: 12px 15px;
-            margin-bottom: 5px;
-            border: 1px solid var(--gris-borde);
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 15px;
-            background-color: #fdfdfd;
-            transition: border-color 0.3s;
+            width: 100%; padding: 12px 15px; margin-bottom: 5px; border: 1px solid var(--gris-borde); border-radius: 4px; box-sizing: border-box; font-size: 15px; background-color: #fdfdfd; transition: border-color 0.3s;
         }
         input:focus, select:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
         
@@ -77,7 +70,14 @@
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
         .full-width { grid-column: span 2; }
         
-        /* Responsive adjustments */
+        /* REGLA DE ORO: Estilos de la ventana flotante (Modal) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; display: flex; justify-content: center; align-items: center; overflow-y: auto; padding: 20px; box-sizing: border-box;}
+        .modal-content { background: #fff; padding: 30px; border-radius: 8px; width: 100%; max-width: 800px; position: relative; border-top: 6px solid var(--azul-oficial); max-height: 90vh; overflow-y: auto;}
+        .close-modal { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; transition: 0.3s;}
+        .close-modal:hover { color: var(--rojo-oficial); }
+        .btn-agregar-fam { background-color: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 13px; text-transform: uppercase; }
+        .badge-count { background: var(--azul-oficial); color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; margin-left: 10px; font-weight: bold;}
+
         @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
     </style>
 </head>
@@ -87,6 +87,7 @@
         
         <div class="top-nav">
             <button type="button" id="btnAdminPanel" class="btn-nav hidden">⚙ Panel Admin</button>
+            <button type="button" id="btnEstadisticas" class="btn-nav" onclick="location.href='estadisticas.html'">📊 Estadísticas</button>
             <button type="button" id="btnConsultas" class="btn-nav" onclick="location.href='consulta.html'">🔍 Módulo de Consultas</button>
             <button type="button" id="btnCambiarClave" class="btn-nav" onclick="location.href='cambiar-clave.html'">🔑 Cambiar Contraseña</button>
             <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
@@ -215,6 +216,11 @@
                         <select id="parentesco" name="parentesco" required>
                             <option value="">Seleccione</option><option value="madre">Madre</option><option value="padre">Padre</option><option value="hijo">Hijo</option><option value="jefe de hogar">Jefe de Hogar</option><option value="nieto">Nieto</option><option value="hermano">Hermano</option><option value="esposo">Esposo</option><option value="cónyuge">Cónyuge</option><option value="suegro">Suegro</option>
                         </select>
+                        
+                        <div id="btnAgregarDepWrapper" class="hidden">
+                            <button type="button" class="btn-agregar-fam" onclick="abrirModalDependiente()">➕ Agregar Familiar</button>
+                            <span id="badgeDependientes" class="badge-count hidden">0 Agregados</span>
+                        </div>
                     </div>
                     <div>
                         <label for="profesion">Profesión / Oficio:</label>
@@ -310,6 +316,55 @@
         </form>
     </div>
 
+    <div id="modalDependiente" class="modal-overlay hidden">
+        <div class="modal-content">
+            <span class="close-modal" onclick="cerrarModalDependiente()">✖</span>
+            <h2 style="color: var(--azul-oficial); border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 0;">Añadir Carga Familiar</h2>
+            <p style="font-size: 13px; color: #555;">La información de vivienda y comunidad se heredará automáticamente del Jefe de Hogar.</p>
+            
+            <form id="formDependiente">
+                <div class="form-grid">
+                    <div><label>Nombres:</label><input type="text" name="nombre" required></div>
+                    <div><label>Apellidos:</label><input type="text" name="apellido" required></div>
+                    <div><label>Cédula de Identidad:</label><input type="text" name="cedula" required></div>
+                    <div><label>Teléfono de Contacto:</label><input type="text" name="telefono" required></div>
+                    <div><label>Fecha de Nacimiento:</label><input type="date" name="fecha_nacimiento" required></div>
+                    <div><label>Sexo:</label><select name="sexo" required><option value="">Seleccione</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
+                    <div>
+                        <label>Parentesco (con el Jefe):</label>
+                        <select name="parentesco" required>
+                            <option value="">Seleccione</option><option value="madre">Madre</option><option value="padre">Padre</option><option value="hijo">Hijo</option><option value="nieto">Nieto</option><option value="hermano">Hermano</option><option value="esposo">Esposo</option><option value="cónyuge">Cónyuge</option><option value="suegro">Suegro</option>
+                        </select>
+                    </div>
+                    <div><label>Profesión / Oficio:</label><input type="text" name="profesion"></div>
+                    <div><label>¿Trabaja Actualmente?:</label><select name="trabaja" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>¿Está Escolarizado?:</label><select name="esta_escolarizado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div class="full-width"><label>¿Posee Cédula Física?:</label><select name="esta_cedulado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    
+                    <div class="full-width"><label>¿Padece alguna enfermedad?:</label><input type="text" name="padece_enfermedad"></div>
+                    <div><label>¿Toma medicamento continuo?:</label><select id="m_toma_medicamento" name="toma_medicamento" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div id="m_cual_medicamento_wrapper" class="hidden"><label>Especifique medicamento:</label><input type="text" id="m_cual_medicamento" name="cual_medicamento"></div>
+                    <div><label>¿Presenta alguna discapacidad?:</label><select name="discapacitado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>¿Embarazada?:</label><select name="embarazada" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>¿En Lactancia Materna?:</label><select name="lactancia_materna" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    
+                    <div><label>Pensión Amor Mayor:</label><select name="cobra_amor_mayor" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>Carnet de la Patria:</label><select name="carnet_patria" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>Misión José Gregorio:</label><select name="mision_jose_gregorio" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>Hogares de la Patria:</label><select name="hogares_patria_bono" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div class="full-width"><label>Centro de Votación:</label><input type="text" name="donde_vota"></div>
+                    <div class="full-width"><label>Estatus Electoral (VD/VB/VO):</label><select id="m_vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required><option value="">Seleccione</option><option value="VD">VD</option><option value="VB">VB</option><option value="VO">VO</option></select></div>
+                    <div id="m_vd_vb_vo_detalle_wrapper" class="hidden full-width"><label>Observaciones:</label><textarea id="m_vd_vb_vo_detalle" name="vd_vb_vo_detalle" rows="2"></textarea></div>
+                </div>
+                
+                <div style="text-align: right; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                    <button type="button" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-right: 10px;" onclick="cerrarModalDependiente()">Cancelar</button>
+                    <button type="submit" style="padding: 10px 20px; background: var(--azul-oficial); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Guardar Familiar ✔</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, push, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -329,6 +384,9 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         const auth = getAuth(app);
+
+        // Variables para Familiares
+        window.dependientesTemporales = [];
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -480,7 +538,7 @@
             
             if (select) {
                 select.addEventListener('change', (e) => {
-                    if (e.target.value === 'si' || (selectId === 'vd_vb_vo_seleccion' && e.target.value !== '')) {
+                    if (e.target.value === 'si' || (selectId === 'vd_vb_vo_seleccion' && e.target.value !== '') || (selectId === 'm_vd_vb_vo_seleccion' && e.target.value !== '')) {
                         wrapper.classList.remove('hidden');
                         if(input) input.required = true;
                     } else {
@@ -493,11 +551,49 @@
 
         toggleHidden('toma_medicamento', 'cual_medicamento_wrapper', 'cual_medicamento');
         toggleHidden('vd_vb_vo_seleccion', 'vd_vb_vo_detalle_wrapper', 'vd_vb_vo_detalle');
-        
-        // REGLA DE ORO: Agregada la función del gas para que aparezca/desaparezca
         toggleHidden('tiene_gas', 'tipo_cilindro_gas_wrapper', 'tipo_cilindro_gas');
+        
+        // Ocultos para el Modal
+        toggleHidden('m_toma_medicamento', 'm_cual_medicamento_wrapper', 'm_cual_medicamento');
+        toggleHidden('m_vd_vb_vo_seleccion', 'm_vd_vb_vo_detalle_wrapper', 'm_vd_vb_vo_detalle');
 
-        // ENVIO
+        // MOSTRAR BOTON DE AGREGAR FAMILIAR SI ES JEFE DE HOGAR
+        document.getElementById('parentesco').addEventListener('change', (e) => {
+            const btnWrap = document.getElementById('btnAgregarDepWrapper');
+            if(e.target.value === 'jefe de hogar') {
+                btnWrap.classList.remove('hidden');
+            } else {
+                btnWrap.classList.add('hidden');
+            }
+        });
+
+        // LÓGICA DEL MODAL
+        window.abrirModalDependiente = () => {
+            document.getElementById('modalDependiente').classList.remove('hidden');
+        };
+
+        window.cerrarModalDependiente = () => {
+            document.getElementById('modalDependiente').classList.add('hidden');
+            document.getElementById('formDependiente').reset();
+            document.getElementById('m_cual_medicamento_wrapper').classList.add('hidden');
+            document.getElementById('m_vd_vb_vo_detalle_wrapper').classList.add('hidden');
+        };
+
+        document.getElementById('formDependiente').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const dependienteData = Object.fromEntries(formData.entries());
+            
+            window.dependientesTemporales.push(dependienteData);
+            
+            const badge = document.getElementById('badgeDependientes');
+            badge.textContent = `${window.dependientesTemporales.length} Agregados`;
+            badge.classList.remove('hidden');
+            
+            window.cerrarModalDependiente();
+        });
+
+        // ENVIO PRINCIPAL
         const form = document.getElementById('registroHabitanteForm');
         form.addEventListener('submit', async (e) => {
             e.preventDefault(); 
@@ -512,16 +608,46 @@
                 habitanteData.registrado_por_nombre = respNombre;
                 habitanteData.fecha_registro = new Date().toLocaleString();
 
+                // 1. Guardar al Jefe
                 const habitantesRef = ref(database, 'habitantes');
-                await push(habitantesRef, habitanteData);
+                const nuevoJefeRef = await push(habitantesRef, habitanteData);
+                const jefeId = nuevoJefeRef.key;
+
+                // 2. Guardar a los Familiares (Si los hay) heredando datos de vivienda
+                if (window.dependientesTemporales.length > 0) {
+                    for (let dep of window.dependientesTemporales) {
+                        dep.codigo_sigue_actual = habitanteData.codigo_sigue_actual;
+                        dep.comuna = habitanteData.comuna;
+                        dep.comunidad = habitanteData.comunidad;
+                        dep.consejo_comunal = habitanteData.consejo_comunal;
+                        dep.calle = habitanteData.calle;
+                        dep.numero_casa = habitanteData.numero_casa;
+                        dep.tipo_vivienda = habitanteData.tipo_vivienda;
+                        dep.condiciones_vivienda = habitanteData.condiciones_vivienda;
+                        dep.responsabilidad_cbi_cm = habitanteData.responsabilidad_cbi_cm;
+                        dep.tiene_gas = habitanteData.tiene_gas;
+                        dep.tipo_cilindro_gas = habitanteData.tipo_cilindro_gas;
+                        
+                        dep.jefe_hogar_id = jefeId;
+                        dep.registrado_por_uid = user.uid;
+                        dep.registrado_por_nombre = respNombre;
+                        dep.fecha_registro = new Date().toLocaleString();
+
+                        await push(habitantesRef, dep);
+                    }
+                }
                 
-                alert('¡Datos guardados con éxito en el Sistema Gubernamental!');
+                alert('¡Grupo Familiar guardado con éxito en el Sistema Gubernamental!');
+                
+                // Limpiar todo
                 form.reset();
+                window.dependientesTemporales = [];
+                document.getElementById('badgeDependientes').classList.add('hidden');
+                document.getElementById('btnAgregarDepWrapper').classList.add('hidden');
+                
                 displayEdad.textContent = '';
                 document.getElementById('cual_medicamento_wrapper').classList.add('hidden');
                 document.getElementById('vd_vb_vo_detalle_wrapper').classList.add('hidden');
-                
-                // REGLA DE ORO: Se asegura de ocultar el gas al limpiar
                 document.getElementById('tipo_cilindro_gas_wrapper').classList.add('hidden');
                 
                 currentStep = 1;
@@ -530,6 +656,11 @@
                 console.error("Error al guardar:", error);
                 alert('Error al guardar. Revise su conexión.');
             }
+        });
+        
+        // Convertir textos de la modal a mayúsculas
+        document.querySelectorAll('#modalDependiente input[type="text"], #modalDependiente textarea').forEach(input => {
+            input.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
         });
     </script>
 </body>

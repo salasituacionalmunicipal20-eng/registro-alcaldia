@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consultas y Buscador - Alcaldía</title>
     <style>
-        :root {
-            --rojo-oficial: #E30613;
-            --azul-oficial: #004a99;
-            --gris-fondo: #e9ecef;
-            --gris-borde: #ced4da;
-        }
+        :root { --rojo-oficial: #E30613; --azul-oficial: #004a99; --gris-fondo: #e9ecef; --gris-borde: #ced4da; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; padding-top: 30px;}
         .cintillo-gob { width: 100%; background-color: #222; color: #fff; text-align: center; padding: 6px 0; font-size: 11px; font-weight: bold; letter-spacing: 1px; position: fixed; top: 0; left: 0; z-index: 1000; }
         .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 1200px; margin: auto; border-top: 8px solid var(--rojo-oficial); }
@@ -67,6 +62,9 @@
         .btn-cancelar { background-color: #6c757d; color: white; padding: 12px 25px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 15px;}
         .btn-cancelar:hover { background-color: #5a6268; }
         .lock-warning { color: var(--rojo-oficial); font-size: 12px; font-weight: bold; margin-top: -5px; margin-bottom: 10px; display: none;}
+
+        /* REGLA DE ORO: Estilos Grupo Familiar */
+        .grupo-familiar-box { background: #f4f6f9; padding: 15px; border-radius: 6px; border: 2px dashed #004a99; margin-top: 15px; }
 
         @media print {
             .cintillo-gob, .top-nav, .search-panel, h2, .edit-panel, .no-print { display: none !important; }
@@ -167,7 +165,17 @@
                     <div><label>Tipo de Vivienda:</label><select id="e_tipo_vivienda" name="tipo_vivienda" required><option value="">Seleccione</option><option value="apto">Apartamento</option><option value="casa">Casa</option><option value="town house">Town House</option></select></div>
                     <div><label>Condiciones de Vivienda:</label><select id="e_condiciones_vivienda" name="condiciones_vivienda" required><option value="">Seleccione</option><option value="bien">Óptimas (Bien)</option><option value="regular">Regulares</option><option value="malo">Malas / Precarias</option></select></div>
                     <div><label>Responsabilidad CBI/CM:</label><input type="text" id="e_responsabilidad_cbi_cm" name="responsabilidad_cbi_cm" required></div>
-                    <div><label>Tipo de Cilindro de Gas:</label><input type="text" id="e_tipo_cilindro_gas" name="tipo_cilindro_gas"></div>
+                    
+                    <div>
+                        <label for="e_tiene_gas">¿Posee Cilindro de Gas?:</label>
+                        <select id="e_tiene_gas" name="tiene_gas" required>
+                            <option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option>
+                        </select>
+                    </div>
+                    <div id="e_tipo_cilindro_gas_wrapper" class="hidden">
+                        <label>Tipo de Cilindro de Gas (Kg):</label>
+                        <input type="text" id="e_tipo_cilindro_gas" name="tipo_cilindro_gas">
+                    </div>
                 </div>
 
                 <h3 class="section-title">3. Datos Personales</h3>
@@ -178,11 +186,22 @@
                     <div><label>Teléfono de Contacto:</label><input type="text" id="e_telefono" name="telefono" required></div>
                     <div><label>Fecha de Nacimiento:</label><input type="date" id="e_fecha_nacimiento" name="fecha_nacimiento" required></div>
                     <div><label>Sexo:</label><select id="e_sexo" name="sexo" required><option value="">Seleccione</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option></select></div>
-                    <div><label>Parentesco con Jefe de Hogar:</label><select id="e_parentesco" name="parentesco" required><option value="">Seleccione</option><option value="madre">Madre</option><option value="padre">Padre</option><option value="hijo">Hijo</option><option value="jefe de hogar">Jefe de Hogar</option><option value="nieto">Nieto</option><option value="hermano">Hermano</option><option value="esposo">Esposo</option><option value="cónyuge">Cónyuge</option><option value="suegro">Suegro</option></select></div>
+                    <div>
+                        <label>Parentesco con Jefe de Hogar:</label>
+                        <select id="e_parentesco" name="parentesco" required><option value="">Seleccione</option><option value="madre">Madre</option><option value="padre">Padre</option><option value="hijo">Hijo</option><option value="jefe de hogar">Jefe de Hogar</option><option value="nieto">Nieto</option><option value="hermano">Hermano</option><option value="esposo">Esposo</option><option value="cónyuge">Cónyuge</option><option value="suegro">Suegro</option></select>
+                    </div>
                     <div><label>Profesión / Oficio:</label><input type="text" id="e_profesion" name="profesion"></div>
                     <div><label>¿Trabaja Actualmente?:</label><select id="e_trabaja" name="trabaja" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
                     <div><label>¿Está Escolarizado?:</label><select id="e_esta_escolarizado" name="esta_escolarizado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
                     <div class="full-width"><label>¿Posee Cédula Física?:</label><select id="e_esta_cedulado" name="esta_cedulado" required><option value="">Seleccione</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                </div>
+
+                <div id="e_grupo_familiar_wrapper" class="hidden full-width grupo-familiar-box">
+                    <h4 style="margin-top:0; color:var(--azul-oficial); border-bottom:1px solid #ccc; padding-bottom:5px;">👨‍👩‍👧‍👦 Cargas Familiares del Jefe de Hogar</h4>
+                    <div id="e_familiares_actuales" style="margin-bottom: 15px; font-size: 13px;"></div>
+                    <label>Asignar NUEVOS Familiares (Habitantes registrados en esta comunidad sin Jefe de Hogar):</label>
+                    <p style="font-size: 11px; color: #666; margin-top:0;">*Mantenga presionada la tecla CTRL para seleccionar varios</p>
+                    <select id="e_dependientes_libres" multiple style="height: 120px;"></select>
                 </div>
 
                 <h3 class="section-title">4. Estatus de Salud</h3>
@@ -239,6 +258,18 @@
         let datosTerritoriales = {}; 
         let idActualEdicion = null; 
 
+        document.querySelectorAll('input[type="text"], textarea').forEach(input => {
+            input.addEventListener('input', function() { this.value = this.value.toUpperCase(); });
+        });
+
+        let inactivityTime = function () {
+            let time;
+            window.onload = resetTimer; document.onmousemove = resetTimer; document.onkeypress = resetTimer;
+            function logout() { alert("Sesión expirada por inactividad. Por seguridad, debe ingresar nuevamente."); signOut(auth).then(() => window.location.href = 'index.html'); }
+            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
+        };
+        inactivityTime();
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
             
@@ -248,31 +279,20 @@
             } else {
                 try {
                     const snap = await get(child(ref(database), `operadores/${user.uid}`));
-                    if (snap.exists() && snap.val().rol === "admin") {
-                        esAdmin = true;
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
+                    if (snap.exists() && snap.val().rol === "admin") { esAdmin = true; }
+                } catch (e) { console.error(e); }
             }
 
             if (esAdmin) {
                 document.getElementById('thResponsable').classList.remove('hidden');
                 const btnAdmin = document.getElementById('btnAdminPanel');
-                if (btnAdmin) {
-                    btnAdmin.classList.remove('hidden');
-                    btnAdmin.addEventListener('click', () => { window.location.href = "admin.html"; });
-                }
+                if (btnAdmin) { btnAdmin.classList.remove('hidden'); btnAdmin.addEventListener('click', () => { window.location.href = "admin.html"; }); }
             }
             
-            cargarFiltrosTerritoriales(); 
-            cargarDatos(); 
+            cargarFiltrosTerritoriales(); cargarDatos(); 
         });
 
-        document.getElementById('btnCerrarSesion').addEventListener('click', () => {
-            signOut(auth).then(() => window.location.href = "index.html");
-        });
-
+        document.getElementById('btnCerrarSesion').addEventListener('click', () => { signOut(auth).then(() => window.location.href = "index.html"); });
         window.imprimirTabla = () => { window.print(); };
 
         window.exportarCSV = () => {
@@ -280,9 +300,7 @@
             const filas = document.querySelectorAll('#tablaCuerpo tr');
             filas.forEach(fila => {
                 const cols = fila.querySelectorAll('td');
-                if(cols.length > 0) {
-                    csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText},${cols[4].innerText},${cols[5].innerText}\\n`;
-                }
+                if(cols.length > 0) { csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText},${cols[4].innerText},${cols[5].innerText}\\n`; }
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = window.URL.createObjectURL(blob);
@@ -311,12 +329,10 @@
             fComuna.addEventListener('change', (e) => {
                 const sel = e.target.value;
                 if (sel && datosTerritoriales[sel]) {
-                    fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>';
-                    fComunidad.disabled = false;
+                    fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; fComunidad.disabled = false;
                     datosTerritoriales[sel].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
                 } else {
-                    fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>';
-                    fComunidad.disabled = true;
+                    fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; fComunidad.disabled = true;
                 }
                 filtrarTabla(); 
             });
@@ -329,7 +345,10 @@
                 if (sel && datosTerritoriales[sel]) {
                     datosTerritoriales[sel].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
                 }
+                if (idActualEdicion) actualizarVistaFamiliares();
             });
+            
+            document.getElementById('e_comunidad').addEventListener('change', () => { if (idActualEdicion) actualizarVistaFamiliares(); });
         }
 
         function cargarDatos() {
@@ -347,8 +366,7 @@
             const fCalle = document.getElementById('fCalle').value.toLowerCase();
 
             const tbody = document.getElementById('tablaCuerpo');
-            tbody.innerHTML = "";
-            let contador = 0;
+            tbody.innerHTML = ""; let contador = 0;
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -382,16 +400,59 @@
             document.getElementById('totalResultados').textContent = `Total de registros encontrados: ${contador}`;
         }
 
-        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => {
-            element.addEventListener('input', filtrarTabla);
-        });
+        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { element.addEventListener('input', filtrarTabla); });
 
         window.eliminarRegistro = (id) => {
             if(confirm("ALERTA DE SEGURIDAD: ¿Seguro que desea eliminar permanentemente este habitante?")) {
-                remove(ref(database, `habitantes/${id}`))
-                .catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
+                remove(ref(database, `habitantes/${id}`)).catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
             }
         };
+
+        // LÓGICA DE GRUPO FAMILIAR EN EDICIÓN
+        function actualizarVistaFamiliares() {
+            const parentesco = document.getElementById('e_parentesco').value;
+            const wrapper = document.getElementById('e_grupo_familiar_wrapper');
+            
+            if (parentesco === 'jefe de hogar') {
+                wrapper.classList.remove('hidden');
+                const comunaActual = document.getElementById('e_comuna').value;
+                const comunidadActual = document.getElementById('e_comunidad').value;
+                
+                const selectLibres = document.getElementById('e_dependientes_libres');
+                const divActuales = document.getElementById('e_familiares_actuales');
+                
+                selectLibres.innerHTML = '';
+                let htmlActuales = '<strong>Familiares vinculados:</strong><ul style="margin-top:5px; padding-left: 20px; color:#333;">';
+                let tieneActuales = false;
+
+                for (let id in baseDeDatosHabitantes) {
+                    const h = baseDeDatosHabitantes[id];
+                    if (id === idActualEdicion) continue;
+
+                    // Si ya es familiar de este jefe
+                    if (h.jefe_hogar_id === idActualEdicion) {
+                        htmlActuales += `<li>${h.nombre} ${h.apellido} - C.I: ${h.cedula} (${h.parentesco})</li>`;
+                        tieneActuales = true;
+                    } 
+                    // Si está en la misma comunidad, NO es jefe y NO tiene jefe asignado
+                    else if (h.comuna === comunaActual && h.comunidad === comunidadActual && h.parentesco !== 'jefe de hogar' && !h.jefe_hogar_id) {
+                        const opt = document.createElement('option');
+                        opt.value = id;
+                        opt.textContent = `${h.nombre} ${h.apellido} - C.I: ${h.cedula} (${h.parentesco || 'Sin parentesco'})`;
+                        selectLibres.appendChild(opt);
+                    }
+                }
+
+                if(!tieneActuales) htmlActuales += '<li>Ninguno registrado</li>';
+                htmlActuales += '</ul>';
+                divActuales.innerHTML = htmlActuales;
+
+            } else {
+                wrapper.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('e_parentesco').addEventListener('change', actualizarVistaFamiliares);
 
         window.editarRegistro = (id) => {
             idActualEdicion = id;
@@ -404,14 +465,10 @@
             
             if (!esAdmin) {
                 document.getElementById('avisoBloqueo').style.display = 'block';
-                camposPersonales.forEach(campoId => {
-                    document.getElementById(campoId).disabled = true;
-                });
+                camposPersonales.forEach(campoId => { document.getElementById(campoId).disabled = true; });
             } else {
                 document.getElementById('avisoBloqueo').style.display = 'none';
-                camposPersonales.forEach(campoId => {
-                    document.getElementById(campoId).disabled = false;
-                });
+                camposPersonales.forEach(campoId => { document.getElementById(campoId).disabled = false; });
             }
 
             const llenarCampo = (idElemento, valor) => { if (document.getElementById(idElemento)) document.getElementById(idElemento).value = valor || ''; };
@@ -431,41 +488,19 @@
             llenarCampo('e_tipo_vivienda', h.tipo_vivienda);
             llenarCampo('e_condiciones_vivienda', h.condiciones_vivienda);
             llenarCampo('e_responsabilidad_cbi_cm', h.responsabilidad_cbi_cm);
+            
+            llenarCampo('e_tiene_gas', h.tiene_gas);
             llenarCampo('e_tipo_cilindro_gas', h.tipo_cilindro_gas);
             
-            llenarCampo('e_nombre', h.nombre);
-            llenarCampo('e_apellido', h.apellido);
-            llenarCampo('e_cedula', h.cedula);
-            llenarCampo('e_telefono', h.telefono);
-            llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento);
-            llenarCampo('e_sexo', h.sexo);
-            llenarCampo('e_parentesco', h.parentesco);
-            llenarCampo('e_profesion', h.profesion);
-            llenarCampo('e_trabaja', h.trabaja);
-            llenarCampo('e_esta_escolarizado', h.esta_escolarizado);
-            llenarCampo('e_esta_cedulado', h.esta_cedulado);
-            
-            llenarCampo('e_padece_enfermedad', h.padece_enfermedad);
-            llenarCampo('e_toma_medicamento', h.toma_medicamento);
-            llenarCampo('e_cual_medicamento', h.cual_medicamento);
-            llenarCampo('e_discapacitado', h.discapacitado);
-            llenarCampo('e_embarazada', h.embarazada);
-            llenarCampo('e_lactancia_materna', h.lactancia_materna);
-            
-            llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor);
-            llenarCampo('e_carnet_patria', h.carnet_patria);
-            llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio);
-            llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono);
-            llenarCampo('e_donde_vota', h.donde_vota);
-            llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion);
-            llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
+            llenarCampo('e_nombre', h.nombre); llenarCampo('e_apellido', h.apellido); llenarCampo('e_cedula', h.cedula); llenarCampo('e_telefono', h.telefono); llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento); llenarCampo('e_sexo', h.sexo); llenarCampo('e_parentesco', h.parentesco); llenarCampo('e_profesion', h.profesion); llenarCampo('e_trabaja', h.trabaja); llenarCampo('e_esta_escolarizado', h.esta_escolarizado); llenarCampo('e_esta_cedulado', h.esta_cedulado);
+            llenarCampo('e_padece_enfermedad', h.padece_enfermedad); llenarCampo('e_toma_medicamento', h.toma_medicamento); llenarCampo('e_cual_medicamento', h.cual_medicamento); llenarCampo('e_discapacitado', h.discapacitado); llenarCampo('e_embarazada', h.embarazada); llenarCampo('e_lactancia_materna', h.lactancia_materna);
+            llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor); llenarCampo('e_carnet_patria', h.carnet_patria); llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio); llenarCampo('e_hogares_patria_bono', h.hogares_patria_bono); llenarCampo('e_donde_vota', h.donde_vota); llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion); llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
 
-            if(h.toma_medicamento === 'si') document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden');
-            else document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
-
-            if(h.vd_vb_vo_seleccion) document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden');
-            else document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
+            if(h.toma_medicamento === 'si') document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden'); else document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
+            if(h.vd_vb_vo_seleccion) document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden'); else document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
+            if(h.tiene_gas === 'si') document.getElementById('e_tipo_cilindro_gas_wrapper').classList.remove('hidden'); else document.getElementById('e_tipo_cilindro_gas_wrapper').classList.add('hidden');
             
+            actualizarVistaFamiliares();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
@@ -477,20 +512,24 @@
         };
 
         const toggleHiddenEdit = (selectId, wrapperId, inputId) => {
-            document.getElementById(selectId).addEventListener('change', (e) => {
-                const wrapper = document.getElementById(wrapperId);
-                const input = document.getElementById(inputId);
-                if (e.target.value === 'si' || (selectId === 'e_vd_vb_vo_seleccion' && e.target.value !== '')) {
-                    wrapper.classList.remove('hidden');
-                    if(input) input.required = true;
-                } else {
-                    wrapper.classList.add('hidden');
-                    if(input) { input.required = false; input.value = ''; }
-                }
-            });
+            const el = document.getElementById(selectId);
+            if(el){
+                el.addEventListener('change', (e) => {
+                    const wrapper = document.getElementById(wrapperId);
+                    const input = document.getElementById(inputId);
+                    if (e.target.value === 'si' || (selectId === 'e_vd_vb_vo_seleccion' && e.target.value !== '')) {
+                        wrapper.classList.remove('hidden');
+                        if(input) input.required = true;
+                    } else {
+                        wrapper.classList.add('hidden');
+                        if(input) { input.required = false; input.value = ''; }
+                    }
+                });
+            }
         };
         toggleHiddenEdit('e_toma_medicamento', 'e_cual_medicamento_wrapper', 'e_cual_medicamento');
         toggleHiddenEdit('e_vd_vb_vo_seleccion', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_detalle');
+        toggleHiddenEdit('e_tiene_gas', 'e_tipo_cilindro_gas_wrapper', 'e_tipo_cilindro_gas');
 
         document.getElementById('formEdicion').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -503,8 +542,19 @@
             };
 
             try {
+                // Actualiza al jefe de hogar
                 await update(ref(database, `habitantes/${idActualEdicion}`), dataFinal);
-                alert('¡Expediente actualizado exitosamente!');
+                
+                // Procesar la vinculación de familiares seleccionados
+                const selectLibres = document.getElementById('e_dependientes_libres');
+                if (selectLibres && !document.getElementById('e_grupo_familiar_wrapper').classList.contains('hidden')) {
+                    const seleccionados = Array.from(selectLibres.selectedOptions).map(opt => opt.value);
+                    for (const depId of seleccionados) {
+                        await update(ref(database, `habitantes/${depId}`), { jefe_hogar_id: idActualEdicion });
+                    }
+                }
+                
+                alert('¡Expediente y Grupo Familiar actualizados exitosamente!');
                 window.cerrarEdicion();
             } catch (error) {
                 alert('Error al actualizar: ' + error.message);
