@@ -101,21 +101,10 @@
             text-transform: uppercase;
         }
         
-        .btn-nav:hover { 
-            background-color: #555; 
-        }
-        
-        #btnVolver { 
-            background-color: var(--azul-oficial); 
-        }
-        
-        .btn-pdf { 
-            background-color: #E30613; 
-        }
-        
-        .btn-pdf:hover { 
-            background-color: #b7050f; 
-        }
+        .btn-nav:hover { background-color: #555; }
+        #btnVolver { background-color: var(--azul-oficial); }
+        .btn-pdf { background-color: #E30613; }
+        .btn-pdf:hover { background-color: #b7050f; }
         
         h2 { 
             color: var(--rojo-oficial); 
@@ -164,7 +153,6 @@
             border-color: var(--azul-oficial); 
             box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); 
         }
-        
         select:disabled { 
             background-color: #e9ecef; 
             color: #6c757d; 
@@ -216,26 +204,9 @@
         .c-11::before { background-color: #343a40; } 
         .c-12::before { background-color: #dc3545; }
 
-        .stat-icon { 
-            font-size: 30px; 
-            margin-bottom: 5px; 
-            display: block;
-        }
-        
-        .stat-number { 
-            font-size: 28px; 
-            font-weight: 900; 
-            color: #333; 
-            margin-bottom: 2px;
-        }
-        
-        .stat-title { 
-            font-size: 11px; 
-            font-weight: bold; 
-            color: #666; 
-            text-transform: uppercase; 
-            margin-bottom: 10px;
-        }
+        .stat-icon { font-size: 30px; margin-bottom: 5px; display: block; }
+        .stat-number { font-size: 28px; font-weight: 900; color: #333; margin-bottom: 2px; }
+        .stat-title { font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 10px; }
 
         .btn-metric-print {
             background-color: #333;
@@ -251,20 +222,19 @@
             align-self: center;
         }
         
-        .btn-metric-print:hover { 
-            background-color: #555; 
-        }
+        .btn-metric-print:hover { background-color: #555; }
 
         .print-only { display: none; }
 
+        /* REGLA DE ORO: Estilos de Impresión Optimizados y Limpios */
         @media print {
             body { 
                 background: white; 
                 padding: 0; 
                 font-family: Arial, sans-serif;
             }
-            .cintillo-gob, .top-nav, .search-panel, h2, .btn-metric-print { 
-                display: none !important; 
+            .cintillo-gob, .top-nav, .search-panel, h2, .stats-grid { 
+                display: none !important; /* Ocultamos las tarjetas y botones gigantes al imprimir */
             }
             .container { 
                 box-shadow: none; 
@@ -277,28 +247,9 @@
             .gob-header { 
                 border-bottom: 2px solid #000; 
                 padding-bottom: 10px; 
-                margin-bottom: 20px;
+                margin-bottom: 15px;
             }
-            .header-titles h1 { 
-                font-size: 18px; 
-                color: #000;
-            }
-            
-            .stats-grid { 
-                grid-template-columns: repeat(4, 1fr); 
-                gap: 10px; 
-                margin-bottom: 20px; 
-                break-inside: avoid;
-            }
-            .stat-card { 
-                padding: 10px; 
-                border: 1px solid #999; 
-                box-shadow: none;
-            }
-            .stat-card::before { display: none; }
-            .stat-icon { font-size: 20px; }
-            .stat-number { font-size: 18px; }
-            .stat-title { font-size: 9px; margin-bottom: 0;}
+            .header-titles h1 { font-size: 16px; color: #000; }
 
             .print-only { display: block; }
             
@@ -307,35 +258,39 @@
                 text-transform: uppercase; 
                 font-size: 14px; 
                 font-weight: bold; 
-                margin-bottom: 15px; 
-                border-bottom: 1px solid #ccc; 
-                padding-bottom: 5px;
+                margin-bottom: 5px; 
             }
-
+            
+            /* Caja para los Filtros Aplicados */
             .print-filters-box { 
                 border: 1px solid #000; 
                 padding: 10px; 
-                margin-bottom: 15px; 
-                background-color: #f9f9f9 !important; 
+                margin-bottom: 10px; 
+                background-color: #fdfdfd !important; 
                 font-size: 10px;
             }
             .print-filters-box strong { color: var(--azul-oficial); }
+
+            /* REGLA DE ORO: Nuevo resumen de métricas compacto para el PDF */
+            .print-metrics-summary {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 5px 15px;
+                border: 1px solid #000;
+                padding: 10px;
+                margin-bottom: 15px;
+                background-color: #f9f9f9 !important;
+                font-size: 10px;
+            }
+            .print-metrics-summary div {
+                border-bottom: 1px dotted #ccc;
+                padding: 2px 0;
+            }
+            .print-metrics-summary strong { color: #333; }
             
-            table { 
-                width: 100%; 
-                border-collapse: collapse; 
-                font-size: 9px; 
-            }
-            th, td { 
-                border: 1px solid #000; 
-                padding: 4px; 
-                text-align: left; 
-            }
-            th { 
-                background-color: #eee !important; 
-                color: #000 !important; 
-                font-weight: bold;
-            }
+            table { width: 100%; border-collapse: collapse; font-size: 9px; }
+            th, td { border: 1px solid #000; padding: 4px; text-align: left; }
+            th { background-color: #eee !important; color: #000 !important; font-weight: bold; text-transform: uppercase;}
         }
     </style>
 </head>
@@ -419,75 +374,75 @@
                 <span class="stat-icon">👥</span>
                 <div class="stat-number" id="statTotal">0</div>
                 <div class="stat-title">Total Personas</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('total')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('total')">🖨 PDF</button>
             </div>
             <div class="stat-card c-2">
                 <span class="stat-icon">👑</span>
                 <div class="stat-number" id="statJefes">0</div>
                 <div class="stat-title">Jefes de Hogar</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('jefes')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('jefes')">🖨 PDF</button>
             </div>
             <div class="stat-card c-3">
                 <span class="stat-icon">🔥</span>
                 <div class="stat-number" id="statGas">0</div>
                 <div class="stat-title">Hogares con Gas</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('gas')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('gas')">🖨 PDF</button>
             </div>
             <div class="stat-card c-4">
                 <span class="stat-icon">🧓🏽</span>
                 <div class="stat-number" id="statAdultos">0</div>
                 <div class="stat-title">Adultos (60+)</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('adultos')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('adultos')">🖨 PDF</button>
             </div>
             
             <div class="stat-card c-5">
                 <span class="stat-icon">👦🏽</span>
                 <div class="stat-number" id="statNinos">0</div>
                 <div class="stat-title">Menores (< 18)</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('ninos')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('ninos')">🖨 PDF</button>
             </div>
             <div class="stat-card c-6">
                 <span class="stat-icon">💼</span>
                 <div class="stat-number" id="statTrabajan">0</div>
                 <div class="stat-title">Población Activa</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('trabajan')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('trabajan')">🖨 PDF</button>
             </div>
             <div class="stat-card c-7">
                 <span class="stat-icon">🎒</span>
                 <div class="stat-number" id="statEscolarizados">0</div>
                 <div class="stat-title">Escolarizados</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('escolarizados')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('escolarizados')">🖨 PDF</button>
             </div>
             <div class="stat-card c-8">
                 <span class="stat-icon">💊</span>
                 <div class="stat-number" id="statEnfermos">0</div>
                 <div class="stat-title">Enfermedades</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('enfermos')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('enfermos')">🖨 PDF</button>
             </div>
             
             <div class="stat-card c-9">
                 <span class="stat-icon">♿</span>
                 <div class="stat-number" id="statDiscapacidad">0</div>
                 <div class="stat-title">Discapacidad</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('discapacidad')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('discapacidad')">🖨 PDF</button>
             </div>
             <div class="stat-card c-10">
                 <span class="stat-icon">🪪</span>
                 <div class="stat-number" id="statPatria">0</div>
                 <div class="stat-title">Carnet de la Patria</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('patria')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('patria')">🖨 PDF</button>
             </div>
             <div class="stat-card c-11">
                 <span class="stat-icon">👴🏽</span>
                 <div class="stat-number" id="statAmor">0</div>
                 <div class="stat-title">Amor Mayor</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('amor')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('amor')">🖨 PDF</button>
             </div>
             <div class="stat-card c-12">
                 <span class="stat-icon">🔴</span>
                 <div class="stat-number" id="statVD">0</div>
                 <div class="stat-title">Voto Duro (VD)</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('vd')">🖨 Reporte</button>
+                <button class="btn-metric-print" onclick="imprimirMetrica('vd')">🖨 PDF</button>
             </div>
         </div>
 
@@ -495,6 +450,10 @@
             <div class="print-title" id="tituloReporte">Listado de Habitantes: Consolidado Municipal</div>
             
             <div class="print-filters-box" id="infoFiltrosReporte">
+                </div>
+            
+            <div class="print-title" style="margin-top: 10px; font-size: 12px; border:none; text-align:left;">RESUMEN DE MÉTRICAS FILTRADAS:</div>
+            <div class="print-metrics-summary" id="printMetricsSummary">
                 </div>
 
             <table>
@@ -542,7 +501,6 @@
             }
             
             let isAdmin = false;
-            
             if (user.email === "carlos.admin@alcaldia.com") { 
                 isAdmin = true; 
             } else {
@@ -569,9 +527,7 @@
         });
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => { 
-            signOut(auth).then(() => {
-                window.location.href = "index.html";
-            }); 
+            signOut(auth).then(() => window.location.href = "index.html"); 
         });
 
         function cargarFiltrosTerritoriales() {
@@ -620,17 +576,14 @@
         }
 
         function calcularEdad(fecha) {
-            if (!fecha) return 0;
-            
+            if(!fecha) return 0;
             const hoy = new Date(); 
             const cumpleanos = new Date(fecha);
             let edad = hoy.getFullYear() - cumpleanos.getFullYear();
             const m = hoy.getMonth() - cumpleanos.getMonth();
-            
             if (m < 0 || (m === 0 && hoy.getDate() < cumpleanos.getDate())) {
                 edad--;
             }
-            
             return edad;
         }
 
@@ -651,6 +604,24 @@
                     <div><strong>Condición Especial:</strong> ${con.toUpperCase()}</div>
                     <div><strong>Fecha Reporte:</strong> ${new Date().toLocaleDateString()}</div>
                 </div>
+            `;
+        }
+        
+        // REGLA DE ORO: Genera el texto compacto para las métricas
+        function imprimirResumenMetricas(t) {
+            return `
+                <div><strong>Total Personas:</strong> ${t.total}</div>
+                <div><strong>Jefes de Hogar:</strong> ${t.jefes}</div>
+                <div><strong>Hogares con Gas:</strong> ${t.gas}</div>
+                <div><strong>Adultos (60+):</strong> ${t.adultos}</div>
+                <div><strong>Menores (< 18):</strong> ${t.ninos}</div>
+                <div><strong>Población Activa:</strong> ${t.trabajan}</div>
+                <div><strong>Escolarizados:</strong> ${t.escolarizados}</div>
+                <div><strong>Enfermedades crónicas:</strong> ${t.enfermos}</div>
+                <div><strong>Con Discapacidad:</strong> ${t.discapacidad}</div>
+                <div><strong>Carnet de la Patria:</strong> ${t.patria}</div>
+                <div><strong>Pensión Amor Mayor:</strong> ${t.amor}</div>
+                <div><strong>Voto Duro (VD):</strong> ${t.vd}</div>
             `;
         }
 
@@ -740,6 +711,7 @@
                 `;
             }
 
+            // Actualizar tarjetas de la web
             document.getElementById('statTotal').textContent = cTotal;
             document.getElementById('statJefes').textContent = cJefes;
             document.getElementById('statGas').textContent = hogaresConGasUnicos.size; 
@@ -753,8 +725,22 @@
             document.getElementById('statAmor').textContent = cAmor;
             document.getElementById('statVD').textContent = cVD;
 
-            document.getElementById('tituloReporte').textContent = "REPORTE GENERAL DE HABITANTES REGISTRADOS";
+            let tituloHoja = "Listado de Habitantes: Consolidado Municipal (Reporte General)";
+            if (fComuna) tituloHoja = `Reporte Demográfico: Comuna ${fComuna}`;
+            if (fComunidad) tituloHoja = `Reporte Demográfico: Comunidad ${fComunidad} - ${fComuna}`;
+
+            // Escribir datos para el PDF
+            document.getElementById('tituloReporte').textContent = tituloHoja;
             document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
+            
+            // Renderizar resumen de métricas para el PDF
+            const totalesContexto = {
+                total: cTotal, jefes: cJefes, gas: hogaresConGasUnicos.size, adultos: cAdultos,
+                ninos: cNinos, trabajan: cTrabajan, escolarizados: cEscolarizados, enfermos: cEnfermos,
+                discapacidad: cDiscapacidad, patria: cPatria, amor: cAmor, vd: cVD
+            };
+            document.getElementById('printMetricsSummary').innerHTML = imprimirResumenMetricas(totalesContexto);
+            
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
         }
 
@@ -818,7 +804,7 @@
                                 pasaMetrica = true; 
                             }
                         }
-                        nombreMetrica = 'HOGARES CON GAS'; 
+                        nombreMetrica = 'REPRESENTANTES DE HOGARES CON GAS (DEDUPLICADO)'; 
                         break;
                     case 'adultos':
                         if (edad >= 60) pasaMetrica = true; 
@@ -838,7 +824,7 @@
                         break;
                     case 'enfermos':
                         const enf2 = (h.padece_enfermedad || '').trim().toUpperCase();
-                        if (enf2 !== '' && enf2 !== 'NO' && enf2 !== 'NINGUNA') pasaMetrica = true;
+                        if (enf2 !== '' && enf2 !== 'NO' && enf2 !== 'NINGUNA' && enf2 !== 'N/A') pasaMetrica = true;
                         nombreMetrica = 'PERSONAS CON ENFERMEDAD'; 
                         break;
                     case 'discapacidad':
@@ -878,6 +864,8 @@
 
             document.getElementById('tituloReporte').textContent = `REPORTE ESPECÍFICO: ${nombreMetrica}`;
             document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
+            
+            // Mantener el resumen general aunque el listado sea de una métrica especifica
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
 
             setTimeout(() => { 
@@ -891,9 +879,11 @@
             window.onload = resetTimer; 
             document.onmousemove = resetTimer; 
             document.onkeypress = resetTimer;
+            
             function logout() { 
                 signOut(auth).then(() => window.location.href = 'index.html'); 
             }
+            
             function resetTimer() { 
                 clearTimeout(time); 
                 time = setTimeout(logout, 900000); 
