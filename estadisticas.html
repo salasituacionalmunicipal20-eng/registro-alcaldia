@@ -11,6 +11,7 @@
             --gris-fondo: #e9ecef; 
             --gris-borde: #ced4da; 
         }
+        
         body { 
             font-family: 'Segoe UI', Arial, sans-serif; 
             margin: 0; 
@@ -18,6 +19,7 @@
             padding: 20px 0; 
             padding-top: 30px;
         }
+        
         .cintillo-gob { 
             width: 100%; 
             background-color: #222; 
@@ -32,6 +34,7 @@
             left: 0; 
             z-index: 1000; 
         }
+        
         .container { 
             background-color: #fff; 
             padding: 40px; 
@@ -50,46 +53,190 @@
             padding-bottom: 20px; 
             margin-bottom: 20px;
         }
-        .gob-header img { height: 70px; object-fit: contain; }
-        .header-titles { text-align: center; flex-grow: 1; padding: 0 20px;}
-        .header-titles h1 { color: var(--azul-oficial); margin: 0; font-size: 24px; text-transform: uppercase; font-weight: 900; letter-spacing: 1px;}
-        .header-titles p { color: #555; margin: 5px 0 0 0; font-size: 14px; font-weight: bold; }
         
-        .top-nav { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
-        .btn-nav { background-color: #333; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; text-transform: uppercase;}
-        .btn-nav:hover { background-color: #555; }
-        #btnVolver { background-color: var(--azul-oficial); }
-        .btn-pdf { background-color: #E30613; }
-        .btn-pdf:hover { background-color: #b7050f; }
+        .gob-header img { 
+            height: 70px; 
+            object-fit: contain; 
+        }
         
-        h2 { color: var(--rojo-oficial); margin-top: 0; font-size: 20px; text-transform: uppercase; border-bottom: 2px solid var(--azul-oficial); padding-bottom: 5px;}
+        .header-titles { 
+            text-align: center; 
+            flex-grow: 1; 
+            padding: 0 20px;
+        }
         
-        .search-panel { background: #fdfdfd; padding: 20px; border-radius: 8px; border: 1px solid var(--gris-borde); margin-bottom: 30px; box-shadow: inset 0 0 10px rgba(0,0,0,0.02);}
+        .header-titles h1 { 
+            color: var(--azul-oficial); 
+            margin: 0; 
+            font-size: 24px; 
+            text-transform: uppercase; 
+            font-weight: 900; 
+            letter-spacing: 1px;
+        }
         
-        .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .header-titles p { 
+            color: #555; 
+            margin: 5px 0 0 0; 
+            font-size: 14px; 
+            font-weight: bold; 
+        }
         
-        label { font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 5px;}
-        select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; transition: 0.3s;}
-        select:focus { outline: none; border-color: var(--azul-oficial); box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); }
-        select:disabled { background-color: #e9ecef; color: #6c757d; cursor: not-allowed; border-color: #ddd;}
+        .top-nav { 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 10px; 
+            margin-bottom: 20px; 
+            flex-wrap: wrap;
+        }
+        
+        .btn-nav { 
+            background-color: #333; 
+            color: white; 
+            padding: 8px 15px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+        }
+        
+        .btn-nav:hover { 
+            background-color: #555; 
+        }
+        
+        #btnVolver { 
+            background-color: var(--azul-oficial); 
+        }
+        
+        .btn-pdf { 
+            background-color: #E30613; 
+        }
+        
+        .btn-pdf:hover { 
+            background-color: #b7050f; 
+        }
+        
+        h2 { 
+            color: var(--rojo-oficial); 
+            margin-top: 0; 
+            font-size: 20px; 
+            text-transform: uppercase; 
+            border-bottom: 2px solid var(--azul-oficial); 
+            padding-bottom: 5px;
+        }
+        
+        .search-panel { 
+            background: #fdfdfd; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border: 1px solid var(--gris-borde); 
+            margin-bottom: 30px; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+        }
+        
+        .search-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+        }
+        
+        label { 
+            font-weight: bold; 
+            font-size: 13px; 
+            color: #333; 
+            display: block; 
+            margin-bottom: 5px;
+        }
+        
+        select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box; 
+            font-size: 14px; 
+            transition: 0.3s;
+        }
+        
+        select:focus { 
+            outline: none; 
+            border-color: var(--azul-oficial); 
+            box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); 
+        }
+        
+        select:disabled { 
+            background-color: #e9ecef; 
+            color: #6c757d; 
+            cursor: not-allowed; 
+            border-color: #ddd;
+        }
 
         /* Tarjetas de Estadísticas Expandido */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;}
-        .stat-card { background: white; border: 1px solid var(--gris-borde); border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center;}
-        .stat-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 5px; }
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            margin-bottom: 30px;
+        }
         
-        .c-1::before { background-color: #007bff; } .c-2::before { background-color: #6f42c1; } 
-        .c-3::before { background-color: #fd7e14; } .c-4::before { background-color: #28a745; }
-        .c-5::before { background-color: #17a2b8; } .c-6::before { background-color: #ffc107; }
-        .c-7::before { background-color: #E30613; } .c-8::before { background-color: #e83e8c; }
-        .c-9::before { background-color: #20c997; } .c-10::before { background-color: #6610f2; }
-        .c-11::before { background-color: #343a40; } .c-12::before { background-color: #dc3545; }
+        .stat-card { 
+            background: white; 
+            border: 1px solid var(--gris-borde); 
+            border-radius: 8px; 
+            padding: 15px; 
+            text-align: center; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            position: relative; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+        }
+        
+        .stat-card::before { 
+            content: ""; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 5px; 
+        }
+        
+        .c-1::before { background-color: #007bff; } 
+        .c-2::before { background-color: #6f42c1; } 
+        .c-3::before { background-color: #fd7e14; } 
+        .c-4::before { background-color: #28a745; }
+        .c-5::before { background-color: #17a2b8; } 
+        .c-6::before { background-color: #ffc107; }
+        .c-7::before { background-color: #E30613; } 
+        .c-8::before { background-color: #e83e8c; }
+        .c-9::before { background-color: #20c997; } 
+        .c-10::before { background-color: #6610f2; }
+        .c-11::before { background-color: #343a40; } 
+        .c-12::before { background-color: #dc3545; }
 
-        .stat-icon { font-size: 30px; margin-bottom: 5px; display: block;}
-        .stat-number { font-size: 28px; font-weight: 900; color: #333; margin-bottom: 2px;}
-        .stat-title { font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; margin-bottom: 10px;}
+        .stat-icon { 
+            font-size: 30px; 
+            margin-bottom: 5px; 
+            display: block;
+        }
+        
+        .stat-number { 
+            font-size: 28px; 
+            font-weight: 900; 
+            color: #333; 
+            margin-bottom: 2px;
+        }
+        
+        .stat-title { 
+            font-size: 11px; 
+            font-weight: bold; 
+            color: #666; 
+            text-transform: uppercase; 
+            margin-bottom: 10px;
+        }
 
-        /* REGLA DE ORO: Estilos del botón de PDF individual */
         .btn-metric-print {
             background-color: #333;
             color: white;
@@ -103,20 +250,51 @@
             transition: 0.3s;
             align-self: center;
         }
-        .btn-metric-print:hover { background-color: #555; }
+        
+        .btn-metric-print:hover { 
+            background-color: #555; 
+        }
 
         .print-only { display: none; }
 
         @media print {
-            body { background: white; padding: 0; font-family: Arial, sans-serif;}
-            .cintillo-gob, .top-nav, .search-panel, h2, .btn-metric-print { display: none !important; }
-            .container { box-shadow: none; border: none; max-width: 100%; padding: 0; margin: 0;}
+            body { 
+                background: white; 
+                padding: 0; 
+                font-family: Arial, sans-serif;
+            }
+            .cintillo-gob, .top-nav, .search-panel, h2, .btn-metric-print { 
+                display: none !important; 
+            }
+            .container { 
+                box-shadow: none; 
+                border: none; 
+                max-width: 100%; 
+                padding: 0; 
+                margin: 0;
+            }
             
-            .gob-header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px;}
-            .header-titles h1 { font-size: 18px; color: #000;}
+            .gob-header { 
+                border-bottom: 2px solid #000; 
+                padding-bottom: 10px; 
+                margin-bottom: 20px;
+            }
+            .header-titles h1 { 
+                font-size: 18px; 
+                color: #000;
+            }
             
-            .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; break-inside: avoid;}
-            .stat-card { padding: 10px; border: 1px solid #999; box-shadow: none;}
+            .stats-grid { 
+                grid-template-columns: repeat(4, 1fr); 
+                gap: 10px; 
+                margin-bottom: 20px; 
+                break-inside: avoid;
+            }
+            .stat-card { 
+                padding: 10px; 
+                border: 1px solid #999; 
+                box-shadow: none;
+            }
             .stat-card::before { display: none; }
             .stat-icon { font-size: 20px; }
             .stat-number { font-size: 18px; }
@@ -124,11 +302,40 @@
 
             .print-only { display: block; }
             
-            .print-title { text-align: center; text-transform: uppercase; font-size: 14px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
+            .print-title { 
+                text-align: center; 
+                text-transform: uppercase; 
+                font-size: 14px; 
+                font-weight: bold; 
+                margin-bottom: 15px; 
+                border-bottom: 1px solid #ccc; 
+                padding-bottom: 5px;
+            }
+
+            .print-filters-box { 
+                border: 1px solid #000; 
+                padding: 10px; 
+                margin-bottom: 15px; 
+                background-color: #f9f9f9 !important; 
+                font-size: 10px;
+            }
+            .print-filters-box strong { color: var(--azul-oficial); }
             
-            table { width: 100%; border-collapse: collapse; font-size: 9px; }
-            th, td { border: 1px solid #000; padding: 4px; text-align: left; }
-            th { background-color: #eee !important; color: #000 !important; font-weight: bold;}
+            table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                font-size: 9px; 
+            }
+            th, td { 
+                border: 1px solid #000; 
+                padding: 4px; 
+                text-align: left; 
+            }
+            th { 
+                background-color: #eee !important; 
+                color: #000 !important; 
+                font-weight: bold;
+            }
         }
     </style>
 </head>
@@ -208,24 +415,88 @@
 
         <h2>Métricas Actualizadas</h2>
         <div class="stats-grid">
-            <div class="stat-card c-1"><span class="stat-icon">👥</span><div class="stat-number" id="statTotal">0</div><div class="stat-title">Total Personas</div><button class="btn-metric-print" onclick="imprimirMetrica('total')">🖨 Reporte</button></div>
-            <div class="stat-card c-2"><span class="stat-icon">👑</span><div class="stat-number" id="statJefes">0</div><div class="stat-title">Jefes de Hogar</div><button class="btn-metric-print" onclick="imprimirMetrica('jefes')">🖨 Reporte</button></div>
-            <div class="stat-card c-3"><span class="stat-icon">🔥</span><div class="stat-number" id="statGas">0</div><div class="stat-title">Hogares con Gas</div><button class="btn-metric-print" onclick="imprimirMetrica('gas')">🖨 Reporte</button></div>
-            <div class="stat-card c-4"><span class="stat-icon">🧓🏽</span><div class="stat-number" id="statAdultos">0</div><div class="stat-title">Adultos (60+)</div><button class="btn-metric-print" onclick="imprimirMetrica('adultos')">🖨 Reporte</button></div>
+            <div class="stat-card c-1">
+                <span class="stat-icon">👥</span>
+                <div class="stat-number" id="statTotal">0</div>
+                <div class="stat-title">Total Personas</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('total')">🖨 Reporte</button>
+            </div>
+            <div class="stat-card c-2">
+                <span class="stat-icon">👑</span>
+                <div class="stat-number" id="statJefes">0</div>
+                <div class="stat-title">Jefes de Hogar</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('jefes')">🖨 Reporte</button>
+            </div>
+            <div class="stat-card c-3">
+                <span class="stat-icon">🔥</span>
+                <div class="stat-number" id="statGas">0</div>
+                <div class="stat-title">Hogares con Gas</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('gas')">🖨 Reporte</button>
+            </div>
+            <div class="stat-card c-4">
+                <span class="stat-icon">🧓🏽</span>
+                <div class="stat-number" id="statAdultos">0</div>
+                <div class="stat-title">Adultos (60+)</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('adultos')">🖨 Reporte</button>
+            </div>
             
-            <div class="stat-card c-5"><span class="stat-icon">👦🏽</span><div class="stat-number" id="statNinos">0</div><div class="stat-title">Menores (< 18)</div><button class="btn-metric-print" onclick="imprimirMetrica('ninos')">🖨 Reporte</button></div>
-            <div class="stat-card c-6"><span class="stat-icon">💼</span><div class="stat-number" id="statTrabajan">0</div><div class="stat-title">Población Activa</div><button class="btn-metric-print" onclick="imprimirMetrica('trabajan')">🖨 Reporte</button></div>
-            <div class="stat-card c-7"><span class="stat-icon">🎒</span><div class="stat-number" id="statEscolarizados">0</div><div class="stat-title">Escolarizados</div><button class="btn-metric-print" onclick="imprimirMetrica('escolarizados')">🖨 Reporte</button></div>
-            <div class="stat-card c-8"><span class="stat-icon">💊</span><div class="stat-number" id="statEnfermos">0</div><div class="stat-title">Enfermedades</div><button class="btn-metric-print" onclick="imprimirMetrica('enfermos')">🖨 Reporte</button></div>
+            <div class="stat-card c-5">
+                <span class="stat-icon">👦🏽</span>
+                <div class="stat-number" id="statNinos">0</div>
+                <div class="stat-title">Menores (< 18)</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('ninos')">🖨 Reporte</button>
+            </div>
+            <div class="stat-card c-6">
+                <span class="stat-icon">💼</span>
+                <div class="stat-number" id="statTrabajan">0</div>
+                <div class="stat-title">Población Activa</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('trabajan')">🖨 Reporte</button>
+            </div>
+            <div class="stat-card c-7">
+                <span class="stat-icon">🎒</span>
+                <div class="stat-number" id="statEscolarizados">0</div>
+                <div class="stat-title">Escolarizados</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('escolarizados')">🖨 Reporte</button>
+            </div>
+            <div class="stat-card c-8">
+                <span class="stat-icon">💊</span>
+                <div class="stat-number" id="statEnfermos">0</div>
+                <div class="stat-title">Enfermedades</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('enfermos')">🖨 Reporte</button>
+            </div>
             
-            <div class="stat-card c-9"><span class="stat-icon">♿</span><div class="stat-number" id="statDiscapacidad">0</div><div class="stat-title">Discapacidad</div><button class="btn-metric-print" onclick="imprimirMetrica('discapacidad')">🖨 Reporte</button></div>
-            <div class="stat-card c-10"><span class="stat-icon">🪪</span><div class="stat-number" id="statPatria">0</div><div class="stat-title">Carnet de la Patria</div><button class="btn-metric-print" onclick="imprimirMetrica('patria')">🖨 Reporte</button></div>
-            <div class="stat-card c-11"><span class="stat-icon">👴🏽</span><div class="stat-number" id="statAmor">0</div><div class="stat-title">Amor Mayor</div><button class="btn-metric-print" onclick="imprimirMetrica('amor')">🖨 Reporte</button></div>
-            <div class="stat-card c-12"><span class="stat-icon">🔴</span><div class="stat-number" id="statVD">0</div><div class="stat-title">Voto Duro (VD)</div><button class="btn-metric-print" onclick="imprimirMetrica('vd')">🖨 Reporte</button></div>
+            <div class="stat-card c-9">
+                <span class="stat-icon">♿</span>
+                <div class="stat-number" id="statDiscapacidad">0</div>
+                <div class="stat-title">Discapacidad</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('discapacidad')">🖨 Reporte</button>
+            </div>
+            <div class="stat-card c-10">
+                <span class="stat-icon">🪪</span>
+                <div class="stat-number" id="statPatria">0</div>
+                <div class="stat-title">Carnet de la Patria</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('patria')">🖨 Reporte</button>
+            </div>
+            <div class="stat-card c-11">
+                <span class="stat-icon">👴🏽</span>
+                <div class="stat-number" id="statAmor">0</div>
+                <div class="stat-title">Amor Mayor</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('amor')">🖨 Reporte</button>
+            </div>
+            <div class="stat-card c-12">
+                <span class="stat-icon">🔴</span>
+                <div class="stat-number" id="statVD">0</div>
+                <div class="stat-title">Voto Duro (VD)</div>
+                <button class="btn-metric-print" onclick="imprimirMetrica('vd')">🖨 Reporte</button>
+            </div>
         </div>
 
         <div class="print-only">
             <div class="print-title" id="tituloReporte">Listado de Habitantes: Consolidado Municipal</div>
+            
+            <div class="print-filters-box" id="infoFiltrosReporte">
+                </div>
+
             <table>
                 <thead>
                     <tr>
@@ -265,29 +536,42 @@
         let datosTerritoriales = {}; 
 
         onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href = "index.html"; return; }
+            if (!user) { 
+                window.location.href = "index.html"; 
+                return; 
+            }
+            
             let isAdmin = false;
+            
             if (user.email === "carlos.admin@alcaldia.com") { 
                 isAdmin = true; 
             } else {
                 try {
                     const snap = await get(child(ref(database), `operadores/${user.uid}`));
-                    if (snap.exists() && snap.val().rol === "admin") isAdmin = true;
+                    if (snap.exists() && snap.val().rol === "admin") {
+                        isAdmin = true;
+                    }
                 } catch(e) {
                     console.error(e);
                 }
             }
+            
             if (isAdmin) {
                 const btnAdmin = document.getElementById('btnAdminPanel');
                 btnAdmin.classList.remove('hidden');
-                btnAdmin.addEventListener('click', () => { window.location.href = "admin.html"; });
+                btnAdmin.addEventListener('click', () => { 
+                    window.location.href = "admin.html"; 
+                });
             }
+            
             cargarFiltrosTerritoriales(); 
             cargarDatos(); 
         });
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => { 
-            signOut(auth).then(() => window.location.href = "index.html"); 
+            signOut(auth).then(() => {
+                window.location.href = "index.html";
+            }); 
         });
 
         function cargarFiltrosTerritoriales() {
@@ -298,6 +582,7 @@
                 if (snapshot.exists()) {
                     datosTerritoriales = snapshot.val();
                     fComuna.innerHTML = '<option value="">TODAS LAS COMUNAS (Consolidado Municipal)</option>';
+                    
                     for (const comuna in datosTerritoriales) {
                         fComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
                     }
@@ -309,7 +594,9 @@
                 if (sel && datosTerritoriales[sel]) {
                     fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; 
                     fComunidad.disabled = false;
-                    datosTerritoriales[sel].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+                    datosTerritoriales[sel].forEach(c => {
+                        fComunidad.innerHTML += `<option value="${c}">${c}</option>`;
+                    });
                 } else {
                     fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; 
                     fComunidad.disabled = true;
@@ -333,15 +620,40 @@
         }
 
         function calcularEdad(fecha) {
-            if(!fecha) return 0;
-            const hoy = new Date(); const cumpleanos = new Date(fecha);
+            if (!fecha) return 0;
+            
+            const hoy = new Date(); 
+            const cumpleanos = new Date(fecha);
             let edad = hoy.getFullYear() - cumpleanos.getFullYear();
             const m = hoy.getMonth() - cumpleanos.getMonth();
-            if (m < 0 || (m === 0 && hoy.getDate() < cumpleanos.getDate())) edad--;
+            
+            if (m < 0 || (m === 0 && hoy.getDate() < cumpleanos.getDate())) {
+                edad--;
+            }
+            
             return edad;
         }
 
-        // FUNCION PRINCIPAL DE CONTEO Y GENERACIÓN DE REPORTE GLOBAL
+        function obtenerTextoFiltros() {
+            const c = document.getElementById('fComuna').value || "TODAS LAS COMUNAS";
+            const com = document.getElementById('fComunidad').value || "TODAS LAS COMUNIDADES";
+            const s = document.getElementById('fSexo').value || "TODOS";
+            const v = document.getElementById('fVoto').value || "TODOS";
+            const b = document.getElementById('fBeneficio').value || "NINGUNO SELECCIONADO";
+            const con = document.getElementById('fCondicion').value || "NINGUNA SELECCIONADA";
+
+            return `
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                    <div><strong>Territorio:</strong> ${c} / ${com}</div>
+                    <div><strong>Género:</strong> ${s.toUpperCase()}</div>
+                    <div><strong>Estatus Electoral:</strong> ${v}</div>
+                    <div><strong>Beneficio:</strong> ${b.toUpperCase().replace(/_/g, ' ')}</div>
+                    <div><strong>Condición Especial:</strong> ${con.toUpperCase()}</div>
+                    <div><strong>Fecha Reporte:</strong> ${new Date().toLocaleDateString()}</div>
+                </div>
+            `;
+        }
+
         function calcularEstadisticas() {
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
@@ -389,14 +701,20 @@
                 if (edad >= 60) cAdultos++;
                 if (edad < 18) cNinos++;
 
-                if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') cJefes++;
+                if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') {
+                    cJefes++;
+                }
+                
                 if ((h.tiene_gas || '').toLowerCase() === 'si') {
                     const dirUnica = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
                     hogaresConGasUnicos.add(h.jefe_hogar_id ? h.jefe_hogar_id : dirUnica);
                 }
 
                 const enf = (h.padece_enfermedad || '').trim().toUpperCase();
-                if (enf !== '' && enf !== 'NO' && enf !== 'NINGUNA' && enf !== 'N/A') cEnfermos++;
+                if (enf !== '' && enf !== 'NO' && enf !== 'NINGUNA' && enf !== 'N/A') {
+                    cEnfermos++;
+                }
+                
                 if ((h.discapacitado || '').toUpperCase() === 'SI') cDiscapacidad++;
                 if ((h.embarazada || '').toUpperCase() === 'SI') cEmbarazadas++;
                 
@@ -409,6 +727,7 @@
 
                 const nac = h.nacionalidad || 'V';
                 const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                
                 filasReporte += `
                     <tr>
                         <td>${h.nombre} ${h.apellido}</td>
@@ -434,22 +753,11 @@
             document.getElementById('statAmor').textContent = cAmor;
             document.getElementById('statVD').textContent = cVD;
 
-            let tituloHoja = "Listado de Habitantes: Consolidado Municipal (Reporte General)";
-            if (fComuna) tituloHoja = `Reporte Demográfico: Comuna ${fComuna}`;
-            if (fComunidad) tituloHoja = `Reporte Demográfico: Comunidad ${fComunidad} - ${fComuna}`;
-            
-            let subFiltros = [];
-            if (fSexo) subFiltros.push(`Género: ${fSexo.toUpperCase()}`);
-            if (fVoto) subFiltros.push(`Electoral: ${fVoto}`);
-            if (fBeneficio) subFiltros.push(`Beneficio: ${fBeneficio.toUpperCase().replace(/_/g, ' ')}`);
-            if (fCondicion) subFiltros.push(`Condición: ${fCondicion.toUpperCase()}`);
-            if (subFiltros.length > 0) tituloHoja += ` | Filtros: [${subFiltros.join(' / ')}]`;
-
-            document.getElementById('tituloReporte').textContent = tituloHoja;
+            document.getElementById('tituloReporte').textContent = "REPORTE GENERAL DE HABITANTES REGISTRADOS";
+            document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
         }
 
-        // REGLA DE ORO: FUNCIÓN PARA GENERAR EL REPORTE ESPECÍFICO DE UNA MÉTRICA (EJ: Solo Gas, Solo Niños)
         window.imprimirMetrica = (tipo) => {
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
@@ -464,6 +772,7 @@
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
+                
                 const comunaStr = (h.comuna || '').toUpperCase();
                 const comunidadStr = (h.comunidad || '').toUpperCase();
 
@@ -471,12 +780,14 @@
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
                 if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
                 if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
+                
                 if (fBeneficio) {
                     if (fBeneficio === 'amor_mayor' && (h.cobra_amor_mayor || '').toLowerCase() !== 'si') continue;
                     if (fBeneficio === 'carnet_patria' && (h.carnet_patria || '').toLowerCase() !== 'si') continue;
                     if (fBeneficio === 'mision_jose_gregorio' && (h.mision_jose_gregorio || '').toLowerCase() !== 'si') continue;
                     if (fBeneficio === 'hogares_patria_bono' && (h.hogares_patria_bono || '').toLowerCase() !== 'si') continue;
                 }
+                
                 if (fCondicion) {
                     if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
@@ -491,68 +802,102 @@
 
                 switch(tipo) {
                     case 'total':
-                        pasaMetrica = true; nombreMetrica = 'Total Personas'; break;
+                        pasaMetrica = true; 
+                        nombreMetrica = 'TOTAL POBLACIÓN'; 
+                        break;
                     case 'jefes':
                         if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') pasaMetrica = true;
-                        nombreMetrica = 'Jefes de Hogar'; break;
+                        nombreMetrica = 'JEFES DE HOGAR'; 
+                        break;
                     case 'gas':
                         if ((h.tiene_gas || '').toLowerCase() === 'si') {
                             const dirUnica = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
                             const idHogar = h.jefe_hogar_id ? h.jefe_hogar_id : dirUnica;
-                            if(!hogaresGasImpresos.has(idHogar)) { hogaresGasImpresos.add(idHogar); pasaMetrica = true; }
+                            if(!hogaresGasImpresos.has(idHogar)) { 
+                                hogaresGasImpresos.add(idHogar); 
+                                pasaMetrica = true; 
+                            }
                         }
-                        nombreMetrica = 'Representantes de Hogares con Gas (Deduplicados)'; break;
+                        nombreMetrica = 'HOGARES CON GAS'; 
+                        break;
                     case 'adultos':
-                        if (edad >= 60) pasaMetrica = true; nombreMetrica = 'Adultos Mayores (60+)'; break;
+                        if (edad >= 60) pasaMetrica = true; 
+                        nombreMetrica = 'ADULTOS MAYORES (60+)'; 
+                        break;
                     case 'ninos':
-                        if (edad < 18) pasaMetrica = true; nombreMetrica = 'Menores de Edad (< 18)'; break;
+                        if (edad < 18) pasaMetrica = true; 
+                        nombreMetrica = 'MENORES DE EDAD (<18)'; 
+                        break;
                     case 'trabajan':
-                        if ((h.trabaja || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Población Activa (Trabajan)'; break;
+                        if ((h.trabaja || '').toUpperCase() === 'SI') pasaMetrica = true; 
+                        nombreMetrica = 'POBLACIÓN QUE TRABAJA'; 
+                        break;
                     case 'escolarizados':
-                        if ((h.esta_escolarizado || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Población Escolarizada'; break;
+                        if ((h.esta_escolarizado || '').toUpperCase() === 'SI') pasaMetrica = true; 
+                        nombreMetrica = 'POBLACIÓN ESCOLARIZADA'; 
+                        break;
                     case 'enfermos':
                         const enf2 = (h.padece_enfermedad || '').trim().toUpperCase();
-                        if (enf2 !== '' && enf2 !== 'NO' && enf2 !== 'NINGUNA' && enf2 !== 'N/A') pasaMetrica = true;
-                        nombreMetrica = 'Con Enfermedad Crónica'; break;
+                        if (enf2 !== '' && enf2 !== 'NO' && enf2 !== 'NINGUNA') pasaMetrica = true;
+                        nombreMetrica = 'PERSONAS CON ENFERMEDAD'; 
+                        break;
                     case 'discapacidad':
-                        if ((h.discapacitado || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Con Discapacidad'; break;
+                        if ((h.discapacitado || '').toUpperCase() === 'SI') pasaMetrica = true; 
+                        nombreMetrica = 'PERSONAS CON DISCAPACIDAD'; 
+                        break;
                     case 'patria':
-                        if ((h.carnet_patria || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Carnet de la Patria'; break;
+                        if ((h.carnet_patria || '').toUpperCase() === 'SI') pasaMetrica = true; 
+                        nombreMetrica = 'CARNET DE LA PATRIA'; 
+                        break;
                     case 'amor':
-                        if ((h.cobra_amor_mayor || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'Pensión Amor Mayor'; break;
+                        if ((h.cobra_amor_mayor || '').toUpperCase() === 'SI') pasaMetrica = true; 
+                        nombreMetrica = 'BENEFICIARIOS AMOR MAYOR'; 
+                        break;
                     case 'vd':
-                        if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VD') pasaMetrica = true; nombreMetrica = 'Voto Duro (VD)'; break;
+                        if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VD') pasaMetrica = true; 
+                        nombreMetrica = 'VOTO DURO (VD)'; 
+                        break;
                 }
 
-                if (!pasaMetrica) continue;
-
-                const nac = h.nacionalidad || 'V';
-                const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
-                filasReporte += `
-                    <tr>
-                        <td>${h.nombre} ${h.apellido}</td>
-                        <td>${cedStr}</td>
-                        <td>${edad}</td>
-                        <td>${h.comunidad}</td>
-                        <td>${h.calle}, Casa ${h.numero_casa}</td>
-                        <td>${h.telefono || ''}</td>
-                    </tr>
-                `;
+                if (pasaMetrica) {
+                    const nac = h.nacionalidad || 'V';
+                    const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                    
+                    filasReporte += `
+                        <tr>
+                            <td>${h.nombre} ${h.apellido}</td>
+                            <td>${cedStr}</td>
+                            <td>${edad}</td>
+                            <td>${h.comunidad}</td>
+                            <td>${h.calle}, Casa ${h.numero_casa}</td>
+                            <td>${h.telefono || ''}</td>
+                        </tr>
+                    `;
+                }
             }
 
-            document.getElementById('tituloReporte').textContent = `REPORTE ESPECÍFICO: ${nombreMetrica.toUpperCase()}`;
+            document.getElementById('tituloReporte').textContent = `REPORTE ESPECÍFICO: ${nombreMetrica}`;
+            document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
 
-            setTimeout(() => {
-                window.print();
-                calcularEstadisticas(); // Restaura la tabla a su estado global después de imprimir
+            setTimeout(() => { 
+                window.print(); 
+                calcularEstadisticas(); 
             }, 300);
         };
 
         let inactivityTime = function () {
-            let time; window.onload = resetTimer; document.onmousemove = resetTimer; document.onkeypress = resetTimer;
-            function logout() { signOut(auth).then(() => window.location.href = 'index.html'); }
-            function resetTimer() { clearTimeout(time); time = setTimeout(logout, 900000); }
+            let time; 
+            window.onload = resetTimer; 
+            document.onmousemove = resetTimer; 
+            document.onkeypress = resetTimer;
+            function logout() { 
+                signOut(auth).then(() => window.location.href = 'index.html'); 
+            }
+            function resetTimer() { 
+                clearTimeout(time); 
+                time = setTimeout(logout, 900000); 
+            }
         };
         inactivityTime();
     </script>
