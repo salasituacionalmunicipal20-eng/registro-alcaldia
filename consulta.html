@@ -182,6 +182,55 @@
             border-color: #ddd;
         }
         
+        /* Controles de Paginación */
+        .controls-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .stats { 
+            font-weight: bold; 
+            color: var(--rojo-oficial); 
+            font-size: 16px;
+        }
+
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .btn-page {
+            background-color: var(--azul-oficial);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-page:hover:not(:disabled) {
+            background-color: #003366;
+        }
+
+        .btn-page:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            color: #666;
+        }
+
+        .page-info {
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+        }
+
         /* Tabla */
         .table-wrapper { overflow-x: auto; }
         
@@ -230,13 +279,6 @@
         }
         
         .hidden { display: none !important; }
-        
-        .stats { 
-            margin-top: 15px; 
-            font-weight: bold; 
-            color: var(--rojo-oficial); 
-            font-size: 16px;
-        }
 
         /* Panel de Edición */
         .edit-panel { 
@@ -318,7 +360,7 @@
         }
 
         @media print {
-            .cintillo-gob, .top-nav, .search-panel, h2, .edit-panel, .no-print { 
+            .cintillo-gob, .top-nav, .search-panel, h2, .edit-panel, .controls-panel, .pagination-container, .no-print { 
                 display: none !important; 
             }
             body { 
@@ -343,7 +385,7 @@
         <div class="top-nav">
             <button type="button" id="btnAdminPanel" class="btn-nav hidden">⚙ Panel Admin</button>
             <button type="button" id="btnEstadisticas" class="btn-nav" onclick="location.href='estadisticas.html'">📊 Estadísticas</button>
-            <button type="button" class="btn-reporte" onclick="window.imprimirTabla()">🖨 Imprimir</button>
+            <button type="button" class="btn-reporte" onclick="window.imprimirTabla()">🖨 Imprimir Listado</button>
             <button type="button" class="btn-reporte" onclick="window.exportarCSV()">📥 Exportar Excel</button>
             <button type="button" id="btnVolver" class="btn-nav" onclick="location.href='registro.html'">← Volver a Registrar</button>
             <button type="button" id="btnCambiarClave" class="btn-nav" onclick="location.href='cambiar-clave.html'">🔑 Cambiar Contraseña</button>
@@ -388,7 +430,19 @@
                         <input type="text" id="fCalle" placeholder="Escriba la calle...">
                     </div>
                 </div>
+            </div>
+
+            <div class="controls-panel">
                 <div class="stats" id="totalResultados">Cargando base de datos...</div>
+                <div>
+                    <label style="display:inline; margin-right:5px; font-weight:bold;">Mostrar:</label>
+                    <select id="selectPaginacion" style="width: auto; padding: 5px;">
+                        <option value="15">15 registros</option>
+                        <option value="25">25 registros</option>
+                        <option value="50">50 registros</option>
+                        <option value="100">100 registros</option>
+                    </select>
+                </div>
             </div>
 
             <div class="table-wrapper">
@@ -408,6 +462,8 @@
                     <tbody id="tablaCuerpo"></tbody>
                 </table>
             </div>
+
+            <div id="paginacion" class="pagination-container"></div>
         </div>
 
         <div id="vistaEdicion" class="edit-panel hidden">
@@ -691,7 +747,7 @@
                     <div class="full-width" id="e_estatus_electoral_wrapper">
                         <label>Estatus Electoral (VD / VB / VO):</label>
                         <select id="e_vd_vb_vo_seleccion" name="vd_vb_vo_seleccion" required>
-                            <option value="">Seleccione</option>
+                            <option value="">Seleccione el estatus</option>
                             <option value="VD">VD (Voto Duro)</option>
                             <option value="VB">VB (Voto Blando)</option>
                             <option value="VO">VO (Voto Opositor)</option>
@@ -736,6 +792,11 @@
         let datosTerritoriales = {}; 
         let idActualEdicion = null; 
 
+        // Variables de Paginación
+        let datosFiltrados = [];
+        let paginaActual = 1;
+        let registrosPorPagina = 15;
+
         document.querySelectorAll('input[type="text"], textarea').forEach(input => {
             input.addEventListener('input', function() { 
                 this.value = this.value.toUpperCase(); 
@@ -766,7 +827,6 @@
             }
             
             esAdmin = false;
-            
             if (user.email === "carlos.admin@alcaldia.com") {
                 esAdmin = true;
             } else {
@@ -797,17 +857,36 @@
             signOut(auth).then(() => window.location.href = "index.html"); 
         });
 
-        window.imprimirTabla = () => { window.print(); };
+        // Evento para cambiar el número de registros por página
+        document.getElementById('selectPaginacion').addEventListener('change', (e) => {
+            registrosPorPagina = parseInt(e.target.value);
+            paginaActual = 1; // Volvemos a la primera pagina al cambiar el límite
+            renderizarTabla();
+        });
 
-        window.exportarCSV = () => {
-            let csv = 'Nombres y Apellidos,Cedula,Comuna,Comunidad,Calle,Telefono\\n';
-            const filas = document.querySelectorAll('#tablaCuerpo tr');
+        // REGLA DE ORO: Imprimir tabla exporta TODOS los filtrados, no solo la pagina actual
+        window.imprimirTabla = () => { 
+            const limiteOriginal = registrosPorPagina;
+            registrosPorPagina = datosFiltrados.length; // Forzamos a mostrar todos temporalmente
+            renderizarTabla();
             
-            filas.forEach(fila => {
-                const cols = fila.querySelectorAll('td');
-                if(cols.length > 0) { 
-                    csv += `${cols[0].innerText},${cols[1].innerText},${cols[2].innerText},${cols[3].innerText},${cols[4].innerText},${cols[5].innerText}\\n`; 
-                }
+            window.print(); 
+            
+            // Restauramos la paginacion
+            registrosPorPagina = limiteOriginal;
+            renderizarTabla();
+        };
+
+        // REGLA DE ORO: Exportar Excel toma TODOS los datos filtrados, no solo la pagina actual
+        window.exportarCSV = () => {
+            let csv = 'Nombres y Apellidos,Cedula,Comuna,Comunidad,Calle,Telefono\n';
+            
+            datosFiltrados.forEach(item => {
+                const h = item.h;
+                const nac = h.nacionalidad ? h.nacionalidad + '-' : 'V-';
+                const cedFinal = h.cedula ? (nac + h.cedula) : 'S/C';
+                // Añadimos comillas para evitar que las comas en direcciones rompan el CSV
+                csv += `"${h.nombre} ${h.apellido}","${cedFinal}","${h.comuna}","${h.comunidad}","${h.calle}","${h.telefono || ''}"\n`; 
             });
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -888,9 +967,7 @@
             const fComunidad = document.getElementById('fComunidad').value.toLowerCase();
             const fCalle = document.getElementById('fCalle').value.toLowerCase();
 
-            const tbody = document.getElementById('tablaCuerpo');
-            tbody.innerHTML = ""; 
-            let contador = 0;
+            datosFiltrados = [];
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -903,29 +980,78 @@
                 const cumpleCalle = (h.calle || '').toLowerCase().includes(fCalle);
 
                 if (cumpleNom && cumpleCed && cumpleComuna && cumpleComunidad && cumpleCalle) {
-                    contador++;
-                    
-                    const nac = h.nacionalidad ? h.nacionalidad + '-' : 'V-';
-                    const cedFinal = h.cedula ? (nac + h.cedula) : 'S/C';
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${h.nombre} ${h.apellido}</strong></td>
-                        <td>${cedFinal}</td>
-                        <td>${h.comuna}</td>
-                        <td>${h.comunidad}</td>
-                        <td>${h.calle}</td>
-                        <td>${h.telefono}</td>
-                        ${esAdmin ? `<td style="color:#E30613; font-weight:bold;">${h.registrado_por_nombre || 'Desconocido'}</td>` : ""}
-                        <td class="no-print">
-                            <button class="btn-edit" onclick="window.editarRegistro('${id}')">Detalle</button>
-                            ${esAdmin ? `<button class="btn-delete" onclick="window.eliminarRegistro('${id}')">Borrar</button>` : ""}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+                    datosFiltrados.push({ id: id, h: h });
                 }
             }
-            document.getElementById('totalResultados').textContent = `Total de registros encontrados: ${contador}`;
+            
+            document.getElementById('totalResultados').textContent = `Total de registros encontrados: ${datosFiltrados.length}`;
+            paginaActual = 1; // Al aplicar un filtro nuevo, volvemos a la página 1
+            renderizarTabla();
+        }
+
+        // Nueva función para inyectar solo la porción de datos de la página actual
+        function renderizarTabla() {
+            const tbody = document.getElementById('tablaCuerpo');
+            tbody.innerHTML = ""; 
+
+            // Lógica matemática para cortar el arreglo de datos
+            const inicio = (paginaActual - 1) * registrosPorPagina;
+            const fin = inicio + registrosPorPagina;
+            const datosPaginaActual = datosFiltrados.slice(inicio, fin);
+
+            datosPaginaActual.forEach(item => {
+                const id = item.id;
+                const h = item.h;
+                
+                const nac = h.nacionalidad ? h.nacionalidad + '-' : 'V-';
+                const cedFinal = h.cedula ? (nac + h.cedula) : 'S/C';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${h.nombre} ${h.apellido}</strong></td>
+                    <td>${cedFinal}</td>
+                    <td>${h.comuna}</td>
+                    <td>${h.comunidad}</td>
+                    <td>${h.calle}</td>
+                    <td>${h.telefono}</td>
+                    ${esAdmin ? `<td style="color:#E30613; font-weight:bold;">${h.registrado_por_nombre || 'Desconocido'}</td>` : ""}
+                    <td class="no-print">
+                        <button class="btn-edit" onclick="window.editarRegistro('${id}')">Detalle</button>
+                        ${esAdmin ? `<button class="btn-delete" onclick="window.eliminarRegistro('${id}')">Borrar</button>` : ""}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            renderizarPaginacion();
+        }
+
+        // Función para construir los botones de navegación
+        function renderizarPaginacion() {
+            const contenedor = document.getElementById('paginacion');
+            if (datosFiltrados.length === 0) {
+                contenedor.innerHTML = "";
+                return;
+            }
+
+            const totalPaginas = Math.ceil(datosFiltrados.length / registrosPorPagina);
+            
+            contenedor.innerHTML = `
+                <button class="btn-page" id="btnPrimera" ${paginaActual === 1 ? 'disabled' : ''}>&laquo; Primera</button>
+                <button class="btn-page" id="btnAnt" ${paginaActual === 1 ? 'disabled' : ''}>&lsaquo; Anterior</button>
+                <span class="page-info">Página ${paginaActual} de ${totalPaginas}</span>
+                <button class="btn-page" id="btnSig" ${paginaActual === totalPaginas ? 'disabled' : ''}>Siguiente &rsaquo;</button>
+                <button class="btn-page" id="btnUltima" ${paginaActual === totalPaginas ? 'disabled' : ''}>Última &raquo;</button>
+            `;
+
+            if (paginaActual > 1) {
+                document.getElementById('btnPrimera').onclick = () => { paginaActual = 1; renderizarTabla(); };
+                document.getElementById('btnAnt').onclick = () => { paginaActual--; renderizarTabla(); };
+            }
+            if (paginaActual < totalPaginas) {
+                document.getElementById('btnSig').onclick = () => { paginaActual++; renderizarTabla(); };
+                document.getElementById('btnUltima').onclick = () => { paginaActual = totalPaginas; renderizarTabla(); };
+            }
         }
 
         document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
@@ -934,8 +1060,7 @@
 
         window.eliminarRegistro = (id) => {
             if(confirm("ALERTA DE SEGURIDAD: ¿Seguro que desea eliminar permanentemente este habitante?")) {
-                remove(ref(database, `habitantes/${id}`))
-                .catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
+                remove(ref(database, `habitantes/${id}`)).catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
             }
         };
 
@@ -990,7 +1115,6 @@
             const hoy = new Date();
             let edad = hoy.getFullYear() - fecha.getFullYear();
             const mes = hoy.getMonth() - fecha.getMonth();
-            
             if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) {
                 edad--;
             }
@@ -1055,7 +1179,6 @@
                 }
             };
             
-            // REGLA DE ORO: Campo UBCH al editar
             llenarCampo('e_ubch', h.ubch);
             
             llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual); 
