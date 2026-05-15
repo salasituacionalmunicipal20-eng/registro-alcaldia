@@ -134,7 +134,7 @@
             height: 25px; 
             background-color: var(--azul-oficial); 
             width: 0%; 
-            transition: width 0.3s ease; 
+            transition: width 0.1s linear; 
         }
 
         .stats-panel {
@@ -190,7 +190,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        // REGLA DE ORO: Solo usaremos 'push' simple para subidas 1 a 1
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -277,15 +278,14 @@
                         const totalDatos = datos.length;
                         
                         escribirLog(`Lectura completada. Se encontraron ${totalDatos} filas en el Excel.`, "log-info");
-                        escribirLog("Iniciando estructuración de datos y empaquetado...", "log-info");
+                        escribirLog("Iniciando subida 1x1 estricta hacia Firebase...", "log-info");
                         
                         let subidos = 0;
-                        const dbRef = ref(database);
-                        let paqueteDeSubida = {}; 
-                        const TAMAÑO_LOTE = 500; 
+                        const habitantesRef = ref(database, 'habitantes');
 
                         const tiempoInicio = Date.now();
 
+                        // REGLA DE ORO: Ciclo for estricto 1 por 1
                         for (let i = 0; i < totalDatos; i++) {
                             let fila = datos[i];
                             
@@ -364,41 +364,30 @@
                                     fecha_registro: new Date().toLocaleString()
                                 };
 
-                                const nuevoId = push(child(dbRef, 'habitantes')).key;
-                                
-                                paqueteDeSubida[`habitantes/${nuevoId}`] = habitanteTraducido;
+                                // REGLA DE ORO: await push, detiene el ciclo hasta que Firebase confirme el guardado
+                                await push(habitantesRef, habitanteTraducido);
                                 subidos++;
                                 
-                                if (subidos % TAMAÑO_LOTE === 0) {
-                                    escribirLog(`Preparando lote de ${TAMAÑO_LOTE} registros... enviando a Firebase.`, "log-info");
-                                    
-                                    await update(dbRef, paqueteDeSubida);
-                                    
-                                    escribirLog(`Lote enviado exitosamente. Total asegurado: ${subidos}/${totalDatos}`, "log-success");
-                                    paqueteDeSubida = {}; 
-                                    
-                                    let porcentaje = (subidos / totalDatos) * 100;
-                                    let tiempoTranscurrido = Date.now() - tiempoInicio;
-                                    let velocidad = subidos / tiempoTranscurrido; 
-                                    let registrosFaltantes = totalDatos - subidos;
-                                    let etaMs = registrosFaltantes / velocidad;
+                                // Actualizamos la interfaz
+                                let porcentaje = (subidos / totalDatos) * 100;
+                                let tiempoTranscurrido = Date.now() - tiempoInicio;
+                                let velocidad = subidos / tiempoTranscurrido; 
+                                let registrosFaltantes = totalDatos - subidos;
+                                let etaMs = registrosFaltantes / velocidad;
 
-                                    document.getElementById('barraProgreso').style.width = Math.min(porcentaje, 100) + "%";
-                                    document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
-                                    document.getElementById('txtPorcentaje').textContent = `${Math.floor(porcentaje)}%`;
-                                    document.getElementById('txtEta').textContent = `Tiempo estimado: ${formatoTiempo(etaMs)}`;
-                                    
-                                    await new Promise(resolve => setTimeout(resolve, 10));
+                                document.getElementById('barraProgreso').style.width = Math.min(porcentaje, 100) + "%";
+                                document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
+                                document.getElementById('txtPorcentaje').textContent = `${Math.floor(porcentaje)}%`;
+                                document.getElementById('txtEta').textContent = `Tiempo estimado: ${formatoTiempo(etaMs)}`;
+                                
+                                // Mandamos mensaje a la consola solo cada 10 registros para no saturarla
+                                if (subidos % 10 === 0 || subidos === totalDatos) {
+                                    escribirLog(`Subido correctamente: Registro ${subidos}/${totalDatos} (Cédula: ${fila['CEDULA'] || 'S/C'})`, "log-success");
                                 }
 
                             } catch (error_fila) {
-                                escribirLog(`Fallo al formatear la fila ${i+1}. Omitiendo. Detalle: ${error_fila.message}`, "log-warning");
+                                escribirLog(`Fallo al subir la fila ${i+1}. Omitiendo. Detalle: ${error_fila.message}`, "log-error");
                             }
-                        }
-
-                        if (Object.keys(paqueteDeSubida).length > 0) {
-                            escribirLog(`Enviando lote final con ${Object.keys(paqueteDeSubida).length} registros...`, "log-info");
-                            await update(dbRef, paqueteDeSubida);
                         }
 
                         document.getElementById('barraProgreso').style.width = "100%";
@@ -406,16 +395,13 @@
                         document.getElementById('txtPorcentaje').textContent = `100%`;
                         document.getElementById('txtEta').textContent = `Completado en ${formatoTiempo(Date.now() - tiempoInicio)}`;
                         
-                        escribirLog(`✅ MIGRACIÓN TOTALMENTE FINALIZADA. Se alojaron ${subidos} registros perfectos.`, "log-success");
-                        alert("¡Operación completada con éxito! Ya puedes revisar la base de datos.");
+                        escribirLog(`✅ MIGRACIÓN 1x1 FINALIZADA. Se guardaron ${subidos} habitantes.`, "log-success");
+                        alert("¡Migración Completada! Revisa el módulo de consultas.");
                         
                     }
                 });
-            } catch (error_general) {
-                document.getElementById('estado').innerHTML = `<span style='color:red;'>⚠️ Ocurrió un fallo en el archivo: ${error_general.message}</span>`;
-            }
-        }, 500); 
-    };
+            }, 500); 
+        };
     </script>
 </body>
 </html>
