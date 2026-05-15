@@ -6,9 +6,16 @@
     <title>Migrador Masivo de Datos - Alcaldía</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
+        :root {
+            --rojo-oficial: #E30613;
+            --azul-oficial: #004a99;
+            --gris-fondo: #e9ecef;
+            --gris-borde: #ced4da;
+        }
+
         body { 
             font-family: 'Segoe UI', sans-serif; 
-            background-color: #e9ecef; 
+            background-color: var(--gris-fondo); 
             padding: 40px; 
             text-align: center; 
         }
@@ -20,11 +27,34 @@
             max-width: 800px; 
             margin: auto; 
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
-            border-top: 8px solid #E30613; 
+            border-top: 8px solid var(--rojo-oficial); 
+        }
+
+        .top-nav { 
+            display: flex; 
+            justify-content: flex-start; 
+            margin-bottom: 20px;
+        }
+        
+        .btn-back { 
+            background-color: var(--azul-oficial); 
+            color: white; 
+            padding: 8px 15px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+        
+        .btn-back:hover { 
+            background-color: #003366; 
         }
         
         h1 { 
-            color: #004a99; 
+            color: var(--azul-oficial); 
             margin-top: 0; 
             text-transform: uppercase; 
         }
@@ -44,7 +74,7 @@
             font-size: 16px; 
         }
         
-        button { 
+        button#btnSubir { 
             background-color: #28a745; 
             color: white; 
             border: none; 
@@ -57,7 +87,7 @@
             transition: 0.3s; 
         }
         
-        button:hover { 
+        button#btnSubir:hover { 
             background-color: #218838; 
         }
         
@@ -66,7 +96,6 @@
             cursor: not-allowed; 
         }
         
-        /* REGLA DE ORO: Estilos del nuevo panel de consola / Terminal en tiempo real */
         .consola-wrapper {
             background-color: #1e1e1e;
             color: #00ff00;
@@ -82,7 +111,10 @@
             border: 2px solid #333;
         }
 
-        .consola-linea { margin-bottom: 5px; }
+        .consola-linea { 
+            margin-bottom: 5px; 
+        }
+        
         .log-error { color: #ff4c4c; }
         .log-success { color: #00ff00; }
         .log-info { color: #00d2ff; }
@@ -100,7 +132,7 @@
         
         .progress-fill { 
             height: 25px; 
-            background-color: #004a99; 
+            background-color: var(--azul-oficial); 
             width: 0%; 
             transition: width 0.3s ease; 
         }
@@ -115,11 +147,18 @@
             display: none;
         }
 
-        .eta-text { color: #E30613; }
+        .eta-text { 
+            color: var(--rojo-oficial); 
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        
+        <div class="top-nav">
+            <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver al Panel Admin</button>
+        </div>
+
         <h1>Migrador de Base de Datos Excel a Firebase</h1>
         
         <div class="instrucciones" id="panelInstrucciones">
@@ -170,22 +209,18 @@
 
         let usuarioActivo = null;
 
-        // Función para escribir en la consola virtual
         function escribirLog(mensaje, tipo = "log-success") {
             const consola = document.getElementById('consolaLog');
             const linea = document.createElement('div');
             linea.className = `consola-linea ${tipo}`;
             
-            // Añadimos hora exacta al log
             const hora = new Date().toLocaleTimeString('es-VE', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
             linea.textContent = `[${hora}] > ${mensaje}`;
             
             consola.appendChild(linea);
-            // Hacer scroll automático hacia abajo
             consola.scrollTop = consola.scrollHeight;
         }
 
-        // VERIFICAMOS SI ES CARLOS ADMIN EXACTAMENTE
         onAuthStateChanged(auth, (user) => {
             if (user && user.email === "carlos.admin@alcaldia.com") {
                 usuarioActivo = user;
@@ -201,7 +236,6 @@
             }
         });
 
-        // Formateador de tiempo para el ETA
         function formatoTiempo(milisegundos) {
             if (milisegundos < 0 || !isFinite(milisegundos)) return "Calculando...";
             let segundosTotales = Math.floor(milisegundos / 1000);
@@ -234,7 +268,6 @@
             
             escribirLog(`Iniciando lectura del archivo: ${archivo.name}`, "log-info");
 
-            // Pausa obligatoria para que el navegador dibuje la interfaz antes de bloquearse leyendo el archivo
             setTimeout(() => {
                 Papa.parse(archivo, {
                     header: true,
@@ -249,34 +282,29 @@
                         let subidos = 0;
                         const dbRef = ref(database);
                         let paqueteDeSubida = {}; 
-                        const TAMAÑO_LOTE = 500; // Subiremos de 500 en 500 para no ahogar el internet
+                        const TAMAÑO_LOTE = 500; 
 
                         const tiempoInicio = Date.now();
 
                         for (let i = 0; i < totalDatos; i++) {
                             let fila = datos[i];
                             
-                            // Si la fila está completamente vacía de nombre, la ignoramos
                             if (!fila['NOMBRE Y APELLIDO']) continue;
                             
                             try {
-                                // 1. Nombres y Apellidos
                                 let nombreCompleto = (fila['NOMBRE Y APELLIDO'] || '').trim().split(' ');
                                 let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
                                 let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
 
-                                // 2. Sexo
                                 let sexoParsed = "";
                                 if (fila['FEMENINA'] && fila['FEMENINA'].trim() !== '') sexoParsed = "femenino";
                                 else if (fila['MASCULINO'] && fila['MASCULINO'].trim() !== '') sexoParsed = "masculino";
 
-                                // 3. Voto Duro, Blando, Opositor
                                 let votoParsed = "";
                                 if (fila['VD'] && fila['VD'].trim() !== '') votoParsed = "VD";
                                 else if (fila['VB'] && fila['VB'].trim() !== '') votoParsed = "VB";
                                 else if (fila['VO'] && fila['VO'].trim() !== '') votoParsed = "VO";
 
-                                // 4. Parentesco
                                 let parentescoParsed = "otro";
                                 let resp = (fila['RESPONSABILIDAD CBI, CM'] || '').toUpperCase();
                                 if (resp.includes("JEFE")) parentescoParsed = "jefe de hogar";
@@ -284,10 +312,8 @@
                                 else if (fila['PADRE'] && fila['PADRE'].trim() !== '') parentescoParsed = "padre";
                                 else if (fila['HIJO'] && fila['HIJO'].trim() !== '') parentescoParsed = "hijo";
 
-                                // 5. Gas
                                 let gasParsed = (fila['TIPO DE CILINDRO'] && fila['TIPO DE CILINDRO'].trim() !== '') ? "si" : "no";
 
-                                // Construir el objeto listo para el sistema
                                 let habitanteTraducido = {
                                     ubch: fila['UBCH A LA QUE PERTENECE'] || '',
                                     codigo_sigue_actual: fila['CODIGO SITUR ACTUAL'] || '',
@@ -338,37 +364,30 @@
                                     fecha_registro: new Date().toLocaleString()
                                 };
 
-                                // Generamos un ID único
                                 const nuevoId = push(child(dbRef, 'habitantes')).key;
                                 
-                                // Añadimos al paquete
                                 paqueteDeSubida[`habitantes/${nuevoId}`] = habitanteTraducido;
                                 subidos++;
                                 
-                                // Cada 500 registros enviamos el paquete a Firebase
                                 if (subidos % TAMAÑO_LOTE === 0) {
                                     escribirLog(`Preparando lote de ${TAMAÑO_LOTE} registros... enviando a Firebase.`, "log-info");
                                     
-                                    // Enviamos a la nube
                                     await update(dbRef, paqueteDeSubida);
                                     
                                     escribirLog(`Lote enviado exitosamente. Total asegurado: ${subidos}/${totalDatos}`, "log-success");
-                                    paqueteDeSubida = {}; // Vaciamos para el siguiente lote
+                                    paqueteDeSubida = {}; 
                                     
-                                    // Cálculos matemáticos de la barra de progreso y el Tiempo Restante (ETA)
                                     let porcentaje = (subidos / totalDatos) * 100;
                                     let tiempoTranscurrido = Date.now() - tiempoInicio;
-                                    let velocidad = subidos / tiempoTranscurrido; // registros por milisegundo
+                                    let velocidad = subidos / tiempoTranscurrido; 
                                     let registrosFaltantes = totalDatos - subidos;
                                     let etaMs = registrosFaltantes / velocidad;
 
-                                    // Actualizar Pantalla (DOM)
-                                    document.getElementById('barraProgreso').style.width = porcentaje + "%";
+                                    document.getElementById('barraProgreso').style.width = Math.min(porcentaje, 100) + "%";
                                     document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
                                     document.getElementById('txtPorcentaje').textContent = `${Math.floor(porcentaje)}%`;
                                     document.getElementById('txtEta').textContent = `Tiempo estimado: ${formatoTiempo(etaMs)}`;
                                     
-                                    // Le damos un respiro de 10 milisegundos al navegador para que dibuje la interfaz
                                     await new Promise(resolve => setTimeout(resolve, 10));
                                 }
 
@@ -377,13 +396,11 @@
                             }
                         }
 
-                        // Subimos las últimas personas (el remanente del último lote)
                         if (Object.keys(paqueteDeSubida).length > 0) {
                             escribirLog(`Enviando lote final con ${Object.keys(paqueteDeSubida).length} registros...`, "log-info");
                             await update(dbRef, paqueteDeSubida);
                         }
 
-                        // Finalización Visual
                         document.getElementById('barraProgreso').style.width = "100%";
                         document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
                         document.getElementById('txtPorcentaje').textContent = `100%`;
@@ -391,10 +408,14 @@
                         
                         escribirLog(`✅ MIGRACIÓN TOTALMENTE FINALIZADA. Se alojaron ${subidos} registros perfectos.`, "log-success");
                         alert("¡Operación completada con éxito! Ya puedes revisar la base de datos.");
+                        
                     }
                 });
-            }, 500); // Pequeña pausa inicial
-        };
+            } catch (error_general) {
+                document.getElementById('estado').innerHTML = `<span style='color:red;'>⚠️ Ocurrió un fallo en el archivo: ${error_general.message}</span>`;
+            }
+        }, 500); 
+    };
     </script>
 </body>
 </html>
