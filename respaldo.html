@@ -11,6 +11,7 @@
             --gris-fondo: #121212; 
             --verde-monitor: #00ff00;
             --verde-supabase: #3ecf8e; 
+            --oro-admin: #ffd700;
         }
 
         body { 
@@ -100,8 +101,6 @@
         .border-supabase::before { background-color: var(--verde-supabase); }
         .border-blue::before { background-color: #00d2ff; }
         .border-orange::before { background-color: #ff9800; }
-        .border-red::before { background-color: var(--rojo-oficial); }
-        .border-purple::before { background-color: #b000ff; }
 
         .status-label {
             font-size: 11px;
@@ -132,7 +131,6 @@
         .status-offline { color: var(--rojo-oficial); }
         .status-warning { color: #ff9800; }
 
-        /* REGLA DE ORO: Panel Unificado y Seguro (Un Solo Botón) */
         .sync-management-panel {
             background-color: #0a0a0a;
             border: 2px dashed #333;
@@ -204,7 +202,7 @@
 
         .live-panels-container {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 2fr 1.5fr; /* Ajustado para darle más espacio al radar */
             gap: 20px;
             margin-top: 30px;
             margin-bottom: 30px;
@@ -216,7 +214,7 @@
             border-radius: 6px;
             padding: 15px;
             text-align: left;
-            height: 300px;
+            height: 350px; /* Un poco más alto para los detalles extras */
             display: flex;
             flex-direction: column;
         }
@@ -257,36 +255,80 @@
         .feed-action { color: #ff9800; }
         .feed-target { color: #fff; }
 
+        /* REGLA DE ORO: Estilos Mejorados para el Radar Espía */
         .radar-box {
             flex-grow: 1;
             overflow-y: auto;
+            padding-right: 5px;
         }
 
         .radar-user {
             display: flex;
-            align-items: center;
-            gap: 10px;
+            align-items: flex-start;
+            gap: 12px;
             background: #1a1a1a;
-            padding: 10px;
+            padding: 12px;
             border-radius: 4px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             border-left: 3px solid var(--verde-monitor);
+            border-bottom: 1px solid #222;
+        }
+        
+        .radar-user.admin-card {
+            border-left: 3px solid var(--oro-admin);
+            background: linear-gradient(90deg, rgba(255,215,0,0.05) 0%, rgba(26,26,26,1) 100%);
         }
 
         .radar-dot {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background-color: var(--verde-monitor);
             border-radius: 50%;
-            box-shadow: 0 0 8px var(--verde-monitor);
+            box-shadow: 0 0 10px var(--verde-monitor);
             animation: pulse 1.5s infinite;
+            margin-top: 4px;
+        }
+        
+        .radar-dot.dot-admin {
+            background-color: var(--oro-admin);
+            box-shadow: 0 0 10px var(--oro-admin);
         }
 
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        .radar-info { text-align: left; }
-        .radar-name { font-size: 13px; font-weight: bold; color: #fff; display: block; }
-        .radar-module { font-size: 10px; color: #888; }
+        .radar-info { text-align: left; width: 100%; }
+        
+        .radar-name { 
+            font-size: 14px; 
+            font-weight: bold; 
+            color: #fff; 
+            display: flex; 
+            justify-content: space-between;
+        }
+        
+        .radar-role {
+            font-size: 10px;
+            color: #aaa;
+            font-weight: normal;
+        }
+
+        .radar-module { 
+            font-size: 11px; 
+            color: #00d2ff; 
+            margin-top: 4px; 
+            display: block;
+        }
+        
+        .radar-action {
+            font-size: 11px;
+            color: #ff9800;
+            margin-top: 4px;
+            display: block;
+            background: #000;
+            padding: 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
 
         .action-grid {
             display: grid;
@@ -405,10 +447,10 @@
             </div>
 
             <div class="live-panel">
-                <h3>📡 Radar en Línea</h3>
+                <h3>📡 Radar Espía en Línea</h3>
                 <div class="radar-box" id="radarBox">
                     <div style="color:#555; text-align:center; font-size:12px; margin-top:20px;">
-                        Buscando señales activas...
+                        Buscando señales activas de operadores...
                     </div>
                 </div>
             </div>
@@ -431,7 +473,7 @@
         <div class="info-text">
             <strong>⚠️ ATENCIÓN ADMINISTRADOR DE RED:</strong><br>
             - La sincronización a Supabase es manual y bajo demanda para no sobrecargar el sistema durante horas pico.<br>
-            - La función inteligente del sincronizador maestro garantiza que no se crearán duplicados.
+            - El Radar Espía lee las pulsaciones de teclado y navegación de los usuarios en tiempo real.
         </div>
     </div>
 
@@ -511,7 +553,6 @@
             }
         }
 
-        // REGLA DE ORO: UN SOLO BOTÓN MAESTRO INTELIGENTE (UPSERT LOGIC)
         window.ejecutarSincronizacionSegura = async () => {
             if(sincronizando) return;
             sincronizando = true;
@@ -535,14 +576,12 @@
                 let procesados = 0;
                 let loteSupabase = [];
 
-                // Recorremos todo Firebase de 50 en 50 para que sea rápido y seguro
                 for(let i = 0; i < total; i++) {
                     let id_fb = keysFirebase[i];
                     let registro = { ...baseDatosBruta[id_fb], id_firebase: id_fb };
                     loteSupabase.push(registro);
 
                     if(loteSupabase.length >= 50 || i === total - 1) {
-                        // Magia de Upsert: Busca el id_firebase. Si existe lo actualiza, si no, lo crea. SIN DUPLICADOS.
                         const { error: upsError } = await supabase
                             .from('habitantes')
                             .upsert(loteSupabase, { onConflict: 'id_firebase' });
@@ -640,6 +679,7 @@
             });
         }
 
+        // REGLA DE ORO: Escáner Espía Ampliado
         function iniciarRadarPresencia() {
             onValue(ref(database, 'presencia'), (snapshot) => {
                 const radarBox = document.getElementById('radarBox');
@@ -653,13 +693,22 @@
                         let data = onlineUsers[uid];
                         if (data.estado === "online") {
                             conteo++;
+                            let isAdmin = data.rol === 'admin';
+                            let rolEtiq = isAdmin ? '⭐ Admin' : '👨🏽‍💻 Operador';
+                            let claseCard = isAdmin ? 'admin-card' : '';
+                            let claseDot = isAdmin ? 'dot-admin' : '';
+                            
+                            // Lectura de la última acción tecleada por el usuario (si existe)
+                            let ultimaAccion = data.ultima_accion || 'Navegando en el sistema...';
+
                             let div = document.createElement('div');
-                            div.className = 'radar-user';
+                            div.className = `radar-user ${claseCard}`;
                             div.innerHTML = `
-                                <div class="radar-dot"></div>
+                                <div class="radar-dot ${claseDot}"></div>
                                 <div class="radar-info">
-                                    <span class="radar-name">${data.nombre}</span>
-                                    <span class="radar-module">Trabajando en: ${data.modulo_actual || 'Sistema'}</span>
+                                    <span class="radar-name">${data.nombre} <span class="radar-role">(${rolEtiq})</span></span>
+                                    <span class="radar-module">📍 Ubicación: Módulo de ${data.modulo_actual || 'Inicio'}</span>
+                                    <span class="radar-action">👁️ Actividad: ${ultimaAccion}</span>
                                 </div>
                             `;
                             radarBox.appendChild(div);
@@ -667,7 +716,7 @@
                     }
 
                     if (conteo === 0) {
-                        radarBox.innerHTML = "<div style='color:#555; text-align:center; font-size:12px; margin-top:20px;'>No hay operadores conectados en este momento.</div>";
+                        radarBox.innerHTML = "<div style='color:#555; text-align:center; font-size:12px; margin-top:20px;'>No hay usuarios conectados en este momento.</div>";
                     }
                 } else {
                     radarBox.innerHTML = "<div style='color:#555; text-align:center; font-size:12px; margin-top:20px;'>Radar en espera de señales...</div>";
