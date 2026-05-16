@@ -166,14 +166,13 @@
         <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
         
         <div class="panel-info">
-            <strong>DICCIONARIO LÓGICO Y MOTOR DE AUDITORÍA (LISTA DE TAREAS ACTIVAS):</strong><br><br>
+            <strong>DICCIONARIO LÓGICO Y MOTOR DE AUDITORÍA PROTEGIDO (TAREAS ACTIVAS):</strong><br><br>
+            - 🛡️ <b>Resguardo Territorial Absoluto:</b> Se bloqueó la sobreescritura de Comunas y Comunidades. Si la celda viene vacía, el sistema mantiene intacta la ubicación de Firebase y hereda del Jefe inmediato en cascada.<br>
             - 🪪 <b>Extractor de Nacionalidad y Menores:</b> Busca la "E" o "V" y la separa. Limpia la cédula de puntos. Si lee "MENOR", "S/C" o "NO", ignora la cédula y hace búsqueda compuesta (Nombre+Apellido+Comuna).<br>
             - 🏠 <b>Motor Clínico de Vivienda y Tenencia:</b> Extrae y separa si es PROPIA, ALQUILADA, PRESTADA, ARRIMADO o COMPARTIDA. Identifica si es APTO, TOWN HOUSE, ANEXO o HABITACION. Traduce "ESTABLE/BUENA/EXCELENTE" a <i>bien</i>, "REGULAR" a <i>regular</i> y "MALA/DETERIORADA" a <i>malo</i>.<br>
-            - ⚠️ <b>Regla Forzada (Rancho):</b> Si detecta "RANCHO" o "IMPROVISADA", fuerza automáticamente la Condición de la Vivienda a <i>malo</i> ignorando lo que diga el encuestador.<br>
-            - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada (Jefe de Hogar):</b> Detecta al "JEFE DE FAMILIA" en el Excel. Guarda su ID en memoria y automáticamente vincula como Carga Familiar a los que estén en las celdas de abajo. Detecta las "X" en las columnas de MADRE/PADRE/HIJO para asignar parentescos específicos.<br>
-            - 📅 <b>Cronología y Cédula Física:</b> Calcula la fecha de nacimiento usando la Edad y el año actual. Si la edad matemática es menor a 9 años, marca automáticamente el campo "¿Posee Cédula Física?" como "NO".<br>
-            - 🎖️ <b>Protección Social y Salud:</b> Evalúa la columna "TIPO DE CILINDRO"; si tiene kilos, inyecta <i>si</i> en Gas. Convierte todas las respuestas "X", "SÍ" y "NO" al formato limpio de base de datos para: Trabajo, Escuela, Amor Mayor, Carnet Patria, Misión JGH, Discapacidad, Embarazo y Lactancia.<br>
-            - 🗳️ <b>Sexo y Estatus Electoral:</b> Detecta FEMENINA/MASCULINO e inyecta sexo. Detecta la marca en columnas VD, VB o VO e inyecta el Estatus Electoral correspondiente.
+            - ⚠️ <b>Regla Forzada (Rancho):</b> Si detecta "RANCHO" o "IMPROVISADA", fuerza automáticamente la Condición de la Vivienda a <i>malo</i>.<br>
+            - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada (Jefe de Hogar):</b> Detecta al "JEFE DE FAMILIA" en el Excel. Guarda su ID en memoria y automáticamente vincula como Carga Familiar a los que estén en las celdas de abajo.<br>
+            - 📅 <b>Cronología y Cédula Física:</b> Calcula la fecha de nacimiento usando la Edad. Si la edad es menor a 9 años, marca "¿Posee Cédula Física?" como "NO".
         </div>
 
         <input type="file" id="csvFile" accept=".csv">
@@ -337,6 +336,10 @@
                     const tiempoInicio = Date.now();
                     
                     let ultimoJefeIdActivo = null;
+                    
+                    // VARIABLES DE MEMORIA DE UBICACIÓN PARA EVITAR LA SOBREESCRITURA CIEGA
+                    let ultimaComunaCascada = "";
+                    let ultimaComunidadCascada = "";
 
                     for(let i = 0; i < totalRows; i++) {
                         let row = csvRows[i];
@@ -346,12 +349,26 @@
                         let rowNombreCompleto = cleanText(row['NOMBRE Y APELLIDO']).split(' ');
                         let rowNombre = rowNombreCompleto.slice(0, Math.ceil(rowNombreCompleto.length / 2)).join(' ');
                         let rowApellido = rowNombreCompleto.slice(Math.ceil(rowNombreCompleto.length / 2)).join(' ');
+                        
+                        // LECTURA DINÁMICA DE UBICACIÓN CON RESPALDO DE CASCADA
                         let rowComuna = cleanText(row['COMUNA']);
+                        let rowComunidad = cleanText(row['COMUNIDAD']);
+                        
+                        if (rowComuna !== "") {
+                            ultimaComunaCascada = rowComuna;
+                        } else {
+                            rowComuna = ultimaComunaCascada; // Si viene vacía, usa la última del Jefe
+                        }
 
-                        // MOTOR EXTRACTOR DE NACIONALIDAD Y LIMPIEZA DE CÉDULA
+                        if (rowComunidad !== "") {
+                            ultimaComunidadCascada = rowComunidad;
+                        } else {
+                            rowComunidad = ultimaComunidadCascada;
+                        }
+
+                        let esCedulaValida = rawCed && rawCed !== 'S/C' && rawCed !== 'NO' && !rawCed.includes('MENOR') && !rawCed.includes('N/A');
                         let rowCedulaNum = rawCed;
                         let rowNac = 'V';
-                        let esCedulaValida = rawCed && rawCed !== 'S/C' && rawCed !== 'NO' && !rawCed.includes('MENOR') && !rawCed.includes('N/A');
 
                         if (esCedulaValida) {
                             if (rawCed.match(/^E[\-\s]?\d/)) {
@@ -364,7 +381,7 @@
                             rowCedulaNum = rowCedulaNum.replace(/\./g, '').trim();
                         }
 
-                        // Busqueda principal o compuesta
+                        // Búsqueda cruzada usando la ubicación resguardada
                         if(esCedulaValida && (mapCedulas[rawCed] || mapCedulas[rowCedulaNum])) {
                             targetId = mapCedulas[rawCed] || mapCedulas[rowCedulaNum];
                         } else {
@@ -429,6 +446,10 @@
                             updates['tipo_vivienda'] = tipoParsed;
                             updates['condiciones_vivienda'] = condicionParsed;
                             if (tenenciaParsed !== '') updates['tenencia_vivienda'] = tenenciaParsed;
+
+                            // 🚨 PROTECCIÓN DE UBICACIÓN: SOLO ACTUALIZA SI EL EXCEL TRAE TEXTO EXPLÍCITO, NUNCA SOBREESCRIBE CON VACÍO 🚨
+                            if (cleanText(row['COMUNA']) !== "") updates['comuna'] = cleanText(row['COMUNA']);
+                            if (cleanText(row['COMUNIDAD']) !== "") updates['comunidad'] = cleanText(row['COMUNIDAD']);
 
                             // 2. GAS DOMÉSTICO
                             let cilindroRaw = cleanText(row['TIPO DE CILINDRO']);
@@ -523,14 +544,13 @@
                             else if(cleanText(row['VB'])) updates['vd_vb_vo_seleccion'] = 'VB';
                             else if(cleanText(row['VO'])) updates['vd_vb_vo_seleccion'] = 'VO';
 
-                            // APLICAR
+                            // APLICAR PARCHE PRESERVANDO UBICACIÓN
                             if(Object.keys(updates).length > 0) {
                                 try {
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
                                     let colorTipo = updates['jefe_hogar_id'] ? "log-family" : "log-ok";
-                                    let logText = tenenciaParsed ? `Tenencia: ${tenenciaParsed} | Condición: ${condicionParsed}` : `Condición: ${condicionParsed}`;
-                                    printLog(`[ACTUALIZADO] ${rowNombre} ${rowApellido} ➔ ${logText}`, colorTipo);
+                                    printLog(`[CORREGIDO] ${rowNombre} ${rowApellido} ➔ Comuna resguardada: ${updates['comuna'] || baseDatosFirebase[targetId].comuna}`, colorTipo);
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
                                 }
@@ -553,14 +573,9 @@
                         document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                     }
 
-                    printLog(`📊 PROCESO DE DEPURACIÓN FINALIZADO.`, "log-info");
-                    printLog(`Expedientes actualizados y Familias vinculadas: ${modificados}`, "log-success");
-                    printLog(`Expedientes omitidos (Ya estaban limpios y al día): ${omitidosCambio}`, "log-ok");
-                    if(ignoradosNoEncontrados > 0) {
-                        printLog(`Filas del Excel ignoradas (No existen en el sistema actual): ${ignoradosNoEncontrados}`, "log-warn");
-                    }
-                    printLog(`⚠️ ALERTA ADMINISTRATIVA: Ejecuta la sincronización manual en la Bóveda de Respaldo para nivelar Supabase con estos datos cruzados.`, "log-warn");
-                    alert("¡Consolidación del Diccionario Lógico del Excel finalizada con éxito!");
+                    printLog(`📊 PROCESO DE DEPURACIÓN FINALIZADO CON ÉXITO.`, "log-info");
+                    printLog(`Expedientes actualizados y asegurados en Firebase: ${modificados}`, "log-success");
+                    alert("¡Consolidación del Diccionario Lógico y Blindaje Territorial finalizada!");
                 }
             });
         };
