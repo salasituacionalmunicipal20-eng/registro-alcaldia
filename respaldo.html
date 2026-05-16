@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bóveda de Respaldo - Alcaldía</title>
+    <style>
+        :root {
+            --rojo-oficial: #E30613;
+            --azul-oficial: #004a99;
+            --gris-fondo: #121212; /* Fondo oscuro para dar ambiente de consola/bóveda */
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: var(--gris-fondo); 
+            padding: 40px; 
+            text-align: center; 
+            color: white;
+        }
+        
+        .container { 
+            background: #1e1e1e; 
+            padding: 40px; 
+            border-radius: 8px; 
+            max-width: 800px; 
+            margin: auto; 
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5); 
+            border-top: 8px solid #00ff00; 
+            position: relative;
+        }
+
+        .top-nav { 
+            display: flex; 
+            justify-content: flex-start; 
+            margin-bottom: 20px;
+        }
+        
+        .btn-back { 
+            background-color: #333; 
+            color: white; 
+            padding: 8px 15px; 
+            border: 1px solid #555; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+        
+        .btn-back:hover { 
+            background-color: #555; 
+            border-color: #00ff00;
+        }
+        
+        h1 { 
+            color: #fff; 
+            margin-top: 0; 
+            text-transform: uppercase; 
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+        
+        /* Panel de Estado del Servidor */
+        .status-panel {
+            display: flex;
+            justify-content: space-around;
+            background-color: #0a0a0a;
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+
+        .status-box {
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .status-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .status-online { color: #00ff00; }
+        .status-offline { color: #E30613; }
+        .status-warning { color: #ff9800; }
+
+        /* Botones de Acción */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .btn-action {
+            padding: 20px;
+            border-radius: 6px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-csv {
+            background-color: #28a745;
+            color: white;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+        }
+        .btn-csv:hover:not(:disabled) { background-color: #218838; transform: translateY(-3px); }
+
+        .btn-json {
+            background-color: #ff9800;
+            color: black;
+            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
+        }
+        .btn-json:hover:not(:disabled) { background-color: #e68a00; transform: translateY(-3px); }
+
+        .btn-icon { font-size: 30px; }
+
+        .info-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 30px;
+            text-align: left;
+            border-top: 1px dashed #333;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button>
+        </div>
+
+        <h1>Bóveda de Respaldo y Salud del Sistema</h1>
+        
+        <div class="status-panel">
+            <div class="status-box">
+                <span class="status-label">Conexión Firebase DB</span>
+                <span class="status-value status-warning" id="lblConexion">Conectando...</span>
+            </div>
+            <div class="status-box">
+                <span class="status-label">Total Habitantes Alojados</span>
+                <span class="status-value" id="lblTotalRegistros">0</span>
+            </div>
+            <div class="status-box">
+                <span class="status-label">Peso Est. Base de Datos</span>
+                <span class="status-value" id="lblPesoDB">0 MB</span>
+            </div>
+        </div>
+
+        <div class="action-grid">
+            <button class="btn-action btn-csv" id="btnDescargarCSV" onclick="descargarCSVGlobal()" disabled>
+                <span class="btn-icon">📊</span>
+                Exportar Respaldo CSV (Excel)
+                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Para leer y auditar en computadora</span>
+            </button>
+
+            <button class="btn-action btn-json" id="btnDescargarJSON" onclick="descargarJSONGlobal()" disabled>
+                <span class="btn-icon">📦</span>
+                Exportar Respaldo JSON (Raíz)
+                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Archivo puro para restaurar sistema</span>
+            </button>
+        </div>
+
+        <div class="info-text">
+            <strong>⚠️ ATENCIÓN ADMINISTRADOR:</strong><br>
+            - Esta página extrae la base de datos completa de Firebase sin pasar por filtros. Puede tardar unos segundos si la conexión es lenta.<br>
+            - El archivo JSON es el código matriz de la base de datos. Guárdelo en un pendrive seguro.
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        let baseDatosBruta = {};
+
+        // Validar seguridad suprema
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== "carlos.admin@alcaldia.com") {
+                document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:100px;'>⚠️ ACCESO RESTRINGIDO. USTED NO ES CARLOS.</h1>";
+                setTimeout(() => window.location.href = "index.html", 3000);
+            }
+        });
+
+        // Monitorear conexión en tiempo real a Firebase
+        const connectedRef = ref(database, ".info/connected");
+        onValue(connectedRef, (snap) => {
+            const lblConexion = document.getElementById('lblConexion');
+            if (snap.val() === true) {
+                lblConexion.textContent = "EN LÍNEA (ESTABLE)";
+                lblConexion.className = "status-value status-online";
+                cargarDatosEnMemoria();
+            } else {
+                lblConexion.textContent = "DESCONECTADO";
+                lblConexion.className = "status-value status-offline";
+                document.getElementById('btnDescargarCSV').disabled = true;
+                document.getElementById('btnDescargarJSON').disabled = true;
+            }
+        });
+
+        // Descargar datos a la memoria RAM de esta página
+        function cargarDatosEnMemoria() {
+            onValue(ref(database, 'habitantes'), (snapshot) => {
+                if(snapshot.exists()) {
+                    baseDatosBruta = snapshot.val();
+                    const total = Object.keys(baseDatosBruta).length;
+                    
+                    document.getElementById('lblTotalRegistros').textContent = total;
+                    
+                    // Cálculo aproximado del peso del JSON en MB
+                    const jsonString = JSON.stringify(baseDatosBruta);
+                    const bytes = new Blob([jsonString]).size;
+                    const mb = (bytes / (1024 * 1024)).toFixed(2);
+                    document.getElementById('lblPesoDB').textContent = `${mb} MB`;
+
+                    document.getElementById('btnDescargarCSV').disabled = false;
+                    document.getElementById('btnDescargarJSON').disabled = false;
+                } else {
+                    document.getElementById('lblTotalRegistros').textContent = "0";
+                    document.getElementById('lblPesoDB').textContent = "0 MB";
+                }
+            });
+        }
+
+        // Función de descarga JSON (Respaldo Matriz)
+        window.descargarJSONGlobal = () => {
+            const jsonString = JSON.stringify(baseDatosBruta, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const fechaStr = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `RESPALDO_FIREBASE_HABITANTES_${fechaStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        // Función de descarga CSV Global Absoluta (A prueba de balas)
+        window.descargarCSVGlobal = () => {
+            // Generar cabeceras exactas
+            let csv = "ID_SISTEMA,UBCH,CODIGO_SITUR,COMUNA,CONSEJO_COMUNAL,COMUNIDAD,CALLE,NUMERO_CASA,TIPO_VIVIENDA,CONDICIONES_VIVIENDA,RESPONSABLE_CBI,TIENE_GAS,CILINDRO_KG,NOMBRES,APELLIDOS,TIENE_CEDULA,NACIONALIDAD,CEDULA,TELEFONO,FECHA_NACIMIENTO,SEXO,PARENTESCO,PROFESION,TRABAJA,ESCOLARIZADO,CEDULA_FISICA,ENFERMEDAD,TOMA_MEDICAMENTO,CUAL_MEDICAMENTO,DISCAPACIDAD,TIPO_DISCAPACIDAD,EMBARAZADA,LACTANCIA,AMOR_MAYOR,CARNET_PATRIA,MISION_JGH,HOGARES_PATRIA,DONDE_VOTA,ESTATUS_ELECTORAL,OBSERVACIONES_VOTO,REGISTRADO_POR,FECHA_REGISTRO\n";
+
+            for(let id in baseDatosBruta) {
+                let h = baseDatosBruta[id];
+                
+                // Función interna para escapar comas y saltos de línea para el Excel
+                const e = (texto) => `"${(texto || '').toString().replace(/"/g, '""')}"`;
+
+                csv += `${e(id)},${e(h.ubch)},${e(h.codigo_sigue_actual)},${e(h.comuna)},${e(h.consejo_comunal)},${e(h.comunidad)},${e(h.calle)},${e(h.numero_casa)},${e(h.tipo_vivienda)},${e(h.condiciones_vivienda)},${e(h.responsabilidad_cbi_cm)},${e(h.tiene_gas)},${e(h.tipo_cilindro_gas)},${e(h.nombre)},${e(h.apellido)},${e(h.tiene_cedula)},${e(h.nacionalidad)},${e(h.cedula)},${e(h.telefono)},${e(h.fecha_nacimiento)},${e(h.sexo)},${e(h.parentesco)},${e(h.profesion)},${e(h.trabaja)},${e(h.esta_escolarizado)},${e(h.esta_cedulado)},${e(h.padece_enfermedad)},${e(h.toma_medicamento)},${e(h.cual_medicamento)},${e(h.discapacitado)},${e(h.tipo_discapacidad)},${e(h.embarazada)},${e(h.lactancia_materna)},${e(h.cobra_amor_mayor)},${e(h.carnet_patria)},${e(h.mision_jose_gregorio)},${e(h.hogares_patria_bono)},${e(h.donde_vota)},${e(h.vd_vb_vo_seleccion)},${e(h.vd_vb_vo_detalle)},${e(h.registrado_por_nombre)},${e(h.fecha_registro)}\n`;
+            }
+
+            // Forzar codificación UTF-8 para que los acentos salgan bien en Excel
+            const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const fechaStr = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `BASE_DATOS_COMPLETA_ALCALDIA_${fechaStr}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+    </script>
+</body>
+</html>

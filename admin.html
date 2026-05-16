@@ -45,7 +45,6 @@
             border-top: 8px solid var(--rojo-oficial); 
         }
         
-        /* Encabezado Gubernamental */
         .gob-header { 
             display: flex; 
             justify-content: space-between; 
@@ -82,7 +81,6 @@
             font-weight: bold; 
         }
         
-        /* Botonera superior */
         .top-nav { 
             display: flex; 
             justify-content: flex-end; 
@@ -119,7 +117,6 @@
             font-weight: bold;
         }
 
-        /* DASHBOARD CARDS */
         .dashboard-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
@@ -149,7 +146,6 @@
             border-color: var(--azul-oficial);
         }
         
-        /* Líneas decorativas superiores */
         .card::before { 
             content: ""; 
             position: absolute; 
@@ -164,9 +160,13 @@
         .card-consulta::before { background-color: var(--azul-oficial); }
         .card-usuarios::before { background-color: #ff9800; }
         .card-estadisticas::before { background-color: #17a2b8; }
-        
-        /* REGLA DE ORO: Color de la nueva tarjeta de migración */
         .card-migracion::before { background-color: #6c757d; }
+        
+        /* REGLA DE ORO: Color oscuro y elegante para la Bóveda de Respaldo */
+        .card-respaldo { background: #1a1a1a; color: white; border: none; }
+        .card-respaldo::before { background-color: #00ff00; }
+        .card-respaldo .card-title { color: white; }
+        .card-respaldo .card-desc { color: #aaa; }
 
         .card-icon { 
             font-size: 50px; 
@@ -249,6 +249,12 @@
                 <div class="card-desc">Carga de base de datos externa desde archivos Excel/CSV. (Solo Carlos).</div>
             </div>
 
+            <div id="cardRespaldo" class="card card-respaldo hidden" onclick="location.href='respaldo.html'">
+                <span class="card-icon">🗄️</span>
+                <div class="card-title">Bóveda de Respaldo</div>
+                <div class="card-desc">Salud del servidor y descargas de seguridad absolutas. (Solo Carlos).</div>
+            </div>
+
         </div>
     </div>
 
@@ -275,11 +281,11 @@
             if (!user) {
                 window.location.href = "index.html";
             } else {
-                // REGLA DE ORO: Si es Carlos Admin, desbloquea la herramienta de migración masiva
+                // Si es Carlos Admin, desbloquea las herramientas críticas
                 if (user.email === "carlos.admin@alcaldia.com") {
                     document.getElementById('cardMigracion').classList.remove('hidden');
+                    document.getElementById('cardRespaldo').classList.remove('hidden');
                 } else {
-                    // Si no es Carlos, validamos que al menos sea un administrador general
                     const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
                     if (!snapshot.exists() || snapshot.val().rol !== "admin") {
                         window.location.href = "index.html";
