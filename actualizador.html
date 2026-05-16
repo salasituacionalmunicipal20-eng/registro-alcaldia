@@ -166,10 +166,10 @@
         <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
         
         <div class="panel-info">
-            <strong>Diccionario Lógico, Cascada Familiar y Extractor de Cédula Activado:</strong><br>
+            <strong>Diccionario Lógico, Cascada Familiar, Extractor de Cédula y Tenencia Activados:</strong><br>
+            - 🏠 <b>Motor Clínico de Vivienda:</b> Extrae "Tenencia" (Propia/Alquilada). Traduce sinónimos de Buena/Mala. Si detecta "RANCHO", inyecta condición "malo" automáticamente.<br>
             - 🪪 <b>Extractor de Nacionalidad:</b> Detecta prefijos "E" o "V", asigna la nacionalidad correspondiente y limpia la cédula de letras y puntos.<br>
             - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada:</b> Vincula menores ("MENOR") y cargas familiares ("X") bajo el Jefe de Hogar detectado en la línea superior.<br>
-            - 🏠 <b>Traductor de Vivienda:</b> Convierte MALA a "malo", BUENA/ESTABLE a "bien", APARTAMENTO a "apto".<br>
             - 🎖️ <b>Protección y Gas:</b> Normaliza TIPO CILINDRO, Misiones, Carnet, Empleo y Estatus Sociales a formato Si/No.
         </div>
 
@@ -314,11 +314,11 @@
                     let mapCedulas = {};
                     let mapNombres = {};
 
+                    // Carga en memoria para optimizar búsqueda cruzada
                     for(let idFb in baseDatosFirebase) {
                         let h = baseDatosFirebase[idFb];
                         let c = cleanText(h.cedula);
                         
-                        // Guardamos tanto la cedula pura como la cedula con la posible "E" que habian metido antes por error
                         if(c && c !== 'S/C' && c !== 'NO' && !c.includes('MENOR') && !c.includes('N/A')) {
                             mapCedulas[c] = idFb;
                             let cStripped = c.replace(/^[VE][\-\s]?/, '').replace(/\./g, '');
@@ -359,11 +359,10 @@
                                 rowNac = 'V';
                                 rowCedulaNum = rawCed.replace(/^V[\-\s]?/, '');
                             }
-                            // Quita los puntos de miles
                             rowCedulaNum = rowCedulaNum.replace(/\./g, '').trim();
                         }
 
-                        // Busqueda
+                        // Busqueda principal o compuesta
                         if(esCedulaValida && (mapCedulas[rawCed] || mapCedulas[rowCedulaNum])) {
                             targetId = mapCedulas[rawCed] || mapCedulas[rowCedulaNum];
                         } else {
@@ -377,58 +376,67 @@
                             let updates = {};
                             let cambiosRealizados = [];
 
-                            // Inyección de Extractor de Nacionalidad
                             if (esCedulaValida) {
                                 updates['nacionalidad'] = rowNac;
                                 updates['cedula'] = rowCedulaNum;
                                 cambiosRealizados.push(`C.I ➔ ${rowNac}-${rowCedulaNum}`);
                             }
 
-                            // 1. TRADUCTOR DE VIVIENDA
-                            let rowTipoVivRaw = cleanText(row['TIPO DE VIVIENDA']);
-                            let rowCasaNum = cleanText(row['NUMERO DE CASA']);
+                            // 1. INTELIGENCIA DE VIVIENDA (TENENCIA Y ARQUITECTURA)
+                            let casaRaw = cleanText(row['NUMERO DE CASA']);
+                            let tipoVivRaw = cleanText(row['TIPO DE VIVIENDA']);
+                            let condicionRaw = cleanText(row['CONDICIONES DE LA VIVIENDA']);
                             
-                            if(rowCasaNum === 'CASA' || rowTipoVivRaw.includes('CASA')) {
-                                if (rowCasaNum === 'CASA') updates['numero_casa'] = '';
-                                updates['tipo_vivienda'] = 'casa';
-                            } else if (rowTipoVivRaw.includes('APTO') || rowTipoVivRaw.includes('APARTAMENTO')) {
-                                updates['tipo_vivienda'] = 'apto';
-                            } else if (rowTipoVivRaw.includes('TOWN') || rowTipoVivRaw.includes('TH')) {
-                                updates['tipo_vivienda'] = 'town house';
-                            } else if (rowTipoVivRaw.includes('RANCHO')) {
-                                updates['tipo_vivienda'] = 'rancho';
-                            }
-
-                            // 2. CONDICIONES DE VIVIENDA
-                            let rowCondicion = cleanText(row['CONDICIONES DE LA VIVIENDA']);
-                            let evalCondicion = rowCondicion;
+                            let tenenciaParsed = "";
+                            let tipoParsed = updates['tipo_vivienda'] || baseDatosFirebase[targetId].tipo_vivienda || "casa"; 
+                            let condicionParsed = updates['condiciones_vivienda'] || baseDatosFirebase[targetId].condiciones_vivienda || "regular"; 
                             
-                            if(rowTipoVivRaw === 'ESTABLE' || rowTipoVivRaw === 'BUENA' || rowTipoVivRaw === 'MALA' || rowTipoVivRaw === 'REGULAR') {
-                                evalCondicion = rowTipoVivRaw;
+                            if(tipoVivRaw.includes('PROPIA') || tipoVivRaw.includes('PROPIO')) tenenciaParsed = 'propia';
+                            else if(tipoVivRaw.includes('ALQUILAD')) tenenciaParsed = 'alquilada';
+                            else if(tipoVivRaw.includes('PRESTAD')) tenenciaParsed = 'prestada';
+                            else if(tipoVivRaw.includes('ARRIMAD')) tenenciaParsed = 'arrimado';
+                            else if(tipoVivRaw.includes('COMPARTID')) tenenciaParsed = 'compartida';
+                            else if(tipoVivRaw.includes('CUIDA')) tenenciaParsed = 'cuidando';
+
+                            if(casaRaw === 'CASA') casaRaw = '';
+
+                            if (tipoVivRaw.includes('APTO') || tipoVivRaw.includes('APARTAMENTO')) tipoParsed = 'apto';
+                            else if (tipoVivRaw.includes('TOWN') || tipoVivRaw.includes('TH')) tipoParsed = 'town house';
+                            else if (tipoVivRaw.includes('RANCHO') || tipoVivRaw.includes('BARRACA') || tipoVivRaw.includes('IMPROVISADA')) tipoParsed = 'rancho';
+                            else if (tipoVivRaw.includes('ANEXO')) tipoParsed = 'anexo';
+                            else if (tipoVivRaw.includes('HABITACION') || tipoVivRaw.includes('PIEZA') || tipoVivRaw.includes('CUARTO')) tipoParsed = 'habitacion';
+                            
+                            let evalCond = condicionRaw;
+                            if(tipoVivRaw.includes('ESTABLE') || tipoVivRaw.includes('BUEN') || tipoVivRaw.includes('MAL') || tipoVivRaw.includes('REGULAR')) {
+                                evalCond = tipoVivRaw;
                             }
 
-                            if(evalCondicion === 'ESTABLE' || evalCondicion === 'BUENA' || evalCondicion === 'BUENAS' || evalCondicion === 'BIEN') {
-                                updates['condiciones_vivienda'] = 'bien';
-                                cambiosRealizados.push("Condición ➔ 'bien'");
-                            } else if (evalCondicion === 'MALA' || evalCondicion === 'MALAS' || evalCondicion === 'MALO') {
-                                updates['condiciones_vivienda'] = 'malo';
-                                cambiosRealizados.push("Condición ➔ 'malo'");
-                            } else if (evalCondicion === 'REGULAR' || evalCondicion === 'REGULARES') {
-                                updates['condiciones_vivienda'] = 'regular';
+                            if(evalCond.includes('ESTABLE') || evalCond.includes('BUEN') || evalCond.includes('BIEN') || evalCond.includes('EXCELENTE') || evalCond.includes('OPTIM')) {
+                                condicionParsed = 'bien';
+                            } else if (evalCond.includes('MAL') || evalCond.includes('DETERIORADA') || evalCond.includes('PRECARIA') || evalCond.includes('RIESGO') || evalCond.includes('DEPLORABLE')) {
+                                condicionParsed = 'malo';
+                            } else if (evalCond.includes('REGULAR') || evalCond.includes('MEDIO') || evalCond.includes('CONSTRUCCION')) {
+                                condicionParsed = 'regular';
                             }
 
-                            // 3. GAS DOMÉSTICO
+                            if (tipoParsed === 'rancho') condicionParsed = 'malo';
+
+                            updates['numero_casa'] = casaRaw;
+                            updates['tipo_vivienda'] = tipoParsed;
+                            updates['condiciones_vivienda'] = condicionParsed;
+                            if (tenenciaParsed !== '') updates['tenencia_vivienda'] = tenenciaParsed;
+
+                            // 2. GAS DOMÉSTICO
                             let cilindroRaw = cleanText(row['TIPO DE CILINDRO']);
                             if (cilindroRaw && cilindroRaw !== 'NO' && cilindroRaw !== 'S/C' && cilindroRaw !== 'N/A') {
                                 updates['tiene_gas'] = 'si';
                                 updates['tipo_cilindro_gas'] = row['TIPO DE CILINDRO'];
-                                cambiosRealizados.push(`Gas ➔ 'si' (${row['TIPO DE CILINDRO']})`);
                             } else if (cilindroRaw === 'NO') {
                                 updates['tiene_gas'] = 'no';
                                 updates['tipo_cilindro_gas'] = '';
                             }
 
-                            // 4. CRONOLOGÍA Y CÉDULA FÍSICA
+                            // 3. CRONOLOGÍA Y CÉDULA FÍSICA
                             let rowFechaRaw = row['FECHA DE NACIMIENTO'];
                             let rowEdadRaw = row['EDAD'];
                             let fechaEstructurada = parseFechaInteligente(rowFechaRaw, rowEdadRaw);
@@ -448,7 +456,7 @@
                                 }
                             }
 
-                            // 5. CASCADA FAMILIAR Y PARENTESCO
+                            // 4. CASCADA FAMILIAR Y PARENTESCO
                             let rowResponsabilidad = cleanText(row['RESPONSABILIDAD CBI, CM']);
                             
                             if (rowResponsabilidad.includes("JEFE DE FAMILIA") || rowResponsabilidad.includes("JEFE")) {
@@ -461,9 +469,9 @@
                                 let rHijo = cleanText(row['HIJO']);
                                 
                                 let nParentesco = null;
-                                if(rMadre) nParentesco = 'madre';
-                                else if(rPadre) nParentesco = 'padre';
-                                else if(rHijo) nParentesco = 'hijo';
+                                if(rMadre === 'X' || rMadre === 'SI') nParentesco = 'madre';
+                                else if(rPadre === 'X' || rPadre === 'SI') nParentesco = 'padre';
+                                else if(rHijo === 'X' || rHijo === 'SI') nParentesco = 'hijo';
 
                                 if(nParentesco) {
                                     updates['parentesco'] = nParentesco;
@@ -478,7 +486,7 @@
                                 }
                             }
 
-                            // 6. INYECTOR SOCIAL, ESCOLAR Y LABORAL
+                            // 5. INYECTOR SOCIAL, ESCOLAR Y LABORAL
                             const normalizarYParchearCampo = (columnaExcel, claveFirebase, etiquetaLog) => {
                                 if (row[columnaExcel] !== undefined) {
                                     let celdaRaw = cleanText(row[columnaExcel]);
@@ -510,13 +518,14 @@
                             else if(cleanText(row['VB'])) updates['vd_vb_vo_seleccion'] = 'VB';
                             else if(cleanText(row['VO'])) updates['vd_vb_vo_seleccion'] = 'VO';
 
-                            // APLICAR
+                            // APLICAR A FIREBASE
                             if(Object.keys(updates).length > 0) {
                                 try {
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
                                     let colorTipo = updates['jefe_hogar_id'] ? "log-family" : "log-ok";
-                                    printLog(`[OK] ${rowNombre} ${rowApellido} ➔ [${cambiosRealizados.length > 0 ? cambiosRealizados.join(' | ') : 'Actualización limpia'}]`, colorTipo);
+                                    let logText = tenenciaParsed ? `Tenencia: ${tenenciaParsed} | Condición: ${condicionParsed}` : `Condición: ${condicionParsed}`;
+                                    printLog(`[ACTUALIZADO] ${rowNombre} ${rowApellido} ➔ ${logText}`, colorTipo);
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
                                 }
