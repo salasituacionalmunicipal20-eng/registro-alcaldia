@@ -389,7 +389,6 @@
         <div id="vistaConsultas">
             <h2>Filtros Activos</h2>
             <div class="search-panel">
-                
                 <div class="search-grid">
                     <div>
                         <label>Filtrar por Comuna:</label>
@@ -789,7 +788,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue, remove, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, remove, get, child, update, set, onDisconnect } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -811,7 +810,6 @@
         let datosTerritoriales = {}; 
         let idActualEdicion = null; 
 
-        // Variables de Paginación
         let datosFiltrados = [];
         let paginaActual = 1;
         let registrosPorPagina = 15;
@@ -867,12 +865,37 @@
                     btnAdmin.addEventListener('click', () => { window.location.href = "admin.html"; }); 
                 }
             }
+
+            // --- INICIO CÓDIGO RADAR ESPÍA ---
+            let nombreOp = user.email.split('@')[0].toUpperCase();
+            if (esAdmin) nombreOp = "CARLOS ADMIN";
+            
+            window.presenciaRef = ref(database, `presencia/${user.uid}`);
+            
+            // Si cierra la pestaña de golpe, Firebase lo marca como offline automáticamente
+            onDisconnect(window.presenciaRef).update({ 
+                estado: 'offline', 
+                ultima_accion: 'Cerró la pestaña inesperadamente' 
+            });
+            
+            // Al entrar, reporta que está conectado
+            set(window.presenciaRef, {
+                estado: 'online',
+                nombre: nombreOp,
+                rol: esAdmin ? 'admin' : 'operador',
+                modulo_actual: 'Consultas',
+                ultima_accion: 'Ingresó al buscador general'
+            });
+            // --- FIN CÓDIGO RADAR ESPÍA ---
             
             cargarFiltrosTerritoriales(); 
             cargarDatos(); 
         });
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => { 
+            if (window.presenciaRef) {
+                update(window.presenciaRef, { estado: 'offline', ultima_accion: 'Cerró sesión voluntariamente' });
+            }
             signOut(auth).then(() => window.location.href = "index.html"); 
         });
 
@@ -883,17 +906,21 @@
         });
 
         window.imprimirTabla = () => { 
+            if (window.presenciaRef) {
+                update(window.presenciaRef, { ultima_accion: `Imprimiendo listado PDF de consultas` });
+            }
             const limiteOriginal = registrosPorPagina;
             registrosPorPagina = datosFiltrados.length; 
             renderizarTabla();
-            
             window.print(); 
-            
             registrosPorPagina = limiteOriginal;
             renderizarTabla();
         };
 
         window.exportarCSV = () => {
+            if (window.presenciaRef) {
+                update(window.presenciaRef, { ultima_accion: `Descargando base de datos a Excel` });
+            }
             let csv = 'Nombres y Apellidos,Cedula,UBCH,Comuna,Comunidad,Calle,Telefono\n';
             
             datosFiltrados.forEach(item => {
@@ -971,7 +998,6 @@
             });
         }
 
-        // REGLA DE ORO: Escaneo Inteligente para Calles y UBCH
         function actualizarFiltrosInteligentes() {
             const fComunaSel = document.getElementById('fComuna').value.toUpperCase();
             const fComunidadSel = document.getElementById('fComunidad').value.toUpperCase();
@@ -999,7 +1025,6 @@
                 if (u !== '') ubchUnicas.add(u);
             }
 
-            // Calles
             fCalle.innerHTML = '<option value="">Todas las calles (Cargadas)</option>';
             Array.from(callesUnicas).sort().forEach(calle => {
                 const opt = document.createElement('option');
@@ -1009,7 +1034,6 @@
             if (seleccionCalle && callesUnicas.has(seleccionCalle)) fCalle.value = seleccionCalle;
             else fCalle.value = "";
 
-            // UBCHs
             if(fUbch) {
                 fUbch.innerHTML = '<option value="">Todas las UBCH (Cargadas)</option>';
                 Array.from(ubchUnicas).sort().forEach(ubch => {
@@ -1025,7 +1049,6 @@
         function cargarDatos() {
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
-                
                 actualizarFiltrosInteligentes();
                 filtrarTabla(); 
             });
@@ -1037,11 +1060,21 @@
             const fComuna = document.getElementById('fComuna').value.toLowerCase();
             const fComunidad = document.getElementById('fComunidad').value.toLowerCase();
             
-            // Leemos el valor del nuevo <select> de UBCH
             const fUbch = document.getElementById('fUbch').value.toUpperCase();
             const fCalle = document.getElementById('fCalle').value.toUpperCase();
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
             const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
+
+            // RASTREADOR ESPÍA DE BÚSQUEDA
+            if (window.presenciaRef) {
+                let accionStr = 'Explorando la base de datos...';
+                if (fCed !== '') accionStr = `Buscando la cédula: ${fCed}`;
+                else if (fNom !== '') accionStr = `Buscando el nombre: ${fNom}`;
+                else if (fComunidad !== '') accionStr = `Filtrando comunidad: ${fComunidad}`;
+                else if (fComuna !== '') accionStr = `Revisando la comuna: ${fComuna}`;
+                
+                update(window.presenciaRef, { ultima_accion: accionStr });
+            }
 
             datosFiltrados = [];
 
@@ -1132,7 +1165,6 @@
         }
 
         document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
-            // Dispara el cálculo automático cuando no sean Comuna o Comunidad
             if(element.id !== 'fComuna' && element.id !== 'fComunidad') {
                 element.addEventListener('input', filtrarTabla); 
             }
@@ -1140,6 +1172,9 @@
 
         window.eliminarRegistro = (id) => {
             if(confirm("ALERTA DE SEGURIDAD: ¿Seguro que desea eliminar permanentemente este habitante?")) {
+                if (window.presenciaRef) {
+                    update(window.presenciaRef, { ultima_accion: `⚠️ Eliminando registro permanente (ID: ${id})` });
+                }
                 remove(ref(database, `habitantes/${id}`)).catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
             }
         };
@@ -1231,6 +1266,11 @@
         window.editarRegistro = (id) => {
             idActualEdicion = id;
             const h = baseDeDatosHabitantes[id];
+
+            // RASTREADOR ESPÍA DE EDICIÓN
+            if (window.presenciaRef) {
+                update(window.presenciaRef, { ultima_accion: `Revisando expediente C.I: ${h.cedula || 'S/C'}` });
+            }
 
             document.getElementById('vistaConsultas').classList.add('hidden');
             document.getElementById('vistaEdicion').classList.remove('hidden');
@@ -1354,6 +1394,9 @@
         };
 
         window.cerrarEdicion = () => {
+            if (window.presenciaRef) {
+                update(window.presenciaRef, { ultima_accion: `Regresó a la pantalla del buscador` });
+            }
             document.getElementById('vistaEdicion').classList.add('hidden');
             document.getElementById('vistaConsultas').classList.remove('hidden');
             idActualEdicion = null;
@@ -1388,6 +1431,11 @@
 
         document.getElementById('formEdicion').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            if (window.presenciaRef) {
+                update(window.presenciaRef, { ultima_accion: `Guardando actualización de datos...` });
+            }
+
             const formData = new FormData(e.target);
             const datosEditados = Object.fromEntries(formData.entries());
             

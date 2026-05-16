@@ -905,7 +905,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, get, child, set, onDisconnect, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -953,13 +953,55 @@
                     window.location.href = "admin.html"; 
                 });
             }
+
+            // --- INICIO CÓDIGO RADAR ESPÍA ---
+            let nombreOp = user.email.split('@')[0].toUpperCase();
+            if (esAdmin) nombreOp = "CARLOS ADMIN";
+            
+            window.presenciaRef = ref(database, `presencia/${user.uid}`);
+            
+            onDisconnect(window.presenciaRef).update({ 
+                estado: 'offline', 
+                ultima_accion: 'Cerró la pestaña inesperadamente' 
+            });
+            
+            set(window.presenciaRef, {
+                estado: 'online',
+                nombre: nombreOp,
+                rol: esAdmin ? 'admin' : 'operador',
+                modulo_actual: 'Registro Nuevo',
+                ultima_accion: 'Preparando nueva planilla en blanco'
+            });
+            // --- FIN CÓDIGO RADAR ESPÍA ---
         });
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
+            if (window.presenciaRef) {
+                update(window.presenciaRef, { estado: 'offline', ultima_accion: 'Cerró sesión voluntariamente' });
+            }
             signOut(auth).then(() => { 
                 window.location.href = "index.html"; 
             });
         });
+
+        // RASTREADOR ESPÍA EN TIEMPO REAL AL ESCRIBIR
+        const inputCedula = document.getElementById('cedula');
+        if(inputCedula) {
+            inputCedula.addEventListener('input', (e) => {
+                if (window.presenciaRef && e.target.value.length >= 3) {
+                    update(window.presenciaRef, { ultima_accion: `Llenando datos de C.I: ${e.target.value}` });
+                }
+            });
+        }
+        
+        const inputNombre = document.getElementById('nombre');
+        if(inputNombre) {
+            inputNombre.addEventListener('input', (e) => {
+                if (window.presenciaRef && e.target.value.length >= 3) {
+                    update(window.presenciaRef, { ultima_accion: `Ingresando a nuevo habitante: ${e.target.value}` });
+                }
+            });
+        }
 
         // WIZARD
         let currentStep = 1;
@@ -1205,6 +1247,12 @@
             e.preventDefault(); 
             try {
                 const user = auth.currentUser;
+                if (!user) return alert("Debe iniciar sesión.");
+
+                if (window.presenciaRef) {
+                    update(window.presenciaRef, { ultima_accion: `Guardando registro definitivo en la nube...` });
+                }
+
                 const userSnap = await get(child(ref(database), `operadores/${user.uid}`));
                 const respNombre = userSnap.exists() ? `${userSnap.val().nombre} ${userSnap.val().apellido}` : "Administrador";
 
@@ -1265,6 +1313,11 @@
                 
                 currentStep = 1;
                 updateWizard();
+
+                if (window.presenciaRef) {
+                    update(window.presenciaRef, { ultima_accion: `Preparando nueva planilla en blanco` });
+                }
+
             } catch (error) {
                 console.error(error);
                 alert('Error al guardar. Revise su conexión.');
