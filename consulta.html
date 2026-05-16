@@ -530,15 +530,33 @@
                         <label>Número de Casa / Apto:</label>
                         <input type="text" id="e_numero_casa" name="numero_casa" required>
                     </div>
+                    
                     <div>
-                        <label>Tipo de Vivienda:</label>
+                        <label>Tipo de Vivienda (Estructura):</label>
                         <select id="e_tipo_vivienda" name="tipo_vivienda" required>
                             <option value="">Seleccione</option>
                             <option value="apto">Apartamento</option>
                             <option value="casa">Casa</option>
                             <option value="town house">Town House</option>
+                            <option value="rancho">Rancho / Improvisada</option>
+                            <option value="anexo">Anexo</option>
+                            <option value="habitacion">Habitación / Pieza</option>
                         </select>
                     </div>
+                    
+                    <div>
+                        <label>Tenencia de la Vivienda:</label>
+                        <select id="e_tenencia_vivienda" name="tenencia_vivienda" required>
+                            <option value="">Seleccione</option>
+                            <option value="propia">Propia</option>
+                            <option value="alquilada">Alquilada</option>
+                            <option value="prestada">Prestada</option>
+                            <option value="arrimado">Arrimado</option>
+                            <option value="compartida">Compartida</option>
+                            <option value="cuidando">Cuidando</option>
+                        </select>
+                    </div>
+                    
                     <div>
                         <label>Condiciones de Vivienda:</label>
                         <select id="e_condiciones_vivienda" name="condiciones_vivienda" required>
@@ -1315,6 +1333,10 @@
             llenarCampo('e_calle', h.calle); 
             llenarCampo('e_numero_casa', h.numero_casa); 
             llenarCampo('e_tipo_vivienda', h.tipo_vivienda); 
+            
+            // REGLA DE ORO: MAPEO DE TENENCIA
+            llenarCampo('e_tenencia_vivienda', h.tenencia_vivienda); 
+            
             llenarCampo('e_condiciones_vivienda', h.condiciones_vivienda); 
             llenarCampo('e_responsabilidad_cbi_cm', h.responsabilidad_cbi_cm);
             

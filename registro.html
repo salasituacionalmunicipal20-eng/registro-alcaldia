@@ -425,15 +425,33 @@
                         <label for="numero_casa">Número de Casa / Apto:</label>
                         <input type="text" id="numero_casa" name="numero_casa" required>
                     </div>
+                    
                     <div>
-                        <label for="tipo_vivienda">Tipo de Vivienda:</label>
+                        <label for="tipo_vivienda">Tipo de Vivienda (Estructura):</label>
                         <select id="tipo_vivienda" name="tipo_vivienda" required>
                             <option value="">Seleccione</option>
                             <option value="apto">Apartamento</option>
                             <option value="casa">Casa</option>
                             <option value="town house">Town House</option>
+                            <option value="rancho">Rancho / Improvisada</option>
+                            <option value="anexo">Anexo</option>
+                            <option value="habitacion">Habitación / Pieza</option>
                         </select>
                     </div>
+                    
+                    <div>
+                        <label for="tenencia_vivienda">Tenencia de la Vivienda:</label>
+                        <select id="tenencia_vivienda" name="tenencia_vivienda" required>
+                            <option value="">Seleccione</option>
+                            <option value="propia">Propia</option>
+                            <option value="alquilada">Alquilada</option>
+                            <option value="prestada">Prestada</option>
+                            <option value="arrimado">Arrimado</option>
+                            <option value="compartida">Compartida</option>
+                            <option value="cuidando">Cuidando</option>
+                        </select>
+                    </div>
+                    
                     <div>
                         <label for="condiciones_vivienda">Condiciones de Vivienda:</label>
                         <select id="condiciones_vivienda" name="condiciones_vivienda" required>
@@ -692,7 +710,7 @@
         <div class="modal-content">
             <span class="close-modal" onclick="cerrarModalDependiente()">✖</span>
             <h2 style="color: var(--azul-oficial); border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 0;">Añadir Carga Familiar</h2>
-            <p style="font-size: 13px; color: #555;">La información de vivienda y comunidad se heredará automáticamente del Jefe de Hogar.</p>
+            <p style="font-size: 13px; color: #555;">La información de vivienda, tenencia y comunidad se heredará automáticamente del Jefe de Hogar.</p>
             
             <form id="formDependiente">
                 <div class="form-grid">
@@ -1280,6 +1298,10 @@
                         dep.calle = habitanteData.calle;
                         dep.numero_casa = habitanteData.numero_casa;
                         dep.tipo_vivienda = habitanteData.tipo_vivienda;
+                        
+                        // REGLA DE ORO: Hereda la tenencia también
+                        dep.tenencia_vivienda = habitanteData.tenencia_vivienda;
+                        
                         dep.condiciones_vivienda = habitanteData.condiciones_vivienda;
                         dep.responsabilidad_cbi_cm = habitanteData.responsabilidad_cbi_cm;
                         dep.tiene_gas = habitanteData.tiene_gas;
