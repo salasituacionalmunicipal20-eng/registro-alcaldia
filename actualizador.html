@@ -165,12 +165,13 @@
         <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
         
         <div class="panel-info">
-            <strong>Algoritmo de Depuración Cruzada e Inyección Social Activado:</strong><br>
-            - 🏠 <b>Vivienda:</b> Limpia "Número de Casa" si contiene la palabra "CASA" y parametriza el tipo.<br>
+            <strong>Algoritmo de Depuración Clínico Activado:</strong><br>
+            - 🏠 <b>Vivienda Múltiple:</b> Asigna tipo "casa" si detecta el string "CASA" en número. Convierte "ESTABLE" (detectado en Condiciones o Tipo de Vivienda) a "bien".<br>
+            - 🪪 <b>Algoritmo de Cédula Física:</b> Evalúa presencia de C.I y cruza con la Edad. Automáticamente deduce < 9 años = "no", ≥ 9 años = "si".<br>
+            - 💼 <b>Ocupación y Escuela:</b> Parchea campos "Trabaja" y "Escolarizado" limpiando la data del Excel.<br>
             - 👨‍👩‍👧‍👦 <b>Parentesco:</b> Traduce "JEFE DE FAMILIA" a la variable normalizada "jefe de hogar".<br>
-            - 🎖️ <b>Protección Social:</b> Indexa de forma masiva los estatus de Amor Mayor, Carnet Patria, Misión JGH, Discapacidad, Embarazo, Lactancia y Hogares de la Patria en formato nativo limpio (si/no).<br>
-            - 📅 <b>Fechas:</b> Análisis cronológico inteligente con respaldo algorítmico basado en la edad.<br>
-            - 🛡️ <b>Precisión:</b> Validación estricta por Cédula o coincidencia compuesta (Nombre + Apellido + Comuna).
+            - 🎖️ <b>Protección Social:</b> Indexa Misiones, Amor Mayor, Carnet, Discapacidad y Lactancia a formato Si/No.<br>
+            - 📅 <b>Fechas:</b> Análisis cronológico inteligente con respaldo basado en Edad (Pivot 2026).
         </div>
 
         <input type="file" id="csvFile" accept=".csv">
@@ -259,6 +260,7 @@
             return `${minutos} min ${segundos} seg`;
         }
 
+        // MOTOR DE ANÁLISIS CRONOLÓGICO INTELIGENTE
         function parseFechaInteligente(rawDate, rawEdad) {
             let dateStr = (rawDate || '').toString().trim();
             let edadStr = (rawEdad || '').toString().trim();
@@ -352,22 +354,22 @@
                             let updates = {};
                             let cambiosRealizados = [];
 
-                            // Vivienda y Casa
+                            // 1. Lógica de Vivienda (Casa y Condición cruzada)
                             let rowCasa = cleanText(row['NUMERO DE CASA']);
                             if(rowCasa === 'CASA') {
                                 updates['numero_casa'] = '';
                                 updates['tipo_vivienda'] = 'casa';
-                                cambiosRealizados.push("Limpia Casa 'CASA' ➔ Tipo 'casa'");
+                                cambiosRealizados.push("Limpia Num 'CASA' ➔ Tipo 'casa'");
                             }
 
-                            // Condiciones de Vivienda
                             let rowCondicion = cleanText(row['CONDICIONES DE LA VIVIENDA']);
-                            if(rowCondicion === 'ESTABLE') {
+                            let rowTipoVivErr = cleanText(row['TIPO DE VIVIENDA']);
+                            if(rowCondicion === 'ESTABLE' || rowTipoVivErr === 'ESTABLE') {
                                 updates['condiciones_vivienda'] = 'bien';
-                                cambiosRealizados.push("Condición 'ESTABLE' ➔ 'bien'");
+                                cambiosRealizados.push("Condición Vivienda ➔ 'bien' (Corregido de ESTABLE)");
                             }
 
-                            // Cronología y Fecha Nacimiento
+                            // 2. Lógica Cronológica Inteligente
                             let rowFechaRaw = row['FECHA DE NACIMIENTO'];
                             let rowEdadRaw = row['EDAD'];
                             let fechaEstructurada = parseFechaInteligente(rowFechaRaw, rowEdadRaw);
@@ -376,14 +378,33 @@
                                 cambiosRealizados.push(`Fecha ➔ ${fechaEstructurada}`);
                             }
 
-                            // REGLA DE ORO: Homologación de "JEFE DE FAMILIA" a "jefe de hogar"
+                            // 3. Algoritmo de Cédula Física por Edad
+                            let tieneCedulaNum = rowCedula !== '' && rowCedula !== 'S/C' && rowCedula !== 'NO';
+                            if (tieneCedulaNum) {
+                                let edadParaCedula = 99; // Default adulto
+                                if (rowEdadRaw && !isNaN(parseInt(rowEdadRaw))) {
+                                    edadParaCedula = parseInt(rowEdadRaw);
+                                } else if (fechaEstructurada) {
+                                    edadParaCedula = 2026 - parseInt(fechaEstructurada.split('-')[0]);
+                                }
+
+                                if (edadParaCedula < 9) {
+                                    updates['esta_cedulado'] = 'no';
+                                    cambiosRealizados.push("Cédula Física ➔ 'no' (Deducción < 9 años)");
+                                } else {
+                                    updates['esta_cedulado'] = 'si';
+                                    cambiosRealizados.push("Cédula Física ➔ 'si' (Posee Nro)");
+                                }
+                            }
+
+                            // 4. Homologación de Jefe de Hogar
                             let rowResponsabilidad = cleanText(row['RESPONSABILIDAD CBI, CM']);
                             if(rowResponsabilidad.includes("JEFE DE FAMILIA")) {
                                 updates['parentesco'] = 'jefe de hogar';
                                 cambiosRealizados.push("Parentesco ➔ 'jefe de hogar'");
                             }
 
-                            // REGLA DE ORO: Inyector de Variables Sociales y Misiones (Estructuración si/no)
+                            // 5. Inyector de Variables Sociales, Misiones, Empleo y Educación
                             const normalizarYParchearCampo = (columnaExcel, claveFirebase, etiquetaLog) => {
                                 if (row[columnaExcel] !== undefined) {
                                     let celdaRaw = (row[columnaExcel] || '').toString().trim().toUpperCase();
@@ -393,13 +414,15 @@
                                     else if (celdaRaw === 'NO') valorNormalizado = 'no';
                                     else valorNormalizado = celdaRaw.toLowerCase();
 
-                                    if (valorNormalizado !== '') {
+                                    if (valorNormalizado !== '' && valorNormalizado !== 'n/a') {
                                         updates[claveFirebase] = valorNormalizado;
                                         cambiosRealizados.push(`${etiquetaLog} ➔ '${valorNormalizado}'`);
                                     }
                                 }
                             };
 
+                            normalizarYParchearCampo('TRABAJA?', 'trabaja', 'Trabaja');
+                            normalizarYParchearCampo('ESTA ESCOLARIZADO?', 'esta_escolarizado', 'Escolarizado');
                             normalizarYParchearCampo('COBRA AMOR MAYOR', 'cobra_amor_mayor', 'Amor Mayor');
                             normalizarYParchearCampo('POSEE CARNET DE LA PATRIA?', 'carnet_patria', 'Carnet Patria');
                             normalizarYParchearCampo('MISION JOSE GREGORIO', 'mision_jose_gregorio', 'Misión JGH');
@@ -408,11 +431,12 @@
                             normalizarYParchearCampo('LACTANCIA MATERNA?', 'lactancia_materna', 'Lactancia');
                             normalizarYParchearCampo('HOGARES DE LA PATRIA BONO UNICO FAMILIAR', 'hogares_patria_bono', 'Hogares Patria');
 
+                            // Aplicar la inyección si hubo modificaciones
                             if(Object.keys(updates).length > 0) {
                                 try {
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
-                                    printLog(`[MODIFICADO] ${rowNombre} ${rowApellido} (C.I: ${rowCedula || 'S/C'}) ➔ [${cambiosRealizados.join(' | ')}]`, "log-ok");
+                                    printLog(`[OK] ${rowNombre} ${rowApellido} (C.I: ${rowCedula || 'S/C'}) ➔ Parches aplicados: [${cambiosRealizados.join(' | ')}]`, "log-ok");
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
                                 }
@@ -435,14 +459,14 @@
                         document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                     }
 
-                    printLog(`📊 PROCESO DE REPARACIÓN FINALIZADO CON ÉXITO.`, "log-info");
+                    printLog(`📊 PROCESO DE DEPURACIÓN Y REPARACIÓN FINALIZADO.`, "log-info");
                     printLog(`Expedientes modificados/reparados en Firebase: ${modificados}`, "log-success");
-                    printLog(`Expedientes omitidos (Ya estaban al día): ${omitidosCambio}`, "log-ok");
+                    printLog(`Expedientes omitidos (Ya estaban limpios y al día): ${omitidosCambio}`, "log-ok");
                     if(ignoradosNoEncontrados > 0) {
-                        printLog(`Filas omitidas (No existen en el sistema): ${ignoradosNoEncontrados}`, "log-warn");
+                        printLog(`Filas del Excel ignoradas (No existen en el sistema actual): ${ignoradosNoEncontrados}`, "log-warn");
                     }
-                    printLog(`⚠️ RECOMENDACIÓN TÉCNICA: Vaya a la Bóveda de Respaldo y ejecute la sincronización manual para consolidar la actualización en Supabase.`, "log-warn");
-                    alert("¡Mantenimiento masivo e inyección social completada!");
+                    printLog(`⚠️ ALERTA ADMINISTRATIVA: Vaya a la Bóveda de Respaldo y ejecute la sincronización manual para consolidar la depuración masiva en Supabase.`, "log-warn");
+                    alert("¡Mantenimiento clínico e inyección de datos sociales completada con éxito!");
                 }
             });
         };
