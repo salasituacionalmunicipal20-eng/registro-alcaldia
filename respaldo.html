@@ -356,7 +356,7 @@
 
         .action-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             border-top: 1px dashed #333;
             padding-top: 30px;
@@ -391,6 +391,10 @@
         .btn-json { background-color: #ff9800; color: black; }
         .btn-json:hover:not(:disabled) { background-color: #e68a00; transform: translateY(-3px); }
 
+        /* REGLA DE ORO: EL NUEVO BOTÓN PARA EL MIGRADOR */
+        .btn-migrator { background-color: var(--azul-oficial); color: white; }
+        .btn-migrator:hover:not(:disabled) { background-color: #003366; transform: translateY(-3px); }
+
         .btn-updater { background-color: #17a2b8; color: white; }
         .btn-updater:hover:not(:disabled) { background-color: #138496; transform: translateY(-3px); }
 
@@ -402,6 +406,11 @@
             border-top: 1px dashed #333;
             padding-top: 15px;
             line-height: 1.6;
+        }
+
+        @media (max-width: 900px) {
+            .status-grid, .action-grid { grid-template-columns: 1fr 1fr; }
+            .live-panels-container { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -549,6 +558,12 @@
                 Descargar JSON
                 <span style="font-size:9px; font-weight:normal;">Matriz de Firebase</span>
             </button>
+
+            <button class="btn-action btn-migrator" onclick="location.href='migrador.html'">
+                <span class="btn-icon">🚀</span>
+                Migrador Maestro
+                <span style="font-size:9px; font-weight:normal;">Ingresar Excel Nuevo</span>
+            </button>
             
             <button class="btn-action btn-updater" onclick="location.href='actualizador.html'">
                 <span class="btn-icon">🛠️</span>
@@ -632,7 +647,6 @@
         actualizarEstadoRed(); 
 
         // --- SISTEMA DE PING / LATENCIA FIREBASE ---
-        // Aquí estaba el error de tipeo "medidirLatencia". ¡Ya está corregido perfectamente!
         function medirLatencia() {
             if(!navigator.onLine) return;
             const start = Date.now();
