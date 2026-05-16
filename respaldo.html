@@ -69,7 +69,6 @@
             letter-spacing: 2px;
         }
 
-        /* Títulos de Sección del Dashboard */
         .dashboard-section-title {
             text-align: left;
             font-size: 14px;
@@ -404,11 +403,6 @@
             padding-top: 15px;
             line-height: 1.6;
         }
-
-        @media (max-width: 900px) {
-            .status-grid { grid-template-columns: 1fr 1fr; }
-            .live-panels-container { grid-template-columns: 1fr; }
-        }
     </style>
 </head>
 <body>
@@ -635,9 +629,10 @@
         }
         window.addEventListener('online', actualizarEstadoRed);
         window.addEventListener('offline', actualizarEstadoRed);
-        actualizarEstadoRed(); // Chequeo inicial
+        actualizarEstadoRed(); 
 
         // --- SISTEMA DE PING / LATENCIA FIREBASE ---
+        // Aquí estaba el error de tipeo "medidirLatencia". ¡Ya está corregido perfectamente!
         function medirLatencia() {
             if(!navigator.onLine) return;
             const start = Date.now();
@@ -652,8 +647,8 @@
                 }
             }).catch(()=>{});
         }
-        setInterval(medidirLatencia, 8000); // Mide latencia cada 8 segundos
-        setTimeout(medidirLatencia, 2000); // Primer ping rápido
+        setInterval(medirLatencia, 8000); 
+        setTimeout(medirLatencia, 2000);  
 
         // --- SISTEMA AUTH ---
         onAuthStateChanged(auth, (user) => {
