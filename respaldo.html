@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bóveda de Respaldo - Alcaldía</title>
+    <title>Bóveda de Respaldo y Monitor - Alcaldía</title>
     <style>
         :root {
             --rojo-oficial: #E30613;
             --azul-oficial: #004a99;
-            --gris-fondo: #121212; /* Fondo oscuro para dar ambiente de consola/bóveda */
+            --gris-fondo: #121212; 
+            --verde-monitor: #00ff00;
         }
 
         body { 
@@ -17,16 +18,17 @@
             padding: 40px; 
             text-align: center; 
             color: white;
+            margin: 0;
         }
         
         .container { 
             background: #1e1e1e; 
             padding: 40px; 
             border-radius: 8px; 
-            max-width: 800px; 
+            max-width: 1000px; 
             margin: auto; 
             box-shadow: 0 5px 25px rgba(0,0,0,0.5); 
-            border-top: 8px solid #00ff00; 
+            border-top: 8px solid var(--verde-monitor); 
             position: relative;
         }
 
@@ -51,7 +53,7 @@
         
         .btn-back:hover { 
             background-color: #555; 
-            border-color: #00ff00;
+            border-color: var(--verde-monitor);
         }
         
         h1 { 
@@ -60,39 +62,72 @@
             text-transform: uppercase; 
             border-bottom: 1px solid #333;
             padding-bottom: 15px;
+            font-size: 24px;
+            letter-spacing: 1px;
         }
         
-        /* Panel de Estado del Servidor */
-        .status-panel {
-            display: flex;
-            justify-content: space-around;
-            background-color: #0a0a0a;
-            border: 1px solid #333;
-            padding: 20px;
-            border-radius: 6px;
+        /* Nuevo Panel de Monitoreo en Múltiples Columnas */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
             margin-bottom: 30px;
         }
 
         .status-box {
+            background-color: #0a0a0a;
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 6px;
             text-align: center;
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
         }
 
+        .status-box:hover {
+            border-color: #555;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+        }
+
+        .status-box::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 3px;
+        }
+
+        .border-green::before { background-color: var(--verde-monitor); }
+        .border-blue::before { background-color: #00d2ff; }
+        .border-orange::before { background-color: #ff9800; }
+        .border-red::before { background-color: var(--rojo-oficial); }
+        .border-purple::before { background-color: #b000ff; }
+
         .status-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #888;
             text-transform: uppercase;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             display: block;
+            font-weight: bold;
+            letter-spacing: 1px;
         }
 
         .status-value {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
             color: #fff;
+            font-family: 'Courier New', Courier, monospace;
         }
 
-        .status-online { color: #00ff00; }
-        .status-offline { color: #E30613; }
+        .status-subtext {
+            font-size: 10px;
+            color: #555;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .status-online { color: var(--verde-monitor); text-shadow: 0 0 10px rgba(0,255,0,0.5); }
+        .status-offline { color: var(--rojo-oficial); }
         .status-warning { color: #ff9800; }
 
         /* Botones de Acción */
@@ -122,6 +157,7 @@
         .btn-action:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            filter: grayscale(100%);
         }
 
         .btn-csv {
@@ -147,7 +183,10 @@
             text-align: left;
             border-top: 1px dashed #333;
             padding-top: 15px;
+            line-height: 1.6;
         }
+
+        .info-text strong { color: #ccc; }
     </style>
 </head>
 <body>
@@ -156,20 +195,55 @@
             <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button>
         </div>
 
-        <h1>Bóveda de Respaldo y Salud del Sistema</h1>
+        <h1>Monitor del Servidor y Bóveda de Respaldo</h1>
         
-        <div class="status-panel">
-            <div class="status-box">
-                <span class="status-label">Conexión Firebase DB</span>
-                <span class="status-value status-warning" id="lblConexion">Conectando...</span>
+        <div class="status-grid">
+            <div class="status-box border-green">
+                <span class="status-label">Firebase RTDB</span>
+                <span class="status-value status-warning" id="lblConexion" style="font-size: 18px;">CONECTANDO...</span>
+                <span class="status-subtext">Estado del Servidor Central</span>
             </div>
-            <div class="status-box">
-                <span class="status-label">Total Habitantes Alojados</span>
+
+            <div class="status-box border-orange">
+                <span class="status-label">Carga de Almacenamiento</span>
+                <span class="status-value" id="lblPesoDB">0.00 MB</span>
+                <span class="status-subtext">Peso del nodo 'habitantes'</span>
+            </div>
+
+            <div class="status-box border-blue">
+                <span class="status-label">Operadores Activos</span>
+                <span class="status-value" id="lblOperadores">0</span>
+                <span class="status-subtext">Cuentas con acceso al sistema</span>
+            </div>
+
+            <div class="status-box border-green">
+                <span class="status-label">Total Habitantes</span>
                 <span class="status-value" id="lblTotalRegistros">0</span>
+                <span class="status-subtext">Registros consolidados</span>
             </div>
-            <div class="status-box">
-                <span class="status-label">Peso Est. Base de Datos</span>
-                <span class="status-value" id="lblPesoDB">0 MB</span>
+
+            <div class="status-box border-purple">
+                <span class="status-label">Jefes de Hogar</span>
+                <span class="status-value" id="lblJefes">0</span>
+                <span class="status-subtext">Familias representadas</span>
+            </div>
+
+            <div class="status-box border-red">
+                <span class="status-label">Cobertura UBCH</span>
+                <span class="status-value" id="lblUbch">0</span>
+                <span class="status-subtext">Centros electorales alcanzados</span>
+            </div>
+
+            <div class="status-box border-orange">
+                <span class="status-label">Comunas Cubiertas</span>
+                <span class="status-value" id="lblComunas">0</span>
+                <span class="status-subtext">Circuitos territoriales</span>
+            </div>
+
+            <div class="status-box border-blue">
+                <span class="status-label">Último Registro Guardado</span>
+                <span class="status-value" id="lblUltimaActividad" style="font-size: 14px; margin-top:10px; display:block; color:#00d2ff;">---</span>
+                <span class="status-subtext">Timestamp de la base de datos</span>
             </div>
         </div>
 
@@ -177,26 +251,27 @@
             <button class="btn-action btn-csv" id="btnDescargarCSV" onclick="descargarCSVGlobal()" disabled>
                 <span class="btn-icon">📊</span>
                 Exportar Respaldo CSV (Excel)
-                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Para leer y auditar en computadora</span>
+                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Para leer, auditar y cruzar datos en computadora</span>
             </button>
 
             <button class="btn-action btn-json" id="btnDescargarJSON" onclick="descargarJSONGlobal()" disabled>
                 <span class="btn-icon">📦</span>
                 Exportar Respaldo JSON (Raíz)
-                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Archivo puro para restaurar sistema</span>
+                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Archivo puro matriz para restaurar el sistema completo</span>
             </button>
         </div>
 
         <div class="info-text">
-            <strong>⚠️ ATENCIÓN ADMINISTRADOR:</strong><br>
-            - Esta página extrae la base de datos completa de Firebase sin pasar por filtros. Puede tardar unos segundos si la conexión es lenta.<br>
-            - El archivo JSON es el código matriz de la base de datos. Guárdelo en un pendrive seguro.
+            <strong>⚠️ ATENCIÓN ADMINISTRADOR DE RED:</strong><br>
+            - Este panel monitorea el consumo y la salud del servidor en tiempo real utilizando listeners de Firebase.<br>
+            - La extracción de datos (CSV/JSON) captura la base de datos <b>CRUDA</b> (RAW) sin aplicar ningún filtro, garantizando que no se pierda ni un solo byte de información.<br>
+            - <strong>Recomendación de Seguridad:</strong> Genere un respaldo JSON al menos una vez a la semana y guárdelo en una unidad de almacenamiento externa (Pendrive/Disco Duro).
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -218,35 +293,68 @@
         // Validar seguridad suprema
         onAuthStateChanged(auth, (user) => {
             if (!user || user.email !== "carlos.admin@alcaldia.com") {
-                document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:100px;'>⚠️ ACCESO RESTRINGIDO. USTED NO ES CARLOS.</h1>";
+                document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:100px; font-family:sans-serif;'>⚠️ ACCESO RESTRINGIDO. USTED NO ESTÁ AUTORIZADO.</h1>";
                 setTimeout(() => window.location.href = "index.html", 3000);
-            }
-        });
-
-        // Monitorear conexión en tiempo real a Firebase
-        const connectedRef = ref(database, ".info/connected");
-        onValue(connectedRef, (snap) => {
-            const lblConexion = document.getElementById('lblConexion');
-            if (snap.val() === true) {
-                lblConexion.textContent = "EN LÍNEA (ESTABLE)";
-                lblConexion.className = "status-value status-online";
-                cargarDatosEnMemoria();
             } else {
-                lblConexion.textContent = "DESCONECTADO";
-                lblConexion.className = "status-value status-offline";
-                document.getElementById('btnDescargarCSV').disabled = true;
-                document.getElementById('btnDescargarJSON').disabled = true;
+                iniciarMonitoreo();
             }
         });
 
-        // Descargar datos a la memoria RAM de esta página
-        function cargarDatosEnMemoria() {
+        function iniciarMonitoreo() {
+            // 1. Monitorear conexión en tiempo real a Firebase
+            const connectedRef = ref(database, ".info/connected");
+            onValue(connectedRef, (snap) => {
+                const lblConexion = document.getElementById('lblConexion');
+                if (snap.val() === true) {
+                    lblConexion.textContent = "EN LÍNEA (OK)";
+                    lblConexion.className = "status-value status-online";
+                } else {
+                    lblConexion.textContent = "DESCONECTADO";
+                    lblConexion.className = "status-value status-offline";
+                    document.getElementById('btnDescargarCSV').disabled = true;
+                    document.getElementById('btnDescargarJSON').disabled = true;
+                }
+            });
+
+            // 2. Monitorear cantidad de Operadores
+            onValue(ref(database, 'operadores'), (snapshot) => {
+                if(snapshot.exists()) {
+                    document.getElementById('lblOperadores').textContent = Object.keys(snapshot.val()).length;
+                }
+            });
+
+            // 3. Monitorear Base de Datos Principal y Analizarla
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 if(snapshot.exists()) {
                     baseDatosBruta = snapshot.val();
-                    const total = Object.keys(baseDatosBruta).length;
+                    const keys = Object.keys(baseDatosBruta);
+                    const total = keys.length;
                     
+                    let countJefes = 0;
+                    let setUbch = new Set();
+                    let setComunas = new Set();
+                    let ultimaFecha = "N/A";
+
+                    // Como los IDs de Firebase son cronológicos, el último es el más reciente
+                    const ultimoRegistro = baseDatosBruta[keys[keys.length - 1]];
+                    if(ultimoRegistro && ultimoRegistro.fecha_registro) {
+                        ultimaFecha = ultimoRegistro.fecha_registro;
+                    }
+
+                    // Analizar las métricas internas
+                    for(let id in baseDatosBruta) {
+                        let h = baseDatosBruta[id];
+                        if((h.parentesco || '').toLowerCase() === 'jefe de hogar') countJefes++;
+                        if(h.ubch && h.ubch.trim() !== '') setUbch.add(h.ubch.toUpperCase());
+                        if(h.comuna && h.comuna.trim() !== '') setComunas.add(h.comuna.toUpperCase());
+                    }
+                    
+                    // Actualizar Pantalla
                     document.getElementById('lblTotalRegistros').textContent = total;
+                    document.getElementById('lblJefes').textContent = countJefes;
+                    document.getElementById('lblUbch').textContent = setUbch.size;
+                    document.getElementById('lblComunas').textContent = setComunas.size;
+                    document.getElementById('lblUltimaActividad').textContent = ultimaFecha;
                     
                     // Cálculo aproximado del peso del JSON en MB
                     const jsonString = JSON.stringify(baseDatosBruta);
@@ -258,7 +366,7 @@
                     document.getElementById('btnDescargarJSON').disabled = false;
                 } else {
                     document.getElementById('lblTotalRegistros').textContent = "0";
-                    document.getElementById('lblPesoDB').textContent = "0 MB";
+                    document.getElementById('lblPesoDB').textContent = "0.00 MB";
                 }
             });
         }
@@ -271,7 +379,7 @@
             const a = document.createElement('a');
             const fechaStr = new Date().toISOString().slice(0, 10);
             a.href = url;
-            a.download = `RESPALDO_FIREBASE_HABITANTES_${fechaStr}.json`;
+            a.download = `RESPALDO_SITUR_CRISTOBAL_ROJAS_${fechaStr}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
