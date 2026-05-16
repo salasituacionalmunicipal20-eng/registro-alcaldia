@@ -166,11 +166,11 @@
         <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
         
         <div class="panel-info">
-            <strong>Diccionario Lógico de Excel y Cascada Familiar Activado:</strong><br>
-            - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada:</b> Vincula a los menores y a la familia marcados con "X" en Madre/Padre/Hijo bajo el último Jefe detectado.<br>
-            - 🏠 <b>Traductor de Vivienda:</b> Convierte MALA/MALAS a "malo", BUENA/ESTABLE a "bien", APARTAMENTO a "apto".<br>
-            - 🪪 <b>Algoritmo Cédula:</b> Asigna si/no a Cédula Física evaluando edad (< 9 años).<br>
-            - 🎖️ <b>Protección y Gas:</b> Lee la columna TIPO CILINDRO para marcar la tenencia de gas, y normaliza Misiones y Estatus Sociales a formato Si/No.
+            <strong>Diccionario Lógico, Cascada Familiar y Extractor de Cédula Activado:</strong><br>
+            - 🪪 <b>Extractor de Nacionalidad:</b> Detecta prefijos "E" o "V", asigna la nacionalidad correspondiente y limpia la cédula de letras y puntos.<br>
+            - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada:</b> Vincula menores ("MENOR") y cargas familiares ("X") bajo el Jefe de Hogar detectado en la línea superior.<br>
+            - 🏠 <b>Traductor de Vivienda:</b> Convierte MALA a "malo", BUENA/ESTABLE a "bien", APARTAMENTO a "apto".<br>
+            - 🎖️ <b>Protección y Gas:</b> Normaliza TIPO CILINDRO, Misiones, Carnet, Empleo y Estatus Sociales a formato Si/No.
         </div>
 
         <input type="file" id="csvFile" accept=".csv">
@@ -318,8 +318,11 @@
                         let h = baseDatosFirebase[idFb];
                         let c = cleanText(h.cedula);
                         
+                        // Guardamos tanto la cedula pura como la cedula con la posible "E" que habian metido antes por error
                         if(c && c !== 'S/C' && c !== 'NO' && !c.includes('MENOR') && !c.includes('N/A')) {
                             mapCedulas[c] = idFb;
+                            let cStripped = c.replace(/^[VE][\-\s]?/, '').replace(/\./g, '');
+                            mapCedulas[cStripped] = idFb;
                         }
                         
                         let keyCompuesta = cleanText(`${h.nombre}||${h.apellido}||${h.comuna}`);
@@ -337,16 +340,32 @@
                         let row = csvRows[i];
                         let targetId = null;
 
-                        let rowCedula = cleanText(row['CEDULA']);
+                        let rawCed = cleanText(row['CEDULA']);
                         let rowNombreCompleto = cleanText(row['NOMBRE Y APELLIDO']).split(' ');
                         let rowNombre = rowNombreCompleto.slice(0, Math.ceil(rowNombreCompleto.length / 2)).join(' ');
                         let rowApellido = rowNombreCompleto.slice(Math.ceil(rowNombreCompleto.length / 2)).join(' ');
                         let rowComuna = cleanText(row['COMUNA']);
 
-                        let esCedulaValida = rowCedula && rowCedula !== 'S/C' && rowCedula !== 'NO' && !rowCedula.includes('MENOR') && !rowCedula.includes('N/A');
+                        // MOTOR EXTRACTOR DE NACIONALIDAD Y LIMPIEZA DE CÉDULA
+                        let rowCedulaNum = rawCed;
+                        let rowNac = 'V';
+                        let esCedulaValida = rawCed && rawCed !== 'S/C' && rawCed !== 'NO' && !rawCed.includes('MENOR') && !rawCed.includes('N/A');
 
-                        if(esCedulaValida && mapCedulas[rowCedula]) {
-                            targetId = mapCedulas[rowCedula];
+                        if (esCedulaValida) {
+                            if (rawCed.match(/^E[\-\s]?\d/)) {
+                                rowNac = 'E';
+                                rowCedulaNum = rawCed.replace(/^E[\-\s]?/, '');
+                            } else if (rawCed.match(/^V[\-\s]?\d/)) {
+                                rowNac = 'V';
+                                rowCedulaNum = rawCed.replace(/^V[\-\s]?/, '');
+                            }
+                            // Quita los puntos de miles
+                            rowCedulaNum = rowCedulaNum.replace(/\./g, '').trim();
+                        }
+
+                        // Busqueda
+                        if(esCedulaValida && (mapCedulas[rawCed] || mapCedulas[rowCedulaNum])) {
+                            targetId = mapCedulas[rawCed] || mapCedulas[rowCedulaNum];
                         } else {
                             let keyRow = cleanText(`${rowNombre}||${rowApellido}||${rowComuna}`);
                             if(mapNombres[keyRow]) {
@@ -358,7 +377,14 @@
                             let updates = {};
                             let cambiosRealizados = [];
 
-                            // 1. TRADUCTOR DE VIVIENDA (TIPO)
+                            // Inyección de Extractor de Nacionalidad
+                            if (esCedulaValida) {
+                                updates['nacionalidad'] = rowNac;
+                                updates['cedula'] = rowCedulaNum;
+                                cambiosRealizados.push(`C.I ➔ ${rowNac}-${rowCedulaNum}`);
+                            }
+
+                            // 1. TRADUCTOR DE VIVIENDA
                             let rowTipoVivRaw = cleanText(row['TIPO DE VIVIENDA']);
                             let rowCasaNum = cleanText(row['NUMERO DE CASA']);
                             
@@ -373,11 +399,10 @@
                                 updates['tipo_vivienda'] = 'rancho';
                             }
 
-                            // 2. TRADUCTOR DE CONDICIONES DE VIVIENDA (BUENA/MALA/ESTABLE)
+                            // 2. CONDICIONES DE VIVIENDA
                             let rowCondicion = cleanText(row['CONDICIONES DE LA VIVIENDA']);
                             let evalCondicion = rowCondicion;
                             
-                            // Si por error pusieron la condicion en el tipo de vivienda
                             if(rowTipoVivRaw === 'ESTABLE' || rowTipoVivRaw === 'BUENA' || rowTipoVivRaw === 'MALA' || rowTipoVivRaw === 'REGULAR') {
                                 evalCondicion = rowTipoVivRaw;
                             }
@@ -390,14 +415,13 @@
                                 cambiosRealizados.push("Condición ➔ 'malo'");
                             } else if (evalCondicion === 'REGULAR' || evalCondicion === 'REGULARES') {
                                 updates['condiciones_vivienda'] = 'regular';
-                                cambiosRealizados.push("Condición ➔ 'regular'");
                             }
 
-                            // 3. ANÁLISIS DE GAS DOMÉSTICO
+                            // 3. GAS DOMÉSTICO
                             let cilindroRaw = cleanText(row['TIPO DE CILINDRO']);
                             if (cilindroRaw && cilindroRaw !== 'NO' && cilindroRaw !== 'S/C' && cilindroRaw !== 'N/A') {
                                 updates['tiene_gas'] = 'si';
-                                updates['tipo_cilindro_gas'] = row['TIPO DE CILINDRO']; // Dejar como viene original (Ej: 10KG)
+                                updates['tipo_cilindro_gas'] = row['TIPO DE CILINDRO'];
                                 cambiosRealizados.push(`Gas ➔ 'si' (${row['TIPO DE CILINDRO']})`);
                             } else if (cilindroRaw === 'NO') {
                                 updates['tiene_gas'] = 'no';
@@ -419,13 +443,12 @@
 
                                 if (edadParaCedula < 9) {
                                     updates['esta_cedulado'] = 'no';
-                                    cambiosRealizados.push("Céd Física ➔ 'no' (<9 años)");
                                 } else {
                                     updates['esta_cedulado'] = 'si';
                                 }
                             }
 
-                            // 5. MOTOR AVANZADO DE CASCADA Y PARENTESCO
+                            // 5. CASCADA FAMILIAR Y PARENTESCO
                             let rowResponsabilidad = cleanText(row['RESPONSABILIDAD CBI, CM']);
                             
                             if (rowResponsabilidad.includes("JEFE DE FAMILIA") || rowResponsabilidad.includes("JEFE")) {
@@ -433,7 +456,6 @@
                                 cambiosRealizados.push("Rol ➔ 'Jefe de Hogar'");
                                 ultimoJefeIdActivo = targetId; 
                             } else {
-                                // Buscar si hay una "X" o texto en las columnas específicas
                                 let rMadre = cleanText(row['MADRE']);
                                 let rPadre = cleanText(row['PADRE']);
                                 let rHijo = cleanText(row['HIJO']);
@@ -448,7 +470,6 @@
                                     cambiosRealizados.push(`Parentesco ➔ '${nParentesco}'`);
                                 }
 
-                                // Si la cascada está abierta, la vinculamos a la familia
                                 if (ultimoJefeIdActivo !== null && targetId !== ultimoJefeIdActivo) {
                                     updates['jefe_hogar_id'] = ultimoJefeIdActivo;
                                     if(!cambiosRealizados.includes("Anexado como Carga Familiar 👨‍👩‍👧‍👦")) {
@@ -482,7 +503,6 @@
                             normalizarYParchearCampo('LACTANCIA MATERNA?', 'lactancia_materna', 'Lactancia');
                             normalizarYParchearCampo('HOGARES DE LA PATRIA BONO UNICO FAMILIAR', 'hogares_patria_bono', 'Hogares Patria');
 
-                            // Sexo y Voto
                             if(cleanText(row['FEMENINA'])) updates['sexo'] = 'femenino';
                             else if (cleanText(row['MASCULINO'])) updates['sexo'] = 'masculino';
 
@@ -519,7 +539,7 @@
                         document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                     }
 
-                    printLog(`📊 PROCESO DE DEPURACIÓN LÓGICA Y CASCADA FINALIZADO.`, "log-info");
+                    printLog(`📊 PROCESO DE DEPURACIÓN FINALIZADO.`, "log-info");
                     printLog(`Expedientes actualizados y Familias vinculadas: ${modificados}`, "log-success");
                     printLog(`Expedientes omitidos (Ya estaban limpios y al día): ${omitidosCambio}`, "log-ok");
                     if(ignoradosNoEncontrados > 0) {
