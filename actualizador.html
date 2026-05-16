@@ -165,10 +165,11 @@
         <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
         
         <div class="panel-info">
-            <strong>Algoritmo de Depuración Cruzada Activado:</strong><br>
-            - 🏠 <b>Vivienda:</b> Limpia el campo "Número de Casa" si contiene la palabra "CASA" y parametriza el tipo a formato nativo.<br>
-            - 📊 <b>Condición:</b> Traduce la variable de entorno "ESTABLE" a la opción oficial del formulario ("bien").<br>
-            - 📅 <b>Fechas:</b> Motor de análisis cronológico de 2 y 4 dígitos con respaldo algorítmico basado en la columna EDAD de tu archivo.<br>
+            <strong>Algoritmo de Depuración Cruzada e Inyección Social Activado:</strong><br>
+            - 🏠 <b>Vivienda:</b> Limpia "Número de Casa" si contiene la palabra "CASA" y parametriza el tipo.<br>
+            - 👨‍👩‍👧‍👦 <b>Parentesco:</b> Traduce "JEFE DE FAMILIA" a la variable normalizada "jefe de hogar".<br>
+            - 🎖️ <b>Protección Social:</b> Indexa de forma masiva los estatus de Amor Mayor, Carnet Patria, Misión JGH, Discapacidad, Embarazo, Lactancia y Hogares de la Patria en formato nativo limpio (si/no).<br>
+            - 📅 <b>Fechas:</b> Análisis cronológico inteligente con respaldo algorítmico basado en la edad.<br>
             - 🛡️ <b>Precisión:</b> Validación estricta por Cédula o coincidencia compuesta (Nombre + Apellido + Comuna).
         </div>
 
@@ -183,7 +184,7 @@
         <div class="stats-panel" id="statsPanel">
             <span id="txtCompletados">Procesados: 0 / 0</span>
             <span id="txtPorcentaje">0%</span>
-            <span id="txtEta" class="eta-text">Tiempo estimado: Calculando...</span>
+            <span id="txtEta" class="eta-text">Tiempo restante: Calculando...</span>
         </div>
 
         <div class="console-box" id="consoleBox"></div>
@@ -250,7 +251,6 @@
             return (txt || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
         }
 
-        // Convertidor de tiempo legible
         function formatoTiempo(milisegundos) {
             if (milisegundos < 0 || !isFinite(milisegundos)) return "Calculando...";
             let segundosTotales = Math.floor(milisegundos / 1000);
@@ -259,7 +259,6 @@
             return `${minutos} min ${segundos} seg`;
         }
 
-        // MOTOR DE ANÁLISIS CRONOLÓGICO INTELIGENTE
         function parseFechaInteligente(rawDate, rawEdad) {
             let dateStr = (rawDate || '').toString().trim();
             let edadStr = (rawEdad || '').toString().trim();
@@ -312,7 +311,6 @@
                     const totalRows = csvRows.length;
                     printLog(`Archivo parseado con éxito. Ejecutando escaneo en lote de ${totalRows} filas...`, "log-info");
 
-                    // Indexar para búsquedas ultrarápidas O(1)
                     let mapCedulas = {};
                     let mapNombres = {};
 
@@ -354,7 +352,7 @@
                             let updates = {};
                             let cambiosRealizados = [];
 
-                            // REGLA DE ORO: Filtrado detallado de Vivienda
+                            // Vivienda y Casa
                             let rowCasa = cleanText(row['NUMERO DE CASA']);
                             if(rowCasa === 'CASA') {
                                 updates['numero_casa'] = '';
@@ -362,28 +360,58 @@
                                 cambiosRealizados.push("Limpia Casa 'CASA' ➔ Tipo 'casa'");
                             }
 
-                            // REGLA DE ORO: Corrección estricta de Condiciones
+                            // Condiciones de Vivienda
                             let rowCondicion = cleanText(row['CONDICIONES DE LA VIVIENDA']);
                             if(rowCondicion === 'ESTABLE') {
                                 updates['condiciones_vivienda'] = 'bien';
                                 cambiosRealizados.push("Condición 'ESTABLE' ➔ 'bien'");
                             }
 
-                            // REGLA DE ORO: Cálculo Cronológico Avanzado
+                            // Cronología y Fecha Nacimiento
                             let rowFechaRaw = row['FECHA DE NACIMIENTO'];
                             let rowEdadRaw = row['EDAD'];
                             let fechaEstructurada = parseFechaInteligente(rowFechaRaw, rowEdadRaw);
-                            
                             if(fechaEstructurada) {
                                 updates['fecha_nacimiento'] = fechaEstructurada;
-                                cambiosRealizados.push(`Fecha fijada ➔ ${fechaEstructurada}`);
+                                cambiosRealizados.push(`Fecha ➔ ${fechaEstructurada}`);
                             }
+
+                            // REGLA DE ORO: Homologación de "JEFE DE FAMILIA" a "jefe de hogar"
+                            let rowResponsabilidad = cleanText(row['RESPONSABILIDAD CBI, CM']);
+                            if(rowResponsabilidad.includes("JEFE DE FAMILIA")) {
+                                updates['parentesco'] = 'jefe de hogar';
+                                cambiosRealizados.push("Parentesco ➔ 'jefe de hogar'");
+                            }
+
+                            // REGLA DE ORO: Inyector de Variables Sociales y Misiones (Estructuración si/no)
+                            const normalizarYParchearCampo = (columnaExcel, claveFirebase, etiquetaLog) => {
+                                if (row[columnaExcel] !== undefined) {
+                                    let celdaRaw = (row[columnaExcel] || '').toString().trim().toUpperCase();
+                                    let valorNormalizado = '';
+                                    
+                                    if (celdaRaw === 'SI' || celdaRaw === 'SÍ') valorNormalizado = 'si';
+                                    else if (celdaRaw === 'NO') valorNormalizado = 'no';
+                                    else valorNormalizado = celdaRaw.toLowerCase();
+
+                                    if (valorNormalizado !== '') {
+                                        updates[claveFirebase] = valorNormalizado;
+                                        cambiosRealizados.push(`${etiquetaLog} ➔ '${valorNormalizado}'`);
+                                    }
+                                }
+                            };
+
+                            normalizarYParchearCampo('COBRA AMOR MAYOR', 'cobra_amor_mayor', 'Amor Mayor');
+                            normalizarYParchearCampo('POSEE CARNET DE LA PATRIA?', 'carnet_patria', 'Carnet Patria');
+                            normalizarYParchearCampo('MISION JOSE GREGORIO', 'mision_jose_gregorio', 'Misión JGH');
+                            normalizarYParchearCampo('DISCAPACITADO?', 'discapacitado', 'Discapacidad');
+                            normalizarYParchearCampo('EMBARAZADA?', 'embarazada', 'Embarazada');
+                            normalizarYParchearCampo('LACTANCIA MATERNA?', 'lactancia_materna', 'Lactancia');
+                            normalizarYParchearCampo('HOGARES DE LA PATRIA BONO UNICO FAMILIAR', 'hogares_patria_bono', 'Hogares Patria');
 
                             if(Object.keys(updates).length > 0) {
                                 try {
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
-                                    // REGLA DE ORO: Log Verbose e Hiperdetallado de Cambios
                                     printLog(`[MODIFICADO] ${rowNombre} ${rowApellido} (C.I: ${rowCedula || 'S/C'}) ➔ [${cambiosRealizados.join(' | ')}]`, "log-ok");
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
@@ -395,7 +423,6 @@
                             ignoradosNoEncontrados++;
                         }
 
-                        // Cálculo matemático en vivo de porcentaje y tiempos demorados (ETA)
                         let pct = Math.floor(((i + 1) / totalRows) * 100);
                         let tiempoTranscurrido = Date.now() - tiempoInicio;
                         let velocidad = (i + 1) / tiempoTranscurrido; 
@@ -408,15 +435,14 @@
                         document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                     }
 
-                    // Log Final de Balance General
                     printLog(`📊 PROCESO DE REPARACIÓN FINALIZADO CON ÉXITO.`, "log-info");
                     printLog(`Expedientes modificados/reparados en Firebase: ${modificados}`, "log-success");
-                    printLog(`Expedientes omitidos (Ya estaban limpios y correctos): ${omitidosCambio}`, "log-ok");
+                    printLog(`Expedientes omitidos (Ya estaban al día): ${omitidosCambio}`, "log-ok");
                     if(ignoradosNoEncontrados > 0) {
-                        printLog(`Filas del Excel ignoradas (No existen en el censo actual): ${ignoradosNoEncontrados}`, "log-warn");
+                        printLog(`Filas omitidas (No existen en el sistema): ${ignoradosNoEncontrados}`, "log-warn");
                     }
-                    printLog(`⚠️ ALERTA ADMINISTRATIVA: Los datos están al día en Firebase. Vaya a la Bóveda de Respaldo y ejecute la sincronización manual para reflejar los parches en Supabase.`, "log-warn");
-                    alert("¡Mantenimiento y reestructuración de censo completada!");
+                    printLog(`⚠️ RECOMENDACIÓN TÉCNICA: Vaya a la Bóveda de Respaldo y ejecute la sincronización manual para consolidar la actualización en Supabase.`, "log-warn");
+                    alert("¡Mantenimiento masivo e inyección social completada!");
                 }
             });
         };
