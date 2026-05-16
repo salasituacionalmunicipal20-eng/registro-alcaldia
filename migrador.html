@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Migrador Masivo de Datos - Alcaldía</title>
+    <title>Migrador Inteligente de Datos Masivos - Alcaldía</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         :root {
@@ -11,6 +11,7 @@
             --azul-oficial: #004a99;
             --gris-fondo: #e9ecef;
             --gris-borde: #ced4da;
+            --verde-monitor: #00ff00;
         }
 
         body { 
@@ -24,10 +25,10 @@
             background: white; 
             padding: 40px; 
             border-radius: 8px; 
-            max-width: 800px; 
+            max-width: 850px; 
             margin: auto; 
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
-            border-top: 8px solid var(--rojo-oficial); 
+            border-top: 8px solid var(--azul-oficial); 
         }
 
         .top-nav { 
@@ -37,7 +38,7 @@
         }
         
         .btn-back { 
-            background-color: var(--azul-oficial); 
+            background-color: #333; 
             color: white; 
             padding: 8px 15px; 
             border: none; 
@@ -50,28 +51,35 @@
         }
         
         .btn-back:hover { 
-            background-color: #003366; 
+            background-color: #555; 
         }
         
         h1 { 
             color: var(--azul-oficial); 
             margin-top: 0; 
             text-transform: uppercase; 
+            font-size: 24px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
         }
         
         .instrucciones { 
             text-align: left; 
             background: #fdfdfd; 
             padding: 20px; 
-            border-left: 4px solid #ff9800; 
+            border-left: 4px solid var(--azul-oficial); 
             font-size: 14px; 
             margin-bottom: 20px; 
+            line-height: 1.6;
         }
         
         input[type="file"] { 
             margin: 20px 0; 
             padding: 10px; 
             font-size: 16px; 
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px dashed #ccc;
         }
         
         button#btnSubir { 
@@ -85,9 +93,10 @@
             cursor: pointer; 
             text-transform: uppercase; 
             transition: 0.3s; 
+            width: 100%;
         }
         
-        button#btnSubir:hover { 
+        button#btnSubir:hover:not(:disabled) { 
             background-color: #218838; 
         }
         
@@ -103,18 +112,16 @@
             padding: 20px;
             border-radius: 5px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 13px;
+            font-size: 12px;
             height: 250px;
             overflow-y: auto;
             margin-top: 20px;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
             border: 2px solid #333;
+            line-height: 1.5;
         }
 
-        .consola-linea { 
-            margin-bottom: 5px; 
-        }
-        
+        .consola-linea { margin-bottom: 5px; }
         .log-error { color: #ff4c4c; font-weight: bold; }
         .log-success { color: #00ff00; }
         .log-info { color: #00d2ff; }
@@ -148,9 +155,7 @@
             display: none;
         }
 
-        .eta-text { 
-            color: var(--rojo-oficial); 
-        }
+        .eta-text { color: var(--rojo-oficial); }
     </style>
 </head>
 <body>
@@ -159,13 +164,17 @@
             <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver al Panel Admin</button>
         </div>
 
-        <h1>Migrador de Base de Datos Excel (Doble Motor)</h1>
+        <h1>Migrador de Datos con Inteligencia de Limpieza (Dual Motor)</h1>
         
         <div class="instrucciones" id="panelInstrucciones">
-            <strong>Instrucciones Importantes (Acceso Restringido):</strong><br><br>
-            1. 🔴 <b style="color:red;">SEGURIDAD:</b> Herramienta exclusiva para <b>carlos.admin@alcaldia.com</b>.<br>
-            2. Selecciona tu archivo CSV ("UNIFICADO EJE 2.xlsx - Hoja1.csv").<br>
-            3. El sistema realizará una <b>Escritura Dual (Dual-Write)</b> inyectando los datos en Firebase (Principal) y Supabase (Respaldo SQL) simultáneamente.
+            <strong>Motor de Ingesta Inteligente Activado:</strong><br><br>
+            Este migrador ahora procesa, limpia y homologa el archivo Excel en tiempo real antes de subirlo:<br>
+            - 🏠 <b>Corrige Viviendas</b> ("ESTABLE" a "bien", limpia "CASA").<br>
+            - 👨‍👩‍👧‍👦 <b>Traduce</b> "JEFE DE FAMILIA" a "jefe de hogar".<br>
+            - 📅 <b>Calcula Fechas y Edad</b> para asignar "Cédula Física" (Sí/No) a menores de 9 años.<br>
+            - 🎖️ <b>Parchea Misiones y Variables de Salud</b> a formato estricto Si/No de la web.<br>
+            <br>
+            🔴 <b style="color:red;">SEGURIDAD:</b> Herramienta exclusiva para <b>carlos.admin@alcaldia.com</b>.
         </div>
 
         <input type="file" id="archivoCSV" accept=".csv">
@@ -185,15 +194,6 @@
         <div class="consola-wrapper" id="consolaLog"></div>
     </div>
 
-    <script>
-        window.onerror = function(mensaje, fuente, linea) {
-            const consola = document.getElementById('consolaLog');
-            if(consola) {
-                consola.innerHTML += `<div class='consola-linea log-error'>⚠️ FALLO TÉCNICO LÍNEA ${linea}: ${mensaje}</div>`;
-            }
-        };
-    </script>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -201,7 +201,7 @@
         
         import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-        // YA CONFIGURADO: Llaves oficiales de tu Supabase
+        // CONEXIÓN OFICIAL A SUPABASE
         const supabaseUrl = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co';
         const supabaseKey = 'sb_publishable_7dkBdGu87mnWz-acprRjzA_vHBujcwB';
         const supabase = createClient(supabaseUrl, supabaseKey);
@@ -211,13 +211,13 @@
             if(!consola) return;
             const linea = document.createElement('div');
             linea.className = `consola-linea ${tipo}`;
-            const hora = new Date().toLocaleTimeString('es-VE', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+            const hora = new Date().toLocaleTimeString('es-VE', { hour12: false });
             linea.textContent = `[${hora}] > ${mensaje}`;
             consola.appendChild(linea);
             consola.scrollTop = consola.scrollHeight;
         }
 
-        escribirLog("Arrancando los motores Duales...", "log-info");
+        escribirLog("Inicializando Motor de Limpieza Dual...", "log-info");
         
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -232,38 +232,32 @@
         let database, auth, usuarioActivo = null;
 
         try {
-            escribirLog("Conectando con Firebase (Motor Principal)...", "log-info");
             const app = initializeApp(firebaseConfig);
             database = getDatabase(app);
             auth = getAuth(app);
             
-            escribirLog("Conectando con Supabase (Motor Respaldo SQL)...", "log-supabase");
-
-            let timeoutSeguridad = setTimeout(() => {
-                if(!usuarioActivo) {
-                    escribirLog("⚠️ La verificación de seguridad está tardando. Revise su conexión.", "log-warning");
-                }
-            }, 8000);
-
             onAuthStateChanged(auth, (user) => {
-                clearTimeout(timeoutSeguridad);
                 if (user && user.email === "carlos.admin@alcaldia.com") {
                     usuarioActivo = user;
                     const btn = document.getElementById('btnSubir');
                     btn.disabled = false;
-                    btn.textContent = "Iniciar Migración Dual 🚀";
+                    btn.textContent = "Iniciar Ingesta Inteligente Dual 🚀";
                     escribirLog(`PERMISOS VALIDADOS. Autenticado como Súper Administrador.`, "log-success");
                 } else {
                     usuarioActivo = null;
                     const btn = document.getElementById('btnSubir');
                     btn.disabled = true;
                     btn.textContent = "Acceso Denegado";
-                    escribirLog("⚠️ ACCESO DENEGADO: Debe iniciar sesión en otra pestaña como administrador.", "log-error");
+                    escribirLog("⚠️ ACCESO DENEGADO: Credenciales insuficientes.", "log-error");
                 }
             });
-
         } catch (errorCredenciales) {
-            escribirLog(`ERROR CRÍTICO AL CONECTAR: ${errorCredenciales.message}`, "log-error");
+            escribirLog(`ERROR AL CONECTAR: ${errorCredenciales.message}`, "log-error");
+        }
+
+        // FUNCIONES DE INTELIGENCIA DE DATOS
+        function cleanText(txt) {
+            return (txt || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
         }
 
         function formatoTiempo(milisegundos) {
@@ -274,23 +268,56 @@
             return `${minutos} min ${segundos} seg`;
         }
 
+        function parseFechaInteligente(rawDate, rawEdad) {
+            let dateStr = (rawDate || '').toString().trim();
+            let edadStr = (rawEdad || '').toString().trim();
+            let parts = dateStr.split(/[\.\/\-]/);
+            
+            if (parts.length === 3) {
+                let d = parts[0].trim().padStart(2, '0');
+                let m = parts[1].trim().padStart(2, '0');
+                let yStr = parts[2].trim();
+                let y = parseInt(yStr);
+
+                if (yStr.length === 2) {
+                    y = y > 26 ? 1900 + y : 2000 + y;
+                }
+                
+                if (!isNaN(y) && !isNaN(parseInt(m)) && !isNaN(parseInt(d))) {
+                    return `${y}-${m}-${d}`; 
+                }
+            }
+
+            let edad = parseInt(edadStr);
+            if (!isNaN(edad) && edad >= 0) {
+                let yCalculado = 2026 - edad;
+                return `${yCalculado}-01-01`; 
+            }
+            return '';
+        }
+
+        function normalizarSiNo(valorRaw) {
+            let celda = cleanText(valorRaw);
+            if (celda === 'SI' || celda === 'SÍ') return 'si';
+            if (celda === 'NO') return 'no';
+            return celda.toLowerCase();
+        }
+
         window.procesarCSV = function() {
             if (!usuarioActivo || usuarioActivo.email !== "carlos.admin@alcaldia.com") {
-                alert("Acceso denegado. Herramienta exclusiva.");
-                return;
+                alert("Acceso denegado."); return;
             }
 
             const archivo = document.getElementById('archivoCSV').files[0];
             if (!archivo) {
-                alert("Seleccione un archivo CSV primero.");
-                return;
+                alert("Seleccione un archivo CSV primero."); return;
             }
             
             document.getElementById('btnSubir').disabled = true;
             document.getElementById('barraWrapper').style.display = "block";
             document.getElementById('statsPanel').style.display = "flex";
             
-            escribirLog(`Iniciando lectura del archivo: ${archivo.name}`, "log-info");
+            escribirLog(`Leyendo y limpiando archivo: ${archivo.name}`, "log-info");
 
             setTimeout(() => {
                 Papa.parse(archivo, {
@@ -300,8 +327,7 @@
                         const datos = results.data;
                         const totalDatos = datos.length;
                         
-                        escribirLog(`Lectura completada. Total filas: ${totalDatos}`, "log-info");
-                        escribirLog("Activando inyección DUAL (Firebase + Supabase)...", "log-info");
+                        escribirLog(`Lectura completada. Aplicando Filtros Inteligentes a ${totalDatos} filas...`, "log-info");
                         
                         let subidos = 0;
                         const habitantesRef = ref(database, 'habitantes');
@@ -309,32 +335,64 @@
 
                         for (let i = 0; i < totalDatos; i++) {
                             let fila = datos[i];
-                            
                             if (!fila['NOMBRE Y APELLIDO']) continue;
                             
                             try {
-                                let nombreCompleto = (fila['NOMBRE Y APELLIDO'] || '').trim().split(' ');
+                                // 1. División de Nombres
+                                let nombreCompleto = cleanText(fila['NOMBRE Y APELLIDO']).split(' ');
                                 let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
                                 let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
 
-                                let sexoParsed = "";
-                                if (fila['FEMENINA'] && fila['FEMENINA'].trim() !== '') sexoParsed = "femenino";
-                                else if (fila['MASCULINO'] && fila['MASCULINO'].trim() !== '') sexoParsed = "masculino";
+                                // 2. Inteligencia de Vivienda
+                                let casaRaw = cleanText(fila['NUMERO DE CASA']);
+                                let tipoVivRaw = cleanText(fila['TIPO DE VIVIENDA']);
+                                let condicionRaw = cleanText(fila['CONDICIONES DE LA VIVIENDA']);
+                                
+                                if (casaRaw === 'CASA') {
+                                    casaRaw = '';
+                                    tipoVivRaw = 'casa';
+                                }
+                                if (condicionRaw === 'ESTABLE' || tipoVivRaw === 'ESTABLE') {
+                                    condicionRaw = 'bien';
+                                }
 
-                                let votoParsed = "";
-                                if (fila['VD'] && fila['VD'].trim() !== '') votoParsed = "VD";
-                                else if (fila['VB'] && fila['VB'].trim() !== '') votoParsed = "VB";
-                                else if (fila['VO'] && fila['VO'].trim() !== '') votoParsed = "VO";
+                                // 3. Motor de Fechas y Cálculo de Cédula Física por Edad
+                                let fechaEstructurada = parseFechaInteligente(fila['FECHA DE NACIMIENTO'], fila['EDAD']);
+                                let cedulaRaw = cleanText(fila['CEDULA']);
+                                let estaCeduladoFinal = "si";
 
+                                if (cedulaRaw !== '' && cedulaRaw !== 'S/C' && cedulaRaw !== 'NO') {
+                                    let edadRef = 99;
+                                    if (fila['EDAD'] && !isNaN(parseInt(fila['EDAD']))) {
+                                        edadRef = parseInt(fila['EDAD']);
+                                    } else if (fechaEstructurada) {
+                                        edadRef = 2026 - parseInt(fechaEstructurada.split('-')[0]);
+                                    }
+                                    if (edadRef < 9) estaCeduladoFinal = 'no';
+                                } else {
+                                    estaCeduladoFinal = 'no';
+                                }
+
+                                // 4. Homologación de Jefe de Hogar
+                                let respFamiliarRaw = cleanText(fila['RESPONSABILIDAD CBI, CM']);
                                 let parentescoParsed = "otro";
-                                let resp = (fila['RESPONSABILIDAD CBI, CM'] || '').toUpperCase();
-                                if (resp.includes("JEFE")) parentescoParsed = "jefe de hogar";
-                                else if (fila['MADRE'] && fila['MADRE'].trim() !== '') parentescoParsed = "madre";
-                                else if (fila['PADRE'] && fila['PADRE'].trim() !== '') parentescoParsed = "padre";
-                                else if (fila['HIJO'] && fila['HIJO'].trim() !== '') parentescoParsed = "hijo";
+                                if (respFamiliarRaw.includes("JEFE DE FAMILIA") || respFamiliarRaw.includes("JEFE")) parentescoParsed = "jefe de hogar";
+                                else if (cleanText(fila['MADRE'])) parentescoParsed = "madre";
+                                else if (cleanText(fila['PADRE'])) parentescoParsed = "padre";
+                                else if (cleanText(fila['HIJO'])) parentescoParsed = "hijo";
 
-                                let gasParsed = (fila['TIPO DE CILINDRO'] && fila['TIPO DE CILINDRO'].trim() !== '') ? "si" : "no";
+                                // 5. Estatus Electoral
+                                let votoParsed = "";
+                                if (cleanText(fila['VD'])) votoParsed = "VD";
+                                else if (cleanText(fila['VB'])) votoParsed = "VB";
+                                else if (cleanText(fila['VO'])) votoParsed = "VO";
 
+                                // 6. Detección de Sexo
+                                let sexoParsed = "";
+                                if (cleanText(fila['FEMENINA'])) sexoParsed = "femenino";
+                                else if (cleanText(fila['MASCULINO'])) sexoParsed = "masculino";
+
+                                // ARMADO DEL EXPEDIENTE LIMPIO
                                 let habitanteTraducido = {
                                     ubch: fila['UBCH A LA QUE PERTENECE'] || '',
                                     codigo_sigue_actual: fila['CODIGO SITUR ACTUAL'] || '',
@@ -342,57 +400,57 @@
                                     consejo_comunal: fila['NOMBRE DEL CONSEJO COMUNAL'] || '',
                                     comunidad: fila['COMUNIDAD'] || '',
                                     calle: fila['CALLE'] || '',
-                                    numero_casa: fila['NUMERO DE CASA'] || 'S/N',
-                                    tipo_vivienda: fila['TIPO DE VIVIENDA'] || '',
-                                    condiciones_vivienda: fila['CONDICIONES DE LA VIVIENDA'] || '',
+                                    numero_casa: casaRaw,
+                                    tipo_vivienda: tipoVivRaw.toLowerCase(),
+                                    condiciones_vivienda: condicionRaw.toLowerCase(),
                                     responsabilidad_cbi_cm: fila['RESPONSABILIDAD CBI, CM'] || '',
-                                    tiene_gas: gasParsed,
+                                    tiene_gas: cleanText(fila['TIPO DE CILINDRO']) !== '' ? "si" : "no",
                                     tipo_cilindro_gas: fila['TIPO DE CILINDRO'] || '',
-                                    nombre: nombreParsed.toUpperCase(),
-                                    apellido: apellidoParsed.toUpperCase(),
-                                    tiene_cedula: fila['CEDULA'] ? "si" : "no",
+                                    
+                                    nombre: nombreParsed,
+                                    apellido: apellidoParsed,
+                                    tiene_cedula: cedulaRaw ? "si" : "no",
                                     nacionalidad: "V", 
-                                    cedula: fila['CEDULA'] || '',
+                                    cedula: cedulaRaw,
                                     telefono: fila['TELEFONO'] || '',
-                                    fecha_nacimiento: fila['FECHA DE NACIMIENTO'] || '',
+                                    fecha_nacimiento: fechaEstructurada,
                                     sexo: sexoParsed,
                                     parentesco: parentescoParsed,
                                     profesion: fila['PROFESION'] || '',
-                                    trabaja: fila['TRABAJA?'] || 'no',
-                                    esta_escolarizado: fila['ESTA ESCOLARIZADO?'] || 'no',
-                                    esta_cedulado: fila['ESTA CEDULADO?'] || 'si',
+                                    
+                                    trabaja: normalizarSiNo(fila['TRABAJA?']),
+                                    esta_escolarizado: normalizarSiNo(fila['ESTA ESCOLARIZADO?']),
+                                    esta_cedulado: estaCeduladoFinal,
+                                    
                                     padece_enfermedad: fila['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.'] || '',
-                                    toma_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] ? 'si' : 'no',
+                                    toma_medicamento: cleanText(fila['TOMA ALGUN MEDICAMENTO? INDIQUE']) !== '' ? 'si' : 'no',
                                     cual_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] || '',
-                                    discapacitado: fila['DISCAPACITADO?'] || 'no',
+                                    discapacitado: normalizarSiNo(fila['DISCAPACITADO?']),
                                     tipo_discapacidad: '',
-                                    embarazada: fila['EMBARAZADA?'] || 'no',
-                                    lactancia_materna: fila['LACTANCIA MATERNA?'] || 'no',
-                                    cobra_amor_mayor: fila['COBRA AMOR MAYOR'] || 'no',
-                                    carnet_patria: fila['POSEE CARNET DE LA PATRIA?'] || 'no',
-                                    mision_jose_gregorio: fila['MISION JOSE GREGORIO'] || 'no',
-                                    hogares_patria_bono: fila['HOGARES DE LA PATRIA BONO UNICO FAMILIAR'] || 'no',
+                                    embarazada: normalizarSiNo(fila['EMBARAZADA?']),
+                                    lactancia_materna: normalizarSiNo(fila['LACTANCIA MATERNA?']),
+                                    
+                                    cobra_amor_mayor: normalizarSiNo(fila['COBRA AMOR MAYOR']),
+                                    carnet_patria: normalizarSiNo(fila['POSEE CARNET DE LA PATRIA?']),
+                                    mision_jose_gregorio: normalizarSiNo(fila['MISION JOSE GREGORIO']),
+                                    hogares_patria_bono: normalizarSiNo(fila['HOGARES DE LA PATRIA BONO UNICO FAMILIAR']),
+                                    
                                     donde_vota: fila['DONDE VOTA'] || '',
                                     vd_vb_vo_seleccion: votoParsed,
                                     vd_vb_vo_detalle: '',
+                                    
                                     registrado_por_uid: usuarioActivo.uid,
-                                    registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN DUAL)",
+                                    registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN INTELIGENTE)",
                                     fecha_registro: new Date().toLocaleString()
                                 };
 
-                                // 1. Preparamos Firebase
+                                // ESCRITURA DUAL 
                                 const nuevoRef = push(habitantesRef);
                                 const firebaseId = nuevoRef.key;
-                                
-                                // 2. Insertamos el ID de Firebase para conectar ambas Bóvedas
                                 habitanteTraducido.id_firebase = firebaseId;
 
-                                // 3. Subimos a Firebase
                                 await set(nuevoRef, habitanteTraducido);
-
-                                // 4. Subimos a Supabase
                                 const { error: supabaseError } = await supabase.from('habitantes').insert([habitanteTraducido]);
-                                
                                 if (supabaseError) throw new Error("Fallo Supabase: " + supabaseError.message);
 
                                 subidos++;
@@ -406,10 +464,10 @@
                                 document.getElementById('barraProgreso').style.width = Math.min(porcentaje, 100) + "%";
                                 document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
                                 document.getElementById('txtPorcentaje').textContent = `${Math.floor(porcentaje)}%`;
-                                document.getElementById('txtEta').textContent = `Tiempo estimado: ${formatoTiempo(etaMs)}`;
+                                document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                                 
-                                if (subidos % 15 === 0 || subidos === totalDatos) {
-                                    escribirLog(`[OK DUAL] Registro ${subidos}/${totalDatos} -> C.I: ${fila['CEDULA'] || 'S/C'} alojado en ambas nubes.`, "log-success");
+                                if (subidos % 20 === 0 || subidos === totalDatos) {
+                                    escribirLog(`[DATO LIMPIO] Ingesta Dual C.I: ${cedulaRaw || 'S/C'} ➔ (T. Viv: ${tipoVivRaw || '-'} | Céd Fisica: ${estaCeduladoFinal} | Parentesco: ${parentescoParsed})`, "log-success");
                                 }
 
                             } catch (error_fila) {
@@ -422,8 +480,8 @@
                         document.getElementById('txtPorcentaje').textContent = `100%`;
                         document.getElementById('txtEta').textContent = `Finalizado en ${formatoTiempo(Date.now() - tiempoInicio)}`;
                         
-                        escribirLog(`✅ MIGRACIÓN DUAL COMPLETADA. ${subidos} registros asegurados en Firebase y Supabase.`, "log-success");
-                        alert("¡Operación completada en ambas bases de datos!");
+                        escribirLog(`✅ MIGRACIÓN LIMPIA COMPLETADA. ${subidos} registros inyectados y homologados en Firebase y Supabase.`, "log-supabase");
+                        alert("¡Operación completada! Los datos se han limpiado e inyectado correctamente en ambas nubes.");
                         
                     }
                 });
