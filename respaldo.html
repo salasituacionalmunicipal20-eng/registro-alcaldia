@@ -70,7 +70,7 @@
         
         .status-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 30px;
         }
@@ -333,7 +333,7 @@
 
         .action-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr; 
             gap: 20px;
             border-top: 1px dashed #333;
             padding-top: 30px;
@@ -534,25 +534,9 @@
                 document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:100px; font-family:sans-serif;'>⚠️ ACCESO RESTRINGIDO. USTED NO ESTÁ AUTORIZADO.</h1>";
                 setTimeout(() => window.location.href = "index.html", 3000);
             } else {
-                
-                // REGLA DE ORO: ¡Activamos la presencia del propio Carlos Admin para que el radar lo detecte!
-                window.presenciaRef = ref(database, `presencia/${user.uid}`);
-                onDisconnect(window.presenciaRef).update({ 
-                    estado: 'offline', 
-                    ultima_accion: 'Cerró la Bóveda de Respaldo' 
-                });
-                
-                set(window.presenciaRef, {
-                    estado: 'online',
-                    nombre: 'CARLOS ADMIN',
-                    rol: 'admin',
-                    modulo_actual: 'Bóveda de Respaldo y DB',
-                    ultima_accion: 'Monitoreando servidores e integridad de datos'
-                });
-
+                // Al validar al usuario, iniciamos los monitores
                 iniciarMonitoreoFirebase();
                 iniciarRadarPresencia();
-                
                 monitorearSupabase();
                 setInterval(monitorearSupabase, 5000);
             }
@@ -664,6 +648,26 @@
                 if (snap.val() === true) {
                     lblConexion.textContent = "EN LÍNEA (OK)";
                     lblConexion.className = "status-value status-online";
+
+                    // 🔥 REGLA DE ORO: SISTEMA DE PRESENCIA INFALIBLE PARA EL ADMIN 🔥
+                    // Se ejecuta justo cuando Firebase confirma que el túnel está abierto
+                    const user = auth.currentUser;
+                    if(user) {
+                        const presenciaRef = ref(database, `presencia/${user.uid}`);
+                        onDisconnect(presenciaRef).update({ 
+                            estado: 'offline', 
+                            ultima_accion: 'Cerró la Bóveda de Respaldo (Sin conexión)' 
+                        }).then(() => {
+                            set(presenciaRef, {
+                                estado: 'online',
+                                nombre: 'CARLOS ADMIN',
+                                rol: 'admin',
+                                modulo_actual: 'Bóveda de Respaldo (Monitor)',
+                                ultima_accion: 'Supervisando la red y bases de datos'
+                            });
+                        });
+                    }
+
                 } else {
                     lblConexion.textContent = "DESCONECTADO";
                     lblConexion.className = "status-value status-offline";
