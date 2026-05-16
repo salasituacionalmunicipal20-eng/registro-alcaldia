@@ -45,7 +45,6 @@
             border-top: 8px solid var(--rojo-oficial); 
         }
         
-        /* Encabezado Gubernamental */
         .gob-header { 
             display: flex; 
             justify-content: space-between; 
@@ -82,7 +81,6 @@
             font-weight: bold; 
         }
         
-        /* Botonera superior */
         .top-nav { 
             display: flex; 
             justify-content: flex-end; 
@@ -122,11 +120,8 @@
             text-transform: uppercase;
         }
         
-        .btn-reporte:hover { 
-            background-color: #138496; 
-        }
+        .btn-reporte:hover { background-color: #138496; }
         
-        /* Buscador Avanzado */
         h2 { 
             color: var(--rojo-oficial); 
             margin-top: 0; 
@@ -215,15 +210,8 @@
             transition: 0.3s;
         }
 
-        .btn-page:hover:not(:disabled) {
-            background-color: #003366;
-        }
-
-        .btn-page:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-            color: #666;
-        }
+        .btn-page:hover:not(:disabled) { background-color: #003366; }
+        .btn-page:disabled { background-color: #ccc; cursor: not-allowed; color: #666; }
 
         .page-info {
             font-weight: bold;
@@ -231,7 +219,6 @@
             color: #333;
         }
 
-        /* Tabla */
         .table-wrapper { overflow-x: auto; }
         
         table { 
@@ -425,6 +412,35 @@
                             <option value="">Seleccione primero una comuna...</option>
                         </select>
                     </div>
+                    
+                    <div>
+                        <label>Buscar por UBCH:</label>
+                        <input type="text" id="fUbch" placeholder="Escriba la UBCH...">
+                    </div>
+                    <div>
+                        <label>Estatus Electoral (VD/VB/VO):</label>
+                        <select id="fVoto">
+                            <option value="">Todos</option>
+                            <option value="VD">Voto Duro (VD)</option>
+                            <option value="VB">Voto Blando (VB)</option>
+                            <option value="VO">Voto Opositor (VO)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Rol Familiar / Parentesco:</label>
+                        <select id="fParentesco">
+                            <option value="">Todos</option>
+                            <option value="jefe de hogar">Jefe de Hogar</option>
+                            <option value="madre">Madre</option>
+                            <option value="padre">Padre</option>
+                            <option value="hijo">Hijo</option>
+                            <option value="hija">Hija</option>
+                            <option value="esposo">Esposo</option>
+                            <option value="esposa">Esposa</option>
+                            <option value="nieto">Nieto</option>
+                            <option value="nieta">Nieta</option>
+                        </select>
+                    </div>
                     <div>
                         <label>Buscar por Calle:</label>
                         <input type="text" id="fCalle" placeholder="Escriba la calle...">
@@ -451,7 +467,7 @@
                         <tr>
                             <th>Nombres y Apellidos</th>
                             <th>Cédula</th>
-                            <th>Comuna</th>
+                            <th>UBCH</th>
                             <th>Comunidad</th>
                             <th>Calle</th>
                             <th>Teléfono</th>
@@ -864,7 +880,6 @@
             renderizarTabla();
         });
 
-        // REGLA DE ORO: Imprimir tabla exporta TODOS los filtrados, no solo la pagina actual
         window.imprimirTabla = () => { 
             const limiteOriginal = registrosPorPagina;
             registrosPorPagina = datosFiltrados.length; // Forzamos a mostrar todos temporalmente
@@ -877,16 +892,15 @@
             renderizarTabla();
         };
 
-        // REGLA DE ORO: Exportar Excel toma TODOS los datos filtrados, no solo la pagina actual
         window.exportarCSV = () => {
-            let csv = 'Nombres y Apellidos,Cedula,Comuna,Comunidad,Calle,Telefono\n';
+            let csv = 'Nombres y Apellidos,Cedula,UBCH,Comunidad,Calle,Telefono\n';
             
             datosFiltrados.forEach(item => {
                 const h = item.h;
                 const nac = h.nacionalidad ? h.nacionalidad + '-' : 'V-';
                 const cedFinal = h.cedula ? (nac + h.cedula) : 'S/C';
                 // Añadimos comillas para evitar que las comas en direcciones rompan el CSV
-                csv += `"${h.nombre} ${h.apellido}","${cedFinal}","${h.comuna}","${h.comunidad}","${h.calle}","${h.telefono || ''}"\n`; 
+                csv += `"${h.nombre} ${h.apellido}","${cedFinal}","${h.ubch || ''}","${h.comunidad}","${h.calle}","${h.telefono || ''}"\n`; 
             });
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -960,12 +974,17 @@
             });
         }
 
+        // REGLA DE ORO: Filtro Tabla ahora sí procesa UBCH, Voto y Parentesco
         function filtrarTabla() {
             const fNom = document.getElementById('fNombre').value.toLowerCase();
             const fCed = document.getElementById('fCedula').value.toLowerCase();
             const fComuna = document.getElementById('fComuna').value.toLowerCase();
             const fComunidad = document.getElementById('fComunidad').value.toLowerCase();
             const fCalle = document.getElementById('fCalle').value.toLowerCase();
+            
+            const fUbch = document.getElementById('fUbch').value.toLowerCase();
+            const fVoto = document.getElementById('fVoto').value.toUpperCase();
+            const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
 
             datosFiltrados = [];
 
@@ -978,8 +997,12 @@
                 const cumpleComuna = (h.comuna || '').toLowerCase().includes(fComuna);
                 const cumpleComunidad = (h.comunidad || '').toLowerCase().includes(fComunidad);
                 const cumpleCalle = (h.calle || '').toLowerCase().includes(fCalle);
+                
+                const cumpleUbch = (h.ubch || '').toLowerCase().includes(fUbch);
+                const cumpleVoto = fVoto === "" || (h.vd_vb_vo_seleccion || '').toUpperCase() === fVoto;
+                const cumpleParentesco = fParentesco === "" || (h.parentesco || '').toLowerCase() === fParentesco;
 
-                if (cumpleNom && cumpleCed && cumpleComuna && cumpleComunidad && cumpleCalle) {
+                if (cumpleNom && cumpleCed && cumpleComuna && cumpleComunidad && cumpleCalle && cumpleUbch && cumpleVoto && cumpleParentesco) {
                     datosFiltrados.push({ id: id, h: h });
                 }
             }
@@ -989,7 +1012,7 @@
             renderizarTabla();
         }
 
-        // Nueva función para inyectar solo la porción de datos de la página actual
+        // Función para inyectar solo la porción de datos de la página actual
         function renderizarTabla() {
             const tbody = document.getElementById('tablaCuerpo');
             tbody.innerHTML = ""; 
@@ -1010,7 +1033,7 @@
                 tr.innerHTML = `
                     <td><strong>${h.nombre} ${h.apellido}</strong></td>
                     <td>${cedFinal}</td>
-                    <td>${h.comuna}</td>
+                    <td>${h.ubch || ''}</td>
                     <td>${h.comunidad}</td>
                     <td>${h.calle}</td>
                     <td>${h.telefono}</td>
