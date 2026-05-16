@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrector y Actualizador de Datos - Alcaldía</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        :root {
+            --rojo-oficial: #E30613;
+            --azul-oficial: #004a99;
+            --gris-fondo: #121212; 
+            --verde-monitor: #00ff00;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: var(--gris-fondo); 
+            padding: 40px; 
+            text-align: center; 
+            color: white;
+            margin: 0;
+        }
+        
+        .container { 
+            background: #1e1e1e; 
+            padding: 40px; 
+            border-radius: 8px; 
+            max-width: 850px; 
+            margin: auto; 
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5); 
+            border-top: 8px solid #ff9800; 
+        }
+
+        .top-nav { 
+            display: flex; 
+            justify-content: flex-start; 
+            margin-bottom: 20px;
+        }
+        
+        .btn-back { 
+            background-color: #333; 
+            color: white; 
+            padding: 8px 15px; 
+            border: 1px solid #555; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase;
+        }
+        
+        h1 { 
+            color: #fff; 
+            margin-top: 0; 
+            text-transform: uppercase; 
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+            font-size: 22px;
+        }
+        
+        .panel-info { 
+            text-align: left; 
+            background: #111; 
+            padding: 20px; 
+            border-left: 4px solid #ff9800; 
+            font-size: 13px; 
+            margin-bottom: 25px; 
+            line-height: 1.6;
+        }
+        
+        input[type="file"] { 
+            margin: 20px 0; 
+            padding: 15px; 
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #fff;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        button#btnEjecutar { 
+            background-color: #ff9800; 
+            color: black; 
+            border: none; 
+            padding: 15px 30px; 
+            font-size: 15px; 
+            font-weight: bold; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            width: 100%;
+            transition: 0.3s;
+        }
+        
+        button#btnEjecutar:hover:not(:disabled) { 
+            background-color: #e68a00; 
+        }
+        
+        button:disabled { 
+            background-color: #333; 
+            color: #777;
+            cursor: not-allowed; 
+        }
+        
+        .console-box {
+            background-color: #000;
+            color: #00ff00;
+            text-align: left;
+            padding: 20px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            height: 250px;
+            overflow-y: auto;
+            margin-top: 25px;
+            border: 1px solid #333;
+        }
+
+        .linea-log { margin-bottom: 4px; }
+        .log-err { color: #ff4c4c; font-weight: bold; }
+        .log-ok { color: #00ff00; }
+        .log-info { color: #00d2ff; }
+        .log-warn { color: #ff9800; }
+
+        .progress-container { 
+            width: 100%; 
+            background-color: #222; 
+            border-radius: 4px; 
+            margin-top: 20px; 
+            overflow: hidden; 
+            display: none; 
+        }
+        
+        .progress-bar { 
+            height: 20px; 
+            background-color: #ff9800; 
+            width: 0%; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-nav">
+            <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button>
+        </div>
+
+        <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
+        
+        <div class="panel-info">
+            <strong>Algoritmo de Depuración Cruzada Activado:</strong><br>
+            - 🏠 <b>Vivienda:</b> Limpia el campo "Número de Casa" si contiene la palabra "CASA" y parametriza el tipo a formato nativo.<br>
+            - 📊 <b>Condición:</b> Traduce la variable de entorno "ESTABLE" a la opción oficial del formulario ("bien").<br>
+            - 📅 <b>Fechas:</b> Motor de análisis cronológico de 2 y 4 dígitos con respaldo algorítmico basado en la columna EDAD de tu archivo.<br>
+            - 🛡️ <b>Precisión:</b> Validación estricta por Cédula o coincidencia compuesta (Nombre + Apellido + Comuna).
+        </div>
+
+        <input type="file" id="csvFile" accept=".csv">
+        <br>
+        <button id="btnEjecutar" onclick="iniciarReparacion()" disabled>Inicializando Bóveda de Datos...</button>
+
+        <div class="progress-container" id="progressWrapper">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="console-box" id="consoleBox"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+
+        let baseDatosFirebase = {};
+        let autorizad = false;
+
+        function printLog(msg, tipo = "log-info") {
+            const box = document.getElementById('consoleBox');
+            const div = document.createElement('div');
+            div.className = `linea-log ${tipo}`;
+            div.textContent = `> ${msg}`;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        printLog("Iniciando servicios de mantenimiento de red...", "log-info");
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user && user.email === "carlos.admin@alcaldia.com") {
+                autorizad = true;
+                printLog("Autenticación exitosa. Descargando snapshot de Firebase para indexación local...", "log-success");
+                
+                try {
+                    const snapshot = await get(child(ref(database), 'habitantes'));
+                    if(snapshot.exists()) {
+                        baseDatosFirebase = snapshot.val();
+                        printLog(`Snapshot cargado. ${Object.keys(baseDatosFirebase).length} habitantes indexados en memoria.`, "log-ok");
+                        document.getElementById('btnEjecutar').disabled = false;
+                        document.getElementById('btnEjecutar').textContent = "Ejecutar Parche de Datos 🚀";
+                    } else {
+                        printLog("La base de datos central no contiene registros.", "log-err");
+                    }
+                } catch (err) {
+                    printLog(`Error de descarga: ${err.message}`, "log-err");
+                }
+            } else {
+                printLog("⚠️ ACCESO RESTRINGIDO: No tiene credenciales de administración habilitadas.", "log-err");
+            }
+        });
+
+        // FUNCION NORMALIZADORA PROFESIONAL
+        function cleanText(txt) {
+            return (txt || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
+        }
+
+        // MOTOR DE ANÁLISIS CRONOLÓGICO INTELIGENTE
+        function parseFechaInteligente(rawDate, rawEdad) {
+            let dateStr = (rawDate || '').toString().trim();
+            let edadStr = (rawEdad || '').toString().trim();
+            
+            // Intentar parsing por delimitadores usuales
+            let parts = dateStr.split(/[\.\/\-]/);
+            if (parts.length === 3) {
+                let d = parts[0].trim().padStart(2, '0');
+                let m = parts[1].trim().padStart(2, '0');
+                let yStr = parts[2].trim();
+                let y = parseInt(yStr);
+
+                if (yStr.length === 2) {
+                    // Pivot 2026: si YY > 26 es de 1900, sino de 2000
+                    y = y > 26 ? 1900 + y : 2000 + y;
+                }
+                
+                if (!isNaN(y) && !isNaN(parseInt(m)) && !isNaN(parseInt(d))) {
+                    return `${y}-${m}-${d}`; // Formato nativo HTML e input date
+                }
+            }
+
+            // Fallback algorítmico basado en la edad de referencia (Año actual de desarrollo: 2026)
+            let edad = parseInt(edadStr);
+            if (!isNaN(edad) && edad >= 0) {
+                let yCalculado = 2026 - edad;
+                return `${yCalculado}-01-01`; // Asigna el primero de enero de ese año como estándar estructurado
+            }
+
+            return null;
+        }
+
+        window.iniciarReparacion = () => {
+            if(!autorizad) return;
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if(!file) {
+                alert("Por favor, cargue el archivo CSV antes de proceder.");
+                return;
+            }
+
+            document.getElementById('btnEjecutar').disabled = true;
+            document.getElementById('progressWrapper').style.display = "block";
+            printLog("Abriendo flujo de lectura de archivos...", "log-info");
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const csvRows = results.data;
+                    const totalRows = csvRows.length;
+                    printLog(`Archivo parseado. Procesando inyección en lote sobre ${totalRows} filas...`, "log-info");
+
+                    // Construir mapas de búsqueda local para optimizar rendimiento O(1)
+                    let mapCedulas = {};
+                    let mapNombres = {};
+
+                    for(let idFb in baseDatosFirebase) {
+                        let h = baseDatosFirebase[idFb];
+                        let c = cleanText(h.cedula);
+                        if(c && c !== 'S/C' && c !== 'NO') {
+                            mapCedulas[c] = idFb;
+                        }
+                        let keyCompuesta = cleanText(`${h.nombre}||${h.apellido}||${h.comuna}`);
+                        mapNombres[keyCompuesta] = idFb;
+                    }
+
+                    let modificados = 0;
+                    let ignorados = 0;
+
+                    for(let i = 0; i < totalRows; i++) {
+                        let row = csvRows[i];
+                        let targetId = null;
+
+                        let rowCedula = cleanText(row['CEDULA']);
+                        let rowNombreCompleto = cleanText(row['NOMBRE Y APELLIDO']).split(' ');
+                        let rowNombre = rowNombreCompleto.slice(0, Math.ceil(rowNombreCompleto.length / 2)).join(' ');
+                        let rowApellido = rowNombreCompleto.slice(Math.ceil(rowNombreCompleto.length / 2)).join(' ');
+                        let rowComuna = cleanText(row['COMUNA']);
+
+                        // 1. Intentar match por cédula
+                        if(rowCedula && mapCedulas[rowCedula]) {
+                            targetId = mapCedulas[rowCedula];
+                        } 
+                        // 2. Fallback: Coincidencia compuesta
+                        else {
+                            let keyRow = cleanText(`${rowNombre}||${rowApellido}||${rowComuna}`);
+                            if(mapNombres[keyRow]) {
+                                targetId = mapNombres[keyRow];
+                            }
+                        }
+
+                        if(targetId) {
+                            let updates = {};
+
+                            // Lógica 1: Limpieza de Casa y asignación de Tipo Vivienda
+                            let rowCasa = cleanText(row['NUMERO DE CASA']);
+                            if(rowCasa === 'CASA') {
+                                updates['numero_casa'] = '';
+                                updates['tipo_vivienda'] = 'casa';
+                            }
+
+                            // Lógica 2: Traducción estricta de condiciones de vivienda
+                            let rowCondicion = cleanText(row['CONDICIONES DE LA VIVIENDA']);
+                            if(rowCondicion === 'ESTABLE') {
+                                updates['condiciones_vivienda'] = 'bien';
+                            }
+
+                            // Lógica 3: Inyección de Fecha de Nacimiento Inteligente
+                            let rowFechaRaw = row['FECHA DE NACIMIENTO'];
+                            let rowEdadRaw = row['EDAD'];
+                            let fechaEstructurada = parseFechaInteligente(rowFechaRaw, rowEdadRaw);
+                            
+                            if(fechaEstructurada) {
+                                updates['fecha_nacimiento'] = fechaEstructurada;
+                            }
+
+                            // Aplicar parche si hay elementos que corregir
+                            if(Object.keys(updates).length > 0) {
+                                try {
+                                    await update(ref(database, `habitantes/${targetId}`), updates);
+                                    modificados++;
+                                } catch (errUpdates) {
+                                    printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
+                                }
+                            }
+                        } else {
+                            ignorados++;
+                        }
+
+                        // Actualizar barra de progreso
+                        let pct = Math.floor(((i + 1) / totalRows) * 100);
+                        document.getElementById('progressBar').style.width = pct + "%";
+                    }
+
+                    printLog(`🚀 PARCHE FINALIZADO CON ÉXITO.`, "log-ok");
+                    printLog(`Expedientes actualizados y corregidos en Firebase: ${modificados}`, "log-success");
+                    if(ignorados > 0) {
+                        printLog(`Filas omitidas (no se encontró coincidencia en el censo): ${ignorados}`, "log-warn");
+                    }
+                    printLog(`⚠️ RECOMENDACIÓN: Ve al módulo de Respaldo y presiona el botón maestro para nivelar Supabase con estos datos frescos.`, "log-warn");
+                    alert("¡Depuración y actualización de datos finalizada!");
+                }
+            });
+        };
+    </script>
+</body>
+</html>
