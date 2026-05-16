@@ -154,6 +154,7 @@
         .log-ok { color: #00ff00; }
         .log-info { color: #00d2ff; }
         .log-warn { color: #ff9800; }
+        .log-family { color: #b000ff; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -165,13 +166,12 @@
         <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
         
         <div class="panel-info">
-            <strong>Algoritmo de Depuración Clínico Activado:</strong><br>
-            - 🏠 <b>Vivienda Múltiple:</b> Asigna tipo "casa" si detecta el string "CASA" en número. Convierte "ESTABLE" (detectado en Condiciones o Tipo de Vivienda) a "bien".<br>
-            - 🪪 <b>Algoritmo de Cédula Física:</b> Evalúa presencia de C.I y cruza con la Edad. Automáticamente deduce < 9 años = "no", ≥ 9 años = "si".<br>
-            - 💼 <b>Ocupación y Escuela:</b> Parchea campos "Trabaja" y "Escolarizado" limpiando la data del Excel.<br>
-            - 👨‍👩‍👧‍👦 <b>Parentesco:</b> Traduce "JEFE DE FAMILIA" a la variable normalizada "jefe de hogar".<br>
-            - 🎖️ <b>Protección Social:</b> Indexa Misiones, Amor Mayor, Carnet, Discapacidad y Lactancia a formato Si/No.<br>
-            - 📅 <b>Fechas:</b> Análisis cronológico inteligente con respaldo basado en Edad (Pivot 2026).
+            <strong>Algoritmo de Cascada Familiar y Depuración Clínico Activado:</strong><br>
+            - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada:</b> Detecta a un "JEFE DE FAMILIA" y automáticamente vincula a los registros que estén debajo con espacios en blanco hacia su Carga Familiar.<br>
+            - 🏠 <b>Vivienda Múltiple:</b> Asigna tipo "casa" si detecta el string "CASA" en número. Convierte "ESTABLE" a "bien".<br>
+            - 🪪 <b>Algoritmo de Cédula Física:</b> Deduce si tiene cédula en mano según si su edad es ≥ 9 años.<br>
+            - 🎖️ <b>Protección Social:</b> Indexa Misiones, Amor Mayor, Carnet, Empleo y Educación a formato Si/No.<br>
+            - 📅 <b>Fechas:</b> Análisis cronológico inteligente con respaldo basado en Edad.
         </div>
 
         <input type="file" id="csvFile" accept=".csv">
@@ -260,7 +260,6 @@
             return `${minutos} min ${segundos} seg`;
         }
 
-        // MOTOR DE ANÁLISIS CRONOLÓGICO INTELIGENTE
         function parseFechaInteligente(rawDate, rawEdad) {
             let dateStr = (rawDate || '').toString().trim();
             let edadStr = (rawEdad || '').toString().trim();
@@ -330,6 +329,9 @@
                     let omitidosCambio = 0;
                     let ignoradosNoEncontrados = 0;
                     const tiempoInicio = Date.now();
+                    
+                    // REGLA DE ORO: Memoria Temporal de Cascada Familiar
+                    let ultimoJefeIdActivo = null;
 
                     for(let i = 0; i < totalRows; i++) {
                         let row = csvRows[i];
@@ -354,7 +356,7 @@
                             let updates = {};
                             let cambiosRealizados = [];
 
-                            // 1. Lógica de Vivienda (Casa y Condición cruzada)
+                            // 1. Vivienda
                             let rowCasa = cleanText(row['NUMERO DE CASA']);
                             if(rowCasa === 'CASA') {
                                 updates['numero_casa'] = '';
@@ -366,10 +368,10 @@
                             let rowTipoVivErr = cleanText(row['TIPO DE VIVIENDA']);
                             if(rowCondicion === 'ESTABLE' || rowTipoVivErr === 'ESTABLE') {
                                 updates['condiciones_vivienda'] = 'bien';
-                                cambiosRealizados.push("Condición Vivienda ➔ 'bien' (Corregido de ESTABLE)");
+                                cambiosRealizados.push("Condición ➔ 'bien' (de ESTABLE)");
                             }
 
-                            // 2. Lógica Cronológica Inteligente
+                            // 2. Cronología
                             let rowFechaRaw = row['FECHA DE NACIMIENTO'];
                             let rowEdadRaw = row['EDAD'];
                             let fechaEstructurada = parseFechaInteligente(rowFechaRaw, rowEdadRaw);
@@ -378,10 +380,10 @@
                                 cambiosRealizados.push(`Fecha ➔ ${fechaEstructurada}`);
                             }
 
-                            // 3. Algoritmo de Cédula Física por Edad
+                            // 3. Algoritmo Cédula
                             let tieneCedulaNum = rowCedula !== '' && rowCedula !== 'S/C' && rowCedula !== 'NO';
                             if (tieneCedulaNum) {
-                                let edadParaCedula = 99; // Default adulto
+                                let edadParaCedula = 99;
                                 if (rowEdadRaw && !isNaN(parseInt(rowEdadRaw))) {
                                     edadParaCedula = parseInt(rowEdadRaw);
                                 } else if (fechaEstructurada) {
@@ -390,26 +392,36 @@
 
                                 if (edadParaCedula < 9) {
                                     updates['esta_cedulado'] = 'no';
-                                    cambiosRealizados.push("Cédula Física ➔ 'no' (Deducción < 9 años)");
+                                    cambiosRealizados.push("Céd Física ➔ 'no' (< 9 años)");
                                 } else {
                                     updates['esta_cedulado'] = 'si';
-                                    cambiosRealizados.push("Cédula Física ➔ 'si' (Posee Nro)");
+                                    cambiosRealizados.push("Céd Física ➔ 'si' (Posee Nro)");
                                 }
                             }
 
-                            // 4. Homologación de Jefe de Hogar
+                            // 4. EL MOTOR DE CASCADA FAMILIAR
                             let rowResponsabilidad = cleanText(row['RESPONSABILIDAD CBI, CM']);
-                            if(rowResponsabilidad.includes("JEFE DE FAMILIA")) {
+                            
+                            if (rowResponsabilidad.includes("JEFE DE FAMILIA")) {
                                 updates['parentesco'] = 'jefe de hogar';
-                                cambiosRealizados.push("Parentesco ➔ 'jefe de hogar'");
+                                cambiosRealizados.push("Rol ➔ 'Jefe de Hogar'");
+                                ultimoJefeIdActivo = targetId; // Arranca la cascada para los de abajo
+                            } else if (rowResponsabilidad === '') {
+                                // Si está en blanco y la cascada está abierta, hereda la carga
+                                if (ultimoJefeIdActivo !== null && targetId !== ultimoJefeIdActivo) {
+                                    updates['jefe_hogar_id'] = ultimoJefeIdActivo;
+                                    cambiosRealizados.push("Anexado como Carga Familiar 👨‍👩‍👧‍👦");
+                                }
+                            } else {
+                                // Si tiene texto pero NO es jefe de familia, cortamos la cascada para no cruzar grupos
+                                ultimoJefeIdActivo = null;
                             }
 
-                            // 5. Inyector de Variables Sociales, Misiones, Empleo y Educación
+                            // 5. Inyector Social
                             const normalizarYParchearCampo = (columnaExcel, claveFirebase, etiquetaLog) => {
                                 if (row[columnaExcel] !== undefined) {
-                                    let celdaRaw = (row[columnaExcel] || '').toString().trim().toUpperCase();
+                                    let celdaRaw = cleanText(row[columnaExcel]);
                                     let valorNormalizado = '';
-                                    
                                     if (celdaRaw === 'SI' || celdaRaw === 'SÍ') valorNormalizado = 'si';
                                     else if (celdaRaw === 'NO') valorNormalizado = 'no';
                                     else valorNormalizado = celdaRaw.toLowerCase();
@@ -422,21 +434,21 @@
                             };
 
                             normalizarYParchearCampo('TRABAJA?', 'trabaja', 'Trabaja');
-                            normalizarYParchearCampo('ESTA ESCOLARIZADO?', 'esta_escolarizado', 'Escolarizado');
+                            normalizarYParchearCampo('ESTA ESCOLARIZADO?', 'esta_escolarizado', 'Escuela');
                             normalizarYParchearCampo('COBRA AMOR MAYOR', 'cobra_amor_mayor', 'Amor Mayor');
-                            normalizarYParchearCampo('POSEE CARNET DE LA PATRIA?', 'carnet_patria', 'Carnet Patria');
-                            normalizarYParchearCampo('MISION JOSE GREGORIO', 'mision_jose_gregorio', 'Misión JGH');
-                            normalizarYParchearCampo('DISCAPACITADO?', 'discapacitado', 'Discapacidad');
-                            normalizarYParchearCampo('EMBARAZADA?', 'embarazada', 'Embarazada');
+                            normalizarYParchearCampo('POSEE CARNET DE LA PATRIA?', 'carnet_patria', 'Carnet');
+                            normalizarYParchearCampo('MISION JOSE GREGORIO', 'mision_jose_gregorio', 'J. Gregorio');
+                            normalizarYParchearCampo('DISCAPACITADO?', 'discapacitado', 'Discap.');
+                            normalizarYParchearCampo('EMBARAZADA?', 'embarazada', 'Embarazo');
                             normalizarYParchearCampo('LACTANCIA MATERNA?', 'lactancia_materna', 'Lactancia');
                             normalizarYParchearCampo('HOGARES DE LA PATRIA BONO UNICO FAMILIAR', 'hogares_patria_bono', 'Hogares Patria');
 
-                            // Aplicar la inyección si hubo modificaciones
                             if(Object.keys(updates).length > 0) {
                                 try {
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
-                                    printLog(`[OK] ${rowNombre} ${rowApellido} (C.I: ${rowCedula || 'S/C'}) ➔ Parches aplicados: [${cambiosRealizados.join(' | ')}]`, "log-ok");
+                                    let colorTipo = updates['jefe_hogar_id'] ? "log-family" : "log-ok";
+                                    printLog(`[OK] ${rowNombre} ${rowApellido} (C.I: ${rowCedula || 'S/C'}) ➔ [${cambiosRealizados.join(' | ')}]`, colorTipo);
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
                                 }
@@ -459,14 +471,14 @@
                         document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                     }
 
-                    printLog(`📊 PROCESO DE DEPURACIÓN Y REPARACIÓN FINALIZADO.`, "log-info");
-                    printLog(`Expedientes modificados/reparados en Firebase: ${modificados}`, "log-success");
+                    printLog(`📊 PROCESO DE DEPURACIÓN Y CASCADA FINALIZADO.`, "log-info");
+                    printLog(`Expedientes actualizados y Familias vinculadas: ${modificados}`, "log-success");
                     printLog(`Expedientes omitidos (Ya estaban limpios y al día): ${omitidosCambio}`, "log-ok");
                     if(ignoradosNoEncontrados > 0) {
                         printLog(`Filas del Excel ignoradas (No existen en el sistema actual): ${ignoradosNoEncontrados}`, "log-warn");
                     }
-                    printLog(`⚠️ ALERTA ADMINISTRATIVA: Vaya a la Bóveda de Respaldo y ejecute la sincronización manual para consolidar la depuración masiva en Supabase.`, "log-warn");
-                    alert("¡Mantenimiento clínico e inyección de datos sociales completada con éxito!");
+                    printLog(`⚠️ ALERTA ADMINISTRATIVA: Ejecuta la sincronización manual en la Bóveda de Respaldo para nivelar Supabase con estos datos cruzados.`, "log-warn");
+                    alert("¡Consolidación de Jefes de Hogar y vinculación de Cargas Familiares finalizada con éxito!");
                 }
             });
         };
