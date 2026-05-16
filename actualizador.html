@@ -167,7 +167,7 @@
         
         <div class="panel-info">
             <strong>Algoritmo de Cascada Familiar y Depuración Clínico Activado:</strong><br>
-            - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada:</b> Detecta a un "JEFE DE FAMILIA" y automáticamente vincula a los registros que estén debajo con espacios en blanco hacia su Carga Familiar.<br>
+            - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada (Menores Incluidos):</b> Detecta Jefes de Familia e inyecta la vinculación a los registros subyacentes, rastreando por nombre a los menores que dicen "MENOR" en su cédula.<br>
             - 🏠 <b>Vivienda Múltiple:</b> Asigna tipo "casa" si detecta el string "CASA" en número. Convierte "ESTABLE" a "bien".<br>
             - 🪪 <b>Algoritmo de Cédula Física:</b> Deduce si tiene cédula en mano según si su edad es ≥ 9 años.<br>
             - 🎖️ <b>Protección Social:</b> Indexa Misiones, Amor Mayor, Carnet, Empleo y Educación a formato Si/No.<br>
@@ -315,12 +315,16 @@
                     let mapCedulas = {};
                     let mapNombres = {};
 
+                    // REGLA DE ORO: Filtro estricto para indexar cédulas
                     for(let idFb in baseDatosFirebase) {
                         let h = baseDatosFirebase[idFb];
                         let c = cleanText(h.cedula);
-                        if(c && c !== 'S/C' && c !== 'NO') {
+                        
+                        // Ignoramos cadenas como MENOR, S/C, N/A para no corromper la busqueda por cedula
+                        if(c && c !== 'S/C' && c !== 'NO' && !c.includes('MENOR') && !c.includes('N/A')) {
                             mapCedulas[c] = idFb;
                         }
+                        
                         let keyCompuesta = cleanText(`${h.nombre}||${h.apellido}||${h.comuna}`);
                         mapNombres[keyCompuesta] = idFb;
                     }
@@ -330,7 +334,6 @@
                     let ignoradosNoEncontrados = 0;
                     const tiempoInicio = Date.now();
                     
-                    // REGLA DE ORO: Memoria Temporal de Cascada Familiar
                     let ultimoJefeIdActivo = null;
 
                     for(let i = 0; i < totalRows; i++) {
@@ -343,9 +346,13 @@
                         let rowApellido = rowNombreCompleto.slice(Math.ceil(rowNombreCompleto.length / 2)).join(' ');
                         let rowComuna = cleanText(row['COMUNA']);
 
-                        if(rowCedula && mapCedulas[rowCedula]) {
+                        // 1. Busqueda inteligente: Si dice "MENOR", saltamos directo a buscarlo por nombre
+                        let esCedulaValida = rowCedula && rowCedula !== 'S/C' && rowCedula !== 'NO' && !rowCedula.includes('MENOR') && !rowCedula.includes('N/A');
+
+                        if(esCedulaValida && mapCedulas[rowCedula]) {
                             targetId = mapCedulas[rowCedula];
                         } else {
+                            // Buscar por nombre y apellido a los menores de edad y gente sin cedula
                             let keyRow = cleanText(`${rowNombre}||${rowApellido}||${rowComuna}`);
                             if(mapNombres[keyRow]) {
                                 targetId = mapNombres[keyRow];
@@ -356,7 +363,7 @@
                             let updates = {};
                             let cambiosRealizados = [];
 
-                            // 1. Vivienda
+                            // Vivienda
                             let rowCasa = cleanText(row['NUMERO DE CASA']);
                             if(rowCasa === 'CASA') {
                                 updates['numero_casa'] = '';
@@ -371,7 +378,7 @@
                                 cambiosRealizados.push("Condición ➔ 'bien' (de ESTABLE)");
                             }
 
-                            // 2. Cronología
+                            // Cronología
                             let rowFechaRaw = row['FECHA DE NACIMIENTO'];
                             let rowEdadRaw = row['EDAD'];
                             let fechaEstructurada = parseFechaInteligente(rowFechaRaw, rowEdadRaw);
@@ -380,9 +387,8 @@
                                 cambiosRealizados.push(`Fecha ➔ ${fechaEstructurada}`);
                             }
 
-                            // 3. Algoritmo Cédula
-                            let tieneCedulaNum = rowCedula !== '' && rowCedula !== 'S/C' && rowCedula !== 'NO';
-                            if (tieneCedulaNum) {
+                            // Algoritmo Cédula Física
+                            if (esCedulaValida) {
                                 let edadParaCedula = 99;
                                 if (rowEdadRaw && !isNaN(parseInt(rowEdadRaw))) {
                                     edadParaCedula = parseInt(rowEdadRaw);
@@ -399,25 +405,23 @@
                                 }
                             }
 
-                            // 4. EL MOTOR DE CASCADA FAMILIAR
+                            // EL MOTOR DE CASCADA FAMILIAR (AHORA ACEPTA A LOS MENORES ENCONTRADOS)
                             let rowResponsabilidad = cleanText(row['RESPONSABILIDAD CBI, CM']);
                             
                             if (rowResponsabilidad.includes("JEFE DE FAMILIA")) {
                                 updates['parentesco'] = 'jefe de hogar';
                                 cambiosRealizados.push("Rol ➔ 'Jefe de Hogar'");
-                                ultimoJefeIdActivo = targetId; // Arranca la cascada para los de abajo
+                                ultimoJefeIdActivo = targetId; 
                             } else if (rowResponsabilidad === '') {
-                                // Si está en blanco y la cascada está abierta, hereda la carga
                                 if (ultimoJefeIdActivo !== null && targetId !== ultimoJefeIdActivo) {
                                     updates['jefe_hogar_id'] = ultimoJefeIdActivo;
                                     cambiosRealizados.push("Anexado como Carga Familiar 👨‍👩‍👧‍👦");
                                 }
                             } else {
-                                // Si tiene texto pero NO es jefe de familia, cortamos la cascada para no cruzar grupos
                                 ultimoJefeIdActivo = null;
                             }
 
-                            // 5. Inyector Social
+                            // Inyector Social
                             const normalizarYParchearCampo = (columnaExcel, claveFirebase, etiquetaLog) => {
                                 if (row[columnaExcel] !== undefined) {
                                     let celdaRaw = cleanText(row[columnaExcel]);
@@ -448,7 +452,7 @@
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
                                     let colorTipo = updates['jefe_hogar_id'] ? "log-family" : "log-ok";
-                                    printLog(`[OK] ${rowNombre} ${rowApellido} (C.I: ${rowCedula || 'S/C'}) ➔ [${cambiosRealizados.join(' | ')}]`, colorTipo);
+                                    printLog(`[OK] ${rowNombre} ${rowApellido} (C.I: ${rowCedula || 'MENOR/SIN CÉDULA'}) ➔ [${cambiosRealizados.join(' | ')}]`, colorTipo);
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
                                 }
@@ -478,7 +482,7 @@
                         printLog(`Filas del Excel ignoradas (No existen en el sistema actual): ${ignoradosNoEncontrados}`, "log-warn");
                     }
                     printLog(`⚠️ ALERTA ADMINISTRATIVA: Ejecuta la sincronización manual en la Bóveda de Respaldo para nivelar Supabase con estos datos cruzados.`, "log-warn");
-                    alert("¡Consolidación de Jefes de Hogar y vinculación de Cargas Familiares finalizada con éxito!");
+                    alert("¡Consolidación de Jefes de Hogar y vinculación de menores finalizada con éxito!");
                 }
             });
         };
