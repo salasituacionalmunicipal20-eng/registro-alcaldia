@@ -132,14 +132,14 @@
         .status-offline { color: var(--rojo-oficial); }
         .status-warning { color: #ff9800; }
 
-        /* REGLA DE ORO: Estilos del nuevo Panel de Sincronización Manual */
+        /* REGLA DE ORO: Panel Unificado y Seguro (Un Solo Botón) */
         .sync-management-panel {
             background-color: #0a0a0a;
             border: 2px dashed #333;
             border-radius: 8px;
             padding: 25px;
             margin-bottom: 30px;
-            text-align: left;
+            text-align: center;
         }
 
         .sync-management-panel h2 {
@@ -150,46 +150,37 @@
             letter-spacing: 1px;
             border-bottom: 1px solid #222;
             padding-bottom: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
-        .sync-buttons-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .btn-sync {
-            padding: 15px;
+        .btn-sync-master {
+            background-color: var(--verde-supabase);
+            color: #000;
+            padding: 15px 30px;
             border-radius: 4px;
             border: none;
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
             text-transform: uppercase;
             cursor: pointer;
             transition: 0.3s;
-            color: white;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 15px;
+        }
+        
+        .btn-sync-master:hover:not(:disabled) { 
+            background-color: #32a873; 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(62,207,142,0.3);
         }
 
-        .btn-sync-total {
-            background-color: var(--azul-oficial);
-            border: 1px solid #003366;
-        }
-        .btn-sync-total:hover:not(:disabled) { background-color: #003366; transform: translateY(-2px); }
-
-        .btn-sync-diff {
-            background-color: #6f42c1;
-            border: 1px solid #522b94;
-        }
-        .btn-sync-diff:hover:not(:disabled) { background-color: #522b94; transform: translateY(-2px); }
-
-        .btn-sync:disabled {
+        .btn-sync-master:disabled {
             background-color: #333 !important;
-            border-color: #222 !important;
             color: #777 !important;
             cursor: not-allowed;
             transform: none !important;
+            box-shadow: none !important;
         }
 
         .sync-console {
@@ -199,10 +190,11 @@
             font-size: 12px;
             padding: 15px;
             border-radius: 4px;
-            height: 120px;
+            height: 150px;
             overflow-y: auto;
             border: 1px solid #222;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            text-align: left;
         }
 
         .sync-line { margin-bottom: 4px; }
@@ -326,21 +318,11 @@
             filter: grayscale(100%);
         }
 
-        .btn-csv {
-            background-color: #28a745;
-            color: white;
-            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
-        }
+        .btn-csv { background-color: #28a745; color: white; }
         .btn-csv:hover:not(:disabled) { background-color: #218838; transform: translateY(-3px); }
 
-        .btn-json {
-            background-color: #ff9800;
-            color: black;
-            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
-        }
+        .btn-json { background-color: #ff9800; color: black; }
         .btn-json:hover:not(:disabled) { background-color: #e68a00; transform: translateY(-3px); }
-
-        .btn-icon { font-size: 30px; }
 
         .info-text {
             font-size: 12px;
@@ -352,8 +334,6 @@
             line-height: 1.6;
         }
 
-        .info-text strong { color: #ccc; }
-        
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a0a0a; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
@@ -407,17 +387,12 @@
         </div>
 
         <div class="sync-management-panel">
-            <h2>🧬 Panel de Gestión y Sincronización Manual bajo demanda</h2>
-            <div class="sync-buttons-grid">
-                <button type="button" class="btn-sync btn-sync-total" id="btnSincTotal" onclick="ejecutarSincronizacionTotal()" disabled>
-                    🔄 Clonación Total (Firebase ➔ Supabase)
-                </button>
-                <button type="button" class="btn-sync btn-sync-diff" id="btnSincDiff" onclick="ejecutarSincronizacionDiferencial()" disabled>
-                    ⚡ Actualizar Diferencial (Inyectar Faltantes)
-                </button>
-            </div>
+            <h2>🧬 Sincronizador Maestro (Actualizar y Respaldar)</h2>
+            <button type="button" class="btn-sync-master" id="btnSincronizar" onclick="ejecutarSincronizacionSegura()" disabled>
+                🚀 INICIAR SINCRONIZACIÓN A SUPABASE
+            </button>
             <div class="sync-console" id="syncConsoleBox">
-                <div class="sync-line">Consola de sincronización lista. Esperando instrucciones...</div>
+                <div class="sync-line">Sistema en espera. Presione el botón para actualizar el respaldo en Supabase. Si hay datos nuevos, se añadirán. Si hay datos modificados, se actualizarán. Sin duplicados.</div>
             </div>
         </div>
 
@@ -455,8 +430,8 @@
 
         <div class="info-text">
             <strong>⚠️ ATENCIÓN ADMINISTRADOR DE RED:</strong><br>
-            - La sincronización ya no se ejecuta automáticamente. Use los botones superiores para unificar las bases de datos manualmente.<br>
-            - El botón <b>Clonación Total</b> resincroniza todo el censo, mientras que <b>Actualizar Diferencial</b> solo busca registros nuevos.
+            - La sincronización a Supabase es manual y bajo demanda para no sobrecargar el sistema durante horas pico.<br>
+            - La función inteligente del sincronizador maestro garantiza que no se crearán duplicados.
         </div>
     </div>
 
@@ -498,7 +473,7 @@
                 iniciarRadarPresencia();
                 
                 monitorearSupabase();
-                setInterval(monitorearSupabase, 4000);
+                setInterval(monitorearSupabase, 5000);
             }
         });
 
@@ -507,7 +482,8 @@
             if(!box) return;
             const div = document.createElement('div');
             div.className = `sync-line ${tipo}`;
-            div.textContent = `> ${mensaje}`;
+            const hora = new Date().toLocaleTimeString('es-VE', { hour12: false, hour: "numeric", minute: "numeric", second: "numeric" });
+            div.textContent = `[${hora}] > ${mensaje}`;
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         }
@@ -525,138 +501,70 @@
                 lblCount.textContent = count || 0;
 
                 if(!sincronizando) {
-                    document.getElementById('btnSincTotal').disabled = false;
-                    document.getElementById('btnSincDiff').disabled = false;
+                    document.getElementById('btnSincronizar').disabled = false;
                 }
 
             } catch (e) {
                 document.getElementById('lblSupabaseConexion').textContent = "ERROR / DESCONECTADO";
                 document.getElementById('lblSupabaseConexion').className = "status-value status-offline";
-                document.getElementById('btnSincTotal').disabled = true;
-                document.getElementById('btnSincDiff').disabled = true;
+                document.getElementById('btnSincronizar').disabled = true;
             }
         }
 
-        // REGLA DE ORO: LÓGICA INTELIGENTE DEL BOTÓN 2 - ACTUALIZAR (DIFERENCIAL)
-        window.ejecutarSincronizacionDiferencial = async () => {
+        // REGLA DE ORO: UN SOLO BOTÓN MAESTRO INTELIGENTE (UPSERT LOGIC)
+        window.ejecutarSincronizacionSegura = async () => {
             if(sincronizando) return;
             sincronizando = true;
-            document.getElementById('btnSincTotal').disabled = true;
-            document.getElementById('btnSincDiff').disabled = true;
+            document.getElementById('btnSincronizar').disabled = true;
             
-            escribirSyncLog("Iniciando Escáner de Sincronización Diferencial...", "sync-info");
+            escribirSyncLog("Iniciando escaneo y sincronización maestra...", "sync-info");
 
             try {
-                // 1. Traemos de Supabase únicamente los id_firebase que ya existen
-                const { data: supaData, error } = await supabase.from('habitantes').select('id_firebase');
-                if(error) throw error;
-
-                const idsEnSupabase = new Set(supaData.map(item => item.id_firebase));
-                escribirSyncLog(`Bóveda Secundaria analizada. Registros SQL detectados: ${idsEnSupabase.size}`, "sync-info");
-
-                // 2. Comparamos con lo que está en memoria de Firebase
-                let registrosFaltantes = [];
-                for(let id_fb in baseDatosBruta) {
-                    if(!idsEnSupabase.has(id_fb)) {
-                        let registro = { ...baseDatosBruta[id_fb], id_firebase: id_fb };
-                        registrosFaltantes.push(registro);
-                    }
-                }
-
-                if(registrosFaltantes.length === 0) {
-                    escribirSyncLog("✅ EXCELENTE: Supabase está 100% actualizado. No hacen falta registros.", "sync-success");
-                    alert("¡El sistema ya está al día! Cero registros faltantes.");
+                const keysFirebase = Object.keys(baseDatosBruta);
+                const total = keysFirebase.length;
+                
+                if (total === 0) {
+                    escribirSyncLog("La base de datos de Firebase está vacía. Nada que sincronizar.", "sync-warning");
                     sincronizando = false;
                     monitorearSupabase();
                     return;
                 }
 
-                escribirSyncLog(`⚠️ DETECTADOS: Faltan ${registrosFaltantes.length} habitantes por respaldar. Inyectando...`, "sync-err");
+                escribirSyncLog(`Empaquetando y respaldando ${total} habitantes hacia Supabase...`, "sync-info");
 
-                // 3. Inyectamos 1 por 1 de forma controlada
-                let exitosos = 0;
-                for(let item of registrosFaltantes) {
-                    const { error: insError } = await supabase.from('habitantes').insert([item]);
-                    if(!insError) {
-                        exitosos++;
-                        if(exitosos % 10 === 0 || exitosos === registrosFaltantes.length) {
-                            escribirSyncLog(`Inyectando faltantes: ${exitosos}/${registrosFaltantes.length} completados.`, "sync-success");
-                        }
-                    } else {
-                        escribirSyncLog(`Error en C.I ${item.cedula}: ${insError.message}`, "sync-err");
-                    }
-                }
-
-                escribirSyncLog(`✅ PROCESO FINALIZADO: Se inyectaron ${exitosos} registros con éxito.`, "sync-success");
-                alert(`¡Sincronización Diferencial completada! Se respaldaron ${exitosos} nuevos habitantes.`);
-
-            } catch (err) {
-                escribirSyncLog(`FALLO DE CONEXIÓN: ${err.message}`, "sync-err");
-            }
-
-            sincronizando = false;
-            monitorearSupabase();
-        };
-
-        // REGLA DE ORO: LÓGICA INTELIGENTE DEL BOTÓN 1 - CLONACIÓN TOTAL (ESPEJO)
-        window.ejecutarSincronizacionTotal = async () => {
-            if(sincronizando) return;
-            if(!confirm("ALERTA DE SISTEMA:\n¿Está seguro de querer ejecutar una clonación total espejo?\nEste proceso revisará y actualizará cada uno de los registros del censo masivo en Supabase.")) return;
-
-            sincronizando = true;
-            document.getElementById('btnSincTotal').disabled = true;
-            document.getElementById('btnSincDiff').disabled = true;
-
-            escribirSyncLog("Iniciando Clonación Total de Infraestructura (Firebase ➔ Supabase)...", "sync-info");
-
-            try {
-                // 1. Mapeamos Supabase para ver qué hay y sobreescribir usando upsert en lote o 1x1 seguro
-                const keysFirebase = Object.keys(baseDatosBruta);
-                const total = keysFirebase.length;
-
-                escribirSyncLog(`Preparando el envío masivo de ${total} habitantes...`, "sync-info");
-                
                 let procesados = 0;
-                // Lo hacemos de 50 en 50 para el upsert masivo por código para que vuele por tu internet de 600mb
                 let loteSupabase = [];
 
+                // Recorremos todo Firebase de 50 en 50 para que sea rápido y seguro
                 for(let i = 0; i < total; i++) {
                     let id_fb = keysFirebase[i];
                     let registro = { ...baseDatosBruta[id_fb], id_firebase: id_fb };
                     loteSupabase.push(registro);
 
                     if(loteSupabase.length >= 50 || i === total - 1) {
-                        // En Supabase usamos upsert. Nota: Si no hay clave única definida en id_firebase en SQL, 
-                        // el insert creará duplicados si ya existen. Para control absoluto, hacemos la inyección limpia.
-                        // Para garantizar que Carlos tenga control absoluto, inyectamos en lote controlado:
-                        const { error: upsError } = await supabase.from('habitantes').insert(loteSupabase);
+                        // Magia de Upsert: Busca el id_firebase. Si existe lo actualiza, si no, lo crea. SIN DUPLICADOS.
+                        const { error: upsError } = await supabase
+                            .from('habitantes')
+                            .upsert(loteSupabase, { onConflict: 'id_firebase' });
                         
-                        if(upsError) {
-                            // Si da error por duplicados, le informamos que use el diferencial o limpie la tabla
-                            escribirSyncLog("Nota: Para clonar desde cero sin duplicar, limpie la tabla de Supabase en su SQL editor.", "sync-err");
-                            throw upsError;
-                        }
+                        if(upsError) throw upsError;
 
                         procesados += loteSupabase.length;
-                        escribirLogClonacion(procesados, total);
+                        escribirSyncLog(`Sincronización en curso: ${procesados} / ${total} asegurados.`, "sync-success");
                         loteSupabase = [];
                     }
                 }
 
-                escribirSyncLog("✅ CLONACIÓN TOTAL COMPLETADA EXITOSAMENTE.", "sync-success");
-                alert("¡Clonación de base de datos terminada con éxito!");
+                escribirSyncLog("✅ SINCRONIZACIÓN EXITOSA. Bóvedas perfectamente niveladas.", "sync-success");
+                alert("¡Base de datos respaldada correctamente en Supabase!");
 
             } catch (err) {
-                escribirSyncLog(`Fallo en clonación total: ${err.message}`, "sync-err");
+                escribirSyncLog(`❌ ERROR DE SINCRONIZACIÓN: ${err.message}`, "sync-err");
             }
 
             sincronizando = false;
             monitorearSupabase();
         };
-
-        function escribirLogClonacion(proc, tot) {
-            escribirSyncLog(`Clonando base de datos: ${proc}/${tot} registros asegurados en espejo.`, "sync-success");
-        }
 
         function iniciarMonitoreoFirebase() {
             const connectedRef = ref(database, ".info/connected");
