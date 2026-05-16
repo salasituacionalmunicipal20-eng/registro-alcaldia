@@ -166,12 +166,11 @@
         <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
         
         <div class="panel-info">
-            <strong>Algoritmo de Cascada Familiar y Depuración Clínico Activado:</strong><br>
-            - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada (Menores Incluidos):</b> Detecta Jefes de Familia e inyecta la vinculación a los registros subyacentes, rastreando por nombre a los menores que dicen "MENOR" en su cédula.<br>
-            - 🏠 <b>Vivienda Múltiple:</b> Asigna tipo "casa" si detecta el string "CASA" en número. Convierte "ESTABLE" a "bien".<br>
-            - 🪪 <b>Algoritmo de Cédula Física:</b> Deduce si tiene cédula en mano según si su edad es ≥ 9 años.<br>
-            - 🎖️ <b>Protección Social:</b> Indexa Misiones, Amor Mayor, Carnet, Empleo y Educación a formato Si/No.<br>
-            - 📅 <b>Fechas:</b> Análisis cronológico inteligente con respaldo basado en Edad.
+            <strong>Diccionario Lógico de Excel y Cascada Familiar Activado:</strong><br>
+            - 👨‍👩‍👧‍👦 <b>Vinculación en Cascada:</b> Vincula a los menores y a la familia marcados con "X" en Madre/Padre/Hijo bajo el último Jefe detectado.<br>
+            - 🏠 <b>Traductor de Vivienda:</b> Convierte MALA/MALAS a "malo", BUENA/ESTABLE a "bien", APARTAMENTO a "apto".<br>
+            - 🪪 <b>Algoritmo Cédula:</b> Asigna si/no a Cédula Física evaluando edad (< 9 años).<br>
+            - 🎖️ <b>Protección y Gas:</b> Lee la columna TIPO CILINDRO para marcar la tenencia de gas, y normaliza Misiones y Estatus Sociales a formato Si/No.
         </div>
 
         <input type="file" id="csvFile" accept=".csv">
@@ -236,7 +235,7 @@
                         baseDatosFirebase = snapshot.val();
                         printLog(`Snapshot cargado. ${Object.keys(baseDatosFirebase).length} habitantes indexados en memoria RAM.`, "log-ok");
                         document.getElementById('btnEjecutar').disabled = false;
-                        document.getElementById('btnEjecutar').textContent = "Ejecutar Parche de Datos 🚀";
+                        document.getElementById('btnEjecutar').textContent = "Ejecutar Parche Lógico y de Cascada 🚀";
                     } else {
                         printLog("La base de datos central no contiene registros.", "log-err");
                     }
@@ -315,12 +314,10 @@
                     let mapCedulas = {};
                     let mapNombres = {};
 
-                    // REGLA DE ORO: Filtro estricto para indexar cédulas
                     for(let idFb in baseDatosFirebase) {
                         let h = baseDatosFirebase[idFb];
                         let c = cleanText(h.cedula);
                         
-                        // Ignoramos cadenas como MENOR, S/C, N/A para no corromper la busqueda por cedula
                         if(c && c !== 'S/C' && c !== 'NO' && !c.includes('MENOR') && !c.includes('N/A')) {
                             mapCedulas[c] = idFb;
                         }
@@ -346,13 +343,11 @@
                         let rowApellido = rowNombreCompleto.slice(Math.ceil(rowNombreCompleto.length / 2)).join(' ');
                         let rowComuna = cleanText(row['COMUNA']);
 
-                        // 1. Busqueda inteligente: Si dice "MENOR", saltamos directo a buscarlo por nombre
                         let esCedulaValida = rowCedula && rowCedula !== 'S/C' && rowCedula !== 'NO' && !rowCedula.includes('MENOR') && !rowCedula.includes('N/A');
 
                         if(esCedulaValida && mapCedulas[rowCedula]) {
                             targetId = mapCedulas[rowCedula];
                         } else {
-                            // Buscar por nombre y apellido a los menores de edad y gente sin cedula
                             let keyRow = cleanText(`${rowNombre}||${rowApellido}||${rowComuna}`);
                             if(mapNombres[keyRow]) {
                                 targetId = mapNombres[keyRow];
@@ -363,76 +358,116 @@
                             let updates = {};
                             let cambiosRealizados = [];
 
-                            // Vivienda
-                            let rowCasa = cleanText(row['NUMERO DE CASA']);
-                            if(rowCasa === 'CASA') {
-                                updates['numero_casa'] = '';
+                            // 1. TRADUCTOR DE VIVIENDA (TIPO)
+                            let rowTipoVivRaw = cleanText(row['TIPO DE VIVIENDA']);
+                            let rowCasaNum = cleanText(row['NUMERO DE CASA']);
+                            
+                            if(rowCasaNum === 'CASA' || rowTipoVivRaw.includes('CASA')) {
+                                if (rowCasaNum === 'CASA') updates['numero_casa'] = '';
                                 updates['tipo_vivienda'] = 'casa';
-                                cambiosRealizados.push("Limpia Num 'CASA' ➔ Tipo 'casa'");
+                            } else if (rowTipoVivRaw.includes('APTO') || rowTipoVivRaw.includes('APARTAMENTO')) {
+                                updates['tipo_vivienda'] = 'apto';
+                            } else if (rowTipoVivRaw.includes('TOWN') || rowTipoVivRaw.includes('TH')) {
+                                updates['tipo_vivienda'] = 'town house';
+                            } else if (rowTipoVivRaw.includes('RANCHO')) {
+                                updates['tipo_vivienda'] = 'rancho';
                             }
 
+                            // 2. TRADUCTOR DE CONDICIONES DE VIVIENDA (BUENA/MALA/ESTABLE)
                             let rowCondicion = cleanText(row['CONDICIONES DE LA VIVIENDA']);
-                            let rowTipoVivErr = cleanText(row['TIPO DE VIVIENDA']);
-                            if(rowCondicion === 'ESTABLE' || rowTipoVivErr === 'ESTABLE') {
-                                updates['condiciones_vivienda'] = 'bien';
-                                cambiosRealizados.push("Condición ➔ 'bien' (de ESTABLE)");
+                            let evalCondicion = rowCondicion;
+                            
+                            // Si por error pusieron la condicion en el tipo de vivienda
+                            if(rowTipoVivRaw === 'ESTABLE' || rowTipoVivRaw === 'BUENA' || rowTipoVivRaw === 'MALA' || rowTipoVivRaw === 'REGULAR') {
+                                evalCondicion = rowTipoVivRaw;
                             }
 
-                            // Cronología
+                            if(evalCondicion === 'ESTABLE' || evalCondicion === 'BUENA' || evalCondicion === 'BUENAS' || evalCondicion === 'BIEN') {
+                                updates['condiciones_vivienda'] = 'bien';
+                                cambiosRealizados.push("Condición ➔ 'bien'");
+                            } else if (evalCondicion === 'MALA' || evalCondicion === 'MALAS' || evalCondicion === 'MALO') {
+                                updates['condiciones_vivienda'] = 'malo';
+                                cambiosRealizados.push("Condición ➔ 'malo'");
+                            } else if (evalCondicion === 'REGULAR' || evalCondicion === 'REGULARES') {
+                                updates['condiciones_vivienda'] = 'regular';
+                                cambiosRealizados.push("Condición ➔ 'regular'");
+                            }
+
+                            // 3. ANÁLISIS DE GAS DOMÉSTICO
+                            let cilindroRaw = cleanText(row['TIPO DE CILINDRO']);
+                            if (cilindroRaw && cilindroRaw !== 'NO' && cilindroRaw !== 'S/C' && cilindroRaw !== 'N/A') {
+                                updates['tiene_gas'] = 'si';
+                                updates['tipo_cilindro_gas'] = row['TIPO DE CILINDRO']; // Dejar como viene original (Ej: 10KG)
+                                cambiosRealizados.push(`Gas ➔ 'si' (${row['TIPO DE CILINDRO']})`);
+                            } else if (cilindroRaw === 'NO') {
+                                updates['tiene_gas'] = 'no';
+                                updates['tipo_cilindro_gas'] = '';
+                            }
+
+                            // 4. CRONOLOGÍA Y CÉDULA FÍSICA
                             let rowFechaRaw = row['FECHA DE NACIMIENTO'];
                             let rowEdadRaw = row['EDAD'];
                             let fechaEstructurada = parseFechaInteligente(rowFechaRaw, rowEdadRaw);
                             if(fechaEstructurada) {
                                 updates['fecha_nacimiento'] = fechaEstructurada;
-                                cambiosRealizados.push(`Fecha ➔ ${fechaEstructurada}`);
                             }
 
-                            // Algoritmo Cédula Física
                             if (esCedulaValida) {
                                 let edadParaCedula = 99;
-                                if (rowEdadRaw && !isNaN(parseInt(rowEdadRaw))) {
-                                    edadParaCedula = parseInt(rowEdadRaw);
-                                } else if (fechaEstructurada) {
-                                    edadParaCedula = 2026 - parseInt(fechaEstructurada.split('-')[0]);
-                                }
+                                if (rowEdadRaw && !isNaN(parseInt(rowEdadRaw))) edadParaCedula = parseInt(rowEdadRaw);
+                                else if (fechaEstructurada) edadParaCedula = 2026 - parseInt(fechaEstructurada.split('-')[0]);
 
                                 if (edadParaCedula < 9) {
                                     updates['esta_cedulado'] = 'no';
-                                    cambiosRealizados.push("Céd Física ➔ 'no' (< 9 años)");
+                                    cambiosRealizados.push("Céd Física ➔ 'no' (<9 años)");
                                 } else {
                                     updates['esta_cedulado'] = 'si';
-                                    cambiosRealizados.push("Céd Física ➔ 'si' (Posee Nro)");
                                 }
                             }
 
-                            // EL MOTOR DE CASCADA FAMILIAR (AHORA ACEPTA A LOS MENORES ENCONTRADOS)
+                            // 5. MOTOR AVANZADO DE CASCADA Y PARENTESCO
                             let rowResponsabilidad = cleanText(row['RESPONSABILIDAD CBI, CM']);
                             
-                            if (rowResponsabilidad.includes("JEFE DE FAMILIA")) {
+                            if (rowResponsabilidad.includes("JEFE DE FAMILIA") || rowResponsabilidad.includes("JEFE")) {
                                 updates['parentesco'] = 'jefe de hogar';
                                 cambiosRealizados.push("Rol ➔ 'Jefe de Hogar'");
                                 ultimoJefeIdActivo = targetId; 
-                            } else if (rowResponsabilidad === '') {
+                            } else {
+                                // Buscar si hay una "X" o texto en las columnas específicas
+                                let rMadre = cleanText(row['MADRE']);
+                                let rPadre = cleanText(row['PADRE']);
+                                let rHijo = cleanText(row['HIJO']);
+                                
+                                let nParentesco = null;
+                                if(rMadre) nParentesco = 'madre';
+                                else if(rPadre) nParentesco = 'padre';
+                                else if(rHijo) nParentesco = 'hijo';
+
+                                if(nParentesco) {
+                                    updates['parentesco'] = nParentesco;
+                                    cambiosRealizados.push(`Parentesco ➔ '${nParentesco}'`);
+                                }
+
+                                // Si la cascada está abierta, la vinculamos a la familia
                                 if (ultimoJefeIdActivo !== null && targetId !== ultimoJefeIdActivo) {
                                     updates['jefe_hogar_id'] = ultimoJefeIdActivo;
-                                    cambiosRealizados.push("Anexado como Carga Familiar 👨‍👩‍👧‍👦");
+                                    if(!cambiosRealizados.includes("Anexado como Carga Familiar 👨‍👩‍👧‍👦")) {
+                                        cambiosRealizados.push("Anexado como Carga Familiar 👨‍👩‍👧‍👦");
+                                    }
                                 }
-                            } else {
-                                ultimoJefeIdActivo = null;
                             }
 
-                            // Inyector Social
+                            // 6. INYECTOR SOCIAL, ESCOLAR Y LABORAL
                             const normalizarYParchearCampo = (columnaExcel, claveFirebase, etiquetaLog) => {
                                 if (row[columnaExcel] !== undefined) {
                                     let celdaRaw = cleanText(row[columnaExcel]);
                                     let valorNormalizado = '';
-                                    if (celdaRaw === 'SI' || celdaRaw === 'SÍ') valorNormalizado = 'si';
+                                    if (celdaRaw === 'SI' || celdaRaw === 'SÍ' || celdaRaw === 'X') valorNormalizado = 'si';
                                     else if (celdaRaw === 'NO') valorNormalizado = 'no';
                                     else valorNormalizado = celdaRaw.toLowerCase();
 
                                     if (valorNormalizado !== '' && valorNormalizado !== 'n/a') {
                                         updates[claveFirebase] = valorNormalizado;
-                                        cambiosRealizados.push(`${etiquetaLog} ➔ '${valorNormalizado}'`);
                                     }
                                 }
                             };
@@ -441,18 +476,27 @@
                             normalizarYParchearCampo('ESTA ESCOLARIZADO?', 'esta_escolarizado', 'Escuela');
                             normalizarYParchearCampo('COBRA AMOR MAYOR', 'cobra_amor_mayor', 'Amor Mayor');
                             normalizarYParchearCampo('POSEE CARNET DE LA PATRIA?', 'carnet_patria', 'Carnet');
-                            normalizarYParchearCampo('MISION JOSE GREGORIO', 'mision_jose_gregorio', 'J. Gregorio');
+                            normalizarYParchearCampo('MISION JOSE GREGORIO', 'mision_jose_gregorio', 'JGH');
                             normalizarYParchearCampo('DISCAPACITADO?', 'discapacitado', 'Discap.');
                             normalizarYParchearCampo('EMBARAZADA?', 'embarazada', 'Embarazo');
                             normalizarYParchearCampo('LACTANCIA MATERNA?', 'lactancia_materna', 'Lactancia');
                             normalizarYParchearCampo('HOGARES DE LA PATRIA BONO UNICO FAMILIAR', 'hogares_patria_bono', 'Hogares Patria');
 
+                            // Sexo y Voto
+                            if(cleanText(row['FEMENINA'])) updates['sexo'] = 'femenino';
+                            else if (cleanText(row['MASCULINO'])) updates['sexo'] = 'masculino';
+
+                            if(cleanText(row['VD'])) updates['vd_vb_vo_seleccion'] = 'VD';
+                            else if(cleanText(row['VB'])) updates['vd_vb_vo_seleccion'] = 'VB';
+                            else if(cleanText(row['VO'])) updates['vd_vb_vo_seleccion'] = 'VO';
+
+                            // APLICAR
                             if(Object.keys(updates).length > 0) {
                                 try {
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
                                     let colorTipo = updates['jefe_hogar_id'] ? "log-family" : "log-ok";
-                                    printLog(`[OK] ${rowNombre} ${rowApellido} (C.I: ${rowCedula || 'MENOR/SIN CÉDULA'}) ➔ [${cambiosRealizados.join(' | ')}]`, colorTipo);
+                                    printLog(`[OK] ${rowNombre} ${rowApellido} ➔ [${cambiosRealizados.length > 0 ? cambiosRealizados.join(' | ') : 'Actualización limpia'}]`, colorTipo);
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
                                 }
@@ -475,14 +519,14 @@
                         document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                     }
 
-                    printLog(`📊 PROCESO DE DEPURACIÓN Y CASCADA FINALIZADO.`, "log-info");
+                    printLog(`📊 PROCESO DE DEPURACIÓN LÓGICA Y CASCADA FINALIZADO.`, "log-info");
                     printLog(`Expedientes actualizados y Familias vinculadas: ${modificados}`, "log-success");
                     printLog(`Expedientes omitidos (Ya estaban limpios y al día): ${omitidosCambio}`, "log-ok");
                     if(ignoradosNoEncontrados > 0) {
                         printLog(`Filas del Excel ignoradas (No existen en el sistema actual): ${ignoradosNoEncontrados}`, "log-warn");
                     }
                     printLog(`⚠️ ALERTA ADMINISTRATIVA: Ejecuta la sincronización manual en la Bóveda de Respaldo para nivelar Supabase con estos datos cruzados.`, "log-warn");
-                    alert("¡Consolidación de Jefes de Hogar y vinculación de menores finalizada con éxito!");
+                    alert("¡Consolidación del Diccionario Lógico del Excel finalizada con éxito!");
                 }
             });
         };
