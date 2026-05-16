@@ -8,28 +8,29 @@
         :root {
             --rojo-oficial: #E30613;
             --azul-oficial: #004a99;
-            --gris-fondo: #121212; 
+            --gris-fondo: #0a0a0a; 
             --verde-monitor: #00ff00;
             --verde-supabase: #3ecf8e; 
             --oro-admin: #ffd700;
+            --cyan-tech: #00d2ff;
         }
 
         body { 
-            font-family: 'Segoe UI', sans-serif; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: var(--gris-fondo); 
-            padding: 40px; 
+            padding: 30px; 
             text-align: center; 
             color: white;
             margin: 0;
         }
         
         .container { 
-            background: #1e1e1e; 
+            background: #151515; 
             padding: 40px; 
-            border-radius: 8px; 
-            max-width: 1100px; 
+            border-radius: 12px; 
+            max-width: 1200px; 
             margin: auto; 
-            box-shadow: 0 5px 25px rgba(0,0,0,0.5); 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8); 
             border-top: 8px solid var(--verde-monitor); 
             position: relative;
         }
@@ -64,31 +65,48 @@
             text-transform: uppercase; 
             border-bottom: 1px solid #333;
             padding-bottom: 15px;
-            font-size: 24px;
-            letter-spacing: 1px;
+            font-size: 26px;
+            letter-spacing: 2px;
+        }
+
+        /* Títulos de Sección del Dashboard */
+        .dashboard-section-title {
+            text-align: left;
+            font-size: 14px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 30px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .status-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
             gap: 15px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .status-box {
-            background-color: #0a0a0a;
-            border: 1px solid #333;
+            background-color: #000;
+            border: 1px solid #222;
             padding: 20px;
-            border-radius: 6px;
+            border-radius: 8px;
             text-align: center;
             transition: 0.3s;
             position: relative;
             overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(255,255,255,0.02);
         }
 
         .status-box:hover {
             border-color: #555;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.05), 0 0 15px rgba(0, 210, 255, 0.1);
+            transform: translateY(-2px);
         }
 
         .status-box::before {
@@ -97,15 +115,18 @@
             top: 0; left: 0; width: 100%; height: 3px;
         }
 
+        /* Colores de las tarjetas */
         .border-green::before { background-color: var(--verde-monitor); }
         .border-supabase::before { background-color: var(--verde-supabase); }
-        .border-blue::before { background-color: #00d2ff; }
+        .border-blue::before { background-color: var(--cyan-tech); }
         .border-orange::before { background-color: #ff9800; }
         .border-gold::before { background-color: var(--oro-admin); }
+        .border-purple::before { background-color: #b000ff; }
+        .border-red::before { background-color: var(--rojo-oficial); }
 
         .status-label {
             font-size: 11px;
-            color: #888;
+            color: #777;
             text-transform: uppercase;
             margin-bottom: 8px;
             display: block;
@@ -114,10 +135,11 @@
         }
 
         .status-value {
-            font-size: 26px;
-            font-weight: bold;
+            font-size: 28px;
+            font-weight: 900;
             color: #fff;
             font-family: 'Courier New', Courier, monospace;
+            text-shadow: 0 0 5px rgba(255,255,255,0.2);
         }
 
         .status-subtext {
@@ -132,12 +154,14 @@
         .status-offline { color: var(--rojo-oficial); }
         .status-warning { color: #ff9800; }
         .status-gold { color: var(--oro-admin); text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .status-cyan { color: var(--cyan-tech); text-shadow: 0 0 10px rgba(0,210,255,0.5); }
 
         .sync-management-panel {
-            background-color: #0a0a0a;
-            border: 2px dashed #333;
+            background-color: #050505;
+            border: 1px solid #333;
             border-radius: 8px;
             padding: 25px;
+            margin-top: 40px;
             margin-bottom: 30px;
             text-align: center;
         }
@@ -190,7 +214,7 @@
             font-size: 12px;
             padding: 15px;
             border-radius: 4px;
-            height: 150px;
+            height: 120px;
             overflow-y: auto;
             border: 1px solid #222;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
@@ -211,12 +235,12 @@
         }
 
         .live-panel {
-            background-color: #0a0a0a;
+            background-color: #050505;
             border: 1px solid #333;
             border-radius: 6px;
             padding: 15px;
             text-align: left;
-            height: 350px;
+            height: 400px;
             display: flex;
             flex-direction: column;
         }
@@ -226,7 +250,7 @@
             color: var(--verde-monitor);
             font-size: 14px;
             text-transform: uppercase;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #222;
             padding-bottom: 10px;
             margin-bottom: 10px;
             display: flex;
@@ -244,7 +268,7 @@
         }
 
         .feed-item {
-            border-left: 2px solid #555;
+            border-left: 2px solid #444;
             padding-left: 10px;
             margin-bottom: 12px;
             animation: fadeIn 0.5s ease;
@@ -267,7 +291,7 @@
             display: flex;
             align-items: flex-start;
             gap: 12px;
-            background: #1a1a1a;
+            background: #111;
             padding: 12px;
             border-radius: 4px;
             margin-bottom: 10px;
@@ -277,7 +301,7 @@
         
         .radar-user.admin-card {
             border-left: 3px solid var(--oro-admin);
-            background: linear-gradient(90deg, rgba(255,215,0,0.05) 0%, rgba(26,26,26,1) 100%);
+            background: linear-gradient(90deg, rgba(255,215,0,0.05) 0%, rgba(17,17,17,1) 100%);
         }
 
         .radar-dot {
@@ -333,17 +357,17 @@
 
         .action-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr; 
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 20px;
             border-top: 1px dashed #333;
             padding-top: 30px;
         }
 
         .btn-action {
-            padding: 20px;
+            padding: 15px;
             border-radius: 6px;
             border: none;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
             text-transform: uppercase;
             cursor: pointer;
@@ -352,7 +376,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             text-align: center;
         }
 
@@ -393,78 +417,100 @@
             <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button>
         </div>
 
-        <h1>Monitor del Servidor y Bóveda de Respaldo Dual</h1>
+        <h1>Centro de Mando y Auditoría de Red</h1>
         
+        <div class="dashboard-section-title">🖥️ Estado de Servidores e Infraestructura</div>
         <div class="status-grid">
             <div class="status-box border-green">
                 <span class="status-label">Firebase (NoSQL)</span>
-                <span class="status-value status-warning" id="lblConexion" style="font-size: 18px;">CONECTANDO...</span>
-                <span class="status-subtext">Bóveda Principal (Tiempo Real)</span>
+                <span class="status-value status-warning" id="lblConexion">CONECTANDO...</span>
+                <span class="status-subtext">Motor en Tiempo Real</span>
             </div>
-
-            <div class="status-box border-green">
-                <span class="status-label">Total en Firebase</span>
-                <span class="status-value" id="lblTotalRegistros">0</span>
-                <span class="status-subtext">Registros consolidados</span>
-            </div>
-
             <div class="status-box border-supabase">
                 <span class="status-label">Supabase (SQL)</span>
-                <span class="status-value status-warning" id="lblSupabaseConexion" style="font-size: 18px;">CONECTANDO...</span>
-                <span class="status-subtext">Bóveda Secundaria Estructurada</span>
+                <span class="status-value status-warning" id="lblSupabaseConexion">CONECTANDO...</span>
+                <span class="status-subtext">Respaldo Estructurado</span>
             </div>
+            <div class="status-box border-orange">
+                <span class="status-label">Consumo de Red</span>
+                <span class="status-value" id="lblPesoDB">0.00 MB</span>
+                <span class="status-subtext">Peso de matriz JSON</span>
+            </div>
+            <div class="status-box border-purple">
+                <span class="status-label">Cuentas Autorizadas</span>
+                <span class="status-value" id="lblOperadores">0</span>
+                <span class="status-subtext">Niveles de Acceso Creados</span>
+            </div>
+        </div>
 
+        <div class="dashboard-section-title">📊 Auditoría de Base de Datos Central</div>
+        <div class="status-grid">
+            <div class="status-box border-blue">
+                <span class="status-label">Total Firebase</span>
+                <span class="status-value" id="lblTotalRegistros">0</span>
+                <span class="status-subtext">Censo Demográfico Real</span>
+            </div>
             <div class="status-box border-supabase">
-                <span class="status-label">Total en Supabase</span>
+                <span class="status-label">Total Supabase</span>
                 <span class="status-value" id="lblSupabaseCount">0</span>
-                <span class="status-subtext">Filas SQL sincronizadas</span>
+                <span class="status-subtext">Clonación en Espejo</span>
             </div>
+            <div class="status-box border-green">
+                <span class="status-label">Familias Consolidadas</span>
+                <span class="status-value" id="lblFamilias">0</span>
+                <span class="status-subtext">Jefes de Hogar Únicos</span>
+            </div>
+            <div class="status-box border-red">
+                <span class="status-label">Alerta: Sin Cédula</span>
+                <span class="status-value status-offline" id="lblIndocumentados">0</span>
+                <span class="status-subtext">Registros Indocumentados</span>
+            </div>
+        </div>
 
+        <div class="dashboard-section-title">⚡ Rendimiento de Operadores y Tráfico</div>
+        <div class="status-grid">
             <div class="status-box border-gold">
                 <span class="status-label">Admins en Línea</span>
                 <span class="status-value status-gold" id="lblAdminsOnline">0</span>
-                <span class="status-subtext">Conectados ahora</span>
+                <span class="status-subtext">Supervisando red</span>
             </div>
-
             <div class="status-box border-blue">
-                <span class="status-label">Operadores en Línea</span>
-                <span class="status-value status-online" id="lblOperadoresOnline" style="color: #00d2ff;">0</span>
-                <span class="status-subtext">Conectados ahora</span>
+                <span class="status-label">Operadores Activos</span>
+                <span class="status-value status-cyan" id="lblOperadoresOnline">0</span>
+                <span class="status-subtext">Trabajando ahora</span>
             </div>
-
-            <div class="status-box border-blue">
-                <span class="status-label">Cuentas Creadas</span>
-                <span class="status-value" id="lblOperadores">0</span>
-                <span class="status-subtext">Usuarios autorizados</span>
+            <div class="status-box border-green">
+                <span class="status-label">Velocidad Diaria</span>
+                <span class="status-value" id="lblCargaHoy">0</span>
+                <span class="status-subtext">Registrados el día de Hoy</span>
             </div>
-
-            <div class="status-box border-orange">
-                <span class="status-label">Peso de Datos (FB)</span>
-                <span class="status-value" id="lblPesoDB">0.00 MB</span>
-                <span class="status-subtext">Consumo de la nube</span>
+            <div class="status-box border-purple">
+                <span class="status-label">Operador Estrella 🏆</span>
+                <span class="status-value" id="lblTopOp" style="font-size: 18px; line-height: 1.4; padding-top:5px;">Calculando...</span>
+                <span class="status-subtext">Mayor inyección histórica</span>
             </div>
         </div>
 
         <div class="sync-management-panel">
-            <h2>🧬 Sincronizador Maestro (Actualizar y Respaldar)</h2>
+            <h2>🧬 Sincronizador Maestro (Actualizar y Respaldar Bóvedas)</h2>
             <button type="button" class="btn-sync-master" id="btnSincronizar" onclick="ejecutarSincronizacionSegura()" disabled>
                 🚀 INICIAR SINCRONIZACIÓN A SUPABASE
             </button>
             <div class="sync-console" id="syncConsoleBox">
-                <div class="sync-line">Sistema en espera. Presione el botón para actualizar el respaldo en Supabase. Si hay datos nuevos, se añadirán. Si hay datos modificados, se actualizarán. Sin duplicados.</div>
+                <div class="sync-line">Sistema en espera. Presione el botón para actualizar el respaldo en Supabase mediante lógica Upsert.</div>
             </div>
         </div>
 
         <div class="live-panels-container">
             <div class="live-panel">
-                <h3>📋 Live Feed (Últimos Movimientos en Firebase)</h3>
+                <h3>📋 Live Feed (Firebase)</h3>
                 <div class="live-feed-box" id="liveFeedBox">
                     <div style="color:#555; text-align:center; margin-top:50px;">Cargando historial de actividad...</div>
                 </div>
             </div>
 
             <div class="live-panel">
-                <h3>📡 Radar Espía en Línea</h3>
+                <h3>📡 Radar Espía</h3>
                 <div class="radar-box" id="radarBox">
                     <div style="color:#555; text-align:center; font-size:12px; margin-top:20px;">
                         Buscando señales activas de operadores...
@@ -476,20 +522,20 @@
         <div class="action-grid">
             <button class="btn-action btn-csv" id="btnDescargarCSV" onclick="descargarCSVGlobal()" disabled>
                 <span class="btn-icon">📊</span>
-                Exportar Respaldo CSV
-                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Para leer y cruzar datos en Excel</span>
+                Descargar CSV
+                <span style="font-size:9px; font-weight:normal;">Base cruda para Excel</span>
             </button>
 
             <button class="btn-action btn-json" id="btnDescargarJSON" onclick="descargarJSONGlobal()" disabled>
                 <span class="btn-icon">📦</span>
-                Exportar Respaldo JSON
-                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Archivo puro matriz de Firebase</span>
+                Descargar JSON
+                <span style="font-size:9px; font-weight:normal;">Matriz de Firebase</span>
             </button>
             
             <button class="btn-action btn-updater" onclick="location.href='actualizador.html'">
                 <span class="btn-icon">🛠️</span>
-                Actualizador Inteligente
-                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Ir al panel de corrección de datos</span>
+                Actualizador
+                <span style="font-size:9px; font-weight:normal;">Panel de Corrección</span>
             </button>
         </div>
 
@@ -534,7 +580,20 @@
                 document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:100px; font-family:sans-serif;'>⚠️ ACCESO RESTRINGIDO. USTED NO ESTÁ AUTORIZADO.</h1>";
                 setTimeout(() => window.location.href = "index.html", 3000);
             } else {
-                // Al validar al usuario, iniciamos los monitores
+                window.presenciaRef = ref(database, `presencia/${user.uid}`);
+                onDisconnect(window.presenciaRef).update({ 
+                    estado: 'offline', 
+                    ultima_accion: 'Cerró el Centro de Mando' 
+                });
+                
+                set(window.presenciaRef, {
+                    estado: 'online',
+                    nombre: 'CARLOS ADMIN',
+                    rol: 'admin',
+                    modulo_actual: 'Centro de Mando (Monitor)',
+                    ultima_accion: 'Auditando infraestructura y bases de datos'
+                });
+
                 iniciarMonitoreoFirebase();
                 iniciarRadarPresencia();
                 monitorearSupabase();
@@ -577,7 +636,7 @@
             } catch (e) {
                 const lblConn = document.getElementById('lblSupabaseConexion');
                 if(lblConn) {
-                    lblConn.textContent = "ERROR / DESCONECTADO";
+                    lblConn.textContent = "ERROR";
                     lblConn.className = "status-value status-offline";
                 }
                 const btnSinc = document.getElementById('btnSincronizar');
@@ -648,26 +707,6 @@
                 if (snap.val() === true) {
                     lblConexion.textContent = "EN LÍNEA (OK)";
                     lblConexion.className = "status-value status-online";
-
-                    // 🔥 REGLA DE ORO: SISTEMA DE PRESENCIA INFALIBLE PARA EL ADMIN 🔥
-                    // Se ejecuta justo cuando Firebase confirma que el túnel está abierto
-                    const user = auth.currentUser;
-                    if(user) {
-                        const presenciaRef = ref(database, `presencia/${user.uid}`);
-                        onDisconnect(presenciaRef).update({ 
-                            estado: 'offline', 
-                            ultima_accion: 'Cerró la Bóveda de Respaldo (Sin conexión)' 
-                        }).then(() => {
-                            set(presenciaRef, {
-                                estado: 'online',
-                                nombre: 'CARLOS ADMIN',
-                                rol: 'admin',
-                                modulo_actual: 'Bóveda de Respaldo (Monitor)',
-                                ultima_accion: 'Supervisando la red y bases de datos'
-                            });
-                        });
-                    }
-
                 } else {
                     lblConexion.textContent = "DESCONECTADO";
                     lblConexion.className = "status-value status-offline";
@@ -705,6 +744,8 @@
                     if(btnCSV) btnCSV.disabled = false;
                     if(btnJSON) btnJSON.disabled = false;
 
+                    // REGLA DE ORO: CALCULAR NUEVAS MÉTRICAS AUDITORAS
+                    calcularMetricasAuditoria(keys);
                     construirLiveFeed(keys);
                 } else {
                     const lblTotal = document.getElementById('lblTotalRegistros');
@@ -713,6 +754,66 @@
                     if(lblPeso) lblPeso.textContent = "0.00 MB";
                 }
             });
+        }
+
+        // FUNCIÓN DEL MOTOR DE ESTADÍSTICAS DEL DASHBOARD
+        function calcularMetricasAuditoria(keys) {
+            let countJefes = 0;
+            let countSinCedula = 0;
+            let countHoy = 0;
+            let opsLeaderboard = {};
+
+            // Obtenemos la fecha de hoy en formato local (Ej: "16/5/2026")
+            let fechaHoy = new Date().toLocaleDateString();
+
+            keys.forEach(id => {
+                let h = baseDatosBruta[id];
+                
+                // 1. Familias
+                if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') countJefes++;
+                
+                // 2. Sin Cédula
+                let ced = (h.cedula || '').toString().trim();
+                if (ced === '' || ced === 'S/C' || ced === 'NO' || h.tiene_cedula === 'no') {
+                    countSinCedula++;
+                }
+
+                // 3. Velocidad Diaria (Registrados Hoy)
+                if (h.fecha_registro) {
+                    // La fecha de registro está guardada como "16/5/2026, 15:30:00"
+                    let fechaSeparada = h.fecha_registro.split(',')[0].trim();
+                    if (fechaSeparada === fechaHoy) {
+                        countHoy++;
+                    }
+                }
+
+                // 4. Operador Estrella (Excluyendo Migración y Admin)
+                let op = (h.registrado_por_nombre || 'Desconocido').toUpperCase();
+                if (!op.includes('ADMIN') && !op.includes('MIGRACIÓN')) {
+                    opsLeaderboard[op] = (opsLeaderboard[op] || 0) + 1;
+                }
+            });
+
+            // Buscar al mejor operador
+            let maxReg = 0;
+            let topOp = "Nadie";
+            for (let op in opsLeaderboard) {
+                if (opsLeaderboard[op] > maxReg) {
+                    maxReg = opsLeaderboard[op];
+                    topOp = op.split(' ')[0]; // Solo el primer nombre para que quepa en el cuadro
+                }
+            }
+
+            // Pintar los datos en el HTML
+            document.getElementById('lblFamilias').textContent = countJefes;
+            document.getElementById('lblIndocumentados').textContent = countSinCedula;
+            document.getElementById('lblCargaHoy').textContent = countHoy;
+            
+            if (maxReg > 0) {
+                document.getElementById('lblTopOp').innerHTML = `${topOp}<br><span style='font-size:12px; color:#aaa;'>${maxReg} Registros</span>`;
+            } else {
+                document.getElementById('lblTopOp').textContent = "SIN DATOS";
+            }
         }
 
         function construirLiveFeed(keys) {
