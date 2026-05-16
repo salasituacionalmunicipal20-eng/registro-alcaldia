@@ -70,7 +70,7 @@
         
         .status-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 30px;
         }
@@ -101,6 +101,7 @@
         .border-supabase::before { background-color: var(--verde-supabase); }
         .border-blue::before { background-color: #00d2ff; }
         .border-orange::before { background-color: #ff9800; }
+        .border-gold::before { background-color: var(--oro-admin); }
 
         .status-label {
             font-size: 11px;
@@ -130,6 +131,7 @@
         .status-supabase { color: var(--verde-supabase); text-shadow: 0 0 10px rgba(62,207,142,0.5); }
         .status-offline { color: var(--rojo-oficial); }
         .status-warning { color: #ff9800; }
+        .status-gold { color: var(--oro-admin); text-shadow: 0 0 10px rgba(255,215,0,0.5); }
 
         .sync-management-panel {
             background-color: #0a0a0a;
@@ -202,7 +204,7 @@
 
         .live-panels-container {
             display: grid;
-            grid-template-columns: 2fr 1.5fr; /* Ajustado para darle más espacio al radar */
+            grid-template-columns: 2fr 1.5fr;
             gap: 20px;
             margin-top: 30px;
             margin-bottom: 30px;
@@ -214,7 +216,7 @@
             border-radius: 6px;
             padding: 15px;
             text-align: left;
-            height: 350px; /* Un poco más alto para los detalles extras */
+            height: 350px;
             display: flex;
             flex-direction: column;
         }
@@ -255,7 +257,6 @@
         .feed-action { color: #ff9800; }
         .feed-target { color: #fff; }
 
-        /* REGLA DE ORO: Estilos Mejorados para el Radar Espía */
         .radar-box {
             flex-grow: 1;
             overflow-y: auto;
@@ -332,7 +333,7 @@
 
         .action-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr; /* Ahora son 3 columnas */
             gap: 20px;
             border-top: 1px dashed #333;
             padding-top: 30px;
@@ -342,7 +343,7 @@
             padding: 20px;
             border-radius: 6px;
             border: none;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
             text-transform: uppercase;
             cursor: pointer;
@@ -352,6 +353,7 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            text-align: center;
         }
 
         .btn-action:disabled {
@@ -365,6 +367,9 @@
 
         .btn-json { background-color: #ff9800; color: black; }
         .btn-json:hover:not(:disabled) { background-color: #e68a00; transform: translateY(-3px); }
+
+        .btn-updater { background-color: #17a2b8; color: white; }
+        .btn-updater:hover:not(:disabled) { background-color: #138496; transform: translateY(-3px); }
 
         .info-text {
             font-size: 12px;
@@ -415,16 +420,16 @@
                 <span class="status-subtext">Filas SQL sincronizadas</span>
             </div>
 
-            <div class="status-box border-blue">
-                <span class="status-label">Operadores Activos</span>
-                <span class="status-value" id="lblOperadores">0</span>
-                <span class="status-subtext">Cuentas con acceso</span>
+            <div class="status-box border-gold">
+                <span class="status-label">Admins en Línea</span>
+                <span class="status-value status-gold" id="lblAdminsOnline">0</span>
+                <span class="status-subtext">Conectados ahora</span>
             </div>
 
-            <div class="status-box border-orange">
-                <span class="status-label">Carga de Datos (FB)</span>
-                <span class="status-value" id="lblPesoDB">0.00 MB</span>
-                <span class="status-subtext">Peso del nodo principal</span>
+            <div class="status-box border-blue">
+                <span class="status-label">Operadores en Línea</span>
+                <span class="status-value status-online" id="lblOperadoresOnline" style="color: #00d2ff;">0</span>
+                <span class="status-subtext">Conectados ahora</span>
             </div>
         </div>
 
@@ -459,14 +464,20 @@
         <div class="action-grid">
             <button class="btn-action btn-csv" id="btnDescargarCSV" onclick="descargarCSVGlobal()" disabled>
                 <span class="btn-icon">📊</span>
-                Exportar Respaldo CSV (Excel)
-                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Extrae la base cruda para cruzar datos en computadora</span>
+                Exportar Respaldo CSV
+                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Para leer y cruzar datos en Excel</span>
             </button>
 
             <button class="btn-action btn-json" id="btnDescargarJSON" onclick="descargarJSONGlobal()" disabled>
                 <span class="btn-icon">📦</span>
-                Exportar Respaldo JSON (Raíz)
-                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Copia de seguridad matriz de Firebase para restaurar</span>
+                Exportar Respaldo JSON
+                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Archivo puro matriz de Firebase</span>
+            </button>
+            
+            <button class="btn-action btn-updater" onclick="location.href='actualizador.html'">
+                <span class="btn-icon">🛠️</span>
+                Actualizador Inteligente
+                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Ir al panel de corrección de datos</span>
             </button>
         </div>
 
@@ -620,12 +631,6 @@
                 }
             });
 
-            onValue(ref(database, 'operadores'), (snapshot) => {
-                if(snapshot.exists()) {
-                    document.getElementById('lblOperadores').textContent = Object.keys(snapshot.val()).length;
-                }
-            });
-
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 if(snapshot.exists()) {
                     baseDatosBruta = snapshot.val();
@@ -679,11 +684,14 @@
             });
         }
 
-        // REGLA DE ORO: Escáner Espía Ampliado
+        // REGLA DE ORO: Escáner Espía Ampliado y Conectado a los Monitores Topes
         function iniciarRadarPresencia() {
             onValue(ref(database, 'presencia'), (snapshot) => {
                 const radarBox = document.getElementById('radarBox');
                 radarBox.innerHTML = '';
+
+                let countAdmins = 0;
+                let countOps = 0;
 
                 if (snapshot.exists()) {
                     const onlineUsers = snapshot.val();
@@ -694,11 +702,18 @@
                         if (data.estado === "online") {
                             conteo++;
                             let isAdmin = data.rol === 'admin';
+                            
+                            // Sumamos para los monitores topes
+                            if (isAdmin) {
+                                countAdmins++;
+                            } else {
+                                countOps++;
+                            }
+
                             let rolEtiq = isAdmin ? '⭐ Admin' : '👨🏽‍💻 Operador';
                             let claseCard = isAdmin ? 'admin-card' : '';
                             let claseDot = isAdmin ? 'dot-admin' : '';
                             
-                            // Lectura de la última acción tecleada por el usuario (si existe)
                             let ultimaAccion = data.ultima_accion || 'Navegando en el sistema...';
 
                             let div = document.createElement('div');
@@ -721,6 +736,10 @@
                 } else {
                     radarBox.innerHTML = "<div style='color:#555; text-align:center; font-size:12px; margin-top:20px;'>Radar en espera de señales...</div>";
                 }
+
+                // Actualizamos los números gigantes de arriba
+                document.getElementById('lblAdminsOnline').textContent = countAdmins;
+                document.getElementById('lblOperadoresOnline').textContent = countOps;
             });
         }
 
