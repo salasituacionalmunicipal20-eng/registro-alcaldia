@@ -104,46 +104,62 @@
             cursor: not-allowed; 
         }
         
+        .progress-container { 
+            width: 100%; 
+            background-color: #222; 
+            border-radius: 4px; 
+            margin-top: 25px; 
+            overflow: hidden; 
+            display: none; 
+            border: 1px solid #333;
+        }
+        
+        .progress-bar { 
+            height: 22px; 
+            background-color: #ff9800; 
+            width: 0%; 
+            transition: width 0.1s linear;
+        }
+
+        .stats-panel {
+            display: none;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #ff9800;
+            border-bottom: 1px solid #222;
+            padding-bottom: 10px;
+        }
+
+        .eta-text { color: #ff4c4c; }
+
         .console-box {
             background-color: #000;
-            color: #00ff00;
+            color: #3ecf8e;
             text-align: left;
             padding: 20px;
             border-radius: 4px;
             font-family: 'Courier New', Courier, monospace;
             font-size: 12px;
-            height: 250px;
+            height: 280px;
             overflow-y: auto;
-            margin-top: 25px;
+            margin-top: 15px;
             border: 1px solid #333;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
         }
 
-        .linea-log { margin-bottom: 4px; }
+        .linea-log { margin-bottom: 5px; line-height: 1.4; }
         .log-err { color: #ff4c4c; font-weight: bold; }
         .log-ok { color: #00ff00; }
         .log-info { color: #00d2ff; }
         .log-warn { color: #ff9800; }
-
-        .progress-container { 
-            width: 100%; 
-            background-color: #222; 
-            border-radius: 4px; 
-            margin-top: 20px; 
-            overflow: hidden; 
-            display: none; 
-        }
-        
-        .progress-bar { 
-            height: 20px; 
-            background-color: #ff9800; 
-            width: 0%; 
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="top-nav">
-            <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button>
+            <button type="button" class="btn-back" onclick="location.href='respaldo.html'">← Volver a Monitor</button>
         </div>
 
         <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
@@ -162,6 +178,12 @@
 
         <div class="progress-container" id="progressWrapper">
             <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="stats-panel" id="statsPanel">
+            <span id="txtCompletados">Procesados: 0 / 0</span>
+            <span id="txtPorcentaje">0%</span>
+            <span id="txtEta" class="eta-text">Tiempo estimado: Calculando...</span>
         </div>
 
         <div class="console-box" id="consoleBox"></div>
@@ -193,7 +215,8 @@
             const box = document.getElementById('consoleBox');
             const div = document.createElement('div');
             div.className = `linea-log ${tipo}`;
-            div.textContent = `> ${msg}`;
+            const hora = new Date().toLocaleTimeString('es-VE', { hour12: false });
+            div.textContent = `[${hora}] > ${msg}`;
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         }
@@ -203,13 +226,13 @@
         onAuthStateChanged(auth, async (user) => {
             if (user && user.email === "carlos.admin@alcaldia.com") {
                 autorizad = true;
-                printLog("Autenticación exitosa. Descargando snapshot de Firebase para indexación local...", "log-success");
+                printLog("Autenticación exitosa. Descargando censo completo de Firebase para indexación local...", "log-success");
                 
                 try {
                     const snapshot = await get(child(ref(database), 'habitantes'));
                     if(snapshot.exists()) {
                         baseDatosFirebase = snapshot.val();
-                        printLog(`Snapshot cargado. ${Object.keys(baseDatosFirebase).length} habitantes indexados en memoria.`, "log-ok");
+                        printLog(`Snapshot cargado. ${Object.keys(baseDatosFirebase).length} habitantes indexados en memoria RAM.`, "log-ok");
                         document.getElementById('btnEjecutar').disabled = false;
                         document.getElementById('btnEjecutar').textContent = "Ejecutar Parche de Datos 🚀";
                     } else {
@@ -223,9 +246,17 @@
             }
         });
 
-        // FUNCION NORMALIZADORA PROFESIONAL
         function cleanText(txt) {
             return (txt || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
+        }
+
+        // Convertidor de tiempo legible
+        function formatoTiempo(milisegundos) {
+            if (milisegundos < 0 || !isFinite(milisegundos)) return "Calculando...";
+            let segundosTotales = Math.floor(milisegundos / 1000);
+            let minutos = Math.floor(segundosTotales / 60);
+            let segundos = segundosTotales % 60;
+            return `${minutos} min ${segundos} seg`;
         }
 
         // MOTOR DE ANÁLISIS CRONOLÓGICO INTELIGENTE
@@ -233,7 +264,6 @@
             let dateStr = (rawDate || '').toString().trim();
             let edadStr = (rawEdad || '').toString().trim();
             
-            // Intentar parsing por delimitadores usuales
             let parts = dateStr.split(/[\.\/\-]/);
             if (parts.length === 3) {
                 let d = parts[0].trim().padStart(2, '0');
@@ -242,20 +272,18 @@
                 let y = parseInt(yStr);
 
                 if (yStr.length === 2) {
-                    // Pivot 2026: si YY > 26 es de 1900, sino de 2000
                     y = y > 26 ? 1900 + y : 2000 + y;
                 }
                 
                 if (!isNaN(y) && !isNaN(parseInt(m)) && !isNaN(parseInt(d))) {
-                    return `${y}-${m}-${d}`; // Formato nativo HTML e input date
+                    return `${y}-${m}-${d}`; 
                 }
             }
 
-            // Fallback algorítmico basado en la edad de referencia (Año actual de desarrollo: 2026)
             let edad = parseInt(edadStr);
             if (!isNaN(edad) && edad >= 0) {
                 let yCalculado = 2026 - edad;
-                return `${yCalculado}-01-01`; // Asigna el primero de enero de ese año como estándar estructurado
+                return `${yCalculado}-01-01`; 
             }
 
             return null;
@@ -273,6 +301,7 @@
 
             document.getElementById('btnEjecutar').disabled = true;
             document.getElementById('progressWrapper').style.display = "block";
+            document.getElementById('statsPanel').style.display = "flex";
             printLog("Abriendo flujo de lectura de archivos...", "log-info");
 
             Papa.parse(file, {
@@ -281,9 +310,9 @@
                 complete: async function(results) {
                     const csvRows = results.data;
                     const totalRows = csvRows.length;
-                    printLog(`Archivo parseado. Procesando inyección en lote sobre ${totalRows} filas...`, "log-info");
+                    printLog(`Archivo parseado con éxito. Ejecutando escaneo en lote de ${totalRows} filas...`, "log-info");
 
-                    // Construir mapas de búsqueda local para optimizar rendimiento O(1)
+                    // Indexar para búsquedas ultrarápidas O(1)
                     let mapCedulas = {};
                     let mapNombres = {};
 
@@ -298,7 +327,9 @@
                     }
 
                     let modificados = 0;
-                    let ignorados = 0;
+                    let omitidosCambio = 0;
+                    let ignoradosNoEncontrados = 0;
+                    const tiempoInicio = Date.now();
 
                     for(let i = 0; i < totalRows; i++) {
                         let row = csvRows[i];
@@ -310,12 +341,9 @@
                         let rowApellido = rowNombreCompleto.slice(Math.ceil(rowNombreCompleto.length / 2)).join(' ');
                         let rowComuna = cleanText(row['COMUNA']);
 
-                        // 1. Intentar match por cédula
                         if(rowCedula && mapCedulas[rowCedula]) {
                             targetId = mapCedulas[rowCedula];
-                        } 
-                        // 2. Fallback: Coincidencia compuesta
-                        else {
+                        } else {
                             let keyRow = cleanText(`${rowNombre}||${rowApellido}||${rowComuna}`);
                             if(mapNombres[keyRow]) {
                                 targetId = mapNombres[keyRow];
@@ -324,54 +352,71 @@
 
                         if(targetId) {
                             let updates = {};
+                            let cambiosRealizados = [];
 
-                            // Lógica 1: Limpieza de Casa y asignación de Tipo Vivienda
+                            // REGLA DE ORO: Filtrado detallado de Vivienda
                             let rowCasa = cleanText(row['NUMERO DE CASA']);
                             if(rowCasa === 'CASA') {
                                 updates['numero_casa'] = '';
                                 updates['tipo_vivienda'] = 'casa';
+                                cambiosRealizados.push("Limpia Casa 'CASA' ➔ Tipo 'casa'");
                             }
 
-                            // Lógica 2: Traducción estricta de condiciones de vivienda
+                            // REGLA DE ORO: Corrección estricta de Condiciones
                             let rowCondicion = cleanText(row['CONDICIONES DE LA VIVIENDA']);
                             if(rowCondicion === 'ESTABLE') {
                                 updates['condiciones_vivienda'] = 'bien';
+                                cambiosRealizados.push("Condición 'ESTABLE' ➔ 'bien'");
                             }
 
-                            // Lógica 3: Inyección de Fecha de Nacimiento Inteligente
+                            // REGLA DE ORO: Cálculo Cronológico Avanzado
                             let rowFechaRaw = row['FECHA DE NACIMIENTO'];
                             let rowEdadRaw = row['EDAD'];
                             let fechaEstructurada = parseFechaInteligente(rowFechaRaw, rowEdadRaw);
                             
                             if(fechaEstructurada) {
                                 updates['fecha_nacimiento'] = fechaEstructurada;
+                                cambiosRealizados.push(`Fecha fijada ➔ ${fechaEstructurada}`);
                             }
 
-                            // Aplicar parche si hay elementos que corregir
                             if(Object.keys(updates).length > 0) {
                                 try {
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
+                                    // REGLA DE ORO: Log Verbose e Hiperdetallado de Cambios
+                                    printLog(`[MODIFICADO] ${rowNombre} ${rowApellido} (C.I: ${rowCedula || 'S/C'}) ➔ [${cambiosRealizados.join(' | ')}]`, "log-ok");
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
                                 }
+                            } else {
+                                omitidosCambio++;
                             }
                         } else {
-                            ignorados++;
+                            ignoradosNoEncontrados++;
                         }
 
-                        // Actualizar barra de progreso
+                        // Cálculo matemático en vivo de porcentaje y tiempos demorados (ETA)
                         let pct = Math.floor(((i + 1) / totalRows) * 100);
+                        let tiempoTranscurrido = Date.now() - tiempoInicio;
+                        let velocidad = (i + 1) / tiempoTranscurrido; 
+                        let registrosFaltantes = totalRows - (i + 1);
+                        let etaMs = registrosFaltantes / velocidad;
+
                         document.getElementById('progressBar').style.width = pct + "%";
+                        document.getElementById('txtCompletados').textContent = `Procesados: ${i + 1} / ${totalRows}`;
+                        document.getElementById('txtPorcentaje').textContent = `${pct}%`;
+                        document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                     }
 
-                    printLog(`🚀 PARCHE FINALIZADO CON ÉXITO.`, "log-ok");
-                    printLog(`Expedientes actualizados y corregidos en Firebase: ${modificados}`, "log-success");
-                    if(ignorados > 0) {
-                        printLog(`Filas omitidas (no se encontró coincidencia en el censo): ${ignorados}`, "log-warn");
+                    // Log Final de Balance General
+                    printLog(`📊 PROCESO DE REPARACIÓN FINALIZADO CON ÉXITO.`, "log-info");
+                    printLog(`Expedientes modificados/reparados en Firebase: ${modificados}`, "log-success");
+                    printLog(`Expedientes omitidos (Ya estaban limpios y correctos): ${omitidosCambio}`, "log-ok");
+                    if(ignoradosNoEncontrados > 0) {
+                        printLog(`Filas del Excel ignoradas (No existen en el censo actual): ${ignoradosNoEncontrados}`, "log-warn");
                     }
-                    printLog(`⚠️ RECOMENDACIÓN: Ve al módulo de Respaldo y presiona el botón maestro para nivelar Supabase con estos datos frescos.`, "log-warn");
-                    alert("¡Depuración y actualización de datos finalizada!");
+                    printLog(`⚠️ ALERTA ADMINISTRATIVA: Los datos están al día en Firebase. Vaya a la Bóveda de Respaldo y ejecute la sincronización manual para reflejar los parches en Supabase.`, "log-warn");
+                    alert("¡Mantenimiento y reestructuración de censo completada!");
                 }
             });
         };
