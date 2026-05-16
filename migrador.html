@@ -119,6 +119,7 @@
         .log-success { color: #00ff00; }
         .log-info { color: #00d2ff; }
         .log-warning { color: #ffc107; }
+        .log-supabase { color: #3ecf8e; font-weight: bold; } 
 
         .progress-bar { 
             width: 100%; 
@@ -158,13 +159,13 @@
             <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver al Panel Admin</button>
         </div>
 
-        <h1>Migrador de Base de Datos Excel a Firebase</h1>
+        <h1>Migrador de Base de Datos Excel (Doble Motor)</h1>
         
         <div class="instrucciones" id="panelInstrucciones">
             <strong>Instrucciones Importantes (Acceso Restringido):</strong><br><br>
-            1. 🔴 <b style="color:red;">SEGURIDAD:</b> Esta herramienta es de uso exclusivo para <b>carlos.admin@alcaldia.com</b>.<br>
+            1. 🔴 <b style="color:red;">SEGURIDAD:</b> Herramienta exclusiva para <b>carlos.admin@alcaldia.com</b>.<br>
             2. Selecciona tu archivo CSV ("UNIFICADO EJE 2.xlsx - Hoja1.csv").<br>
-            3. Haz clic en "Iniciar Migración Masiva".
+            3. El sistema realizará una <b>Escritura Dual (Dual-Write)</b> inyectando los datos en Firebase (Principal) y Supabase (Respaldo SQL) simultáneamente.
         </div>
 
         <input type="file" id="archivoCSV" accept=".csv">
@@ -181,25 +182,30 @@
             <span id="txtEta" class="eta-text">Tiempo estimado: Calculando...</span>
         </div>
 
-        <div class="consola-wrapper" id="consolaLog">
-            </div>
+        <div class="consola-wrapper" id="consolaLog"></div>
     </div>
 
     <script>
         window.onerror = function(mensaje, fuente, linea) {
             const consola = document.getElementById('consolaLog');
             if(consola) {
-                consola.innerHTML += `<div class='consola-linea log-error'>⚠️ FALLO TÉCNICO EN LÍNEA ${linea}: ${mensaje}</div>`;
+                consola.innerHTML += `<div class='consola-linea log-error'>⚠️ FALLO TÉCNICO LÍNEA ${linea}: ${mensaje}</div>`;
             }
         };
     </script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-        // 1. Función para escribir en la consola virtual
+        // YA CONFIGURADO: Llaves oficiales de tu Supabase
+        const supabaseUrl = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co';
+        const supabaseKey = 'sb_publishable_7dkBdGu87mnWz-acprRjzA_vHBujcwB';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
         function escribirLog(mensaje, tipo = "log-info") {
             const consola = document.getElementById('consolaLog');
             if(!consola) return;
@@ -211,7 +217,7 @@
             consola.scrollTop = consola.scrollHeight;
         }
 
-        escribirLog("Arrancando el sistema...", "log-info");
+        escribirLog("Arrancando los motores Duales...", "log-info");
         
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -226,34 +232,33 @@
         let database, auth, usuarioActivo = null;
 
         try {
-            escribirLog("Conectando con la base de datos Firebase...", "log-info");
+            escribirLog("Conectando con Firebase (Motor Principal)...", "log-info");
             const app = initializeApp(firebaseConfig);
             database = getDatabase(app);
             auth = getAuth(app);
-            escribirLog("Conexión establecida. Verificando credenciales de seguridad...", "log-info");
+            
+            escribirLog("Conectando con Supabase (Motor Respaldo SQL)...", "log-supabase");
 
-            // Temporizador por si el internet o el navegador bloquean la conexión
             let timeoutSeguridad = setTimeout(() => {
                 if(!usuarioActivo) {
-                    escribirLog("⚠️ La verificación de seguridad está tardando demasiado. Asegúrese de tener buena conexión o intente recargar la página.", "log-warning");
+                    escribirLog("⚠️ La verificación de seguridad está tardando. Revise su conexión.", "log-warning");
                 }
             }, 8000);
 
-            // VERIFICAMOS SI ES CARLOS ADMIN
             onAuthStateChanged(auth, (user) => {
                 clearTimeout(timeoutSeguridad);
                 if (user && user.email === "carlos.admin@alcaldia.com") {
                     usuarioActivo = user;
                     const btn = document.getElementById('btnSubir');
                     btn.disabled = false;
-                    btn.textContent = "Iniciar Migración Masiva 🚀";
-                    escribirLog(`PERMISOS VALIDADOS. Autenticado como Súper Administrador: ${user.email}`, "log-success");
+                    btn.textContent = "Iniciar Migración Dual 🚀";
+                    escribirLog(`PERMISOS VALIDADOS. Autenticado como Súper Administrador.`, "log-success");
                 } else {
                     usuarioActivo = null;
                     const btn = document.getElementById('btnSubir');
                     btn.disabled = true;
                     btn.textContent = "Acceso Denegado";
-                    escribirLog("⚠️ ACCESO DENEGADO: No se detecta la sesión del administrador. Debe ingresar al sistema en la página de inicio.", "log-error");
+                    escribirLog("⚠️ ACCESO DENEGADO: Debe iniciar sesión en otra pestaña como administrador.", "log-error");
                 }
             });
 
@@ -261,7 +266,6 @@
             escribirLog(`ERROR CRÍTICO AL CONECTAR: ${errorCredenciales.message}`, "log-error");
         }
 
-        // Formateador de tiempo para el ETA
         function formatoTiempo(milisegundos) {
             if (milisegundos < 0 || !isFinite(milisegundos)) return "Calculando...";
             let segundosTotales = Math.floor(milisegundos / 1000);
@@ -272,156 +276,157 @@
 
         window.procesarCSV = function() {
             if (!usuarioActivo || usuarioActivo.email !== "carlos.admin@alcaldia.com") {
-                escribirLog("Error crítico: Intento de subida sin permisos de administrador.", "log-error");
-                alert("Acceso denegado. Herramienta exclusiva de Carlos Admin.");
+                alert("Acceso denegado. Herramienta exclusiva.");
                 return;
             }
 
             const archivo = document.getElementById('archivoCSV').files[0];
             if (!archivo) {
-                alert("Por favor, seleccione un archivo CSV primero.");
-                escribirLog("Operación cancelada: Archivo no seleccionado.", "log-warning");
+                alert("Seleccione un archivo CSV primero.");
                 return;
             }
             
-            if (typeof Papa === 'undefined') {
-                escribirLog("Error: Librería de lectura CSV (PapaParse) no está disponible. Revise su conexión a internet.", "log-error");
-                return;
-            }
-
             document.getElementById('btnSubir').disabled = true;
             document.getElementById('barraWrapper').style.display = "block";
             document.getElementById('statsPanel').style.display = "flex";
             
-            escribirLog(`Iniciando lectura del archivo seleccionado: ${archivo.name}`, "log-info");
+            escribirLog(`Iniciando lectura del archivo: ${archivo.name}`, "log-info");
 
             setTimeout(() => {
-                try {
-                    Papa.parse(archivo, {
-                        header: true,
-                        skipEmptyLines: true,
-                        complete: async function(results) {
-                            const datos = results.data;
-                            const totalDatos = datos.length;
+                Papa.parse(archivo, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: async function(results) {
+                        const datos = results.data;
+                        const totalDatos = datos.length;
+                        
+                        escribirLog(`Lectura completada. Total filas: ${totalDatos}`, "log-info");
+                        escribirLog("Activando inyección DUAL (Firebase + Supabase)...", "log-info");
+                        
+                        let subidos = 0;
+                        const habitantesRef = ref(database, 'habitantes');
+                        const tiempoInicio = Date.now();
+
+                        for (let i = 0; i < totalDatos; i++) {
+                            let fila = datos[i];
                             
-                            escribirLog(`Lectura completada. Se encontraron ${totalDatos} filas en el documento.`, "log-info");
-                            escribirLog("Iniciando inyección de datos a la nube (1 por 1)...", "log-info");
+                            if (!fila['NOMBRE Y APELLIDO']) continue;
                             
-                            let subidos = 0;
-                            const habitantesRef = ref(database, 'habitantes');
-                            const tiempoInicio = Date.now();
+                            try {
+                                let nombreCompleto = (fila['NOMBRE Y APELLIDO'] || '').trim().split(' ');
+                                let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
+                                let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
 
-                            for (let i = 0; i < totalDatos; i++) {
-                                let fila = datos[i];
+                                let sexoParsed = "";
+                                if (fila['FEMENINA'] && fila['FEMENINA'].trim() !== '') sexoParsed = "femenino";
+                                else if (fila['MASCULINO'] && fila['MASCULINO'].trim() !== '') sexoParsed = "masculino";
+
+                                let votoParsed = "";
+                                if (fila['VD'] && fila['VD'].trim() !== '') votoParsed = "VD";
+                                else if (fila['VB'] && fila['VB'].trim() !== '') votoParsed = "VB";
+                                else if (fila['VO'] && fila['VO'].trim() !== '') votoParsed = "VO";
+
+                                let parentescoParsed = "otro";
+                                let resp = (fila['RESPONSABILIDAD CBI, CM'] || '').toUpperCase();
+                                if (resp.includes("JEFE")) parentescoParsed = "jefe de hogar";
+                                else if (fila['MADRE'] && fila['MADRE'].trim() !== '') parentescoParsed = "madre";
+                                else if (fila['PADRE'] && fila['PADRE'].trim() !== '') parentescoParsed = "padre";
+                                else if (fila['HIJO'] && fila['HIJO'].trim() !== '') parentescoParsed = "hijo";
+
+                                let gasParsed = (fila['TIPO DE CILINDRO'] && fila['TIPO DE CILINDRO'].trim() !== '') ? "si" : "no";
+
+                                let habitanteTraducido = {
+                                    ubch: fila['UBCH A LA QUE PERTENECE'] || '',
+                                    codigo_sigue_actual: fila['CODIGO SITUR ACTUAL'] || '',
+                                    comuna: fila['COMUNA'] || '',
+                                    consejo_comunal: fila['NOMBRE DEL CONSEJO COMUNAL'] || '',
+                                    comunidad: fila['COMUNIDAD'] || '',
+                                    calle: fila['CALLE'] || '',
+                                    numero_casa: fila['NUMERO DE CASA'] || 'S/N',
+                                    tipo_vivienda: fila['TIPO DE VIVIENDA'] || '',
+                                    condiciones_vivienda: fila['CONDICIONES DE LA VIVIENDA'] || '',
+                                    responsabilidad_cbi_cm: fila['RESPONSABILIDAD CBI, CM'] || '',
+                                    tiene_gas: gasParsed,
+                                    tipo_cilindro_gas: fila['TIPO DE CILINDRO'] || '',
+                                    nombre: nombreParsed.toUpperCase(),
+                                    apellido: apellidoParsed.toUpperCase(),
+                                    tiene_cedula: fila['CEDULA'] ? "si" : "no",
+                                    nacionalidad: "V", 
+                                    cedula: fila['CEDULA'] || '',
+                                    telefono: fila['TELEFONO'] || '',
+                                    fecha_nacimiento: fila['FECHA DE NACIMIENTO'] || '',
+                                    sexo: sexoParsed,
+                                    parentesco: parentescoParsed,
+                                    profesion: fila['PROFESION'] || '',
+                                    trabaja: fila['TRABAJA?'] || 'no',
+                                    esta_escolarizado: fila['ESTA ESCOLARIZADO?'] || 'no',
+                                    esta_cedulado: fila['ESTA CEDULADO?'] || 'si',
+                                    padece_enfermedad: fila['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.'] || '',
+                                    toma_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] ? 'si' : 'no',
+                                    cual_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] || '',
+                                    discapacitado: fila['DISCAPACITADO?'] || 'no',
+                                    tipo_discapacidad: '',
+                                    embarazada: fila['EMBARAZADA?'] || 'no',
+                                    lactancia_materna: fila['LACTANCIA MATERNA?'] || 'no',
+                                    cobra_amor_mayor: fila['COBRA AMOR MAYOR'] || 'no',
+                                    carnet_patria: fila['POSEE CARNET DE LA PATRIA?'] || 'no',
+                                    mision_jose_gregorio: fila['MISION JOSE GREGORIO'] || 'no',
+                                    hogares_patria_bono: fila['HOGARES DE LA PATRIA BONO UNICO FAMILIAR'] || 'no',
+                                    donde_vota: fila['DONDE VOTA'] || '',
+                                    vd_vb_vo_seleccion: votoParsed,
+                                    vd_vb_vo_detalle: '',
+                                    registrado_por_uid: usuarioActivo.uid,
+                                    registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN DUAL)",
+                                    fecha_registro: new Date().toLocaleString()
+                                };
+
+                                // 1. Preparamos Firebase
+                                const nuevoRef = push(habitantesRef);
+                                const firebaseId = nuevoRef.key;
                                 
-                                if (!fila['NOMBRE Y APELLIDO']) continue;
+                                // 2. Insertamos el ID de Firebase para conectar ambas Bóvedas
+                                habitanteTraducido.id_firebase = firebaseId;
+
+                                // 3. Subimos a Firebase
+                                await set(nuevoRef, habitanteTraducido);
+
+                                // 4. Subimos a Supabase
+                                const { error: supabaseError } = await supabase.from('habitantes').insert([habitanteTraducido]);
                                 
-                                try {
-                                    let nombreCompleto = (fila['NOMBRE Y APELLIDO'] || '').trim().split(' ');
-                                    let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
-                                    let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
+                                if (supabaseError) throw new Error("Fallo Supabase: " + supabaseError.message);
 
-                                    let sexoParsed = "";
-                                    if (fila['FEMENINA'] && fila['FEMENINA'].trim() !== '') sexoParsed = "femenino";
-                                    else if (fila['MASCULINO'] && fila['MASCULINO'].trim() !== '') sexoParsed = "masculino";
+                                subidos++;
+                                
+                                let porcentaje = (subidos / totalDatos) * 100;
+                                let tiempoTranscurrido = Date.now() - tiempoInicio;
+                                let velocidad = subidos / tiempoTranscurrido; 
+                                let registrosFaltantes = totalDatos - subidos;
+                                let etaMs = registrosFaltantes / velocidad;
 
-                                    let votoParsed = "";
-                                    if (fila['VD'] && fila['VD'].trim() !== '') votoParsed = "VD";
-                                    else if (fila['VB'] && fila['VB'].trim() !== '') votoParsed = "VB";
-                                    else if (fila['VO'] && fila['VO'].trim() !== '') votoParsed = "VO";
-
-                                    let parentescoParsed = "otro";
-                                    let resp = (fila['RESPONSABILIDAD CBI, CM'] || '').toUpperCase();
-                                    if (resp.includes("JEFE")) parentescoParsed = "jefe de hogar";
-                                    else if (fila['MADRE'] && fila['MADRE'].trim() !== '') parentescoParsed = "madre";
-                                    else if (fila['PADRE'] && fila['PADRE'].trim() !== '') parentescoParsed = "padre";
-                                    else if (fila['HIJO'] && fila['HIJO'].trim() !== '') parentescoParsed = "hijo";
-
-                                    let gasParsed = (fila['TIPO DE CILINDRO'] && fila['TIPO DE CILINDRO'].trim() !== '') ? "si" : "no";
-
-                                    let habitanteTraducido = {
-                                        ubch: fila['UBCH A LA QUE PERTENECE'] || '',
-                                        codigo_sigue_actual: fila['CODIGO SITUR ACTUAL'] || '',
-                                        comuna: fila['COMUNA'] || '',
-                                        consejo_comunal: fila['NOMBRE DEL CONSEJO COMUNAL'] || '',
-                                        comunidad: fila['COMUNIDAD'] || '',
-                                        calle: fila['CALLE'] || '',
-                                        numero_casa: fila['NUMERO DE CASA'] || 'S/N',
-                                        tipo_vivienda: fila['TIPO DE VIVIENDA'] || '',
-                                        condiciones_vivienda: fila['CONDICIONES DE LA VIVIENDA'] || '',
-                                        responsabilidad_cbi_cm: fila['RESPONSABILIDAD CBI, CM'] || '',
-                                        tiene_gas: gasParsed,
-                                        tipo_cilindro_gas: fila['TIPO DE CILINDRO'] || '',
-                                        nombre: nombreParsed.toUpperCase(),
-                                        apellido: apellidoParsed.toUpperCase(),
-                                        tiene_cedula: fila['CEDULA'] ? "si" : "no",
-                                        nacionalidad: "V", 
-                                        cedula: fila['CEDULA'] || '',
-                                        telefono: fila['TELEFONO'] || '',
-                                        fecha_nacimiento: fila['FECHA DE NACIMIENTO'] || '',
-                                        sexo: sexoParsed,
-                                        parentesco: parentescoParsed,
-                                        profesion: fila['PROFESION'] || '',
-                                        trabaja: fila['TRABAJA?'] || 'no',
-                                        esta_escolarizado: fila['ESTA ESCOLARIZADO?'] || 'no',
-                                        esta_cedulado: fila['ESTA CEDULADO?'] || 'si',
-                                        padece_enfermedad: fila['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.'] || '',
-                                        toma_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] ? 'si' : 'no',
-                                        cual_medicamento: fila['TOMA ALGUN MEDICAMENTO? INDIQUE'] || '',
-                                        discapacitado: fila['DISCAPACITADO?'] || 'no',
-                                        tipo_discapacidad: '',
-                                        embarazada: fila['EMBARAZADA?'] || 'no',
-                                        lactancia_materna: fila['LACTANCIA MATERNA?'] || 'no',
-                                        cobra_amor_mayor: fila['COBRA AMOR MAYOR'] || 'no',
-                                        carnet_patria: fila['POSEE CARNET DE LA PATRIA?'] || 'no',
-                                        mision_jose_gregorio: fila['MISION JOSE GREGORIO'] || 'no',
-                                        hogares_patria_bono: fila['HOGARES DE LA PATRIA BONO UNICO FAMILIAR'] || 'no',
-                                        donde_vota: fila['DONDE VOTA'] || '',
-                                        vd_vb_vo_seleccion: votoParsed,
-                                        vd_vb_vo_detalle: '',
-                                        registrado_por_uid: usuarioActivo.uid,
-                                        registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN)",
-                                        fecha_registro: new Date().toLocaleString()
-                                    };
-
-                                    // Lógica de subida segura 1 a 1
-                                    await push(habitantesRef, habitanteTraducido);
-                                    subidos++;
-                                    
-                                    let porcentaje = (subidos / totalDatos) * 100;
-                                    let tiempoTranscurrido = Date.now() - tiempoInicio;
-                                    let velocidad = subidos / tiempoTranscurrido; 
-                                    let registrosFaltantes = totalDatos - subidos;
-                                    let etaMs = registrosFaltantes / velocidad;
-
-                                    document.getElementById('barraProgreso').style.width = Math.min(porcentaje, 100) + "%";
-                                    document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
-                                    document.getElementById('txtPorcentaje').textContent = `${Math.floor(porcentaje)}%`;
-                                    document.getElementById('txtEta').textContent = `Tiempo estimado: ${formatoTiempo(etaMs)}`;
-                                    
-                                    // Reportamos a la consola cada 15 registros para evitar saturarla visualmente
-                                    if (subidos % 15 === 0 || subidos === totalDatos) {
-                                        escribirLog(`Guardado exitoso: Registro ${subidos}/${totalDatos} -> C.I: ${fila['CEDULA'] || 'S/C'}`, "log-success");
-                                    }
-
-                                } catch (error_fila) {
-                                    escribirLog(`⚠️ Fallo en la fila ${i+1}. Detalle: ${error_fila.message}`, "log-error");
+                                document.getElementById('barraProgreso').style.width = Math.min(porcentaje, 100) + "%";
+                                document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
+                                document.getElementById('txtPorcentaje').textContent = `${Math.floor(porcentaje)}%`;
+                                document.getElementById('txtEta').textContent = `Tiempo estimado: ${formatoTiempo(etaMs)}`;
+                                
+                                if (subidos % 15 === 0 || subidos === totalDatos) {
+                                    escribirLog(`[OK DUAL] Registro ${subidos}/${totalDatos} -> C.I: ${fila['CEDULA'] || 'S/C'} alojado en ambas nubes.`, "log-success");
                                 }
-                            }
 
-                            document.getElementById('barraProgreso').style.width = "100%";
-                            document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
-                            document.getElementById('txtPorcentaje').textContent = `100%`;
-                            document.getElementById('txtEta').textContent = `Finalizado en ${formatoTiempo(Date.now() - tiempoInicio)}`;
-                            
-                            escribirLog(`✅ MIGRACIÓN FINALIZADA. Operación completada con éxito.`, "log-success");
-                            alert("¡Migración Completada! Revisa el módulo de consultas.");
-                            
+                            } catch (error_fila) {
+                                escribirLog(`⚠️ Fallo en la fila ${i+1}. Detalle: ${error_fila.message}`, "log-error");
+                            }
                         }
-                    });
-                } catch (errorParse) {
-                    escribirLog(`Error crítico al leer el archivo CSV: ${errorParse.message}`, "log-error");
-                }
+
+                        document.getElementById('barraProgreso').style.width = "100%";
+                        document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
+                        document.getElementById('txtPorcentaje').textContent = `100%`;
+                        document.getElementById('txtEta').textContent = `Finalizado en ${formatoTiempo(Date.now() - tiempoInicio)}`;
+                        
+                        escribirLog(`✅ MIGRACIÓN DUAL COMPLETADA. ${subidos} registros asegurados en Firebase y Supabase.`, "log-success");
+                        alert("¡Operación completada en ambas bases de datos!");
+                        
+                    }
+                });
             }, 500); 
         };
     </script>

@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bóveda de Respaldo y Monitor - Alcaldía</title>
+    <title>Bóveda de Respaldo y Monitor Dual - Alcaldía</title>
     <style>
         :root {
             --rojo-oficial: #E30613;
             --azul-oficial: #004a99;
             --gris-fondo: #121212; 
             --verde-monitor: #00ff00;
+            --verde-supabase: #3ecf8e; /* Verde corporativo de Supabase */
         }
 
         body { 
@@ -97,6 +98,7 @@
         }
 
         .border-green::before { background-color: var(--verde-monitor); }
+        .border-supabase::before { background-color: var(--verde-supabase); }
         .border-blue::before { background-color: #00d2ff; }
         .border-orange::before { background-color: #ff9800; }
         .border-red::before { background-color: var(--rojo-oficial); }
@@ -127,10 +129,10 @@
         }
 
         .status-online { color: var(--verde-monitor); text-shadow: 0 0 10px rgba(0,255,0,0.5); }
+        .status-supabase { color: var(--verde-supabase); text-shadow: 0 0 10px rgba(62,207,142,0.5); }
         .status-offline { color: var(--rojo-oficial); }
         .status-warning { color: #ff9800; }
 
-        /* REGLA DE ORO: Paneles de Actividad y Radar */
         .live-panels-container {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -276,7 +278,6 @@
 
         .info-text strong { color: #ccc; }
         
-        /* Scrollbar estilo consola */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a0a0a; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
@@ -289,37 +290,49 @@
             <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button>
         </div>
 
-        <h1>Monitor del Servidor y Bóveda de Respaldo</h1>
+        <h1>Monitor del Servidor y Bóveda de Respaldo Dual</h1>
         
         <div class="status-grid">
             <div class="status-box border-green">
-                <span class="status-label">Firebase RTDB</span>
+                <span class="status-label">Firebase (NoSQL)</span>
                 <span class="status-value status-warning" id="lblConexion" style="font-size: 18px;">CONECTANDO...</span>
-                <span class="status-subtext">Estado del Servidor Central</span>
-            </div>
-
-            <div class="status-box border-orange">
-                <span class="status-label">Carga de Datos</span>
-                <span class="status-value" id="lblPesoDB">0.00 MB</span>
-                <span class="status-subtext">Peso del nodo principal</span>
-            </div>
-
-            <div class="status-box border-blue">
-                <span class="status-label">Usuarios Creados</span>
-                <span class="status-value" id="lblOperadores">0</span>
-                <span class="status-subtext">Cuentas con acceso al sistema</span>
+                <span class="status-subtext">Bóveda Principal (Tiempo Real)</span>
             </div>
 
             <div class="status-box border-green">
-                <span class="status-label">Total Habitantes</span>
+                <span class="status-label">Total en Firebase</span>
                 <span class="status-value" id="lblTotalRegistros">0</span>
                 <span class="status-subtext">Registros consolidados</span>
+            </div>
+
+            <div class="status-box border-supabase">
+                <span class="status-label">Supabase (SQL)</span>
+                <span class="status-value status-warning" id="lblSupabaseConexion" style="font-size: 18px;">CONECTANDO...</span>
+                <span class="status-subtext">Bóveda Secundaria Estructurada</span>
+            </div>
+
+            <div class="status-box border-supabase">
+                <span class="status-label">Total en Supabase</span>
+                <span class="status-value" id="lblSupabaseCount">0</span>
+                <span class="status-subtext">Filas SQL sincronizadas</span>
+            </div>
+
+            <div class="status-box border-blue">
+                <span class="status-label">Operadores Activos</span>
+                <span class="status-value" id="lblOperadores">0</span>
+                <span class="status-subtext">Cuentas con acceso</span>
+            </div>
+
+            <div class="status-box border-orange">
+                <span class="status-label">Carga de Datos (FB)</span>
+                <span class="status-value" id="lblPesoDB">0.00 MB</span>
+                <span class="status-subtext">Peso del nodo principal</span>
             </div>
         </div>
 
         <div class="live-panels-container">
             <div class="live-panel">
-                <h3>📋 Live Feed (Últimos Movimientos)</h3>
+                <h3>📋 Live Feed (Últimos Movimientos en Firebase)</h3>
                 <div class="live-feed-box" id="liveFeedBox">
                     <div style="color:#555; text-align:center; margin-top:50px;">Cargando historial de actividad...</div>
                 </div>
@@ -345,21 +358,28 @@
             <button class="btn-action btn-json" id="btnDescargarJSON" onclick="descargarJSONGlobal()" disabled>
                 <span class="btn-icon">📦</span>
                 Exportar Respaldo JSON (Raíz)
-                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Copia de seguridad matriz para restaurar el sistema</span>
+                <span style="font-size:10px; font-weight:normal; opacity:0.8;">Copia de seguridad matriz de Firebase para restaurar</span>
             </button>
         </div>
 
         <div class="info-text">
             <strong>⚠️ ATENCIÓN ADMINISTRADOR DE RED:</strong><br>
-            - Este panel monitorea el consumo, la salud del servidor y el trabajo de tu equipo en tiempo real utilizando listeners directos a Firebase.<br>
-            - La extracción de datos (CSV/JSON) captura la base de datos <b>CRUDA</b> sin aplicar ningún filtro, garantizando que no se pierda ni un byte.<br>
+            - Este panel ahora monitorea de forma DUAL la conectividad y la ingesta de datos tanto en <b>Firebase (Google)</b> como en <b>Supabase (PostgreSQL)</b>.<br>
+            - El <b>Total en Firebase</b> y el <b>Total en Supabase</b> deberían coincidir siempre si la escritura dual es exitosa.<br>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue, query, limitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        
+        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+        // CONEXIÓN A SUPABASE
+        const supabaseUrl = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co';
+        const supabaseKey = 'sb_publishable_7dkBdGu87mnWz-acprRjzA_vHBujcwB';
+        const supabase = createClient(supabaseUrl, supabaseKey);
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -382,13 +402,37 @@
                 document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:100px; font-family:sans-serif;'>⚠️ ACCESO RESTRINGIDO. USTED NO ESTÁ AUTORIZADO.</h1>";
                 setTimeout(() => window.location.href = "index.html", 3000);
             } else {
-                iniciarMonitoreo();
+                iniciarMonitoreoFirebase();
                 iniciarRadarPresencia();
+                
+                // Iniciamos Supabase Polling cada 3 segundos
+                monitorearSupabase();
+                setInterval(monitorearSupabase, 3000);
             }
         });
 
-        function iniciarMonitoreo() {
-            // 1. Estado de Conexión
+        // REGLA DE ORO: Monitoreo en vivo de Supabase
+        async function monitorearSupabase() {
+            try {
+                // Hacemos un ping a Supabase para que nos cuente cuántas filas hay (rápido y no consume mucha data)
+                const { count, error } = await supabase.from('habitantes').select('*', { count: 'exact', head: true });
+                
+                const lblConn = document.getElementById('lblSupabaseConexion');
+                const lblCount = document.getElementById('lblSupabaseCount');
+
+                if (error) throw error;
+
+                lblConn.textContent = "EN LÍNEA (OK)";
+                lblConn.className = "status-value status-supabase";
+                lblCount.textContent = count || 0;
+
+            } catch (e) {
+                document.getElementById('lblSupabaseConexion').textContent = "ERROR / DESCONECTADO";
+                document.getElementById('lblSupabaseConexion').className = "status-value status-offline";
+            }
+        }
+
+        function iniciarMonitoreoFirebase() {
             const connectedRef = ref(database, ".info/connected");
             onValue(connectedRef, (snap) => {
                 const lblConexion = document.getElementById('lblConexion');
@@ -403,14 +447,12 @@
                 }
             });
 
-            // 2. Operadores Creados
             onValue(ref(database, 'operadores'), (snapshot) => {
                 if(snapshot.exists()) {
                     document.getElementById('lblOperadores').textContent = Object.keys(snapshot.val()).length;
                 }
             });
 
-            // 3. Extracción de Base de Datos y Live Feed
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 if(snapshot.exists()) {
                     baseDatosBruta = snapshot.val();
@@ -418,7 +460,6 @@
                     
                     document.getElementById('lblTotalRegistros').textContent = keys.length;
                     
-                    // Calcular Peso
                     const jsonString = JSON.stringify(baseDatosBruta);
                     const bytes = new Blob([jsonString]).size;
                     const mb = (bytes / (1024 * 1024)).toFixed(2);
@@ -427,9 +468,7 @@
                     document.getElementById('btnDescargarCSV').disabled = false;
                     document.getElementById('btnDescargarJSON').disabled = false;
 
-                    // CONSTRUIR EL LIVE FEED (Últimos 20 registros)
                     construirLiveFeed(keys);
-
                 } else {
                     document.getElementById('lblTotalRegistros').textContent = "0";
                     document.getElementById('lblPesoDB').textContent = "0.00 MB";
@@ -438,30 +477,26 @@
             });
         }
 
-        // Función para renderizar el Log de Actividades
         function construirLiveFeed(keys) {
             const feedBox = document.getElementById('liveFeedBox');
             feedBox.innerHTML = ''; 
 
-            // Tomamos los últimos 20 IDs (como Firebase genera Push IDs cronológicos, los últimos son los más recientes)
             const ultimosKeys = keys.slice(-30).reverse(); 
 
             ultimosKeys.forEach(id => {
                 let h = baseDatosBruta[id];
-                
                 let fecha = h.fecha_registro || "Fecha desconocida";
                 let operador = h.registrado_por_nombre || "Operador Desconocido";
                 let cedula = h.cedula ? `${h.nacionalidad||'V'}-${h.cedula}` : "S/C";
                 let habitante = `${h.nombre} ${h.apellido}`;
 
-                // Determinamos si fue una migración masiva o un registro manual
-                let accionStr = operador.includes("MIGRACIÓN") ? "migró al sistema a" : "registró/actualizó a";
+                let accionStr = operador.includes("MIGRACIÓN") ? "migró en Bóvedas Duales a" : "registró/actualizó a";
                 let accionColor = operador.includes("MIGRACIÓN") ? "#ff8c00" : "#00ff00";
 
                 let feedItem = document.createElement('div');
                 feedItem.className = 'feed-item';
                 feedItem.innerHTML = `
-                    <div class="feed-time">${fecha} | ID: ...${id.slice(-6)}</div>
+                    <div class="feed-time">${fecha} | ID FB: ...${id.slice(-6)}</div>
                     <div>
                         <span class="feed-op">@${operador.split(' ')[0]}</span> 
                         <span class="feed-action" style="color:${accionColor};">${accionStr}</span> 
@@ -472,7 +507,6 @@
             });
         }
 
-        // Función para leer las sesiones en línea de los operadores
         function iniciarRadarPresencia() {
             onValue(ref(database, 'presencia'), (snapshot) => {
                 const radarBox = document.getElementById('radarBox');
@@ -484,8 +518,6 @@
 
                     for (let uid in onlineUsers) {
                         let data = onlineUsers[uid];
-                        
-                        // Si está online
                         if (data.estado === "online") {
                             conteo++;
                             let div = document.createElement('div');
@@ -505,7 +537,7 @@
                         radarBox.innerHTML = "<div style='color:#555; text-align:center; font-size:12px; margin-top:20px;'>No hay operadores conectados en este momento.</div>";
                     }
                 } else {
-                    radarBox.innerHTML = "<div style='color:#555; text-align:center; font-size:12px; margin-top:20px;'>Radar en espera de señales...<br>(Requiere actualización en pantallas de operadores)</div>";
+                    radarBox.innerHTML = "<div style='color:#555; text-align:center; font-size:12px; margin-top:20px;'>Radar en espera de señales...</div>";
                 }
             });
         }
