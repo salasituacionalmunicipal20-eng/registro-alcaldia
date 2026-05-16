@@ -389,15 +389,8 @@
         <div id="vistaConsultas">
             <h2>Filtros Activos</h2>
             <div class="search-panel">
+                
                 <div class="search-grid">
-                    <div>
-                        <label>Buscar por Nombre / Apellido:</label>
-                        <input type="text" id="fNombre" placeholder="Escriba el nombre...">
-                    </div>
-                    <div>
-                        <label>Buscar por Cédula:</label>
-                        <input type="text" id="fCedula" placeholder="Escriba la cédula...">
-                    </div>
                     <div>
                         <label>Filtrar por Comuna:</label>
                         <select id="fComuna">
@@ -410,10 +403,26 @@
                             <option value="">Seleccione primero una comuna...</option>
                         </select>
                     </div>
-                    
+                    <div>
+                        <label>Filtrar por Calle / Sector:</label>
+                        <select id="fCalle">
+                            <option value="">Todas las calles (Cargando...)</option>
+                        </select>
+                    </div>
                     <div>
                         <label>Buscar por UBCH:</label>
-                        <input type="text" id="fUbch" placeholder="Escriba la UBCH...">
+                        <select id="fUbch">
+                            <option value="">Todas las UBCH (Cargando...)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label>Buscar por Nombre / Apellido:</label>
+                        <input type="text" id="fNombre" placeholder="Escriba el nombre...">
+                    </div>
+                    <div>
+                        <label>Buscar por Cédula:</label>
+                        <input type="text" id="fCedula" placeholder="Escriba la cédula...">
                     </div>
                     <div>
                         <label>Estatus Electoral (VD/VB/VO):</label>
@@ -437,13 +446,6 @@
                             <option value="esposa">Esposa</option>
                             <option value="nieto">Nieto</option>
                             <option value="nieta">Nieta</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label>Filtrar por Calle / Sector:</label>
-                        <select id="fCalle">
-                            <option value="">Todas las calles (Cargando...)</option>
                         </select>
                     </div>
                 </div>
@@ -942,12 +944,12 @@
                     fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; 
                     fComunidad.disabled = true;
                 }
-                actualizarFiltroCalles();
+                actualizarFiltrosInteligentes();
                 filtrarTabla(); 
             });
             
             fComunidad.addEventListener('change', () => {
-                actualizarFiltroCalles();
+                actualizarFiltrosInteligentes();
                 filtrarTabla();
             });
 
@@ -969,44 +971,54 @@
             });
         }
 
-        // REGLA DE ORO: Función para recolectar calles basándonos SOLO en la Comuna/Comunidad seleccionada
-        function actualizarFiltroCalles() {
+        // REGLA DE ORO: Escaneo Inteligente para Calles y UBCH
+        function actualizarFiltrosInteligentes() {
             const fComunaSel = document.getElementById('fComuna').value.toUpperCase();
             const fComunidadSel = document.getElementById('fComunidad').value.toUpperCase();
+            
             const fCalle = document.getElementById('fCalle');
-            const seleccionPrevia = fCalle.value;
+            const seleccionCalle = fCalle.value;
+
+            const fUbch = document.getElementById('fUbch');
+            const seleccionUbch = fUbch ? fUbch.value : '';
 
             let callesUnicas = new Set();
+            let ubchUnicas = new Set();
 
             for (let id in baseDeDatosHabitantes) {
                 let h = baseDeDatosHabitantes[id];
                 let c = (h.calle || '').trim().toUpperCase();
+                let u = (h.ubch || '').trim().toUpperCase();
                 let com = (h.comuna || '').toUpperCase();
                 let comu = (h.comunidad || '').toUpperCase();
 
-                // Validamos que el registro pertenezca a la comuna o comunidad filtrada
                 if (fComunaSel && !com.includes(fComunaSel)) continue;
                 if (fComunidadSel && !comu.includes(fComunidadSel)) continue;
 
-                if (c !== '') {
-                    callesUnicas.add(c);
-                }
+                if (c !== '') callesUnicas.add(c);
+                if (u !== '') ubchUnicas.add(u);
             }
 
+            // Calles
             fCalle.innerHTML = '<option value="">Todas las calles (Cargadas)</option>';
-            let callesOrdenadas = Array.from(callesUnicas).sort();
-
-            callesOrdenadas.forEach(calle => {
+            Array.from(callesUnicas).sort().forEach(calle => {
                 const opt = document.createElement('option');
-                opt.value = calle;
-                opt.textContent = calle;
+                opt.value = calle; opt.textContent = calle;
                 fCalle.appendChild(opt);
             });
+            if (seleccionCalle && callesUnicas.has(seleccionCalle)) fCalle.value = seleccionCalle;
+            else fCalle.value = "";
 
-            if (seleccionPrevia && callesUnicas.has(seleccionPrevia)) {
-                fCalle.value = seleccionPrevia;
-            } else {
-                fCalle.value = "";
+            // UBCHs
+            if(fUbch) {
+                fUbch.innerHTML = '<option value="">Todas las UBCH (Cargadas)</option>';
+                Array.from(ubchUnicas).sort().forEach(ubch => {
+                    const opt = document.createElement('option');
+                    opt.value = ubch; opt.textContent = ubch;
+                    fUbch.appendChild(opt);
+                });
+                if (seleccionUbch && ubchUnicas.has(seleccionUbch)) fUbch.value = seleccionUbch;
+                else fUbch.value = "";
             }
         }
 
@@ -1014,7 +1026,7 @@
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
                 
-                actualizarFiltroCalles();
+                actualizarFiltrosInteligentes();
                 filtrarTabla(); 
             });
         }
@@ -1025,8 +1037,9 @@
             const fComuna = document.getElementById('fComuna').value.toLowerCase();
             const fComunidad = document.getElementById('fComunidad').value.toLowerCase();
             
+            // Leemos el valor del nuevo <select> de UBCH
+            const fUbch = document.getElementById('fUbch').value.toUpperCase();
             const fCalle = document.getElementById('fCalle').value.toUpperCase();
-            const fUbch = document.getElementById('fUbch').value.toLowerCase();
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
             const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
 
@@ -1042,7 +1055,7 @@
                 const cumpleComunidad = (h.comunidad || '').toLowerCase().includes(fComunidad);
                 
                 const cumpleCalle = fCalle === "" || (h.calle || '').trim().toUpperCase() === fCalle;
-                const cumpleUbch = (h.ubch || '').toLowerCase().includes(fUbch);
+                const cumpleUbch = fUbch === "" || (h.ubch || '').trim().toUpperCase() === fUbch;
                 const cumpleVoto = fVoto === "" || (h.vd_vb_vo_seleccion || '').toUpperCase() === fVoto;
                 const cumpleParentesco = fParentesco === "" || (h.parentesco || '').toLowerCase() === fParentesco;
 
@@ -1119,7 +1132,7 @@
         }
 
         document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
-            // Si el elemento no es Comuna/Comunidad, dispara el filtrado directo
+            // Dispara el cálculo automático cuando no sean Comuna o Comunidad
             if(element.id !== 'fComuna' && element.id !== 'fComunidad') {
                 element.addEventListener('input', filtrarTabla); 
             }

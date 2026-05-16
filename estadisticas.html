@@ -329,6 +329,7 @@
 
         <h2>Filtro Demográfico Avanzado</h2>
         <div class="search-panel">
+            
             <div class="search-grid">
                 <div>
                     <label>Comuna / Circuito:</label>
@@ -342,15 +343,16 @@
                         <option value="">Todas las comunidades...</option>
                     </select>
                 </div>
-                
-                <div>
-                    <label>Buscar por UBCH:</label>
-                    <input type="text" id="fUbch" placeholder="Escriba la UBCH...">
-                </div>
                 <div>
                     <label>Filtrar por Calle / Sector:</label>
                     <select id="fCalle">
                         <option value="">Todas las calles (Cargando...)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Buscar por UBCH:</label>
+                    <select id="fUbch">
+                        <option value="">Todas las UBCH (Cargando...)</option>
                     </select>
                 </div>
                 
@@ -612,53 +614,64 @@
                     fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; 
                     fComunidad.disabled = true;
                 }
-                actualizarFiltroCalles();
+                actualizarFiltrosInteligentes();
                 calcularEstadisticas(); 
             });
             
             fComunidad.addEventListener('change', () => {
-                actualizarFiltroCalles();
+                actualizarFiltrosInteligentes();
                 calcularEstadisticas();
             });
         }
 
-        // REGLA DE ORO: Escaneo Inteligente de Calles en Estadisticas
-        function actualizarFiltroCalles() {
+        // REGLA DE ORO: Escaneo Inteligente unificado para Calles y UBCH
+        function actualizarFiltrosInteligentes() {
             const fComunaSel = document.getElementById('fComuna').value.toUpperCase();
             const fComunidadSel = document.getElementById('fComunidad').value.toUpperCase();
+            
             const fCalle = document.getElementById('fCalle');
-            const seleccionPrevia = fCalle.value;
+            const seleccionCalle = fCalle.value;
+
+            const fUbch = document.getElementById('fUbch');
+            const seleccionUbch = fUbch ? fUbch.value : '';
 
             let callesUnicas = new Set();
+            let ubchUnicas = new Set();
 
             for (let id in baseDeDatosHabitantes) {
                 let h = baseDeDatosHabitantes[id];
                 let c = (h.calle || '').trim().toUpperCase();
+                let u = (h.ubch || '').trim().toUpperCase();
                 let com = (h.comuna || '').toUpperCase();
                 let comu = (h.comunidad || '').toUpperCase();
 
                 if (fComunaSel && !com.includes(fComunaSel)) continue;
                 if (fComunidadSel && !comu.includes(fComunidadSel)) continue;
 
-                if (c !== '') {
-                    callesUnicas.add(c);
-                }
+                if (c !== '') callesUnicas.add(c);
+                if (u !== '') ubchUnicas.add(u);
             }
 
+            // Actualizar Calles
             fCalle.innerHTML = '<option value="">Todas las calles (Cargadas)</option>';
-            let callesOrdenadas = Array.from(callesUnicas).sort();
-
-            callesOrdenadas.forEach(calle => {
+            Array.from(callesUnicas).sort().forEach(calle => {
                 const opt = document.createElement('option');
-                opt.value = calle;
-                opt.textContent = calle;
+                opt.value = calle; opt.textContent = calle;
                 fCalle.appendChild(opt);
             });
+            if (seleccionCalle && callesUnicas.has(seleccionCalle)) fCalle.value = seleccionCalle;
+            else fCalle.value = "";
 
-            if (seleccionPrevia && callesUnicas.has(seleccionPrevia)) {
-                fCalle.value = seleccionPrevia;
-            } else {
-                fCalle.value = "";
+            // Actualizar UBCH
+            if(fUbch) {
+                fUbch.innerHTML = '<option value="">Todas las UBCH (Cargadas)</option>';
+                Array.from(ubchUnicas).sort().forEach(ubch => {
+                    const opt = document.createElement('option');
+                    opt.value = ubch; opt.textContent = ubch;
+                    fUbch.appendChild(opt);
+                });
+                if (seleccionUbch && ubchUnicas.has(seleccionUbch)) fUbch.value = seleccionUbch;
+                else fUbch.value = "";
             }
         }
 
@@ -672,7 +685,7 @@
         function cargarDatos() {
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
-                actualizarFiltroCalles();
+                actualizarFiltrosInteligentes();
                 calcularEstadisticas(); 
             });
         }
@@ -735,7 +748,7 @@
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
             
-            const fUbch = document.getElementById('fUbch').value.toLowerCase();
+            const fUbch = document.getElementById('fUbch').value.toUpperCase();
             const fCalle = document.getElementById('fCalle').value.toUpperCase();
             const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
             
@@ -760,7 +773,7 @@
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
                 
-                const cumpleUbch = (h.ubch || '').toLowerCase().includes(fUbch);
+                const cumpleUbch = fUbch === "" || (h.ubch || '').trim().toUpperCase() === fUbch;
                 if (fUbch && !cumpleUbch) continue;
                 
                 const cumpleCalle = fCalle === "" || (h.calle || '').trim().toUpperCase() === fCalle;
@@ -876,7 +889,7 @@
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
             
-            const fUbch = document.getElementById('fUbch').value.toLowerCase();
+            const fUbch = document.getElementById('fUbch').value.toUpperCase();
             const fCalle = document.getElementById('fCalle').value.toUpperCase();
             const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
             
@@ -898,7 +911,7 @@
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
                 
-                const cumpleUbch = (h.ubch || '').toLowerCase().includes(fUbch);
+                const cumpleUbch = fUbch === "" || (h.ubch || '').trim().toUpperCase() === fUbch;
                 if (fUbch && !cumpleUbch) continue;
                 
                 const cumpleCalle = fCalle === "" || (h.calle || '').trim().toUpperCase() === fCalle;
