@@ -26,7 +26,7 @@
             background: #1e1e1e; 
             padding: 40px; 
             border-radius: 8px; 
-            max-width: 900px; 
+            max-width: 950px; 
             margin: auto; 
             box-shadow: 0 5px 25px rgba(0,0,0,0.5); 
             border-top: 8px solid #ff9800; 
@@ -62,11 +62,11 @@
         .panel-info { 
             text-align: left; 
             background: #111; 
-            padding: 20px; 
+            padding: 25px; 
             border-left: 4px solid #ff9800; 
             font-size: 13px; 
             margin-bottom: 25px; 
-            line-height: 1.6;
+            line-height: 1.7;
         }
         
         input[type="file"] { 
@@ -166,11 +166,17 @@
         <h1>Herramienta de Reparación e Inyección de Parches Demográficos</h1>
         
         <div class="panel-info">
-            <strong>DICCIONARIO LOGÍSTICO COMPLETO CON BLINDAJE DE IDENTIDADES Y VINCULACIÓN TOTAL:</strong><br><br>
-            - 👨‍👩‍👧‍👦 <b>Estructura de Parentescos Estricta:</b> Consolida la figura de <i>Jefe de Hogar</i>. Escanea las marcas de "X" y texto en columnas secundarias para registrar explícitamente si es <u>madre</u>, <u>padre</u>, <u>hijo</u>, <u>hija</u>, o <u>esposa</u>, evaluando el género del habitante de forma clínica.<br>
-            - 🛡️ <b>Consolidación Territorial y Residencial:</b> Arrastra en cascada UBCH, Comuna, Comunidad, Calle, Casa, Tipo de Vivienda y Tenencia desde la fila del Jefe de Familia hacia todos los dependientes y menores de edad. Evita que filas con celdas en blanco borren datos válidos en Firebase.<br>
-            - 🏠 <b>Mapeo Clínico de Vivienda:</b> Clasifica el Tipo (Casa, Apto, Rancho, Anexo, Habitación) y extrae la Tenencia (Propia, Alquilada, Prestada, Arrimado). Obliga a que si detecta "RANCHO", la condición pase a <i>malo</i> de forma automática.<br>
-            - 🪪 <b>Limpieza de Cédulas y Menores:</b> Extrae y formatea prefijos "E" y "V", borrando puntos y letras internas. Si calcula una edad menor a 9 años, fija automáticamente que no posee cédula física.
+            <strong style="color:#ff9800; font-size:14px; letter-spacing:1px;">📋 DICCIONARIO LOGÍSTICO ABSOLUTO — CAPAS DE AUDITORÍA ACTIVAS:</strong><br><br>
+            1. 🛡️ <b>Resguardo Territorial en Cascada:</b> Protege los campos residenciales. Arrastra y rellena de manera automática UBCH, Código Sigue, Comuna, Consejo Comunal y Comunidad desde la fila del Jefe hacia abajo para evitar celdas vacías o borrados accidentales en Firebase.<br>
+            2. 🪪 <b>Filtro de Extranjería (Regex E/V):</b> Evalúa el prefijo de la cédula en el Excel. Si detecta "E" o "E-", configura la nacionalidad como "E". Extrae el número puro, eliminando letras y puntos de millares para no romper búsquedas futuras.<br>
+            3. 🚸 <b>Escudo para Menores e Indocumentados:</b> Si en el campo cédula se lee "MENOR", "S/C", "NO" o "N/A", aborta la búsqueda numérica y activa el rastreo por coincidencia compuesta: Nombres + Apellidos + Comuna indexada.<br>
+            4. 🏠 <b>Separación Semántica de Vivienda:</b> Divide de forma quirúrgica la arquitectura de la propiedad. Detecta palabras clave para poblar el nuevo campo <u>tenencia_vivienda</u> (propia, alquilada, prestada, arrimado, compartida, cuidando) y limpia el tipo de estructura (casa, apto, town house, anexo, habitacion, rancho).<br>
+            5. ⚠️ <b>Regla Forzada Clínico-Estructural:</b> Si el tipo de vivienda es clasificado como "rancho" o "improvisada", el motor anula cualquier criterio del encuestador y fuerza las condiciones de la vivienda directamente a <i>malo</i>.<br>
+            6. 👨‍👩‍👧‍👦 <b>Análisis de Género y Jerarquía de Hogar:</b> Fija de forma obligatoria el rol de <i>Jefe de Hogar</i>. Al procesar las cargas familiares de abajo, cruza las marcas de Madre/Padre/Hijo con las columnas de género para inyectar explícitamente: <u>madre</u>, <u>padre</u>, <u>hijo</u> o <u>hija</u>.<br>
+            7. 💍 <b>Traductor de Parentescos Especiales:</b> Si la columna "OTRO" contiene descripciones textuales, el motor parsea el string y homologa los roles del buscador: <u>esposa</u>, <u>esposo</u>, <u>nieta</u>, <u>nieto</u>, <u>hermana</u> o <u>hermano</u>.<br>
+            8. 📅 <b>Lógica Cronológica e Indexación de Cédula Física:</b> Estructura las fechas en formato ISO (AAAA-MM-DD). Si la edad matemática deducida es inferior a los 9 años, el sistema marca de forma automatizada que el menor no posee Cédula Física en mano.<br>
+            9. ⛽ <b>Detección de Infraestructura Energética:</b> Escanea la columna de cilindros de gas; si contiene datos válidos (ej: 10kg, 18kg, Directo), configura de inmediato la variable <u>tiene_gas</u> en <i>si</i> y guarda el peso.<br>
+            10. 🎖️ <b>Normalización de Variables de Protección Social:</b> Purifica todas las respuestas "X", "SI" o "NO" del Excel al formato binario estricto (si/no) para los módulos de Trabajo, Escuela, Amor Mayor, Carnet de la Patria, Misión JGH, Discapacidad, Embarazo, Lactancia y Hogares de la Patria.
         </div>
 
         <input type="file" id="csvFile" accept=".csv">
@@ -369,7 +375,7 @@
                             rowCedulaNum = rowCedulaNum.replace(/\./g, '').trim();
                         }
 
-                        // Búsqueda cruzada usando el escudo de ubicación cascada
+                        // Búsqueda cruzada usando el escudo de ubicación cascada con Comuna asegurada
                         if(esCedulaValida && (mapCedulas[rawCed] || mapCedulas[rowCedulaNum])) {
                             targetId = mapCedulas[rawCed] || mapCedulas[rowCedulaNum];
                         } else {
@@ -381,7 +387,6 @@
 
                         if(targetId) {
                             let updates = {};
-                            let cambiosRealizados = [];
                             let hOriginal = baseDatosFirebase[targetId];
 
                             if (esCedulaValida) {
@@ -428,9 +433,9 @@
 
                             if (tipoParsed === 'rancho') condicionParsed = 'malo';
 
-                            // Guardar en la cascada si la fila actual los trajo explícitos
+                            // Guardar en la cascada si la fila actual los trajo explísitos
                             if (casaRaw !== "") cCasa = casaRaw;
-                            if (tipoVivRaw !== "" && !tipoVivRaw.includes('PROPIA') && !tipoVivRaw.includes('ALQUILAD') && !tipoVivRaw.includes('PRESTAD') && !tipoVivRaw.includes('ARRIMAD')) cTipo = tipoParsed;
+                            if (tipoVivRaw !== "" && !tipoVivRaw.includes('PROPIA') && !tipoVivRaw.includes('ALQUILAD')) cTipo = tipoParsed;
                             if (condicionParsed !== "regular") cCondicion = condicionParsed;
                             if (tenenciaParsed !== "") cTenencia = tenenciaParsed;
 
@@ -482,7 +487,6 @@
                             
                             if (rowResponsabilidad.includes("JEFE DE FAMILIA") || rowResponsabilidad.includes("JEFE")) {
                                 updates['parentesco'] = 'jefe de hogar';
-                                cambiosRealizados.push("Rol ➔ Jefe de Hogar");
                                 ultimoJefeIdActivo = targetId; 
                             } else {
                                 let rMadre = cleanText(row['MADRE']);
@@ -511,15 +515,13 @@
                                 }
 
                                 updates['parentesco'] = nParentesco;
-                                cambiosRealizados.push(`Parentesco ➔ ${nParentesco}`);
 
                                 if (ultimoJefeIdActivo !== null && targetId !== ultimoJefeIdActivo) {
                                     updates['jefe_hogar_id'] = ultimoJefeIdActivo;
-                                    cambiosRealizados.push("Carga Familiar Enlazada 👨‍👩‍👧‍👦");
                                 }
                             }
 
-                            // 6. INYECTOR SOCIAL SEGURO (NO DESTRUYE CON VACÍOS)
+                            // 6. INYECTOR SOCIAL SEGURO
                             const normalizarYParchearCampo = (columnaExcel, claveFirebase) => {
                                 if (row[columnaExcel] !== undefined) {
                                     let celdaRaw = cleanText(row[columnaExcel]);
@@ -548,13 +550,13 @@
                             else if(cleanText(row['VB'])) updates['vd_vb_vo_seleccion'] = 'VB';
                             else if(cleanText(row['VO'])) updates['vd_vb_vo_seleccion'] = 'VO';
 
-                            // FILTRO MAESTRO DE CAMBIOS NO DESTRUCTIVOS: Elimina las celdas vacías del paquete de envío
+                            // FILTRO MAESTRO DE CAMBIOS NO DESTRUCTIVOS
                             let tieneCambiosReales = false;
                             for (let key in updates) {
                                 if (updates[key] !== hOriginal[key] && updates[key] !== undefined && updates[key] !== "") {
                                     tieneCambiosReales = true;
                                 } else {
-                                    delete updates[key]; // Remueve campos idénticos o vacíos para no pisar data
+                                    delete updates[key]; 
                                 }
                             }
 
@@ -563,7 +565,7 @@
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
                                     let colorTipo = updates['jefe_hogar_id'] ? "log-family" : "log-ok";
-                                    printLog(`[CONSOLIDADO] ${rowNombre} ${rowApellido} ➔ Parentesco: ${updates['parentesco'] || hOriginal.parentesco} | Ubicación Completa Asegurada`, colorTipo);
+                                    printLog(`[CONSOLIDADO] ${rowNombre} ${rowApellido} ➔ Parentesco: ${updates['parentesco'] || hOriginal.parentesco}`, colorTipo);
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
                                 }
@@ -586,7 +588,7 @@
                         document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                     }
 
-                    printLog(`📊 PROCESO DE DEPURACIÓN DE CONTROL COMPLETADO CON ÉXITO.`, "log-info");
+                    printLog(`📊 PROCESO DE DEPURACIÓN FINALIZADO CON ÉXITO.`, "log-info");
                     printLog(`Expedientes consolidados en Firebase sin pérdidas: ${modificados}`, "log-success");
                     printLog(`Expedientes verificados en perfecto estado: ${omitidosCambio}`, "log-ok");
                     alert("¡Estructura de Jefes de Hogar, Parentescos y Bloque Territorial fijada exitosamente!");
