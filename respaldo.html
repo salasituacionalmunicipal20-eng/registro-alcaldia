@@ -70,7 +70,7 @@
         
         .status-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 15px;
             margin-bottom: 30px;
         }
@@ -333,7 +333,7 @@
 
         .action-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr; /* Ahora son 3 columnas */
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 20px;
             border-top: 1px dashed #333;
             padding-top: 30px;
@@ -431,6 +431,18 @@
                 <span class="status-value status-online" id="lblOperadoresOnline" style="color: #00d2ff;">0</span>
                 <span class="status-subtext">Conectados ahora</span>
             </div>
+
+            <div class="status-box border-blue">
+                <span class="status-label">Cuentas Creadas</span>
+                <span class="status-value" id="lblOperadores">0</span>
+                <span class="status-subtext">Usuarios autorizados</span>
+            </div>
+
+            <div class="status-box border-orange">
+                <span class="status-label">Peso de Datos (FB)</span>
+                <span class="status-value" id="lblPesoDB">0.00 MB</span>
+                <span class="status-subtext">Consumo de la nube</span>
+            </div>
         </div>
 
         <div class="sync-management-panel">
@@ -490,7 +502,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set, onDisconnect, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         
         import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -522,6 +534,22 @@
                 document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:100px; font-family:sans-serif;'>⚠️ ACCESO RESTRINGIDO. USTED NO ESTÁ AUTORIZADO.</h1>";
                 setTimeout(() => window.location.href = "index.html", 3000);
             } else {
+                
+                // REGLA DE ORO: ¡Activamos la presencia del propio Carlos Admin para que el radar lo detecte!
+                window.presenciaRef = ref(database, `presencia/${user.uid}`);
+                onDisconnect(window.presenciaRef).update({ 
+                    estado: 'offline', 
+                    ultima_accion: 'Cerró la Bóveda de Respaldo' 
+                });
+                
+                set(window.presenciaRef, {
+                    estado: 'online',
+                    nombre: 'CARLOS ADMIN',
+                    rol: 'admin',
+                    modulo_actual: 'Bóveda de Respaldo y DB',
+                    ultima_accion: 'Monitoreando servidores e integridad de datos'
+                });
+
                 iniciarMonitoreoFirebase();
                 iniciarRadarPresencia();
                 
@@ -549,25 +577,36 @@
 
                 if (error) throw error;
 
-                lblConn.textContent = "EN LÍNEA (OK)";
-                lblConn.className = "status-value status-supabase";
-                lblCount.textContent = count || 0;
+                if(lblConn) {
+                    lblConn.textContent = "EN LÍNEA (OK)";
+                    lblConn.className = "status-value status-supabase";
+                }
+                if(lblCount) {
+                    lblCount.textContent = count || 0;
+                }
 
                 if(!sincronizando) {
-                    document.getElementById('btnSincronizar').disabled = false;
+                    const btnSinc = document.getElementById('btnSincronizar');
+                    if(btnSinc) btnSinc.disabled = false;
                 }
 
             } catch (e) {
-                document.getElementById('lblSupabaseConexion').textContent = "ERROR / DESCONECTADO";
-                document.getElementById('lblSupabaseConexion').className = "status-value status-offline";
-                document.getElementById('btnSincronizar').disabled = true;
+                const lblConn = document.getElementById('lblSupabaseConexion');
+                if(lblConn) {
+                    lblConn.textContent = "ERROR / DESCONECTADO";
+                    lblConn.className = "status-value status-offline";
+                }
+                const btnSinc = document.getElementById('btnSincronizar');
+                if(btnSinc) btnSinc.disabled = true;
             }
         }
 
         window.ejecutarSincronizacionSegura = async () => {
             if(sincronizando) return;
             sincronizando = true;
-            document.getElementById('btnSincronizar').disabled = true;
+            
+            const btnSinc = document.getElementById('btnSincronizar');
+            if(btnSinc) btnSinc.disabled = true;
             
             escribirSyncLog("Iniciando escaneo y sincronización maestra...", "sync-info");
 
@@ -620,14 +659,25 @@
             const connectedRef = ref(database, ".info/connected");
             onValue(connectedRef, (snap) => {
                 const lblConexion = document.getElementById('lblConexion');
+                if(!lblConexion) return;
+                
                 if (snap.val() === true) {
                     lblConexion.textContent = "EN LÍNEA (OK)";
                     lblConexion.className = "status-value status-online";
                 } else {
                     lblConexion.textContent = "DESCONECTADO";
                     lblConexion.className = "status-value status-offline";
-                    document.getElementById('btnDescargarCSV').disabled = true;
-                    document.getElementById('btnDescargarJSON').disabled = true;
+                    const btnDescCSV = document.getElementById('btnDescargarCSV');
+                    const btnDescJSON = document.getElementById('btnDescargarJSON');
+                    if(btnDescCSV) btnDescCSV.disabled = true;
+                    if(btnDescJSON) btnDescJSON.disabled = true;
+                }
+            });
+
+            onValue(ref(database, 'operadores'), (snapshot) => {
+                if(snapshot.exists()) {
+                    const lblOps = document.getElementById('lblOperadores');
+                    if(lblOps) lblOps.textContent = Object.keys(snapshot.val()).length;
                 }
             });
 
@@ -636,36 +686,44 @@
                     baseDatosBruta = snapshot.val();
                     const keys = Object.keys(baseDatosBruta);
                     
-                    document.getElementById('lblTotalRegistros').textContent = keys.length;
+                    const lblTotal = document.getElementById('lblTotalRegistros');
+                    if(lblTotal) lblTotal.textContent = keys.length;
                     
                     const jsonString = JSON.stringify(baseDatosBruta);
                     const bytes = new Blob([jsonString]).size;
                     const mb = (bytes / (1024 * 1024)).toFixed(2);
-                    document.getElementById('lblPesoDB').textContent = `${mb} MB`;
+                    
+                    const lblPeso = document.getElementById('lblPesoDB');
+                    if(lblPeso) lblPeso.textContent = `${mb} MB`;
 
-                    document.getElementById('btnDescargarCSV').disabled = false;
-                    document.getElementById('btnDescargarJSON').disabled = false;
+                    const btnCSV = document.getElementById('btnDescargarCSV');
+                    const btnJSON = document.getElementById('btnDescargarJSON');
+                    if(btnCSV) btnCSV.disabled = false;
+                    if(btnJSON) btnJSON.disabled = false;
 
                     construirLiveFeed(keys);
                 } else {
-                    document.getElementById('lblTotalRegistros').textContent = "0";
-                    document.getElementById('lblPesoDB').textContent = "0.00 MB";
+                    const lblTotal = document.getElementById('lblTotalRegistros');
+                    const lblPeso = document.getElementById('lblPesoDB');
+                    if(lblTotal) lblTotal.textContent = "0";
+                    if(lblPeso) lblPeso.textContent = "0.00 MB";
                 }
             });
         }
 
         function construirLiveFeed(keys) {
             const feedBox = document.getElementById('liveFeedBox');
+            if(!feedBox) return;
             feedBox.innerHTML = ''; 
 
             const ultimosKeys = keys.slice(-30).reverse(); 
 
             ultimosKeys.forEach(id => {
                 let h = baseDatosBruta[id];
-                let fecha = h.fecha_registro || "Fecha desconocida";
-                let operador = h.registrado_por_nombre || "Operador Desconocido";
-                let cedula = h.cedula ? `${h.nacionalidad||'V'}-${h.cedula}` : "S/C";
-                let habitante = `${h.nombre} ${h.apellido}`;
+                let fecha = h?.fecha_registro || "Fecha desconocida";
+                let operador = h?.registrado_por_nombre || "Operador Desconocido";
+                let cedula = h?.cedula ? `${h.nacionalidad||'V'}-${h.cedula}` : "S/C";
+                let habitante = `${h?.nombre || 'Desconocido'} ${h?.apellido || ''}`;
 
                 let accionStr = operador.includes("MIGRACIÓN") ? "alojó en el servidor central a" : "registró/actualizó a";
                 let accionColor = operador.includes("MIGRACIÓN") ? "#ff8c00" : "#00ff00";
@@ -684,10 +742,11 @@
             });
         }
 
-        // REGLA DE ORO: Escáner Espía Ampliado y Conectado a los Monitores Topes
         function iniciarRadarPresencia() {
             onValue(ref(database, 'presencia'), (snapshot) => {
                 const radarBox = document.getElementById('radarBox');
+                if(!radarBox) return;
+                
                 radarBox.innerHTML = '';
 
                 let countAdmins = 0;
@@ -703,17 +762,12 @@
                             conteo++;
                             let isAdmin = data.rol === 'admin';
                             
-                            // Sumamos para los monitores topes
-                            if (isAdmin) {
-                                countAdmins++;
-                            } else {
-                                countOps++;
-                            }
+                            if (isAdmin) countAdmins++;
+                            else countOps++;
 
                             let rolEtiq = isAdmin ? '⭐ Admin' : '👨🏽‍💻 Operador';
                             let claseCard = isAdmin ? 'admin-card' : '';
                             let claseDot = isAdmin ? 'dot-admin' : '';
-                            
                             let ultimaAccion = data.ultima_accion || 'Navegando en el sistema...';
 
                             let div = document.createElement('div');
@@ -721,8 +775,8 @@
                             div.innerHTML = `
                                 <div class="radar-dot ${claseDot}"></div>
                                 <div class="radar-info">
-                                    <span class="radar-name">${data.nombre} <span class="radar-role">(${rolEtiq})</span></span>
-                                    <span class="radar-module">📍 Ubicación: Módulo de ${data.modulo_actual || 'Inicio'}</span>
+                                    <span class="radar-name">${data.nombre || 'Usuario'} <span class="radar-role">(${rolEtiq})</span></span>
+                                    <span class="radar-module">📍 Ubicación: ${data.modulo_actual || 'Inicio'}</span>
                                     <span class="radar-action">👁️ Actividad: ${ultimaAccion}</span>
                                 </div>
                             `;
@@ -737,9 +791,10 @@
                     radarBox.innerHTML = "<div style='color:#555; text-align:center; font-size:12px; margin-top:20px;'>Radar en espera de señales...</div>";
                 }
 
-                // Actualizamos los números gigantes de arriba
-                document.getElementById('lblAdminsOnline').textContent = countAdmins;
-                document.getElementById('lblOperadoresOnline').textContent = countOps;
+                const lblAdmins = document.getElementById('lblAdminsOnline');
+                const lblOps = document.getElementById('lblOperadoresOnline');
+                if(lblAdmins) lblAdmins.textContent = countAdmins;
+                if(lblOps) lblOps.textContent = countOps;
             });
         }
 
