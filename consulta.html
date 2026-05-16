@@ -442,8 +442,10 @@
                         </select>
                     </div>
                     <div>
-                        <label>Buscar por Calle:</label>
-                        <input type="text" id="fCalle" placeholder="Escriba la calle...">
+                        <label>Filtrar por Calle / Sector:</label>
+                        <select id="fCalle">
+                            <option value="">Todas las calles (Cargando...)</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -873,21 +875,19 @@
             signOut(auth).then(() => window.location.href = "index.html"); 
         });
 
-        // Evento para cambiar el número de registros por página
         document.getElementById('selectPaginacion').addEventListener('change', (e) => {
             registrosPorPagina = parseInt(e.target.value);
-            paginaActual = 1; // Volvemos a la primera pagina al cambiar el límite
+            paginaActual = 1; 
             renderizarTabla();
         });
 
         window.imprimirTabla = () => { 
             const limiteOriginal = registrosPorPagina;
-            registrosPorPagina = datosFiltrados.length; // Forzamos a mostrar todos temporalmente
+            registrosPorPagina = datosFiltrados.length; 
             renderizarTabla();
             
             window.print(); 
             
-            // Restauramos la paginacion
             registrosPorPagina = limiteOriginal;
             renderizarTabla();
         };
@@ -899,7 +899,6 @@
                 const h = item.h;
                 const nac = h.nacionalidad ? h.nacionalidad + '-' : 'V-';
                 const cedFinal = h.cedula ? (nac + h.cedula) : 'S/C';
-                // Añadimos comillas para evitar que las comas en direcciones rompan el CSV
                 csv += `"${h.nombre} ${h.apellido}","${cedFinal}","${h.ubch || ''}","${h.comunidad}","${h.calle}","${h.telefono || ''}"\n`; 
             });
             
@@ -970,17 +969,45 @@
         function cargarDatos() {
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
+                
+                // REGLA DE ORO: Escaneo Inteligente de Calles
+                const fCalle = document.getElementById('fCalle');
+                const seleccionPrevia = fCalle.value; 
+                
+                let callesUnicas = new Set();
+                for (let id in baseDeDatosHabitantes) {
+                    let c = baseDeDatosHabitantes[id].calle;
+                    if (c && c.trim() !== '') {
+                        callesUnicas.add(c.trim().toUpperCase());
+                    }
+                }
+                
+                fCalle.innerHTML = '<option value="">Todas las calles...</option>';
+                let callesOrdenadas = Array.from(callesUnicas).sort();
+                
+                callesOrdenadas.forEach(calle => {
+                    const opt = document.createElement('option');
+                    opt.value = calle;
+                    opt.textContent = calle;
+                    fCalle.appendChild(opt);
+                });
+                
+                if (seleccionPrevia && callesUnicas.has(seleccionPrevia)) {
+                    fCalle.value = seleccionPrevia;
+                }
+                
                 filtrarTabla(); 
             });
         }
 
-        // REGLA DE ORO: Filtro Tabla ahora sí procesa UBCH, Voto y Parentesco
         function filtrarTabla() {
             const fNom = document.getElementById('fNombre').value.toLowerCase();
             const fCed = document.getElementById('fCedula').value.toLowerCase();
             const fComuna = document.getElementById('fComuna').value.toLowerCase();
             const fComunidad = document.getElementById('fComunidad').value.toLowerCase();
-            const fCalle = document.getElementById('fCalle').value.toLowerCase();
+            
+            // REGLA DE ORO: Actualizamos a que busque la calle seleccionada exactamente
+            const fCalle = document.getElementById('fCalle').value.toUpperCase();
             
             const fUbch = document.getElementById('fUbch').value.toLowerCase();
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
@@ -996,8 +1023,8 @@
                 const cumpleCed = (h.cedula || '').toLowerCase().includes(fCed);
                 const cumpleComuna = (h.comuna || '').toLowerCase().includes(fComuna);
                 const cumpleComunidad = (h.comunidad || '').toLowerCase().includes(fComunidad);
-                const cumpleCalle = (h.calle || '').toLowerCase().includes(fCalle);
                 
+                const cumpleCalle = fCalle === "" || (h.calle || '').trim().toUpperCase() === fCalle;
                 const cumpleUbch = (h.ubch || '').toLowerCase().includes(fUbch);
                 const cumpleVoto = fVoto === "" || (h.vd_vb_vo_seleccion || '').toUpperCase() === fVoto;
                 const cumpleParentesco = fParentesco === "" || (h.parentesco || '').toLowerCase() === fParentesco;
@@ -1008,16 +1035,14 @@
             }
             
             document.getElementById('totalResultados').textContent = `Total de registros encontrados: ${datosFiltrados.length}`;
-            paginaActual = 1; // Al aplicar un filtro nuevo, volvemos a la página 1
+            paginaActual = 1; 
             renderizarTabla();
         }
 
-        // Función para inyectar solo la porción de datos de la página actual
         function renderizarTabla() {
             const tbody = document.getElementById('tablaCuerpo');
             tbody.innerHTML = ""; 
 
-            // Lógica matemática para cortar el arreglo de datos
             const inicio = (paginaActual - 1) * registrosPorPagina;
             const fin = inicio + registrosPorPagina;
             const datosPaginaActual = datosFiltrados.slice(inicio, fin);
@@ -1049,7 +1074,6 @@
             renderizarPaginacion();
         }
 
-        // Función para construir los botones de navegación
         function renderizarPaginacion() {
             const contenedor = document.getElementById('paginacion');
             if (datosFiltrados.length === 0) {
