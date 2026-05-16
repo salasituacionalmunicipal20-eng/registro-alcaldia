@@ -138,7 +138,7 @@
             margin-bottom: 5px;
         }
         
-        select { 
+        input, select { 
             width: 100%; 
             padding: 12px; 
             border: 1px solid #ccc; 
@@ -148,7 +148,7 @@
             transition: 0.3s;
         }
         
-        select:focus { 
+        input:focus, select:focus { 
             outline: none; 
             border-color: var(--azul-oficial); 
             box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); 
@@ -202,8 +202,8 @@
         .c-10::before { background-color: #6610f2; }
         .c-11::before { background-color: #343a40; } 
         .c-12::before { background-color: #dc3545; }
-        .c-13::before { background-color: #ff8c00; } /* Naranja para VB */
-        .c-14::before { background-color: #6c757d; } /* Gris para VO */
+        .c-13::before { background-color: #ff8c00; } 
+        .c-14::before { background-color: #6c757d; } 
 
         .stat-icon { font-size: 30px; margin-bottom: 5px; display: block; }
         .stat-number { font-size: 28px; font-weight: 900; color: #333; margin-bottom: 2px; }
@@ -344,6 +344,17 @@
                 </div>
                 
                 <div>
+                    <label>Buscar por UBCH:</label>
+                    <input type="text" id="fUbch" placeholder="Escriba la UBCH...">
+                </div>
+                <div>
+                    <label>Filtrar por Calle / Sector:</label>
+                    <select id="fCalle">
+                        <option value="">Todas las calles (Cargando...)</option>
+                    </select>
+                </div>
+                
+                <div>
                     <label>Sexo / Género:</label>
                     <select id="fSexo">
                         <option value="">Todos</option>
@@ -358,6 +369,21 @@
                         <option value="VD">Voto Duro (VD)</option>
                         <option value="VB">Voto Blando (VB)</option>
                         <option value="VO">Voto Opositor (VO)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Rol Familiar / Parentesco:</label>
+                    <select id="fParentesco">
+                        <option value="">Todos</option>
+                        <option value="jefe de hogar">Jefe de Hogar</option>
+                        <option value="madre">Madre</option>
+                        <option value="padre">Padre</option>
+                        <option value="hijo">Hijo</option>
+                        <option value="hija">Hija</option>
+                        <option value="esposo">Esposo</option>
+                        <option value="esposa">Esposa</option>
+                        <option value="nieto">Nieto</option>
+                        <option value="nieta">Nieta</option>
                     </select>
                 </div>
                 <div>
@@ -586,20 +612,67 @@
                     fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; 
                     fComunidad.disabled = true;
                 }
+                actualizarFiltroCalles();
                 calcularEstadisticas(); 
             });
             
-            fComunidad.addEventListener('change', calcularEstadisticas);
+            fComunidad.addEventListener('change', () => {
+                actualizarFiltroCalles();
+                calcularEstadisticas();
+            });
         }
 
-        document.getElementById('fSexo').addEventListener('change', calcularEstadisticas);
-        document.getElementById('fVoto').addEventListener('change', calcularEstadisticas);
-        document.getElementById('fBeneficio').addEventListener('change', calcularEstadisticas);
-        document.getElementById('fCondicion').addEventListener('change', calcularEstadisticas);
+        // REGLA DE ORO: Escaneo Inteligente de Calles en Estadisticas
+        function actualizarFiltroCalles() {
+            const fComunaSel = document.getElementById('fComuna').value.toUpperCase();
+            const fComunidadSel = document.getElementById('fComunidad').value.toUpperCase();
+            const fCalle = document.getElementById('fCalle');
+            const seleccionPrevia = fCalle.value;
+
+            let callesUnicas = new Set();
+
+            for (let id in baseDeDatosHabitantes) {
+                let h = baseDeDatosHabitantes[id];
+                let c = (h.calle || '').trim().toUpperCase();
+                let com = (h.comuna || '').toUpperCase();
+                let comu = (h.comunidad || '').toUpperCase();
+
+                if (fComunaSel && !com.includes(fComunaSel)) continue;
+                if (fComunidadSel && !comu.includes(fComunidadSel)) continue;
+
+                if (c !== '') {
+                    callesUnicas.add(c);
+                }
+            }
+
+            fCalle.innerHTML = '<option value="">Todas las calles (Cargadas)</option>';
+            let callesOrdenadas = Array.from(callesUnicas).sort();
+
+            callesOrdenadas.forEach(calle => {
+                const opt = document.createElement('option');
+                opt.value = calle;
+                opt.textContent = calle;
+                fCalle.appendChild(opt);
+            });
+
+            if (seleccionPrevia && callesUnicas.has(seleccionPrevia)) {
+                fCalle.value = seleccionPrevia;
+            } else {
+                fCalle.value = "";
+            }
+        }
+
+        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
+            // Dispara el cálculo automático cuando no sean Comuna o Comunidad
+            if(element.id !== 'fComuna' && element.id !== 'fComunidad') {
+                element.addEventListener('input', calcularEstadisticas); 
+            }
+        });
 
         function cargarDatos() {
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
+                actualizarFiltroCalles();
                 calcularEstadisticas(); 
             });
         }
@@ -639,7 +712,6 @@
             `;
         }
         
-        // REGLA DE ORO: Actualizamos el resumen de métricas para PDF con VB y VO
         function imprimirResumenMetricas(t) {
             return `
                 <div><strong>Total Personas:</strong> ${t.total}</div>
@@ -662,6 +734,11 @@
         function calcularEstadisticas() {
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
+            
+            const fUbch = document.getElementById('fUbch').value.toLowerCase();
+            const fCalle = document.getElementById('fCalle').value.toUpperCase();
+            const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
+            
             const fSexo = document.getElementById('fSexo').value.toLowerCase();
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
             const fBeneficio = document.getElementById('fBeneficio').value.toLowerCase();
@@ -670,8 +747,6 @@
             let cTotal = 0, cAdultos = 0, cEnfermos = 0, cDiscapacidad = 0, cJefes = 0;
             let cNinos = 0, cTrabajan = 0, cEscolarizados = 0;
             let cPatria = 0, cAmor = 0, cEmbarazadas = 0;
-            
-            // REGLA DE ORO: Sumamos contadores para VD, VB, VO
             let cVD = 0, cVB = 0, cVO = 0;
             
             let hogaresConGasUnicos = new Set();
@@ -684,6 +759,16 @@
 
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
+                
+                const cumpleUbch = (h.ubch || '').toLowerCase().includes(fUbch);
+                if (fUbch && !cumpleUbch) continue;
+                
+                const cumpleCalle = fCalle === "" || (h.calle || '').trim().toUpperCase() === fCalle;
+                if (fCalle && !cumpleCalle) continue;
+                
+                const cumpleParentesco = fParentesco === "" || (h.parentesco || '').toLowerCase() === fParentesco;
+                if (fParentesco && !cumpleParentesco) continue;
+
                 if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
                 if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
                 
@@ -790,6 +875,11 @@
         window.imprimirMetrica = (tipo) => {
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
+            
+            const fUbch = document.getElementById('fUbch').value.toLowerCase();
+            const fCalle = document.getElementById('fCalle').value.toUpperCase();
+            const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
+            
             const fSexo = document.getElementById('fSexo').value.toLowerCase();
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
             const fBeneficio = document.getElementById('fBeneficio').value.toLowerCase();
@@ -807,6 +897,16 @@
 
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
+                
+                const cumpleUbch = (h.ubch || '').toLowerCase().includes(fUbch);
+                if (fUbch && !cumpleUbch) continue;
+                
+                const cumpleCalle = fCalle === "" || (h.calle || '').trim().toUpperCase() === fCalle;
+                if (fCalle && !cumpleCalle) continue;
+                
+                const cumpleParentesco = fParentesco === "" || (h.parentesco || '').toLowerCase() === fParentesco;
+                if (fParentesco && !cumpleParentesco) continue;
+
                 if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
                 if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
                 
@@ -916,7 +1016,6 @@
             document.getElementById('tituloReporte').textContent = `REPORTE ESPECÍFICO: ${nombreMetrica}`;
             document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
             
-            // Mantener el resumen general aunque el listado sea de una métrica especifica
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
 
             setTimeout(() => { 

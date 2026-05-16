@@ -177,7 +177,6 @@
             border-color: #ddd;
         }
         
-        /* Controles de Paginación */
         .controls-panel {
             display: flex;
             justify-content: space-between;
@@ -267,7 +266,6 @@
         
         .hidden { display: none !important; }
 
-        /* Panel de Edición */
         .edit-panel { 
             background: #fff; 
             padding: 20px; 
@@ -441,6 +439,7 @@
                             <option value="nieta">Nieta</option>
                         </select>
                     </div>
+                    
                     <div>
                         <label>Filtrar por Calle / Sector:</label>
                         <select id="fCalle">
@@ -893,13 +892,13 @@
         };
 
         window.exportarCSV = () => {
-            let csv = 'Nombres y Apellidos,Cedula,UBCH,Comunidad,Calle,Telefono\n';
+            let csv = 'Nombres y Apellidos,Cedula,UBCH,Comuna,Comunidad,Calle,Telefono\n';
             
             datosFiltrados.forEach(item => {
                 const h = item.h;
                 const nac = h.nacionalidad ? h.nacionalidad + '-' : 'V-';
                 const cedFinal = h.cedula ? (nac + h.cedula) : 'S/C';
-                csv += `"${h.nombre} ${h.apellido}","${cedFinal}","${h.ubch || ''}","${h.comunidad}","${h.calle}","${h.telefono || ''}"\n`; 
+                csv += `"${h.nombre} ${h.apellido}","${cedFinal}","${h.ubch || ''}","${h.comuna}","${h.comunidad}","${h.calle}","${h.telefono || ''}"\n`; 
             });
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -943,10 +942,14 @@
                     fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; 
                     fComunidad.disabled = true;
                 }
+                actualizarFiltroCalles();
                 filtrarTabla(); 
             });
             
-            fComunidad.addEventListener('change', filtrarTabla);
+            fComunidad.addEventListener('change', () => {
+                actualizarFiltroCalles();
+                filtrarTabla();
+            });
 
             eComuna.addEventListener('change', (e) => {
                 const sel = e.target.value;
@@ -966,36 +969,52 @@
             });
         }
 
+        // REGLA DE ORO: Función para recolectar calles basándonos SOLO en la Comuna/Comunidad seleccionada
+        function actualizarFiltroCalles() {
+            const fComunaSel = document.getElementById('fComuna').value.toUpperCase();
+            const fComunidadSel = document.getElementById('fComunidad').value.toUpperCase();
+            const fCalle = document.getElementById('fCalle');
+            const seleccionPrevia = fCalle.value;
+
+            let callesUnicas = new Set();
+
+            for (let id in baseDeDatosHabitantes) {
+                let h = baseDeDatosHabitantes[id];
+                let c = (h.calle || '').trim().toUpperCase();
+                let com = (h.comuna || '').toUpperCase();
+                let comu = (h.comunidad || '').toUpperCase();
+
+                // Validamos que el registro pertenezca a la comuna o comunidad filtrada
+                if (fComunaSel && !com.includes(fComunaSel)) continue;
+                if (fComunidadSel && !comu.includes(fComunidadSel)) continue;
+
+                if (c !== '') {
+                    callesUnicas.add(c);
+                }
+            }
+
+            fCalle.innerHTML = '<option value="">Todas las calles (Cargadas)</option>';
+            let callesOrdenadas = Array.from(callesUnicas).sort();
+
+            callesOrdenadas.forEach(calle => {
+                const opt = document.createElement('option');
+                opt.value = calle;
+                opt.textContent = calle;
+                fCalle.appendChild(opt);
+            });
+
+            if (seleccionPrevia && callesUnicas.has(seleccionPrevia)) {
+                fCalle.value = seleccionPrevia;
+            } else {
+                fCalle.value = "";
+            }
+        }
+
         function cargarDatos() {
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
                 
-                // REGLA DE ORO: Escaneo Inteligente de Calles
-                const fCalle = document.getElementById('fCalle');
-                const seleccionPrevia = fCalle.value; 
-                
-                let callesUnicas = new Set();
-                for (let id in baseDeDatosHabitantes) {
-                    let c = baseDeDatosHabitantes[id].calle;
-                    if (c && c.trim() !== '') {
-                        callesUnicas.add(c.trim().toUpperCase());
-                    }
-                }
-                
-                fCalle.innerHTML = '<option value="">Todas las calles...</option>';
-                let callesOrdenadas = Array.from(callesUnicas).sort();
-                
-                callesOrdenadas.forEach(calle => {
-                    const opt = document.createElement('option');
-                    opt.value = calle;
-                    opt.textContent = calle;
-                    fCalle.appendChild(opt);
-                });
-                
-                if (seleccionPrevia && callesUnicas.has(seleccionPrevia)) {
-                    fCalle.value = seleccionPrevia;
-                }
-                
+                actualizarFiltroCalles();
                 filtrarTabla(); 
             });
         }
@@ -1006,9 +1025,7 @@
             const fComuna = document.getElementById('fComuna').value.toLowerCase();
             const fComunidad = document.getElementById('fComunidad').value.toLowerCase();
             
-            // REGLA DE ORO: Actualizamos a que busque la calle seleccionada exactamente
             const fCalle = document.getElementById('fCalle').value.toUpperCase();
-            
             const fUbch = document.getElementById('fUbch').value.toLowerCase();
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
             const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
@@ -1102,7 +1119,10 @@
         }
 
         document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
-            element.addEventListener('input', filtrarTabla); 
+            // Si el elemento no es Comuna/Comunidad, dispara el filtrado directo
+            if(element.id !== 'fComuna' && element.id !== 'fComunidad') {
+                element.addEventListener('input', filtrarTabla); 
+            }
         });
 
         window.eliminarRegistro = (id) => {
