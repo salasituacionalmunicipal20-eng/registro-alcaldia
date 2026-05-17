@@ -383,7 +383,7 @@
                 <h1>Módulo de Consultas y Búsqueda</h1>
                 <p>SISTEMA DE INTEGRACIÓN TERRITORIAL | ALCALDÍA DE CRISTÓBAL ROJAS</p>
             </div>
-            <img src="escudo municipal.jpg" alt="Escudo Cristóbal Rojas">
+            <img src="escudo municipal.jpg" alt="Escudo Cristóbal Rojas" style="max-height: 70px;">
         </div>
 
         <div id="vistaConsultas">
@@ -827,6 +827,9 @@
         let baseDeDatosHabitantes = {}; 
         let datosTerritoriales = {}; 
         let idActualEdicion = null; 
+        
+        // INYECCIÓN: Perfil del operador activo
+        window.perfilOperador = null;
 
         let datosFiltrados = [];
         let paginaActual = 1;
@@ -864,11 +867,15 @@
             esAdmin = false;
             if (user.email === "carlos.admin@alcaldia.com") {
                 esAdmin = true;
+                window.perfilOperador = { rol: 'admin', comuna_asignada: 'TODAS' };
             } else {
                 try {
                     const snap = await get(child(ref(database), `operadores/${user.uid}`));
-                    if (snap.exists() && snap.val().rol === "admin") { 
-                        esAdmin = true; 
+                    if (snap.exists()) { 
+                        window.perfilOperador = snap.val();
+                        if (window.perfilOperador.rol === "admin") {
+                            esAdmin = true; 
+                        }
                     }
                 } catch (e) { 
                     console.error(e); 
@@ -890,13 +897,11 @@
             
             window.presenciaRef = ref(database, `presencia/${user.uid}`);
             
-            // Si cierra la pestaña de golpe, Firebase lo marca como offline automáticamente
             onDisconnect(window.presenciaRef).update({ 
                 estado: 'offline', 
                 ultima_accion: 'Cerró la pestaña inesperadamente' 
             });
             
-            // Al entrar, reporta que está conectado
             set(window.presenciaRef, {
                 estado: 'online',
                 nombre: nombreOp,
@@ -906,7 +911,7 @@
             });
             // --- FIN CÓDIGO RADAR ESPÍA ---
             
-            cargarFiltrosTerritoriales(); 
+            cargarFiltrosTerritoriales(esAdmin); 
             cargarDatos(); 
         });
 
@@ -961,7 +966,8 @@
             document.body.removeChild(a);
         };
 
-        function cargarFiltrosTerritoriales() {
+        // INYECCIÓN: CARGA DE FILTROS TERRITORIALES CON BLOQUEO RBAC
+        function cargarFiltrosTerritoriales(esAdmin) {
             const fComuna = document.getElementById('fComuna');
             const fComunidad = document.getElementById('fComunidad');
             const eComuna = document.getElementById('e_comuna');
@@ -969,12 +975,34 @@
             get(child(ref(database), `filtros_territoriales`)).then((snapshot) => {
                 if (snapshot.exists()) {
                     datosTerritoriales = snapshot.val();
-                    fComuna.innerHTML = '<option value="">Todas las comunas...</option>';
-                    eComuna.innerHTML = '<option value="">Seleccione</option>';
                     
-                    for (const comuna in datosTerritoriales) {
-                        fComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
-                        eComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
+                    if (!esAdmin && window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== 'TODAS') {
+                        let miComuna = window.perfilOperador.comuna_asignada;
+                        fComuna.innerHTML = `<option value="${miComuna}">${miComuna}</option>`;
+                        eComuna.innerHTML = `<option value="${miComuna}">${miComuna}</option>`;
+                        
+                        fComuna.value = miComuna;
+                        eComuna.value = miComuna;
+
+                        // Bloquear interacciones
+                        fComuna.style.pointerEvents = "none";
+                        fComuna.style.backgroundColor = "#e9ecef";
+                        eComuna.style.pointerEvents = "none";
+                        eComuna.style.backgroundColor = "#e9ecef";
+                        
+                        // Carga automática de comunidades
+                        fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; 
+                        fComunidad.disabled = false;
+                        if (datosTerritoriales[miComuna]) {
+                            datosTerritoriales[miComuna].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+                        }
+                    } else {
+                        fComuna.innerHTML = '<option value="">Todas las comunas...</option>';
+                        eComuna.innerHTML = '<option value="">Seleccione</option>';
+                        for (const comuna in datosTerritoriales) {
+                            fComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
+                            eComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
+                        }
                     }
                 }
             });
@@ -1098,6 +1126,13 @@
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
+                
+                // INYECCIÓN: ESCUDO DE SEGURIDAD RBAC EN LA BÚSQUEDA Y RENDERIZADO
+                const comunaDelHabitante = h.comuna || '';
+                if (!esAdmin && window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== "TODAS") {
+                    if (comunaDelHabitante !== window.perfilOperador.comuna_asignada) continue;
+                }
+
                 const nombreCompleto = `${h.nombre || ''} ${h.apellido || ''}`.toLowerCase();
                 
                 const cumpleNom = nombreCompleto.includes(fNom);
@@ -1217,6 +1252,11 @@
                     const h = baseDeDatosHabitantes[id];
                     if (id === idActualEdicion) continue;
 
+                    // INYECCIÓN: Si está restringido, no puede ver ni vincular personas de otra comuna
+                    if (!esAdmin && window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== "TODAS") {
+                        if (h.comuna !== window.perfilOperador.comuna_asignada) continue;
+                    }
+
                     if (h.jefe_hogar_id === idActualEdicion) {
                         htmlActuales += `<li>${h.nombre} ${h.apellido} - C.I: ${h.cedula ? (h.nacionalidad||'V')+'-'+h.cedula : 'S/C'} (${h.parentesco})</li>`;
                         tieneActuales = true;
@@ -1285,7 +1325,6 @@
             idActualEdicion = id;
             const h = baseDeDatosHabitantes[id];
 
-            // RASTREADOR ESPÍA DE EDICIÓN
             if (window.presenciaRef) {
                 update(window.presenciaRef, { ultima_accion: `Revisando expediente C.I: ${h.cedula || 'S/C'}` });
             }
@@ -1318,7 +1357,6 @@
             };
             
             llenarCampo('e_ubch', h.ubch);
-            
             llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual); 
             llenarCampo('e_comuna', h.comuna);
             
@@ -1333,16 +1371,11 @@
             llenarCampo('e_calle', h.calle); 
             llenarCampo('e_numero_casa', h.numero_casa); 
             llenarCampo('e_tipo_vivienda', h.tipo_vivienda); 
-            
-            // REGLA DE ORO: MAPEO DE TENENCIA
             llenarCampo('e_tenencia_vivienda', h.tenencia_vivienda); 
-            
             llenarCampo('e_condiciones_vivienda', h.condiciones_vivienda); 
             llenarCampo('e_responsabilidad_cbi_cm', h.responsabilidad_cbi_cm);
-            
             llenarCampo('e_tiene_gas', h.tiene_gas); 
             llenarCampo('e_tipo_cilindro_gas', h.tipo_cilindro_gas);
-            
             llenarCampo('e_nombre', h.nombre); 
             llenarCampo('e_apellido', h.apellido); 
             
@@ -1352,7 +1385,6 @@
             llenarCampo('e_tiene_cedula', tieneCedVal);
             llenarCampo('e_nacionalidad', h.nacionalidad || 'V');
             llenarCampo('e_cedula', h.cedula);
-            
             llenarCampo('e_telefono', h.telefono); 
             llenarCampo('e_fecha_nacimiento', h.fecha_nacimiento); 
             llenarCampo('e_sexo', h.sexo); 
@@ -1361,16 +1393,13 @@
             llenarCampo('e_trabaja', h.trabaja); 
             llenarCampo('e_esta_escolarizado', h.esta_escolarizado); 
             llenarCampo('e_esta_cedulado', h.esta_cedulado);
-            
             llenarCampo('e_padece_enfermedad', h.padece_enfermedad); 
             llenarCampo('e_toma_medicamento', h.toma_medicamento); 
             llenarCampo('e_cual_medicamento', h.cual_medicamento); 
             llenarCampo('e_discapacitado', h.discapacitado); 
             llenarCampo('e_embarazada', h.embarazada); 
             llenarCampo('e_lactancia_materna', h.lactancia_materna);
-            
             llenarCampo('e_tipo_discapacidad', h.tipo_discapacidad);
-
             llenarCampo('e_cobra_amor_mayor', h.cobra_amor_mayor); 
             llenarCampo('e_carnet_patria', h.carnet_patria); 
             llenarCampo('e_mision_jose_gregorio', h.mision_jose_gregorio); 
@@ -1379,35 +1408,20 @@
             llenarCampo('e_vd_vb_vo_seleccion', h.vd_vb_vo_seleccion); 
             llenarCampo('e_vd_vb_vo_detalle', h.vd_vb_vo_detalle);
 
-            if(tieneCedVal === 'si') {
-                document.getElementById('e_cedula_wrapper').classList.remove('hidden');
-            } else {
-                document.getElementById('e_cedula_wrapper').classList.add('hidden');
-            }
+            if(tieneCedVal === 'si') document.getElementById('e_cedula_wrapper').classList.remove('hidden');
+            else document.getElementById('e_cedula_wrapper').classList.add('hidden');
             
-            if(h.toma_medicamento === 'si') {
-                document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden');
-            } else {
-                document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
-            }
+            if(h.toma_medicamento === 'si') document.getElementById('e_cual_medicamento_wrapper').classList.remove('hidden');
+            else document.getElementById('e_cual_medicamento_wrapper').classList.add('hidden');
             
-            if(h.vd_vb_vo_seleccion) {
-                document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden');
-            } else {
-                document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
-            }
+            if(h.vd_vb_vo_seleccion) document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.remove('hidden');
+            else document.getElementById('e_vd_vb_vo_detalle_wrapper').classList.add('hidden');
             
-            if(h.tiene_gas === 'si') {
-                document.getElementById('e_tipo_cilindro_gas_wrapper').classList.remove('hidden');
-            } else {
-                document.getElementById('e_tipo_cilindro_gas_wrapper').classList.add('hidden');
-            }
+            if(h.tiene_gas === 'si') document.getElementById('e_tipo_cilindro_gas_wrapper').classList.remove('hidden');
+            else document.getElementById('e_tipo_cilindro_gas_wrapper').classList.add('hidden');
             
-            if(h.discapacitado === 'si') {
-                document.getElementById('e_tipo_discapacidad_wrapper').classList.remove('hidden');
-            } else {
-                document.getElementById('e_tipo_discapacidad_wrapper').classList.add('hidden');
-            }
+            if(h.discapacitado === 'si') document.getElementById('e_tipo_discapacidad_wrapper').classList.remove('hidden');
+            else document.getElementById('e_tipo_discapacidad_wrapper').classList.add('hidden');
             
             checkEdadElectoral(h.fecha_nacimiento, 'e_donde_vota_wrapper', 'e_estatus_electoral_wrapper', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_seleccion', 'e_donde_vota');
             
@@ -1461,6 +1475,11 @@
             const formData = new FormData(e.target);
             const datosEditados = Object.fromEntries(formData.entries());
             
+            // INYECCIÓN: Forzamos la comuna si está bloqueada en la vista de edición
+            if(!esAdmin && window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== 'TODAS'){
+                datosEditados.comuna = window.perfilOperador.comuna_asignada;
+            }
+
             const dataFinal = { 
                 ...baseDeDatosHabitantes[idActualEdicion], 
                 ...datosEditados 

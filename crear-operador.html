@@ -95,6 +95,13 @@
                     </select>
                 </div>
 
+                <div class="full-width">
+                    <label for="comuna_asignada">Comuna Asignada (Bloqueo de Territorio):</label>
+                    <select id="comuna_asignada" required>
+                        <option value="">Cargando comunas...</option>
+                    </select>
+                </div>
+
                 <div class="full-width" style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 20px;">
                     <label for="newUsername">ID de Usuario (Sin @):</label>
                     <input type="text" id="newUsername" placeholder="Ej: juan.perez" required>
@@ -115,7 +122,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -155,7 +162,7 @@
         };
         inactivityTime();
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = "index.html";
             }
@@ -163,6 +170,33 @@
 
         document.getElementById('btnCerrarSesion').addEventListener('click', () => {
             signOut(auth).then(() => window.location.href = "index.html");
+        });
+
+        // INYECCIÓN: Lógica para cargar comunas y bloquear según el rol
+        const selComuna = document.getElementById('comuna_asignada');
+        get(child(ref(database), 'filtros_territoriales')).then(snap => {
+            selComuna.innerHTML = '<option value="">Seleccione la comuna a asignar</option>';
+            if(snap.exists()){
+                const data = snap.val();
+                for(let c in data) {
+                    selComuna.innerHTML += `<option value="${c}">${c}</option>`;
+                }
+            }
+        });
+
+        document.getElementById('rol').addEventListener('change', (e) => {
+            if(e.target.value === 'admin') {
+                selComuna.innerHTML = '<option value="TODAS">TODAS (Acceso Global de Administrador)</option>';
+                selComuna.disabled = true;
+            } else {
+                selComuna.disabled = false;
+                get(child(ref(database), 'filtros_territoriales')).then(snap => {
+                    selComuna.innerHTML = '<option value="">Seleccione la comuna a asignar</option>';
+                    if(snap.exists()){
+                        for(let c in snap.val()) selComuna.innerHTML += `<option value="${c}">${c}</option>`;
+                    }
+                });
+            }
         });
 
         const createForm = document.getElementById('createUserForm');
@@ -177,10 +211,18 @@
             const nombre = document.getElementById('nombre').value;
             const apellido = document.getElementById('apellido').value;
             const cargo = document.getElementById('cargo').value;
-            const rol = document.getElementById('rol').value; // REGLA DE ORO: Se agregó lectura del nuevo select
+            const rol = document.getElementById('rol').value;
+            const comuna_asignada = selComuna.value; // INYECCIÓN: Capturamos la comuna
             const newUsername = document.getElementById('newUsername').value.trim();
             const newPassword = document.getElementById('newPassword').value;
             const emailFalso = newUsername + "@alcaldia.com";
+
+            // INYECCIÓN: Validación de seguridad
+            if (rol === 'operador' && (!comuna_asignada || comuna_asignada === 'TODAS')) {
+                errorMsg.textContent = "Error: Un operador regular debe tener una comuna específica asignada.";
+                errorMsg.style.display = 'block'; 
+                return;
+            }
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(secondaryAuth, emailFalso, newPassword);
@@ -190,7 +232,8 @@
                     nombre: nombre,
                     apellido: apellido,
                     cargo: cargo,
-                    rol: rol, // REGLA DE ORO: Se guarda el rol seleccionado
+                    rol: rol, 
+                    comuna_asignada: comuna_asignada, // INYECCIÓN: Se guarda en Firebase
                     usuario: newUsername,
                     cambio_obligatorio: true,
                     fecha_registro: new Date().toISOString()
@@ -198,6 +241,7 @@
 
                 successMsg.style.display = 'block';
                 createForm.reset();
+                selComuna.disabled = false;
                 await signOut(secondaryAuth);
             } catch (error) {
                 console.error(error);

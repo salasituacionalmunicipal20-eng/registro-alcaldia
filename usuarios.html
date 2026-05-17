@@ -71,13 +71,14 @@
                         <th>Nombres y Apellidos</th>
                         <th>Cargo</th>
                         <th>Rol (Nivel)</th>
-                        <th>ID Usuario</th>
+                        <th>Comuna Autorizada</th> <th>ID Usuario</th>
                         <th>Estado de Clave</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaUsuarios">
-                    </tbody>
+                    <tr><td colspan="7" style="text-align:center;">Cargando directorio...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -101,7 +102,6 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        // REGLA DE ORO: Seguridad actualizada para que funcione y se vea la tabla
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = "index.html";
@@ -137,13 +137,14 @@
                             ? '<span class="status-badge status-pending">Pendiente por cambiar</span>' 
                             : '<span class="status-badge status-active">Clave Personalizada</span>';
                             
-                        // REGLA DE ORO: Muestra si es admin u operador    
                         const nivel = user.rol === "admin" ? "Administrador" : "Operador";
+                        const comunaEtiq = user.comuna_asignada || 'TODAS'; // INYECCIÓN
 
                         tr.innerHTML = `
                             <td><strong>${user.nombre} ${user.apellido}</strong></td>
                             <td>${user.cargo}</td>
                             <td style="color:#004a99; font-weight:bold;">${nivel}</td>
+                            <td style="color:var(--rojo-oficial); font-weight:bold;">${comunaEtiq}</td>
                             <td><code>${user.usuario}</code></td>
                             <td>${estadoClave}</td>
                             <td>
@@ -153,7 +154,7 @@
                         tbody.appendChild(tr);
                     }
                 } else {
-                    tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>No hay operadores registrados.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>No hay operadores registrados.</td></tr>";
                 }
             });
         }
