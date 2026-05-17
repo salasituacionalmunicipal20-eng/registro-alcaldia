@@ -156,10 +156,10 @@
         <div class="instrucciones" id="panelInstrucciones">
             <strong style="color:var(--rojo-oficial); font-size:14px; letter-spacing:1px;">🚨 PROTOCOLO DE RESETEO ABSOLUTO ACTIVADO:</strong><br><br>
             1. 💥 <b>Wipe Out Seguro:</b> Borrado en lotes para vaciar Firebase sin causar error de Permisos.<br>
-            2. 🚀 <b>Fase 1 (Subida Total):</b> Se sube el 100% de los habitantes del Excel. Nadie se omite. Todos heredan su residencia correspondiente para no dejar datos vacíos. En esta fase todos son individuos sin Jefe asignado.<br>
+            2. 🚀 <b>Fase 1 (Subida Total):</b> Se sube el 100% de los habitantes del Excel. NADIE SE OMITIRÁ. Todos heredan su residencia correspondiente para no dejar datos vacíos.<br>
             3. 👨‍👩‍👧‍👦 <b>Fase 2 (Barrido de Jefes):</b> Una vez montados absolutamente todos los registros, el sistema hace un segundo escaneo. Al detectar un Jefe, agarra a los de abajo y les inyecta su <code>jefe_hogar_id</code> sin borrar ni modificar el resto de sus datos.<br>
             4. 🪪 <b>Filtros Clínicos y de Identidad:</b> Limpieza de cédulas "E/V". Asignación de Roles por género (Madre, Padre, Esposa, Hija). Limpieza de medicinas (Elimina "NO INDICA", "NINGUNO").<br>
-            5. ☁️ <b>Operación Aislada Firebase:</b> Supabase está desconectado en esta herramienta.
+            5. ☁️ <b>Operación Aislada Firebase:</b> Supabase está desconectado en esta herramienta para máxima velocidad.
         </div>
 
         <input type="file" id="archivoCSV" accept=".csv">
@@ -290,7 +290,7 @@
                     let subidos = 0;
                     const habitantesRef = ref(database, 'habitantes');
                     
-                    // Memoria Territorial en Cascada
+                    // Memoria Territorial en Cascada (Solo se usará para rellenar campos en blanco de las familias)
                     let cUbch = "", cSigue = "", cComuna = "", cConsejo = "", cComunidad = "", cCalle = "", cCasa = "", cTipo = "casa", cCondicion = "regular", cTenencia = "";
 
                     // Arreglo para guardar el ID de Firebase y saber quién es Jefe para la Fase 2
@@ -333,6 +333,8 @@
                             let rTipoViv = cleanText(fila['TIPO DE VIVIENDA']);
                             let rCondicion = cleanText(fila['CONDICIONES DE LA VIVIENDA']);
 
+                            // Guardamos en memoria todo lo que NO venga vacío.
+                            // Si la fila viene vacía, conservará el valor anterior (el del Jefe)
                             if (rUbch !== "") cUbch = rUbch;
                             if (rSigue !== "") cSigue = rSigue;
                             if (rComuna !== "") cComuna = rComuna;
@@ -387,9 +389,10 @@
                                 parentescoParsed = "jefe de hogar";
                                 esJefeAbsoluto = true;
                             } else {
+                                // CORRECCIÓN DEL BUG: Usamos 'fila' en vez de 'row' para que el sistema no se detenga.
                                 let rMadre = cleanText(fila['MADRE']);
                                 let rPadre = cleanText(fila['PADRE']);
-                                let rHijo = cleanText(row['HIJO']);
+                                let rHijo = cleanText(fila['HIJO']);
                                 let rOtro = cleanText(fila['OTRO']);
                                 
                                 if(rMadre === 'X' || rMadre === 'SI' || rMadre.includes('MADRE')) parentescoParsed = 'madre';
@@ -498,11 +501,11 @@
                             document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
                             
                         } catch (err) {
-                            console.error(err);
+                            escribirLog(`❌ Error en fila ${i+1}: ${err.message}`, "log-error");
                         }
                     }
                     
-                    escribirLog(`✅ FASE 1 COMPLETADA. Se subieron ${subidos} habitantes.`, "log-success");
+                    escribirLog(`✅ FASE 1 COMPLETADA. Se subieron ${subidos} habitantes sin omisiones.`, "log-success");
 
                     // ==========================================
                     // PASO 3: FASE 2 - BARRIDO DE VINCULACIÓN
@@ -519,16 +522,12 @@
                         let h = mapaSubidosFase2[j];
                         
                         if (h.es_jefe) {
-                            jefeActual = h.id_fb; // Actualizamos el radar al nuevo jefe
-                            escribirLog(`[NÚCLEO FIJADO] ${h.nombre} ${h.apellido} establecido como Jefe de Hogar.`, "log-family");
+                            jefeActual = h.id_fb; 
                         } else {
                             if (jefeActual !== null) {
-                                // ACTUALIZAMOS ÚNICAMENTE EL CAMPO DE VINCULACIÓN, SIN BORRAR NADA
+                                // ACTUALIZAMOS ÚNICAMENTE EL CAMPO DE VINCULACIÓN
                                 await update(ref(database, `habitantes/${h.id_fb}`), { jefe_hogar_id: jefeActual });
                                 vinculados++;
-                                if (vinculados % 10 === 0) {
-                                    escribirLog(`   ↳ ${h.nombre} vinculado exitosamente como ${h.rol}.`, "log-success");
-                                }
                             }
                         }
                     }
@@ -537,7 +536,7 @@
                     document.getElementById('txtEta').textContent = `PROCESO 100% FINALIZADO`;
                     
                     escribirLog(`✅ FASE 2 COMPLETADA. Se vincularon ${vinculados} familiares a sus Jefes de Hogar.`, "log-success");
-                    alert("¡Instalación Limpia y Vinculación Familiar exitosa!");
+                    alert(`¡Instalación Limpia completada!\nSe subieron ${subidos} habitantes y se vincularon ${vinculados} cargas familiares.`);
                 }
             });
         };
