@@ -155,12 +155,20 @@
         .status-gold { color: var(--oro-admin); text-shadow: 0 0 10px rgba(255,215,0,0.5); }
         .status-cyan { color: var(--cyan-tech); text-shadow: 0 0 10px rgba(0,210,255,0.5); }
 
+        /* Estilos del Switch de Emergencia */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; margin-left: 20px;}
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; border: 2px solid #222;}
+        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5);}
+        input:checked + .slider { background-color: var(--rojo-oficial); border-color: #b7050f; box-shadow: inset 0 0 15px rgba(0,0,0,0.3), 0 0 20px rgba(227,6,19,0.4); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
         .sync-management-panel {
             background-color: #050505;
             border: 1px solid #333;
             border-radius: 8px;
             padding: 25px;
-            margin-top: 40px;
+            margin-top: 20px;
             margin-bottom: 30px;
             text-align: center;
         }
@@ -391,7 +399,6 @@
         .btn-json { background-color: #ff9800; color: black; }
         .btn-json:hover:not(:disabled) { background-color: #e68a00; transform: translateY(-3px); }
 
-        /* REGLA DE ORO: EL NUEVO BOTÓN PARA EL MIGRADOR */
         .btn-migrator { background-color: var(--azul-oficial); color: white; }
         .btn-migrator:hover:not(:disabled) { background-color: #003366; transform: translateY(-3px); }
 
@@ -518,13 +525,30 @@
             </div>
         </div>
 
+        <div class="dashboard-section-title" style="color: var(--rojo-oficial); border-bottom-color: var(--rojo-oficial);">🚨 Protocolo de Contingencia Global (Failover)</div>
+        <div class="status-grid" style="grid-template-columns: 1fr;">
+            <div class="status-box" style="border: 2px solid #555; background: linear-gradient(90deg, #111 0%, #050505 100%); display: flex; justify-content: space-between; align-items: center; padding: 20px 40px;">
+                <div style="text-align: left;">
+                    <span style="color: #fff; font-weight: bold; font-size: 16px; text-transform: uppercase;">Activar Servidor de Emergencia (Supabase)</span>
+                    <span class="status-subtext" style="color: #aaa; font-size: 11px; margin-top: 5px;">Desvía globalmente todo el tráfico web hacia la bóveda de Supabase. Úselo SOLO si los servidores de Firebase colapsan.</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span id="lblEstadoSwitch" style="font-size: 12px; font-weight: bold; color: #888; margin-right: 15px;">INACTIVO</span>
+                    <label class="switch">
+                        <input type="checkbox" id="failoverSwitch">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
         <div class="sync-management-panel">
-            <h2>🧬 Sincronizador Maestro (Actualizar y Respaldar Bóvedas)</h2>
+            <h2>🧬 Sincronizador Maestro (Actualizar Bóveda de Respaldo)</h2>
             <button type="button" class="btn-sync-master" id="btnSincronizar" onclick="ejecutarSincronizacionSegura()" disabled>
-                🚀 INICIAR SINCRONIZACIÓN A SUPABASE
+                🚀 INICIAR RESPALDO MANUAL A SUPABASE
             </button>
             <div class="sync-console" id="syncConsoleBox">
-                <div class="sync-line">Sistema en espera. Presione el botón para actualizar el respaldo en Supabase mediante lógica Upsert.</div>
+                <div class="sync-line">Sistema en espera. Al tener desactivada la sincronización en tiempo real, presione este botón para respaldar la data de hoy.</div>
             </div>
         </div>
 
@@ -664,7 +688,7 @@
         setInterval(medirLatencia, 8000); 
         setTimeout(medirLatencia, 2000);  
 
-        // --- SISTEMA AUTH ---
+        // --- SISTEMA AUTH Y FAILOVER SWITCH ---
         onAuthStateChanged(auth, (user) => {
             const lblAuth = document.getElementById('lblAuth');
             if (!user || user.email !== "carlos.admin@alcaldia.com") {
@@ -698,6 +722,38 @@
                 iniciarRadarPresencia();
                 monitorearSupabase();
                 setInterval(monitorearSupabase, 5000);
+                
+                // Lógica del Switch de Emergencia
+                const failoverSwitch = document.getElementById('failoverSwitch');
+                const lblEstadoSwitch = document.getElementById('lblEstadoSwitch');
+                
+                onValue(ref(database, 'config/sistema/failover_activo'), (snap) => {
+                    if(snap.exists()) {
+                        const estaActivo = snap.val() === true;
+                        failoverSwitch.checked = estaActivo;
+                        lblEstadoSwitch.textContent = estaActivo ? "ACTIVADO" : "INACTIVO";
+                        lblEstadoSwitch.style.color = estaActivo ? "#E30613" : "#888";
+                    }
+                });
+
+                failoverSwitch.addEventListener('change', (e) => {
+                    const activado = e.target.checked;
+                    if(activado) {
+                        if(!confirm("⚠️ ALERTA DE SEGURIDAD CRÍTICA: ¿Está seguro que desea apagar el motor de Firebase y desviar todo el tráfico de la Alcaldía hacia la base de datos de respaldo en Supabase?")) {
+                            e.target.checked = false;
+                            return;
+                        }
+                        update(ref(database, 'config/sistema'), { failover_activo: true, activado_por: 'CARLOS ADMIN', fecha: new Date().toLocaleString() });
+                        escribirSyncLog("🚨 PROTOCOLO DE CONTINGENCIA ACTIVADO: Tráfico desviado a Supabase.", "sync-err");
+                    } else {
+                        if(!confirm("¿Restaurar el tráfico normal hacia los servidores principales de Firebase?")) {
+                            e.target.checked = true;
+                            return;
+                        }
+                        update(ref(database, 'config/sistema'), { failover_activo: false });
+                        escribirSyncLog("✅ SISTEMA NORMALIZADO: Tráfico devuelto a Firebase.", "sync-success");
+                    }
+                });
             }
         });
 
@@ -1013,13 +1069,19 @@
             document.body.removeChild(a);
         };
 
+        // REGLA DE ORO: CSV PLANCHADO ANTI-ERRORES
         window.descargarCSVGlobal = () => {
-            let csv = "ID_SISTEMA,UBCH,CODIGO_SITUR,COMUNA,CONSEJO_COMUNAL,COMUNIDAD,CALLE,NUMERO_CASA,TIPO_VIVIENDA,CONDICIONES_VIVIENDA,RESPONSABLE_CBI,TIENE_GAS,CILINDRO_KG,NOMBRES,APELLIDOS,TIENE_CEDULA,NACIONALIDAD,CEDULA,TELEFONO,FECHA_NACIMIENTO,SEXO,PARENTESCO,PROFESION,TRABAJA,ESCOLARIZADO,CEDULA_FISICA,ENFERMEDAD,TOMA_MEDICAMENTO,CUAL_MEDICAMENTO,DISCAPACIDAD,TIPO_DISCAPACIDAD,EMBARAZADA,LACTANCIA,AMOR_MAYOR,CARNET_PATRIA,MISION_JGH,HOGARES_PATRIA,DONDE_VOTA,ESTATUS_ELECTORAL,OBSERVACIONES_VOTO,REGISTRADO_POR,FECHA_REGISTRO\n";
+            let csv = "ID_SISTEMA,UBCH,CODIGO_SITUR,COMUNA,CONSEJO_COMUNAL,COMUNIDAD,CALLE,NUMERO_CASA,TIPO_VIVIENDA,TENENCIA_VIVIENDA,CONDICIONES_VIVIENDA,RESPONSABLE_CBI,TIENE_GAS,CILINDRO_KG,NOMBRES,APELLIDOS,TIENE_CEDULA,NACIONALIDAD,CEDULA,TELEFONO,FECHA_NACIMIENTO,SEXO,PARENTESCO,PROFESION,TRABAJA,ESCOLARIZADO,CEDULA_FISICA,ENFERMEDAD,TOMA_MEDICAMENTO,CUAL_MEDICAMENTO,DISCAPACIDAD,TIPO_DISCAPACIDAD,EMBARAZADA,LACTANCIA,AMOR_MAYOR,CARNET_PATRIA,MISION_JGH,HOGARES_PATRIA,DONDE_VOTA,ESTATUS_ELECTORAL,OBSERVACIONES_VOTO,REGISTRADO_POR,FECHA_REGISTRO\n";
 
             for(let id in baseDatosBruta) {
                 let h = baseDatosBruta[id];
-                const e = (texto) => `"${(texto || '').toString().replace(/"/g, '""')}"`;
-                csv += `${e(id)},${e(h.ubch)},${e(h.codigo_sigue_actual)},${e(h.comuna)},${e(h.consejo_comunal)},${e(h.comunidad)},${e(h.calle)},${e(h.numero_casa)},${e(h.tipo_vivienda)},${e(h.condiciones_vivienda)},${e(h.responsabilidad_cbi_cm)},${e(h.tiene_gas)},${e(h.tipo_cilindro_gas)},${e(h.nombre)},${e(h.apellido)},${e(h.tiene_cedula)},${e(h.nacionalidad)},${e(h.cedula)},${e(h.telefono)},${e(h.fecha_nacimiento)},${e(h.sexo)},${e(h.parentesco)},${e(h.profesion)},${e(h.trabaja)},${e(h.esta_escolarizado)},${e(h.esta_cedulado)},${e(h.padece_enfermedad)},${e(h.toma_medicamento)},${e(h.cual_medicamento)},${e(h.discapacitado)},${e(h.tipo_discapacidad)},${e(h.embarazada)},${e(h.lactancia_materna)},${e(h.cobra_amor_mayor)},${e(h.carnet_patria)},${e(h.mision_jose_gregorio)},${e(h.hogares_patria_bono)},${e(h.donde_vota)},${e(h.vd_vb_vo_seleccion)},${e(h.vd_vb_vo_detalle)},${e(h.registrado_por_nombre)},${e(h.fecha_registro)}\n`;
+                const e = (texto) => {
+                    if (!texto) return '""';
+                    // Elimina los saltos de línea para que no destruya la fila del Excel
+                    let limpio = texto.toString().replace(/"/g, '""').replace(/(\r\n|\n|\r)/gm, " | ");
+                    return `"${limpio}"`;
+                };
+                csv += `${e(id)},${e(h.ubch)},${e(h.codigo_sigue_actual)},${e(h.comuna)},${e(h.consejo_comunal)},${e(h.comunidad)},${e(h.calle)},${e(h.numero_casa)},${e(h.tipo_vivienda)},${e(h.tenencia_vivienda)},${e(h.condiciones_vivienda)},${e(h.responsabilidad_cbi_cm)},${e(h.tiene_gas)},${e(h.tipo_cilindro_gas)},${e(h.nombre)},${e(h.apellido)},${e(h.tiene_cedula)},${e(h.nacionalidad)},${e(h.cedula)},${e(h.telefono)},${e(h.fecha_nacimiento)},${e(h.sexo)},${e(h.parentesco)},${e(h.profesion)},${e(h.trabaja)},${e(h.esta_escolarizado)},${e(h.esta_cedulado)},${e(h.padece_enfermedad)},${e(h.toma_medicamento)},${e(h.cual_medicamento)},${e(h.discapacitado)},${e(h.tipo_discapacidad)},${e(h.embarazada)},${e(h.lactancia_materna)},${e(h.cobra_amor_mayor)},${e(h.carnet_patria)},${e(h.mision_jose_gregorio)},${e(h.hogares_patria_bono)},${e(h.donde_vota)},${e(h.vd_vb_vo_seleccion)},${e(h.vd_vb_vo_detalle)},${e(h.registrado_por_nombre)},${e(h.fecha_registro)}\n`;
             }
 
             const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
