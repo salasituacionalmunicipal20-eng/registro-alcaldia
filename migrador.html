@@ -172,16 +172,16 @@
         
         <div class="instrucciones" id="panelInstrucciones">
             <strong style="color:var(--azul-oficial); font-size:14px; letter-spacing:1px;">📋 DICCIONARIO LOGÍSTICO ABSOLUTO — CAPAS DE INGESTA ACTIVAS:</strong><br><br>
-            1. 🛡️ <b>Resguardo Territorial en Cascada:</b> Protege los campos residenciales. Arrastra y rellena de manera automática UBCH, Código Sigue, Comuna, Consejo Comunal y Comunidad desde la fila del Jefe hacia abajo para evitar celdas vacías o borrados accidentales en Firebase.<br>
-            2. 🪪 <b>Filtro de Extranjería (Regex E/V):</b> Evalúa el prefijo de la cédula en el Excel. Si detecta "E" o "E-", configura la nacionalidad como "E". Extrae el número puro, eliminando letras y puntos de millares para no romper búsquedas futuras.<br>
-            3. 🚸 <b>Escudo para Menores e Indocumentados:</b> Si en el campo cédula se lee "MENOR", "S/C", "NO" o "N/A", aborta la búsqueda numérica y activa el rastreo por coincidencia compuesta: Nombres + Apellidos + Comuna indexada.<br>
-            4. 🏠 <b>Separación Semántica de Vivienda:</b> Divide de forma quirúrgica la arquitectura de la propiedad. Detecta palabras clave para poblar el nuevo campo <u>tenencia_vivienda</u> (propia, alquilada, prestada, arrimado, compartida, cuidando) y limpia el tipo de estructura (casa, apto, town house, anexo, habitacion, rancho).<br>
+            1. 🛡️ <b>Inyección Territorial 1x1 Exacta:</b> Extrae UBCH, Código Sigue, Comuna, Consejo Comunal, Comunidad y Calle directamente de la celda de cada individuo, evitando sobreescrituras ciegas en Firebase.<br>
+            2. 🪪 <b>Filtro de Extranjería (Regex E/V):</b> Evalúa el prefijo de la cédula en el Excel. Si detecta "E" o "E-", configura la nacionalidad como "E". Extrae el número puro, eliminando letras y puntos de millares.<br>
+            3. 🚸 <b>Escudo para Menores e Indocumentados:</b> Si en el campo cédula se lee "MENOR", "S/C" o "NO", aborta la búsqueda numérica e inyecta la configuración para cédula faltante.<br>
+            4. 🏠 <b>Separación Semántica de Vivienda:</b> Divide de forma quirúrgica la arquitectura de la propiedad. Detecta palabras clave para poblar <u>tenencia_vivienda</u> (propia, alquilada, prestada, arrimado) y limpia el tipo de estructura.<br>
             5. ⚠️ <b>Regla Forzada Clínico-Estructural:</b> Si el tipo de vivienda es clasificado como "rancho" o "improvisada", el motor anula cualquier criterio del encuestador y fuerza las condiciones de la vivienda directamente a <i>malo</i>.<br>
-            6. 👨‍👩‍👧‍👦 <b>Análisis de Género y Jerarquía de Hogar:</b> Fija de forma obligatoria el rol de <i>Jefe de Hogar</i>. Al procesar las cargas familiares de abajo, cruza las marcas de Madre/Padre/Hijo con las columnas de género para inyectar explícitamente: <u>madre</u>, <u>padre</u>, <u>hijo</u> o <u>hija</u>.<br>
-            7. 💍 <b>Traductor de Parentescos Especiales:</b> Si la columna "OTRO" contiene descripciones textuales, el motor parsea el string y homologa los roles del buscador: <u>esposa</u>, <u>esposo</u>, <u>nieta</u>, <u>nieto</u>, <u>hermana</u> o <u>hermano</u>.<br>
-            8. 📅 <b>Lógica Cronológica e Indexación de Cédula Física:</b> Estructura las fechas en formato ISO (AAAA-MM-DD). Si la edad matemática deducida es inferior a los 9 años, el sistema marca de forma automatizada que el menor no posee Cédula Física en mano.<br>
-            9. 🏥 <b>Motor Clínico Inteligente (Limpieza Médica):</b> Reemplaza las falsas medicinas (como "NO INDICA", "NINGUNA", "SANO") por campos limpios, para no contaminar el inventario estadístico de salud del municipio.<br>
-            10. 🎖️ <b>Normalización de Variables de Protección Social:</b> Purifica todas las respuestas "X", "SI" o "NO" del Excel al formato binario estricto (si/no) para los módulos de Trabajo, Escuela, Amor Mayor, Carnet de la Patria, Misión JGH, Discapacidad, Embarazo, Lactancia y Hogares de la Patria.<br><br>
+            6. 👨‍👩‍👧‍👦 <b>Jerarquía de Hogar y Cascada Real:</b> Fija de forma obligatoria el rol de <i>Jefe de Hogar</i>. Vincula todo el núcleo familiar bajo su ID para agrupaciones precisas. Cruza marcas de Madre/Padre/Hijo con el género para inyectar roles exactos.<br>
+            7. 💍 <b>Traductor de Parentescos Especiales:</b> Si la columna "OTRO" contiene descripciones textuales, el motor parsea el string y homologa a: <u>esposa</u>, <u>esposo</u>, <u>nieta</u>, <u>nieto</u>, <u>hermana</u> o <u>hermano</u>.<br>
+            8. 📅 <b>Lógica Cronológica e Indexación de Cédula Física:</b> Estructura las fechas en formato ISO. Si la edad matemática deducida es inferior a los 9 años, el sistema marca que el menor no posee Cédula Física en mano.<br>
+            9. 🏥 <b>Motor Clínico Inteligente (Limpieza Médica):</b> Reemplaza las falsas medicinas ("NO INDICA", "NINGUNA", "SANO") por campos limpios, para no contaminar el inventario estadístico de salud.<br>
+            10. 🎖️ <b>Normalización de Variables de Protección Social:</b> Purifica todas las respuestas "X", "SI" o "NO" del Excel al formato binario estricto (si/no) para los módulos de Trabajo, Escuela, Amor Mayor, Carnet, Misión JGH, Discapacidad y Hogares de la Patria.<br><br>
             🔴 <b style="color:red;">SEGURIDAD:</b> El botón de subida se activará automáticamente al validar tus credenciales de Súper Administrador.
         </div>
 
@@ -209,7 +209,6 @@
         
         import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-        // CONEXIÓN OFICIAL A SUPABASE
         const supabaseUrl = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co';
         const supabaseKey = 'sb_publishable_7dkBdGu87mnWz-acprRjzA_vHBujcwB';
         const supabase = createClient(supabaseUrl, supabaseKey);
@@ -304,9 +303,8 @@
                     let subidos = 0;
                     const habitantesRef = ref(database, 'habitantes');
                     const tiempoInicio = Date.now();
+                    
                     let ultimoJefeIdActivo = null;
-
-                    let cUbch = "", cSigue = "", cComuna = "", cConsejo = "", cComunidad = "", cCalle = "", cCasa = "", cTipo = "", cCondicion = "", cTenencia = "";
 
                     for (let i = 0; i < totalDatos; i++) {
                         let fila = datos[i];
@@ -317,12 +315,13 @@
                             let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
                             let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
 
-                            if (cleanText(fila['UBCH A LA QUE PERTENECE']) !== "") cUbch = cleanText(fila['UBCH A LA QUE PERTENECE']);
-                            if (cleanText(fila['CODIGO SITUR ACTUAL']) !== "") cSigue = cleanText(fila['CODIGO SITUR ACTUAL']);
-                            if (cleanText(fila['COMUNA']) !== "") cComuna = cleanText(fila['COMUNA']);
-                            if (cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']) !== "") cConsejo = cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']);
-                            if (cleanText(fila['COMUNIDAD']) !== "") cComunidad = cleanText(fila['COMUNIDAD']);
-                            if (cleanText(fila['CALLE']) !== "") cCalle = cleanText(fila['CALLE']);
+                            // EXTRACCIÓN 1X1 PURA DEL EXCEL
+                            let cUbch = cleanText(fila['UBCH A LA QUE PERTENECE']);
+                            let cSigue = cleanText(fila['CODIGO SITUR ACTUAL']);
+                            let cComuna = cleanText(fila['COMUNA']);
+                            let cConsejo = cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']);
+                            let cComunidad = cleanText(fila['COMUNIDAD']);
+                            let cCalle = cleanText(fila['CALLE']);
 
                             let rawCed = cleanText(fila['CEDULA']);
                             let rowCedulaNum = rawCed;
@@ -365,11 +364,6 @@
                             else if (evalCond.includes('MAL') || evalCond.includes('DETERIORADA') || evalCond.includes('PRECARIA')) condicionParsed = 'malo';
 
                             if (tipoParsed === 'rancho') condicionParsed = 'malo';
-
-                            if (casaRaw !== "") cCasa = casaRaw;
-                            if (tipoVivRaw !== "" && !tipoVivRaw.includes('PROPIA') && !tipoVivRaw.includes('ALQUILAD')) cTipo = tipoParsed;
-                            if (condicionParsed !== "regular") cCondicion = condicionParsed;
-                            if (tenenciaParsed !== "") cTenencia = tenenciaParsed;
 
                             let fechaEstructurada = parseFechaInteligente(fila['FECHA DE NACIMIENTO'], fila['EDAD']);
                             let estaCeduladoFinal = "si";
@@ -423,8 +417,7 @@
                             };
 
                             let cilindroRaw = cleanText(fila['TIPO DE CILINDRO']);
-                            let tieneGasParsed = (cilindroRaw && cilindroRaw !== 'NO') ? 'si' : 'no';
-                            let kilosGas = tieneGasParsed === 'si' ? cilindroRaw : '';
+                            let tieneGasParsed = (cilindroRaw && cilindroRaw !== 'NO' && cilindroRaw !== 'S/C' && cilindroRaw !== 'N/A') ? 'si' : 'no';
 
                             // 🚨 MOTOR CLÍNICO DE SALUD Y MEDICAMENTOS (LIMPIEZA INTELIGENTE) 🚨
                             let rawEnf = cleanText(fila['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.']);
@@ -443,7 +436,6 @@
                                 medFinal = '';
                             }
                             
-                            // Validacion cruzada: si no tiene enfermedad y la medicina es vacia o negativa, forzamos a NO.
                             if (enfFinal === '' && (rawMed === '' || negacionesSalud.includes(rawMed))) {
                                 tomaMedFinal = 'no';
                                 medFinal = '';
@@ -458,13 +450,13 @@
                                 consejo_comunal: cConsejo,
                                 comunidad: cComunidad,
                                 calle: cCalle,
-                                numero_casa: cCasa,
-                                tipo_vivienda: cTipo || "casa",
-                                condiciones_vivienda: cCondicion || "regular",
-                                tenencia_vivienda: cTenencia,
+                                numero_casa: casaRaw,
+                                tipo_vivienda: tipoParsed || "casa",
+                                condiciones_vivienda: condicionParsed || "regular",
+                                tenencia_vivienda: tenenciaParsed,
                                 responsabilidad_cbi_cm: rowResponsabilidad,
                                 tiene_gas: tieneGasParsed,
-                                tipo_cilindro_gas: kilosGas,
+                                tipo_cilindro_gas: tieneGasParsed === 'si' ? cilindroRaw : '',
                                 nombre: nombreParsed,
                                 apellido: apellidoParsed,
                                 tiene_cedula: esCedulaValida ? "si" : "no",
@@ -478,7 +470,6 @@
                                 esta_escolarizado: ns(fila['ESTA ESCOLARIZADO?']),
                                 esta_cedulado: estaCeduladoFinal,
                                 
-                                // CAMPOS CLÍNICOS LIMPIOS
                                 padece_enfermedad: enfFinal,
                                 toma_medicamento: tomaMedFinal,
                                 cual_medicamento: medFinal,
@@ -507,12 +498,24 @@
                             document.getElementById('barraProgreso').style.width = porcentaje + "%";
                             document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
                             document.getElementById('txtPorcentaje').textContent = Math.floor(porcentaje) + "%";
+                            
+                            if (subidos % 20 === 0 || subidos === totalDatos) {
+                                let logColor = jefeHogarId ? "log-family" : "log-success";
+                                escribirLog(`[LIMPIO Y GUARDADO] 1x1: ${nombreParsed} ${apellidoParsed} ➔ Rol: ${parentescoParsed} | Comuna Asegurada`, logColor);
+                            }
 
                         } catch (err) {
                             console.error(err);
                         }
                     }
-                    alert("¡Migración Masiva exitosa!");
+                    
+                    document.getElementById('barraProgreso').style.width = "100%";
+                    document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
+                    document.getElementById('txtPorcentaje').textContent = `100%`;
+                    document.getElementById('txtEta').textContent = `Finalizado en ${formatoTiempo(Date.now() - tiempoInicio)}`;
+                    
+                    escribirLog(`✅ MIGRACIÓN MAESTRA COMPLETADA. ${subidos} registros depurados y vinculados en cascada a Firebase y Supabase.`, "log-supabase");
+                    alert("¡Operación completada! Los datos se han limpiado, vinculado y guardado perfectamente en ambas bases de datos.");
                 }
             });
         };
