@@ -165,16 +165,15 @@
         
         <div class="panel-info">
             <strong style="color:#ff9800; font-size:14px; letter-spacing:1px;">📋 DICCIONARIO LOGÍSTICO ABSOLUTO — CAPAS DE AUDITORÍA ACTIVAS:</strong><br><br>
-            1. 🛡️ <b>Herencia Territorial en Cascada Obligatoria:</b> El sistema detecta al Jefe de Familia. Todos los familiares que aparecen abajo con campos vacíos heredan de forma automatizada la UBCH, Comuna, Consejo Comunal, Comunidad, Calle, Casa, Tipo de Vivienda y Tenencia de ese Jefe para que nadie quede con datos incompletos en Firebase.<br>
-            2. 🪪 <b>Filtro de Extranjería (Regex E/V):</b> Evalúa el prefijo de la cédula en el Excel. Si detecta "E" o "E-", configura la nacionalidad como "E". Extrae el número puro, eliminando letras y puntos de millares para no romper búsquedas futuras.<br>
-            3. 🚸 <b>Escudo de Rescate para Menores e Indocumentados:</b> Si en el campo cédula dice "MENOR" o "S/C", activa el rastreo por coincidencia compuesta purificada (Nombre + Apellido) salvando los registros que originalmente tenían la comuna en blanco en Firebase.<br>
-            4. 🏠 <b>Separación Semántica de Vivienda:</b> Divide de forma quirúrgica la arquitectura de la propiedad. Detecta palabras clave para poblar el campo <u>tenencia_vivienda</u> (propia, alquilada, prestada, arrimado, compartida) y limpia el tipo de estructura.<br>
-            5. ⚠️ <b>Regla Forzada Clínico-Estructural:</b> Si el tipo de vivienda es clasificado como "rancho" o "improvisada", el motor anula cualquier criterio del encuestador y fuerza las condiciones de la vivienda directamente a <i>malo</i>.<br>
-            6. 👨‍👩‍👧‍👦 <b>Análisis de Género y Jerarquía de Hogar:</b> Fija de forma obligatoria el rol de <i>Jefe de Hogar</i>. Al procesar las cargas familiares de abajo, cruza las marcas de Madre/Padre/Hijo con las columnas de género para inyectar explícitamente: <u>madre</u>, <u>padre</u>, <u>hijo</u> o <u>hija</u>.<br>
-            7. 💍 <b>Traductor de Parentescos Especiales:</b> Si la columna "OTRO" contiene descripciones textuales, el motor parsea el string y homologa los roles del buscador: <u>esposa</u>, <u>esposo</u>, <u>nieta</u>, <u>nieto</u>, <u>hermana</u> o <u>hermano</u>.<br>
-            8. 📅 <b>Lógica Cronológica e Indexación de Cédula Física:</b> Estructura las fechas en formato ISO (AAAA-MM-DD). Si la edad matemática deducida es inferior a los 9 años, el sistema marca de forma automatizada que el menor no posee Cédula Física en mano.<br>
-            9. 🏥 <b>Motor Clínico Inteligente (Limpieza de Medicinas):</b> Elimina diagnósticos falsos ("NO INDICA", "NINGUNA", "SANO"). Si el campo de enfermedad viene vacío o negativo, purifica el perfil de salud para no contaminar las estadísticas médicas.<br>
-            10. 🎖️ <b>Normalización de Variables de Protección Social:</b> Purifica todas las respuestas "X", "SI" o "NO" del Excel al formato binario estricto (si/no) para los módulos de Trabajo, Escuela, Amor Mayor, Carnet de la Patria, Misión JGH, Discapacidad, Embarazo y Lactancia.
+            1. 🛡️ <b>Inyección Territorial 1x1 Exacta:</b> Extrae UBCH, Comuna, Comunidad y Calle directamente de la celda de cada individuo, evitando sobreescrituras ciegas en Firebase.<br>
+            2. 🏠 <b>Arrastre Exclusivo de Vivienda:</b> El sistema detecta al Jefe de Familia y hereda *únicamente* la Casa, Tipo y Condición a los familiares de abajo para rellenar los vacíos del Excel.<br>
+            3. 🪪 <b>Filtro de Extranjería (Regex E/V):</b> Evalúa el prefijo de la cédula en el Excel y limpia los números.<br>
+            4. ⚠️ <b>Regla Forzada Clínico-Estructural:</b> Si el tipo de vivienda es "rancho", fuerza las condiciones a <i>malo</i>.<br>
+            5. 👨‍👩‍👧‍👦 <b>Jerarquía de Hogar Inquebrantable:</b> Fija de forma obligatoria el rol de <i>Jefe de Hogar</i>. Regla Estricta: Un Jefe de Hogar existente JAMÁS será colocado como carga familiar de otro, evitando corrupciones de núcleos.<br>
+            6. 💍 <b>Traductor de Parentescos Especiales:</b> Homologa los roles (madre, padre, esposo, esposa, hijo, hija) cruzando texto libre con género.<br>
+            7. 🏥 <b>Motor Clínico Inteligente:</b> Elimina diagnósticos falsos ("NO INDICA", "NINGUNA", "SANO") para mantener limpio el inventario médico.<br>
+            8. 🎖️ <b>Normalización de Variables de Protección Social:</b> Purifica las Misiones al formato binario estricto (si/no).<br>
+            9. ☁️ <b>Desconexión Supabase:</b> Trabaja exclusivamente sobre Firebase a máxima velocidad.
         </div>
 
         <input type="file" id="csvFile" accept=".csv">
@@ -241,28 +240,17 @@
         function parseFechaInteligente(rawDate, rawEdad) {
             let dateStr = (rawDate || '').toString().trim();
             let edadStr = (rawEdad || '').toString().trim();
-            
             let parts = dateStr.split(/[\.\/\-]/);
             if (parts.length === 3) {
                 let d = parts[0].trim().padStart(2, '0');
                 let m = parts[1].trim().padStart(2, '0');
                 let yStr = parts[2].trim();
                 let y = parseInt(yStr);
-
-                if (yStr.length === 2) {
-                    y = y > 26 ? 1900 + y : 2000 + y;
-                }
-                
-                if (!isNaN(y) && !isNaN(parseInt(m)) && !isNaN(parseInt(d))) {
-                    return `${y}-${m}-${d}`; 
-                }
+                if (yStr.length === 2) y = y > 26 ? 1900 + y : 2000 + y;
+                if (!isNaN(y) && !isNaN(parseInt(m)) && !isNaN(parseInt(d))) return `${y}-${m}-${d}`; 
             }
-
             let edad = parseInt(edadStr);
-            if (!isNaN(edad) && edad >= 0) {
-                return `${2026 - edad}-01-01`; 
-            }
-
+            if (!isNaN(edad) && edad >= 0) return `${2026 - edad}-01-01`; 
             return null;
         }
 
@@ -272,14 +260,13 @@
             if (user && user.email === "carlos.admin@alcaldia.com") {
                 autorizad = true;
                 printLog("Autenticación exitosa. Descargando censo completo de Firebase...", "log-success");
-                
                 try {
                     const snapshot = await get(child(ref(database), 'habitantes'));
                     if(snapshot.exists()) {
                         baseDatosFirebase = snapshot.val();
                         printLog(`Snapshot cargado. ${Object.keys(baseDatosFirebase).length} habitantes indexados en memoria RAM.`, "log-ok");
                         document.getElementById('btnEjecutar').disabled = false;
-                        document.getElementById('btnEjecutar').textContent = "Ejecutar Motor en Cascada de Relleno Absoluto 🚀";
+                        document.getElementById('btnEjecutar').textContent = "Ejecutar Motor 1x1 y Validar Familias 🚀";
                     } else {
                         printLog("La base de datos central no contiene registros.", "log-err");
                     }
@@ -287,7 +274,7 @@
                     printLog(`Error de descarga: ${err.message}`, "log-err");
                 }
             } else {
-                printLog("⚠️ ACCESO RESTRINGIDO: No tiene credenciales de administración habilitadas.", "log-err");
+                printLog("⚠️ ACCESO RESTRINGIDO: No tiene credenciales habilitadas.", "log-err");
             }
         });
 
@@ -298,10 +285,7 @@
             const fileInput = document.getElementById('csvFile');
             const file = fileInput.files[0];
             
-            if(!file) {
-                alert("Por favor, cargue el archivo CSV antes de proceder.");
-                return;
-            }
+            if(!file) return alert("Por favor, cargue el archivo CSV antes de proceder.");
 
             document.getElementById('btnEjecutar').disabled = true;
             document.getElementById('progressWrapper').style.display = "block";
@@ -314,24 +298,20 @@
                 complete: async function(results) {
                     const csvRows = results.data;
                     const totalRows = csvRows.length;
-                    printLog("Archivo parseado con éxito. Procesando capas jerárquicas...", "log-info");
+                    printLog(`Archivo parseado con éxito. Ejecutando escaneo en lote de ${totalRows} filas...`, "log-info");
 
                     let mapCedulas = {};
-                    let mapNombresCompletos = {};
-                    let mapNombresPuros = {};
+                    let mapNombres = {};
 
                     for(let idFb in baseDatosFirebase) {
                         let h = baseDatosFirebase[idFb];
                         let c = cleanText(h.cedula);
-                        
                         if(c && c !== 'S/C' && c !== 'NO' && !c.includes('MENOR') && !c.includes('N/A')) {
                             mapCedulas[c] = idFb;
-                            let cStripped = c.replace(/^[VE][\-\s]?/, '').replace(/\./g, '');
-                            mapCedulas[cStripped] = idFb;
+                            mapCedulas[c.replace(/^[VE][\-\s]?/, '').replace(/\./g, '')] = idFb;
                         }
-                        
-                        mapNombresCompletos[cleanText(`${h.nombre}||${h.apellido}||${h.comuna}`)] = idFb;
-                        mapNombresPuros[cleanText(`${h.nombre}||${h.apellido}`)] = idFb;
+                        let keyCompuesta = cleanText(`${h.nombre}||${h.apellido}`);
+                        mapNombres[keyCompuesta] = idFb;
                     }
 
                     let modificados = 0;
@@ -341,11 +321,11 @@
                     
                     let ultimoJefeIdActivo = null;
 
-                    // BANCO DE MEMORIA DE CASCADA RESIDENCIAL ABSOLUTA (EL JEFE MANDA)
-                    let cUbch = "", cSigue = "", cComuna = "", cConsejo = "", cComunidad = "", cCalle = "", cCasa = "", cTipo = "casa", cCondicion = "regular", cTenencia = "";
+                    // MEMORIA RAM SOLO PARA VIVIENDA (Las ubicaciones se leen 1x1 del Excel)
+                    let mCasa = "", mTipo = "casa", mCondicion = "regular", mTenencia = "";
 
                     for(let i = 0; i < totalRows; i++) {
-                        if (i % 100 === 0) await window.utilizarRetraso(); // Libera RAM del Navegador
+                        if (i % 150 === 0) await window.utilizarRetraso();
 
                         let row = csvRows[i];
                         let targetId = null;
@@ -358,42 +338,30 @@
                         let rowResponsabilidad = cleanText(row['RESPONSABILIDAD CBI, CM']);
                         let esJefeFila = rowResponsabilidad.includes("JEFE DE FAMILIA") || rowResponsabilidad.includes("JEFE");
 
-                        // CAPTURA MAESTRA DE CASCADA TERRITORIAL
-                        if (cleanText(row['UBCH A LA QUE PERTENECE']) !== "") cUbch = cleanText(row['UBCH A LA QUE PERTENECE']);
-                        if (cleanText(row['CODIGO SITUR ACTUAL']) !== "") cSigue = cleanText(row['CODIGO SITUR ACTUAL']);
-                        if (cleanText(row['COMUNA']) !== "") cComuna = cleanText(row['COMUNA']);
-                        if (cleanText(row['NOMBRE DEL CONSEJO COMUNAL']) !== "") cConsejo = cleanText(row['NOMBRE DEL CONSEJO COMUNAL']);
-                        if (cleanText(row['COMUNIDAD']) !== "") cComunidad = cleanText(row['COMUNIDAD']);
-                        if (cleanText(row['CALLE']) !== "") cCalle = cleanText(row['CALLE']);
+                        // 1. EXTRACCIÓN TERRITORIAL 1X1 (Se lee directo de la fila)
+                        let rComuna = cleanText(row['COMUNA']);
+                        let rComunidad = cleanText(row['COMUNIDAD']);
+                        let rCalle = cleanText(row['CALLE']);
+                        let rUbch = cleanText(row['UBCH A LA QUE PERTENECE']);
+                        let rSigue = cleanText(row['CODIGO SITUR ACTUAL']);
+                        let rConsejo = cleanText(row['NOMBRE DEL CONSEJO COMUNAL']);
 
                         let esCedulaValida = rawCed && rawCed !== 'S/C' && rawCed !== 'NO' && !rawCed.includes('MENOR') && !rawCed.includes('N/A');
                         let rowCedulaNum = rawCed;
                         let rowNac = 'V';
 
                         if (esCedulaValida) {
-                            if (rawCed.match(/^E[\-\s]?\d/)) {
-                                rowNac = 'E';
-                                rowCedulaNum = rawCed.replace(/^E[\-\s]?/, '');
-                            } else if (rawCed.match(/^V[\-\s]?\d/)) {
-                                rowNac = 'V';
-                                rowCedulaNum = rawCed.replace(/^V[\-\s]?/, '');
-                            }
+                            if (rawCed.match(/^E[\-\s]?\d/)) { rowNac = 'E'; rowCedulaNum = rawCed.replace(/^E[\-\s]?/, ''); } 
+                            else if (rawCed.match(/^V[\-\s]?\d/)) { rowNac = 'V'; rowCedulaNum = rawCed.replace(/^V[\-\s]?/, ''); }
                             rowCedulaNum = rowCedulaNum.replace(/\./g, '').trim();
                         }
 
-                        // ALGORITMO DE RASTREO COMPUESTO Y ESCUDO DE RESCATE
+                        // Buscar en Firebase
                         if(esCedulaValida && (mapCedulas[rawCed] || mapCedulas[rowCedulaNum])) {
                             targetId = mapCedulas[rawCed] || mapCedulas[rowCedulaNum];
                         } else {
-                            let keyConComuna = cleanText(`${rowNombre}||${rowApellido}||${cComuna}`);
-                            if(mapNombresCompletos[keyConComuna]) {
-                                targetId = mapNombresCompletos[keyConComuna];
-                            } else {
-                                let keyPura = cleanText(`${rowNombre}||${rowApellido}`);
-                                if(mapNombresPuros[keyPura]) {
-                                    targetId = mapNombresPuros[keyPura];
-                                }
-                            }
+                            let keyRow = cleanText(`${rowNombre}||${rowApellido}`);
+                            if(mapNombres[keyRow]) targetId = mapNombres[keyRow];
                         }
 
                         if(targetId) {
@@ -401,9 +369,20 @@
                             let cambiosRealizados = [];
                             let hOriginal = baseDatosFirebase[targetId];
 
-                            if (esJefeFila) ultimoJefeIdActivo = targetId;
+                            if (esCedulaValida) {
+                                updates['nacionalidad'] = rowNac;
+                                updates['cedula'] = rowCedulaNum;
+                            }
 
-                            // 1. INYECCIÓN OBLIGATORIA DE LA LÓGICA DE CASCADA RESIDENCIAL RELATIVA AL JEFE
+                            // INYECCIÓN 1X1 TERRITORIAL
+                            if (rComuna !== "") updates['comuna'] = rComuna;
+                            if (rComunidad !== "") updates['comunidad'] = rComunidad;
+                            if (rCalle !== "") updates['calle'] = rCalle;
+                            if (rUbch !== "") updates['ubch'] = rUbch;
+                            if (rSigue !== "") updates['codigo_sigue_actual'] = rSigue;
+                            if (rConsejo !== "") updates['consejo_comunal'] = rConsejo;
+
+                            // 2. SEPARACIÓN DE VIVIENDA Y CASCADA DE CASA (El Jefe comparte su casa)
                             let casaRaw = cleanText(row['NUMERO DE CASA']);
                             let tipoVivRaw = cleanText(row['TIPO DE VIVIENDA']);
                             let condicionRaw = cleanText(row['CONDICIONES DE LA VIVIENDA']);
@@ -428,39 +407,63 @@
                             else if (tipoVivRaw.includes('HABITACION') || tipoVivRaw.includes('PIEZA') || tipoVivRaw.includes('CUARTO')) tipoParsed = 'habitacion';
                             
                             let evalCond = condicionRaw;
-                            if(tipoVivRaw.includes('ESTABLE') || tipoVivRaw.includes('BUEN') || tipoVivRaw.includes('MAL') || tipoVivRaw.includes('REGULAR')) {
-                                evalCond = tipoVivRaw;
-                            }
+                            if(tipoVivRaw.includes('ESTABLE') || tipoVivRaw.includes('BUEN') || tipoVivRaw.includes('MAL') || tipoVivRaw.includes('REGULAR')) evalCond = tipoVivRaw;
 
-                            if(evalCond.includes('ESTABLE') || evalCond.includes('BUEN') || evalCond.includes('BIEN') || evalCond.includes('EXCELENTE') || evalCond.includes('OPTIM')) {
-                                condicionParsed = 'bien';
-                            } else if (evalCond.includes('MAL') || evalCond.includes('DETERIORADA') || evalCond.includes('PRECARIA') || evalCond.includes('RIESGO') || evalCond.includes('DEPLORABLE')) {
-                                condicionParsed = 'malo';
-                            } else if (evalCond.includes('REGULAR') || evalCond.includes('MEDIO') || evalCond.includes('CONSTRUCCION')) {
-                                condicionParsed = 'regular';
-                            }
+                            if(evalCond.includes('ESTABLE') || evalCond.includes('BUEN') || evalCond.includes('BIEN') || evalCond.includes('EXCELENTE')) condicionParsed = 'bien';
+                            else if (evalCond.includes('MAL') || evalCond.includes('DETERIORADA') || evalCond.includes('PRECARIA') || evalCond.includes('RIESGO')) condicionParsed = 'malo';
+                            else if (evalCond.includes('REGULAR') || evalCond.includes('MEDIO') || evalCond.includes('CONSTRUCCION')) condicionParsed = 'regular';
 
                             if (tipoParsed === 'rancho') condicionParsed = 'malo';
 
-                            // Guardar en banco si la fila lo traía explícito
-                            if (casaRaw !== "") cCasa = casaRaw;
-                            if (tipoVivRaw !== "" && !tipoVivRaw.includes('PROPIA') && !tipoVivRaw.includes('ALQUILAD')) cTipo = tipoParsed;
-                            if (condicionParsed !== "regular") cCondicion = condicionParsed;
-                            if (tenenciaParsed !== "") cTenencia = tenenciaParsed;
+                            // Arrastre solo para campos en blanco de los familiares
+                            if (casaRaw !== "") mCasa = casaRaw;
+                            if (tipoVivRaw !== "" && !tipoVivRaw.includes('PROPIA') && !tipoVivRaw.includes('ALQUILAD')) mTipo = tipoParsed;
+                            if (condicionParsed !== "regular") mCondicion = condicionParsed;
+                            if (tenenciaParsed !== "") mTenencia = tenenciaParsed;
 
-                            // Aplicación forzosa del bloque residencial unificado
-                            updates['ubch'] = cUbch;
-                            updates['codigo_sigue_actual'] = cSigue;
-                            updates['comuna'] = cComuna;
-                            updates['consejo_comunal'] = cConsejo;
-                            updates['comunidad'] = cComunidad;
-                            updates['calle'] = cCalle;
-                            updates['numero_casa'] = cCasa;
-                            updates['tipo_vivienda'] = cTipo || "casa";
-                            updates['condiciones_vivienda'] = cCondicion || "regular";
-                            if (cTenencia !== "") updates['tenencia_vivienda'] = cTenencia;
+                            updates['numero_casa'] = casaRaw !== "" ? casaRaw : mCasa;
+                            updates['tipo_vivienda'] = tipoVivRaw !== "" ? tipoParsed : mTipo;
+                            updates['condiciones_vivienda'] = condicionParsed !== "regular" ? condicionParsed : mCondicion;
+                            if (tenenciaParsed !== "" || mTenencia !== "") updates['tenencia_vivienda'] = tenenciaParsed !== "" ? tenenciaParsed : mTenencia;
 
-                            // 2. GAS DOMÉSTICO
+                            // 3. GÉNERO
+                            let sexoParsed = hOriginal.sexo || "";
+                            if(cleanText(row['FEMENINA']) !== "") sexoParsed = 'femenino';
+                            else if (cleanText(row['MASCULINO']) !== "") sexoParsed = 'masculino';
+                            if (sexoParsed !== "") updates['sexo'] = sexoParsed;
+
+                            // 4. ESTRUCTURA DE ROLES FAMILIARES Y ANCLAJE AL NÚCLEO (Regla de Jefe Intocable)
+                            if (esJefeFila) {
+                                updates['parentesco'] = 'jefe de hogar';
+                                updates['jefe_hogar_id'] = ""; // Un Jefe no puede tener Jefe
+                                ultimoJefeIdActivo = targetId; 
+                            } else {
+                                let rMadre = cleanText(row['MADRE']), rPadre = cleanText(row['PADRE']), rHijo = cleanText(row['HIJO']), rOtro = cleanText(row['OTRO']);
+                                let nParentesco = hOriginal.parentesco || "otro";
+                                
+                                if(rMadre === 'X' || rMadre === 'SI' || rMadre.includes('MADRE')) nParentesco = 'madre';
+                                else if(rPadre === 'X' || rPadre === 'SI' || rPadre.includes('PADRE')) nParentesco = 'padre';
+                                else if(rHijo === 'X' || rHijo === 'SI' || rHijo.includes('HIJO') || rHijo.includes('HIJA')) nParentesco = (sexoParsed === 'femenino') ? 'hija' : 'hijo';
+                                else if(rOtro !== "" && rOtro !== "NO") {
+                                    if (rOtro.includes('ESPOSA')) nParentesco = 'esposa';
+                                    else if (rOtro.includes('ESPOSO')) nParentesco = 'esposo';
+                                    else if (rOtro.includes('NIETA')) nParentesco = 'nieta';
+                                    else if (rOtro.includes('NIETO')) nParentesco = 'nieto';
+                                    else if (rOtro.includes('HERMANA')) nParentesco = 'hermana';
+                                    else if (rOtro.includes('HERMANO')) nParentesco = 'hermano';
+                                    else nParentesco = rOtro.toLowerCase();
+                                }
+                                updates['parentesco'] = nParentesco;
+
+                                // REGLA DE ORO: Si Firebase dice que él ya era Jefe, no le clavamos un Jefe por encima.
+                                if (nParentesco === 'jefe de hogar' || hOriginal.parentesco === 'jefe de hogar') {
+                                    updates['jefe_hogar_id'] = "";
+                                } else if (ultimoJefeIdActivo !== null && targetId !== ultimoJefeIdActivo) {
+                                    updates['jefe_hogar_id'] = ultimoJefeIdActivo;
+                                }
+                            }
+
+                            // 5. GAS Y CÉDULA FÍSICA
                             let cilindroRaw = cleanText(row['TIPO DE CILINDRO']);
                             if (cilindroRaw && cilindroRaw !== 'NO' && cilindroRaw !== 'S/C' && cilindroRaw !== 'N/A') {
                                 updates['tiene_gas'] = 'si';
@@ -470,89 +473,30 @@
                                 updates['tipo_cilindro_gas'] = '';
                             }
 
-                            // 3. CRONOLOGÍA Y EDADES
-                            let rowFechaRaw = row['FECHA DE NACIMIENTO'];
-                            let rowEdadRaw = row['EDAD'];
+                            let rowFechaRaw = row['FECHA DE NACIMIENTO'], rowEdadRaw = row['EDAD'];
                             let fechaEstructurada = parseFechaInteligente(rowFechaRaw, rowEdadRaw);
-                            if(fechaEstructurada) {
-                                updates['fecha_nacimiento'] = fechaEstructurada;
-                            }
-
-                            let sexoParsed = hOriginal.sexo || "";
-                            if(cleanText(row['FEMENINA']) !== "") sexoParsed = 'femenino';
-                            else if (cleanText(row['MASCULINO']) !== "") sexoParsed = 'masculino';
-                            if (sexoParsed !== "") updates['sexo'] = sexoParsed;
-
+                            if(fechaEstructurada) updates['fecha_nacimiento'] = fechaEstructurada;
                             if (esCedulaValida) {
-                                let edadParaCedula = 99;
-                                if (rowEdadRaw && !isNaN(parseInt(rowEdadRaw))) edadParaCedula = parseInt(rowEdadRaw);
-                                else if (fechaEstructurada) edadParaCedula = 2026 - parseInt(fechaEstructurada.split('-')[0]);
+                                let edadParaCedula = rowEdadRaw ? parseInt(rowEdadRaw) : (fechaEstructurada ? 2026 - parseInt(fechaEstructurada.split('-')[0]) : 99);
                                 updates['esta_cedulado'] = edadParaCedula < 9 ? 'no' : 'si';
                             }
 
-                            // 4. ESTRUCTURA DE ROLES FAMILIARES Y ANCLAJE AL NÚCLEO
-                            if (esJefeFila) {
-                                updates['parentesco'] = 'jefe de hogar';
-                                cambiosRealizados.push("Líder de Núcleo Vinculado");
-                            } else {
-                                let rMadre = cleanText(row['MADRE']);
-                                let rPadre = cleanText(row['PADRE']);
-                                let rHijo = cleanText(row['HIJO']);
-                                let rOtro = cleanText(row['OTRO']);
-                                
-                                let nParentesco = hOriginal.parentesco || "otro";
-                                
-                                if(rMadre === 'X' || rMadre === 'SI' || rMadre.includes('MADRE')) nParentesco = 'madre';
-                                else if(rPadre === 'X' || rPadre === 'SI' || rPadre.includes('PADRE')) nParentesco = 'padre';
-                                else if(rHijo === 'X' || rHijo === 'SI' || rHijo.includes('HIJO') || rHijo.includes('HIJA')) {
-                                    nParentesco = (sexoParsed === 'femenino') ? 'hija' : 'hijo';
-                                } else if(rOtro !== "" && rOtro !== "NO") {
-                                    if (rOtro.includes('ESPOSA')) nParentesco = 'esposa';
-                                    else if (rOtro.includes('ESPOSO')) nParentesco = 'esposo';
-                                    else if (rOtro.includes('NIETA')) nParentesco = 'nieta';
-                                    else if (rOtro.includes('NIETO')) nParentesco = 'nieto';
-                                    else if (rOtro.includes('HERMANA')) nParentesco = 'hermana';
-                                    else if (rOtro.includes('HERMANO')) nParentesco = 'hermano';
-                                    else if (rOtro.includes('HIJA')) nParentesco = 'hija';
-                                    else if (rOtro.includes('HIJO')) nParentesco = (sexoParsed === 'femenino') ? 'hija' : 'hijo';
-                                    else if (rOtro.includes('MADRE')) nParentesco = 'madre';
-                                    else if (rOtro.includes('PADRE')) nParentesco = 'padre';
-                                    else nParentesco = rOtro.toLowerCase();
-                                }
-
-                                updates['parentesco'] = nParentesco;
-
-                                if (ultimoJefeIdActivo !== null && targetId !== ultimoJefeIdActivo) {
-                                    updates['jefe_hogar_id'] = ultimoJefeIdActivo;
-                                    cambiosRealizados.push(`Asignado como Carga Familiar (${nParentesco})`);
-                                }
-                            }
-
-                            // 5. MOTOR CLÍNICO DE SALUD Y MEDICAMENTOS (LIMPIEZA ANTICONTAMINACIÓN)
+                            // 6. MOTOR CLÍNICO DE SALUD
                             let rawEnf = cleanText(row['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.']);
                             let rawMed = cleanText(row['TOMA ALGUN MEDICAMENTO? INDIQUE']);
                             const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
 
-                            let enfFinal = rawEnf;
-                            if (negacionesSalud.includes(rawEnf) || rawEnf === '') enfFinal = '';
-
-                            let medFinal = rawMed;
-                            let tomaMedFinal = 'si';
-                            if (negacionesSalud.includes(rawMed) || rawMed === '') {
-                                tomaMedFinal = 'no';
-                                medFinal = '';
-                            }
+                            let enfFinal = negacionesSalud.includes(rawEnf) ? '' : rawEnf;
+                            let medFinal = negacionesSalud.includes(rawMed) ? '' : rawMed;
+                            let tomaMedFinal = medFinal === '' ? 'no' : 'si';
                             
-                            if (enfFinal === '' && (rawMed === '' || negacionesSalud.includes(rawMed))) {
-                                tomaMedFinal = 'no';
-                                medFinal = '';
-                            }
+                            if (enfFinal === '' && (rawMed === '' || negacionesSalud.includes(rawMed))) { tomaMedFinal = 'no'; medFinal = ''; }
 
                             updates['padece_enfermedad'] = enfFinal;
                             updates['toma_medicamento'] = tomaMedFinal;
                             updates['cual_medicamento'] = medFinal;
 
-                            // 6. INYECTOR SOCIAL SEGURO BINARIO (SI/NO)
+                            // 7. INYECTOR SOCIAL SEGURO
                             const normalizarYParchearCampo = (columnaExcel, claveFirebase) => {
                                 if (row[columnaExcel] !== undefined) {
                                     let celdaRaw = cleanText(row[columnaExcel]);
@@ -560,10 +504,7 @@
                                     if (celdaRaw === 'SI' || celdaRaw === 'SÍ' || celdaRaw === 'X') valorNormalizado = 'si';
                                     else if (celdaRaw === 'NO') valorNormalizado = 'no';
                                     else valorNormalizado = celdaRaw.toLowerCase();
-
-                                    if (valorNormalizado !== '' && valorNormalizado !== 'n/a') {
-                                        updates[claveFirebase] = valorNormalizado;
-                                    }
+                                    if (valorNormalizado !== '' && valorNormalizado !== 'n/a') updates[claveFirebase] = valorNormalizado;
                                 }
                             };
 
@@ -581,14 +522,11 @@
                             else if(cleanText(row['VB'])) updates['vd_vb_vo_seleccion'] = 'VB';
                             else if(cleanText(row['VO'])) updates['vd_vb_vo_seleccion'] = 'VO';
 
-                            // 🚨 FASE DE VALIDACIÓN DEFINITIVA ANTI-BORRADO 🚨
+                            // FILTRO MAESTRO ANTI-BORRADO: Borramos del paquete todo lo vacío o igual
                             let tieneCambiosReales = false;
                             for (let key in updates) {
-                                if (updates[key] !== hOriginal[key] && updates[key] !== undefined && updates[key] !== "") {
-                                    tieneCambiosReales = true;
-                                } else {
-                                    delete updates[key]; 
-                                }
+                                if (updates[key] !== hOriginal[key] && updates[key] !== undefined && updates[key] !== "") tieneCambiosReales = true;
+                                else delete updates[key]; 
                             }
 
                             if(tieneCambiosReales) {
@@ -596,33 +534,21 @@
                                     await update(ref(database, `habitantes/${targetId}`), updates);
                                     modificados++;
                                     let colorTipo = updates['jefe_hogar_id'] ? "log-family" : "log-ok";
-                                    printLog(`[CONSOLIDADO CASCADA] ${rowNombre} ${rowApellido} ➔ Rellenado exitosamente sin pérdidas territoriales.`, colorTipo);
+                                    printLog(`[ACTUALIZADO 1x1] ${rowNombre} ${rowApellido} ➔ Parentesco: ${updates['parentesco'] || hOriginal.parentesco} | Ubicación Intacta`, colorTipo);
                                 } catch (errUpdates) {
                                     printLog(`Error inyectando ID ${targetId}: ${errUpdates.message}`, "log-err");
                                 }
-                            } else {
-                                omitidosCambio++;
-                            }
-                        } else {
-                            ignoradosNoEncontrados++;
-                        }
+                            } else omitidosCambio++;
+                        } else ignoradosNoEncontrados++;
 
                         let pct = Math.floor(((i + 1) / totalRows) * 100);
-                        let tiempoTranscurrido = Date.now() - tiempoInicio;
-                        let velocidad = (i + 1) / tiempoTranscurrido; 
-                        let registrosFaltantes = totalRows - (i + 1);
-                        let etaMs = registrosFaltantes / velocidad;
-
                         document.getElementById('progressBar').style.width = pct + "%";
                         document.getElementById('txtCompletados').textContent = `Procesados: ${i + 1} / ${totalRows}`;
                         document.getElementById('txtPorcentaje').textContent = `${pct}%`;
-                        document.getElementById('txtEta').textContent = `Tiempo restante: ${formatoTiempo(etaMs)}`;
                     }
 
-                    printLog(`📊 PROCESO DE CONTROL TOTALMENTE COMPLETADO.`, "log-info");
-                    printLog(`Expedientes inyectados y resguardados en Firebase: ${modificados}`, "log-success");
-                    printLog(`Expedientes intactos (ya estaban correctos): ${omitidosCambio}`, "log-ok");
-                    alert("¡Mapeo del Núcleo Familiar y Arrastre Territorial consolidado exitosamente en Firebase!");
+                    printLog(`📊 PROCESO FINALIZADO. Modificados: ${modificados} | Intactos (OK): ${omitidosCambio} | No Encontrados: ${ignoradosNoEncontrados}`, "log-success");
+                    alert("¡Validación 1x1 y Cascada de Jefes finalizada perfectamente en Firebase!");
                 }
             });
         };

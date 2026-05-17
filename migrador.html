@@ -131,6 +131,33 @@
         .log-info { color: #00d2ff; }
         .log-warning { color: #ffc107; }
         .log-family { color: #b000ff; font-weight: bold; }
+
+        .progress-bar { 
+            width: 100%; 
+            background-color: #ddd; 
+            border-radius: 5px; 
+            margin-top: 20px; 
+            overflow: hidden; 
+            display: none; 
+            border: 1px solid #bbb;
+        }
+        
+        .progress-fill { 
+            height: 25px; 
+            background-color: var(--azul-oficial); 
+            width: 0%; 
+            transition: width 0.1s linear; 
+        }
+
+        .stats-panel {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -139,21 +166,20 @@
             <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver al Panel Admin</button>
         </div>
 
-        <h1>Migrador Maestro de Carga Demográfica (Motor Inteligente de Cascada)</h1>
+        <h1>Migrador Maestro de Carga Demográfica (Motor Inteligente)</h1>
         
         <div class="instrucciones" id="panelInstrucciones">
             <strong style="color:var(--azul-oficial); font-size:14px; letter-spacing:1px;">📋 DICCIONARIO LOGÍSTICO ABSOLUTO — CAPAS DE INGESTA ACTIVAS:</strong><br><br>
-            1. 🛡️ <b>Resguardo Territorial en Cascada Absoluta:</b> Protege los campos residenciales. Arrastra y rellena de manera automática UBCH, Código Sigue, Comuna, Consejo Comunal, Comunidad, Calle y Vivienda desde la fila del Jefe hacia abajo para evitar celdas vacías en Firebase.<br>
-            2. 🪪 <b>Filtro de Extranjería (Regex E/V):</b> Evalúa el prefijo de la cédula en el Excel. Si detecta "E" o "E-", configura la nacionalidad como "E". Extrae el número puro, eliminando letras y puntos de millares.<br>
-            3. 🚸 <b>Escudo para Menores e Indocumentados:</b> Si en el campo cédula se lee "MENOR", "S/C" o "NO", aborta la búsqueda numérica e inyecta la configuración para cédula faltante.<br>
-            4. 🏠 <b>Separación Semántica de Vivienda:</b> Divide de forma quirúrgica la arquitectura de la propiedad. Detecta palabras clave para poblar <u>tenencia_vivienda</u> (propia, alquilada, prestada, arrimado) y limpia el tipo de estructura.<br>
-            5. ⚠️ <b>Regla Forzada Clínico-Estructural:</b> Si el tipo de vivienda es clasificado como "rancho" o "improvisada", el motor anula cualquier criterio del encuestador y fuerza las condiciones de la vivienda directamente a <i>malo</i>.<br>
-            6. 👨‍👩‍👧‍👦 <b>Jerarquía de Hogar y Cascada Real:</b> Fija de forma obligatoria el rol de <i>Jefe de Hogar</i>. Vincula todo el núcleo familiar bajo su ID para agrupaciones precisas. Cruza marcas de Madre/Padre/Hijo con el género para inyectar roles exactos.<br>
-            7. 💍 <b>Traductor de Parentescos Especiales:</b> Si la columna "OTRO" contiene descripciones textuales, el motor parsea el string y homologa a: <u>esposa</u>, <u>esposo</u>, <u>nieta</u>, <u>nieto</u>, <u>hermana</u> o <u>hermano</u>.<br>
-            8. 📅 <b>Lógica Cronológica e Indexación de Cledula Física:</b> Estructura las fechas en formato ISO. Si la edad matemática deducida es inferior a los 9 años, el sistema marca que el menor no posee Cédula Física en mano.<br>
-            9. 🏥 <b>Motor Clínico Inteligente (Limpieza Médica):</b> Reemplaza las falsas medicinas ("NO INDICA", "NINGUNA", "SANO") por campos limpios, para no contaminar el inventario estadístico de salud.<br>
-            10. 🎖️ <b>Normalización de Variables de Protección Social:</b> Purifica todas las respuestas "X", "SI" o "NO" del Excel al formato binario estricto (si/no) para los módulos de Trabajo, Escuela, Amor Mayor, Carnet, Misión JGH, Discapacidad y Hogares de la Patria.<br><br>
-            🔴 <b style="color:red;">SEGURIDAD DE RED:</b> Este módulo inyectará datos de forma exclusiva en Firebase para mantener el turbo de velocidad de la base de datos de Charallave.
+            1. 🛡️ <b>Extracción Territorial Pura (1x1):</b> Extrae UBCH, Comuna, Comunidad y Calle directamente de la celda de cada individuo. Si es familia y no tiene casa, asume la del Jefe.<br>
+            2. ⛔ <b>Escudo Anti-Duplicados (Nuevo):</b> Antes de registrar, escanea la cédula en Firebase. Si la persona ya existe, detiene la carga de esa fila y la omite, evitando clones.<br>
+            3. 🪪 <b>Filtro de Extranjería (Regex E/V):</b> Evalúa el prefijo de la cédula en el Excel y elimina letras/puntos internos.<br>
+            4. 🏠 <b>Separación Semántica de Vivienda:</b> Divide de forma quirúrgica la arquitectura de la propiedad y detecta palabras clave para poblar <u>tenencia_vivienda</u> (propia, alquilada, prestada, arrimado).<br>
+            5. ⚠️ <b>Regla Forzada Clínico-Estructural:</b> Si el tipo de vivienda es clasificado como "rancho" o "improvisada", fuerza las condiciones directamente a <i>malo</i>.<br>
+            6. 👨‍👩‍👧‍👦 <b>Jerarquía de Hogar y Cascada Real:</b> Fija el rol de <i>Jefe de Hogar</i>. Vincula todo el núcleo familiar bajo su ID. Cruza marcas de Madre/Padre/Hijo con el género.<br>
+            7. 💍 <b>Traductor de Parentescos Especiales:</b> Traduce la columna "OTRO" y homologa a: esposa, esposo, nieta, nieto, hermana o hermano.<br>
+            8. 📅 <b>Lógica Cronológica e Indexación de Cédula Física:</b> Si la edad deducida es inferior a los 9 años, marca que el menor no posee Cédula Física en mano.<br>
+            9. 🏥 <b>Motor Clínico Inteligente (Limpieza Médica):</b> Reemplaza falsas medicinas ("NO INDICA", "NINGUNA", "SANO") por campos limpios para no contaminar estadísticas.<br>
+            10. ☁️ <b>Modo Turbo:</b> Este módulo inyecta datos de forma exclusiva en Firebase para mantener máxima velocidad.
         </div>
 
         <input type="file" id="archivoCSV" accept=".csv">
@@ -167,7 +193,7 @@
         <div class="stats-panel" id="statsPanel">
             <span id="txtCompletados">Procesados: 0 / 0</span>
             <span id="txtPorcentaje">0%</span>
-            <span id="txtEta" class="eta-text">Tiempo restante: Calculando...</span>
+            <span id="txtEta" style="color: #ff4c4c;">Tiempo estimado: Calculando...</span>
         </div>
 
         <div class="consola-wrapper" id="consolaLog"></div>
@@ -175,7 +201,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, get, push, set, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -189,6 +215,7 @@
         };
 
         let database, auth, usuarioActivo = null;
+        let baseDatosFirebase = {}; // Para detectar duplicados
 
         function escribirLog(mensaje, tipo = "log-info") {
             const consola = document.getElementById('consolaLog');
@@ -206,47 +233,35 @@
             database = getDatabase(app);
             auth = getAuth(app);
             
-            onAuthStateChanged(auth, (user) => {
+            onAuthStateChanged(auth, async (user) => {
                 if (user && user.email === "carlos.admin@alcaldia.com") {
                     usuarioActivo = user;
+                    
+                    // Descarga base para detectar duplicados
+                    const snapshot = await get(child(ref(database), 'habitantes'));
+                    if(snapshot.exists()) baseDatosFirebase = snapshot.val();
+
                     const btn = document.getElementById('btnSubir');
                     btn.disabled = false;
-                    btn.textContent = "Iniciar Ingesta Inteligente Dual 🚀";
-                    escribirLog(`PERMISOS VALIDADOS. Autenticado como Súper Administrador.`, "log-success");
+                    btn.textContent = "Iniciar Ingesta Anti-Duplicados 🚀";
+                    escribirLog(`PERMISOS VALIDADOS. Listo para subir.`, "log-success");
                 } else {
                     usuarioActivo = null;
-                    const btn = document.getElementById('btnSubir');
-                    btn.disabled = true;
-                    btn.textContent = "Acceso Denegado";
+                    document.getElementById('btnSubir').disabled = true;
                 }
             });
-        } catch (error) {
-            console.error(error);
-        }
+        } catch (error) { console.error(error); }
 
-        function cleanText(txt) {
-            return (txt || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
-        }
-
-        function formatoTiempo(milisegundos) {
-            if (milisegundos < 0 || !isFinite(milisegundos)) return "Calculando...";
-            let segundosTotales = Math.floor(milisegundos / 1000);
-            return `${Math.floor(segundosTotales / 60)} min ${segundosTotales % 60} seg`;
-        }
+        function cleanText(txt) { return (txt || '').toString().trim().toUpperCase().replace(/\s+/g, ' '); }
 
         function parseFechaInteligente(rawDate, rawEdad) {
-            let dateStr = (rawDate || '').toString().trim();
-            let edadStr = (rawEdad || '').toString().trim();
-            let parts = dateStr.split(/[\.\/\-]/);
+            let parts = (rawDate || '').toString().trim().split(/[\.\/\-]/);
             if (parts.length === 3) {
-                let d = parts[0].trim().padStart(2, '0');
-                let m = parts[1].trim().padStart(2, '0');
-                let yStr = parts[2].trim();
-                let y = parseInt(yStr);
-                if (yStr.length === 2) y = y > 26 ? 1900 + y : 2000 + y;
-                if (!isNaN(y) && !isNaN(parseInt(m)) && !isNaN(parseInt(d))) return `${y}-${m}-${d}`; 
+                let y = parseInt(parts[2].trim());
+                if (y.toString().length === 2) y = y > 26 ? 1900 + y : 2000 + y;
+                return `${y}-${parts[1].trim().padStart(2, '0')}-${parts[0].trim().padStart(2, '0')}`; 
             }
-            let edad = parseInt(edadStr);
+            let edad = parseInt((rawEdad || '').toString().trim());
             if (!isNaN(edad) && edad >= 0) return `${2026 - edad}-01-01`; 
             return '';
         }
@@ -265,102 +280,95 @@
                 complete: async function(results) {
                     const datos = results.data;
                     const totalDatos = datos.length;
-                    let subidos = 0;
+                    
+                    // Mapa de Cédulas Existentes (Para bloquear clones)
+                    let mapCedulas = {};
+                    for(let idFb in baseDatosFirebase) {
+                        let c = cleanText(baseDatosFirebase[idFb].cedula);
+                        if(c && c !== 'S/C' && c !== 'NO' && !c.includes('MENOR')) {
+                            mapCedulas[c] = idFb;
+                        }
+                    }
+
+                    let subidos = 0, omitidos = 0;
                     const habitantesRef = ref(database, 'habitantes');
-                    const tiempoInicio = Date.now();
                     let ultimoJefeIdActivo = null;
 
-                    // BANCO DE MEMORIA TERRITORIAL ININTERRUMPIDO EN CASCADA
-                    let cUbch = "", cSigue = "", cComuna = "", cConsejo = "", cComunidad = "", cCalle = "", cCasa = "", cTipo = "casa", cCondicion = "regular", cTenencia = "";
+                    // Arrastre solo para vivienda de familia
+                    let mCasa = "", mTipo = "casa", mCondicion = "regular", mTenencia = "";
 
                     for (let i = 0; i < totalDatos; i++) {
                         let fila = datos[i];
                         if (!fila['NOMBRE Y APELLIDO']) continue;
 
                         try {
-                            let nombreCompleto = cleanText(fila['NOMBRE Y APELLIDO']).split(' ');
-                            let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
-                            let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
-
-                            // INGESTIÓN DE MEMORIA TERRITORIAL EN CASCADA (FIJA AL HABITANTE INDIVIDUAL)
-                            if (cleanText(fila['UBCH A LA QUE PERTENECE']) !== "") cUbch = cleanText(fila['UBCH A LA QUE PERTENECE']);
-                            if (cleanText(fila['CODIGO SITUR ACTUAL']) !== "") cSigue = cleanText(fila['CODIGO SITUR ACTUAL']);
-                            if (cleanText(fila['COMUNA']) !== "") cComuna = cleanText(fila['COMUNA']);
-                            if (cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']) !== "") cConsejo = cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']);
-                            if (cleanText(fila['COMUNIDAD']) !== "") cComunidad = cleanText(fila['COMUNIDAD']);
-                            if (cleanText(fila['CALLE']) !== "") cCalle = cleanText(fila['CALLE']);
-
                             let rawCed = cleanText(fila['CEDULA']);
-                            let rowCedulaNum = rawCed;
-                            let rowNac = 'V';
+                            let rowCedulaNum = rawCed, rowNac = 'V';
                             let esCedulaValida = rawCed && rawCed !== 'S/C' && rawCed !== 'NO' && !rawCed.includes('MENOR') && !rawCed.includes('N/A');
 
                             if (esCedulaValida) {
                                 if (rawCed.match(/^E[\-\s]?\d/)) { rowNac = 'E'; rowCedulaNum = rawCed.replace(/^E[\-\s]?/, ''); } 
                                 else if (rawCed.match(/^V[\-\s]?\d/)) { rowNac = 'V'; rowCedulaNum = rawCed.replace(/^V[\-\s]?/, ''); }
                                 rowCedulaNum = rowCedulaNum.replace(/\./g, '').trim();
-                            } else {
-                                rowCedulaNum = '';
+                            } else { rowCedulaNum = ''; }
+
+                            // 🛑 ESCUDO ANTI-DUPLICADOS 🛑
+                            if (esCedulaValida && mapCedulas[rowCedulaNum]) {
+                                omitidos++;
+                                if (omitidos % 20 === 0) escribirLog(`[DUPLICADO SALTADO] C.I: ${rowCedulaNum} ya existe en Firebase.`, "log-warning");
+                                continue; 
                             }
+
+                            let nombreCompleto = cleanText(fila['NOMBRE Y APELLIDO']).split(' ');
+                            let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
+                            let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
+
+                            // EXTRACCIÓN TERRITORIAL DIRECTA 1x1
+                            let cUbch = cleanText(fila['UBCH A LA QUE PERTENECE']);
+                            let cSigue = cleanText(fila['CODIGO SITUR ACTUAL']);
+                            let cComuna = cleanText(fila['COMUNA']);
+                            let cConsejo = cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']);
+                            let cComunidad = cleanText(fila['COMUNIDAD']);
+                            let cCalle = cleanText(fila['CALLE']);
 
                             let casaRaw = cleanText(fila['NUMERO DE CASA']);
                             let tipoVivRaw = cleanText(fila['TIPO DE VIVIENDA']);
                             let condicionRaw = cleanText(fila['CONDICIONES DE LA VIVIENDA']);
                             
-                            let tenenciaParsed = "";
-                            let tipoParsed = "casa", condicionParsed = "regular";
+                            let tenenciaParsed = "", tipoParsed = "casa", condicionParsed = "regular";
 
-                            if(tipoVivRaw.includes('PROPIA') || tipoVivRaw.includes('PROPIO')) tenenciaParsed = 'propia';
+                            if(tipoVivRaw.includes('PROPIA')) tenenciaParsed = 'propia';
                             else if(tipoVivRaw.includes('ALQUILAD')) tenenciaParsed = 'alquilada';
                             else if(tipoVivRaw.includes('PRESTAD')) tenenciaParsed = 'prestada';
                             else if(tipoVivRaw.includes('ARRIMAD')) tenenciaParsed = 'arrimado';
-                            else if(tipoVivRaw.includes('COMPARTID')) tenenciaParsed = 'compartida';
-                            else if(tipoVivRaw.includes('CUIDA')) tenenciaParsed = 'cuidando';
 
-                            if(casaRaw === 'CASA') casaRaw = '';
-
-                            if (tipoVivRaw.includes('APTO') || tipoVivRaw.includes('APARTAMENTO')) tipoParsed = 'apto';
-                            else if (tipoVivRaw.includes('TOWN') || tipoVivRaw.includes('TH')) tipoParsed = 'town house';
-                            else if (tipoVivRaw.includes('RANCHO') || tipoVivRaw.includes('BARRACA') || tipoVivRaw.includes('IMPROVISADA')) tipoParsed = 'rancho';
+                            if (tipoVivRaw.includes('APTO')) tipoParsed = 'apto';
+                            else if (tipoVivRaw.includes('TOWN')) tipoParsed = 'town house';
+                            else if (tipoVivRaw.includes('RANCHO')) tipoParsed = 'rancho';
                             else if (tipoVivRaw.includes('ANEXO')) tipoParsed = 'anexo';
-                            else if (tipoVivRaw.includes('HABITACION') || tipoVivRaw.includes('PIEZA') || tipoVivRaw.includes('CUARTO')) tipoParsed = 'habitacion';
 
-                            let evalCond = condicionRaw;
-                            if(tipoVivRaw.includes('ESTABLE') || tipoVivRaw.includes('BUEN') || tipoVivRaw.includes('MAL') || tipoVivRaw.includes('REGULAR')) {
-                                evalCond = tipoVivRaw;
-                            }
-
-                            if(evalCond.includes('ESTABLE') || evalCond.includes('BUEN') || evalCond.includes('BIEN') || evalCond.includes('EXCELENTE') || evalCond.includes('OPTIM')) {
-                                condicionParsed = 'bien';
-                            } else if (evalCond.includes('MAL') || evalCond.includes('DETERIORADA') || evalCond.includes('PRECARIA') || evalCond.includes('RIESGO') || evalCond.includes('DEPLORABLE')) {
-                                condicionParsed = 'malo';
-                            } else if (evalCond.includes('REGULAR') || evalCond.includes('MEDIO') || evalCond.includes('CONSTRUCCION')) {
-                                condicionParsed = 'regular';
-                            }
+                            let evalCond = cleanText(fila['CONDICIONES DE LA VIVIENDA']);
+                            if(evalCond.includes('BUEN') || evalCond.includes('OPTIM')) condicionParsed = 'bien';
+                            else if (evalCond.includes('MAL') || evalCond.includes('PRECARIA')) condicionParsed = 'malo';
 
                             if (tipoParsed === 'rancho') condicionParsed = 'malo';
 
-                            // Guardamos en memoria si la fila actual los trajo explícitos
-                            if (casaRaw !== "") cCasa = casaRaw;
-                            if (tipoVivRaw !== "" && !tipoVivRaw.includes('PROPIA') && !tipoVivRaw.includes('ALQUILAD')) cTipo = tipoParsed;
-                            if (condicionParsed !== "regular") cCondicion = condicionParsed;
-                            if (tenenciaParsed !== "") cTenencia = tenenciaParsed;
+                            // Solo para vivienda arrastramos del jefe si viene vacío
+                            if (casaRaw !== "" && casaRaw !== "CASA") mCasa = casaRaw;
+                            if (tipoVivRaw !== "" && !tipoVivRaw.includes('PROPIA')) mTipo = tipoParsed;
+                            if (condicionParsed !== "regular") mCondicion = condicionParsed;
+                            if (tenenciaParsed !== "") mTenencia = tenenciaParsed;
 
                             let fechaEstructurada = parseFechaInteligente(fila['FECHA DE NACIMIENTO'], fila['EDAD']);
                             let estaCeduladoFinal = "si";
-
                             let sexoParsed = "";
                             if(cleanText(fila['FEMENINA']) !== "") sexoParsed = 'femenino';
                             else if (cleanText(fila['MASCULINO']) !== "") sexoParsed = 'masculino';
 
                             if (esCedulaValida) {
-                                let edadRef = 99;
-                                if (fila['EDAD'] && !isNaN(parseInt(fila['EDAD']))) edadRef = parseInt(fila['EDAD']);
-                                else if (fechaEstructurada) edadRef = 2026 - parseInt(fechaEstructurada.split('-')[0]);
+                                let edadRef = fila['EDAD'] ? parseInt(fila['EDAD']) : (fechaEstructurada ? 2026 - parseInt(fechaEstructurada.split('-')[0]) : 99);
                                 if (edadRef < 9) estaCeduladoFinal = 'no';
-                            } else {
-                                estaCeduladoFinal = 'no';
-                            }
+                            } else estaCeduladoFinal = 'no';
 
                             const nuevoRef = push(habitantesRef);
                             const firebaseId = nuevoRef.key;
@@ -372,61 +380,34 @@
                                 parentescoParsed = "jefe de hogar";
                                 ultimoJefeIdActivo = firebaseId; 
                             } else {
-                                let rMadre = cleanText(fila['MADRE']);
-                                let rPadre = cleanText(fila['PADRE']);
-                                let rHijo = cleanText(fila['HIJO']);
-                                let rOtro = cleanText(fila['OTRO']);
+                                let rMadre = cleanText(fila['MADRE']), rPadre = cleanText(fila['PADRE']), rHijo = cleanText(fila['HIJO']), rOtro = cleanText(fila['OTRO']);
                                 
                                 if(rMadre === 'X' || rMadre === 'SI' || rMadre.includes('MADRE')) parentescoParsed = 'madre';
                                 else if(rPadre === 'X' || rPadre === 'SI' || rPadre.includes('PADRE')) parentescoParsed = 'padre';
-                                else if(rHijo === 'X' || rHijo === 'SI' || rHijo.includes('HIJO') || rHijo.includes('HIJA')) {
-                                    parentescoParsed = (sexoParsed === 'femenino') ? 'hija' : 'hijo';
-                                } else if(rOtro !== "" && rOtro !== "NO") {
+                                else if(rHijo === 'X' || rHijo === 'SI' || rHijo.includes('HIJO') || rHijo.includes('HIJA')) parentescoParsed = (sexoParsed === 'femenino') ? 'hija' : 'hijo';
+                                else if(rOtro !== "" && rOtro !== "NO") {
                                     if (rOtro.includes('ESPOSA')) parentescoParsed = 'esposa';
                                     else if (rOtro.includes('ESPOSO')) parentescoParsed = 'esposo';
                                     else if (rOtro.includes('NIETA')) parentescoParsed = 'nieta';
                                     else if (rOtro.includes('NIETO')) parentescoParsed = 'nieto';
-                                    else if (rOtro.includes('HERMANA')) parentescoParsed = 'hermana';
-                                    else if (rOtro.includes('HERMANO')) parentescoParsed = 'hermano';
-                                    else if (rOtro.includes('HIJA')) parentescoParsed = 'hija';
-                                    else if (rOtro.includes('HIJO')) parentescoParsed = (sexoParsed === 'femenino') ? 'hija' : 'hijo';
-                                    else if (rOtro.includes('MADRE')) parentescoParsed = 'madre';
-                                    else if (rOtro.includes('PADRE')) parentescoParsed = 'padre';
                                     else parentescoParsed = rOtro.toLowerCase();
                                 }
-
                                 if (ultimoJefeIdActivo !== null) jefeHogarId = ultimoJefeIdActivo;
                             }
 
-                            const ns = (val) => {
-                                let c = cleanText(val);
-                                return (c==='SI'||c==='X'||c==='SÍ') ? 'si' : 'no';
-                            };
-
+                            const ns = (val) => { let c = cleanText(val); return (c==='SI'||c==='X'||c==='SÍ') ? 'si' : 'no'; };
                             let cilindroRaw = cleanText(fila['TIPO DE CILINDRO']);
-                            let tieneGasParsed = (cilindroRaw && cilindroRaw !== 'NO' && cilindroRaw !== 'S/C' && cilindroRaw !== 'N/A') ? 'si' : 'no';
+                            let tieneGasParsed = (cilindroRaw && cilindroRaw !== 'NO' && cilindroRaw !== 'S/C') ? 'si' : 'no';
 
-                            // 🚨 MOTOR CLÍNICO DE SALUD Y MEDICAMENTOS (LIMPIEZA INTELIGENTE) 🚨
+                            // 🚨 MOTOR CLÍNICO DE SALUD Y MEDICAMENTOS (LIMPIEZA INTELIGENTE)
                             let rawEnf = cleanText(fila['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.']);
                             let rawMed = cleanText(fila['TOMA ALGUN MEDICAMENTO? INDIQUE']);
                             const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
 
-                            let enfFinal = rawEnf;
-                            if (negacionesSalud.includes(rawEnf) || rawEnf === '') {
-                                enfFinal = '';
-                            }
-
-                            let medFinal = rawMed;
-                            let tomaMedFinal = 'si';
-                            if (negacionesSalud.includes(rawMed) || rawMed === '') {
-                                tomaMedFinal = 'no';
-                                medFinal = '';
-                            }
-                            
-                            if (enfFinal === '' && (rawMed === '' || negacionesSalud.includes(rawMed))) {
-                                tomaMedFinal = 'no';
-                                medFinal = '';
-                            }
+                            let enfFinal = negacionesSalud.includes(rawEnf) ? '' : rawEnf;
+                            let medFinal = negacionesSalud.includes(rawMed) ? '' : rawMed;
+                            let tomaMedFinal = medFinal === '' ? 'no' : 'si';
+                            if (enfFinal === '' && (rawMed === '' || negacionesSalud.includes(rawMed))) { tomaMedFinal = 'no'; medFinal = ''; }
 
                             let habitanteTraducido = {
                                 id_firebase: firebaseId,
@@ -437,10 +418,10 @@
                                 consejo_comunal: cConsejo,
                                 comunidad: cComunidad,
                                 calle: cCalle,
-                                numero_casa: cCasa,
-                                tipo_vivienda: cTipo || "casa",
-                                condiciones_vivienda: cCondicion || "regular",
-                                tenencia_vivienda: cTenencia,
+                                numero_casa: casaRaw !== "" ? casaRaw : mCasa,
+                                tipo_vivienda: tipoVivRaw !== "" ? tipoParsed : mTipo,
+                                condiciones_vivienda: condicionParsed !== "regular" ? condicionParsed : mCondicion,
+                                tenencia_vivienda: tenenciaParsed !== "" ? tenenciaParsed : mTenencia,
                                 responsabilidad_cbi_cm: rowResponsabilidad,
                                 tiene_gas: tieneGasParsed,
                                 tipo_cilindro_gas: tieneGasParsed === 'si' ? cilindroRaw : '',
@@ -471,33 +452,25 @@
                                 vd_vb_vo_seleccion: cleanText(fila['VD']) ? 'VD' : (cleanText(fila['VB']) ? 'VB' : (cleanText(fila['VO']) ? 'VO' : '')),
                                 vd_vb_vo_detalle: '',
                                 registrado_por_uid: usuarioActivo.uid,
-                                registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN MAESTRA)",
+                                registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN)",
                                 fecha_registro: new Date().toLocaleString()
                             };
 
-                            await set(nuevoRef, habitanteTraducido); // GUARDA TOTALMENTE EN FIREBASE
+                            await set(nuevoRef, habitanteTraducido);
                             subidos++;
+                            
+                            // Lo anotamos en memoria para no duplicarlo más adelante en el mismo archivo
+                            if(rowCedulaNum) mapCedulas[rowCedulaNum] = firebaseId;
 
                             let porcentaje = (subidos / totalDatos) * 100;
                             document.getElementById('barraProgreso').style.width = porcentaje + "%";
-                            document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
-                            document.getElementById('txtPorcentaje').textContent = Math.floor(porcentaje) + "%";
+                            document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos} (Omitidos: ${omitidos})`;
                             
-                            if (subidos % 20 === 0 || subidos === totalDatos) {
-                                let logColor = jefeHogarId ? "log-family" : "log-success";
-                                escribirLog(`[MIGRADO FB] Fila ${i+1}: ${nombreParsed} ${apellidoParsed} ➔ Rol: ${parentescoParsed} | Territorio Asegurado`, logColor);
-                            }
-
-                        } catch (err) {
-                            console.error(err);
-                        }
+                        } catch (err) { console.error(err); }
                     }
                     
                     document.getElementById('barraProgreso').style.width = "100%";
-                    document.getElementById('txtPorcentaje').textContent = `100%`;
-                    document.getElementById('txtEta').textContent = `Finalizado en ${formatoTiempo(Date.now() - tiempoInicio)}`;
-                    escribirLog(`✅ MIGRACIÓN MAESTRA COMPLETADA EN FIREBASE.`, "log-success");
-                    alert("¡Operación completada! Los datos se han limpiado y guardado perfectamente en Firebase.");
+                    alert(`¡Migración Masiva exitosa! Nuevos: ${subidos} | Duplicados Omitidos: ${omitidos}`);
                 }
             });
         };
