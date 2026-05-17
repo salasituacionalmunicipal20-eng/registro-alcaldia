@@ -343,7 +343,6 @@
 
         <h2>Filtro Demográfico Avanzado</h2>
         <div class="search-panel">
-            
             <div class="search-grid">
                 <div>
                     <label>Comuna / Circuito:</label>
@@ -473,8 +472,8 @@
             <div class="stat-card c-8">
                 <span class="stat-icon">💊</span>
                 <div class="stat-number" id="statEnfermos">0</div>
-                <div class="stat-title">Enfermedades</div>
-                <button class="btn-metric-print" onclick="abrirModalMedicinas()">🖨 PDF</button>
+                <div class="stat-title">Pacientes Médicos</div>
+                <button class="btn-metric-print" onclick="abrirModalMedicinas()">🖨 FILTRAR PDF</button>
             </div>
             
             <div class="stat-card c-9">
@@ -519,12 +518,10 @@
         <div class="print-only">
             <div class="print-title" id="tituloReporte">Listado de Habitantes: Consolidado Municipal</div>
             
-            <div class="print-filters-box" id="infoFiltrosReporte">
-                </div>
+            <div class="print-filters-box" id="infoFiltrosReporte"></div>
             
             <div class="print-title" style="margin-top: 10px; font-size: 12px; border:none; text-align:left;">RESUMEN DE MÉTRICAS FILTRADAS:</div>
-            <div class="print-metrics-summary" id="printMetricsSummary">
-                </div>
+            <div class="print-metrics-summary" id="printMetricsSummary"></div>
 
             <table>
                 <thead>
@@ -535,7 +532,7 @@
                         <th>Comunidad</th>
                         <th>Dirección</th>
                         <th>Teléfono</th>
-                        <th>Tratamiento / Medicina</th>
+                        <th>Diagnóstico / Tratamiento</th>
                     </tr>
                 </thead>
                 <tbody id="tablaReporteCuerpo"></tbody>
@@ -547,12 +544,12 @@
         <div class="modal-content">
             <span class="close-modal" onclick="cerrarModalMedicinas()">✖</span>
             <h3 style="color: var(--azul-oficial); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; text-transform: uppercase; font-size: 16px; font-weight: bold;">📋 Reporte Avanzado de Tratamientos Médicos</h3>
-            <p style="font-size: 12px; color: #555; line-height: 1.5; margin-bottom: 20px;">Filtre el censo de salud por el nombre específico del medicamento que posee en inventario. El sistema listará únicamente a los habitantes con dicha prescripción activa en Charallave.</p>
+            <p style="font-size: 12px; color: #555; line-height: 1.5; margin-bottom: 20px;">Filtre el censo de salud por el nombre específico del medicamento que posee en inventario. El sistema listará únicamente a los habitantes con dicha prescripción activa.</p>
             
             <div style="margin-bottom: 20px;">
                 <label style="font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 8px;">Seleccionar Filtro de Medicina:</label>
                 <select id="selMedicinaFiltro">
-                    <option value="TODOS">Generar Reporte Completo (Todas las Medicinas)</option>
+                    <option value="TODOS">Generar Reporte Completo (Todas las Medicinas y Pacientes)</option>
                 </select>
             </div>
             
@@ -585,7 +582,6 @@
         let baseDeDatosHabitantes = {}; 
         let datosTerritoriales = {}; 
 
-        // EL MOTOR DE TEXTO QUE FALTABA
         function cleanText(txt) {
             return (txt || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
         }
@@ -641,15 +637,26 @@
             const valorActual = selectMed.value;
             
             let medUnicas = new Set();
+            // Palabras que no son medicinas
+            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
+
             for (let id in baseDeDatosHabitantes) {
                 let h = baseDeDatosHabitantes[id];
                 let med = cleanText(h.cual_medicamento);
-                if (med !== '' && med !== 'NO' && med !== 'NINGUNO' && med !== 'NINGUNA' && med !== 'N/A') {
-                    medUnicas.add(med);
+                
+                if (med && !negacionesSalud.includes(med)) {
+                    // Separador clínico de compuestos: Corta por comas, "Y", "E", o barra.
+                    let partes = med.split(/,| Y | E |\//);
+                    partes.forEach(p => {
+                        let m = p.trim();
+                        if (m && !negacionesSalud.includes(m)) {
+                            medUnicas.add(m);
+                        }
+                    });
                 }
             }
             
-            selectMed.innerHTML = '<option value="TODOS">Generar Reporte Completo (Todas las Medicinas)</option>';
+            selectMed.innerHTML = '<option value="TODOS">Generar Reporte Completo (Todas las Medicinas y Pacientes)</option>';
             Array.from(medUnicas).sort().forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m;
@@ -676,6 +683,7 @@
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
             
             let filasReporte = '';
+            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
             
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -691,14 +699,28 @@
                 if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
                 
                 const med = cleanText(h.cual_medicamento);
-                const tieneMedicina = med !== '' && med !== 'NO' && med !== 'NINGUNO' && med !== 'NINGUNA' && med !== 'N/A';
+                const enf = cleanText(h.padece_enfermedad);
                 
-                if (!tieneMedicina) continue;
-                if (filtroMed !== 'TODOS' && med !== filtroMed) continue;
+                // Si la medicina está en el array de negaciones o está vacía, no tiene medicina
+                const tieneMedicina = med !== '' && !negacionesSalud.includes(med);
+                const tieneEnfermedad = enf !== '' && !negacionesSalud.includes(enf);
+                
+                // Para el reporte de "Enfermos/Pacientes", deben tener o una medicina o una enfermedad
+                if (!tieneMedicina && !tieneEnfermedad) continue;
+                
+                if (filtroMed !== 'TODOS') {
+                    // Si selecciona un filtro específico, buscarlo dentro de las medicinas de esta persona
+                    let partes = med.split(/,| Y | E |\//).map(p => p.trim());
+                    let coincide = partes.some(p => p.includes(filtroMed) || filtroMed.includes(p));
+                    if (!coincide) continue;
+                }
                 
                 const edad = calcularEdad(h.fecha_nacimiento);
                 const nac = h.nacionalidad || 'V';
                 const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                
+                let medStrPrint = med;
+                if(!tieneMedicina && tieneEnfermedad) medStrPrint = `PADECE: ${enf} (No Especifica Tratamiento)`;
                 
                 filasReporte += `
                     <tr>
@@ -708,12 +730,12 @@
                         <td>${h.comunidad}</td>
                         <td>${h.calle}, Casa ${h.numero_casa}</td>
                         <td>${h.telefono || ''}</td>
-                        <td>${med}</td>
+                        <td>${medStrPrint}</td>
                     </tr>
                 `;
             }
             
-            let nombreMetrica = filtroMed === 'TODOS' ? 'REPORTE GLOBAL DE TRATAMIENTOS CRÍTICOS' : `REPORTE ESPECÍFICO DE ASIGNACIÓN: ${filtroMed}`;
+            let nombreMetrica = filtroMed === 'TODOS' ? 'REPORTE GLOBAL DE PACIENTES Y TRATAMIENTOS CRÍTICOS' : `REPORTE ESPECÍFICO DE ASIGNACIÓN MÉDICA: ${filtroMed}`;
             
             document.getElementById('tituloReporte').textContent = nombreMetrica;
             document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
@@ -868,7 +890,7 @@
                 <div><strong>Menores (< 18):</strong> ${t.ninos}</div>
                 <div><strong>Población Activa:</strong> ${t.trabajan}</div>
                 <div><strong>Escolarizados:</strong> ${t.escolarizados}</div>
-                <div><strong>Enfermedades crónicas:</strong> ${t.enfermos}</div>
+                <div><strong>Pacientes Médicos:</strong> ${t.enfermos}</div>
                 <div><strong>Con Discapacidad:</strong> ${t.discapacidad}</div>
                 <div><strong>Carnet de la Patria:</strong> ${t.patria}</div>
                 <div><strong>Pensión Amor Mayor:</strong> ${t.amor}</div>
@@ -898,6 +920,8 @@
             
             let hogaresConGasUnicos = new Set();
             let filasReporte = '';
+            
+            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -924,8 +948,12 @@
                     if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'enfermedad') {
-                        const enf = (h.padece_enfermedad || '').trim().toUpperCase();
-                        if (!enf || enf === 'NO' || enf === 'NINGUNA' || enf === 'N/A') continue;
+                        const enf = cleanText(h.padece_enfermedad);
+                        const med = cleanText(h.cual_medicamento);
+                        // Cuenta si tiene enfermedad REAL o Medicina REAL
+                        const tieneEnfermedad = enf !== '' && !negacionesSalud.includes(enf);
+                        const tieneMedicina = med !== '' && !negacionesSalud.includes(med);
+                        if (!tieneEnfermedad && !tieneMedicina) continue;
                     }
                 }
 
@@ -940,11 +968,12 @@
                     hogaresConGasUnicos.add(h.jefe_hogar_id ? h.jefe_hogar_id : dirUnica);
                 }
 
-                const enf = (h.padece_enfermedad || '').trim().toUpperCase();
-                const medCelda = (h.cual_medicamento || '').trim().toUpperCase();
-                let medStrInfo = medCelda ? medCelda : (enf !== '' && enf !== 'NO' && enf !== 'NINGUNA' && enf !== 'N/A' ? enf : 'NINGUNO');
+                const enf = cleanText(h.padece_enfermedad);
+                const med = cleanText(h.cual_medicamento);
+                const tieneEnf = enf !== '' && !negacionesSalud.includes(enf);
+                const tieneMed = med !== '' && !negacionesSalud.includes(med);
 
-                if (medCelda !== '' && medCelda !== 'NO' && medCelda !== 'NINGUNA' && medCelda !== 'N/A') {
+                if (tieneEnf || tieneMed) {
                     cEnfermos++;
                 }
                 
@@ -962,6 +991,10 @@
                 const nac = h.nacionalidad || 'V';
                 const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
                 
+                let diagInfo = "NINGUNO";
+                if(tieneMed) diagInfo = med;
+                else if (tieneEnf) diagInfo = `PADECE: ${enf} (No Especifica Tratamiento)`;
+
                 filasReporte += `
                     <tr>
                         <td>${h.nombre} ${h.apellido}</td>
@@ -970,7 +1003,7 @@
                         <td>${h.comunidad}</td>
                         <td>${h.calle}, Casa ${h.numero_casa}</td>
                         <td>${h.telefono || ''}</td>
-                        <td>${medStrInfo}</td>
+                        <td>${diagInfo}</td>
                     </tr>
                 `;
             }
@@ -1022,6 +1055,8 @@
             let filasReporte = '';
             let hogaresGasImpresos = new Set();
             let nombreMetrica = '';
+            
+            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -1048,8 +1083,11 @@
                     if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'enfermedad') {
-                        const enf = (h.padece_enfermedad || '').trim().toUpperCase();
-                        if (!enf || enf === 'NO' || enf === 'NINGUNA' || enf === 'N/A') continue;
+                        const enf = cleanText(h.padece_enfermedad);
+                        const med = cleanText(h.cual_medicamento);
+                        const tieneEnfermedad = enf !== '' && !negacionesSalud.includes(enf);
+                        const tieneMedicina = med !== '' && !negacionesSalud.includes(med);
+                        if (!tieneEnfermedad && !tieneMedicina) continue;
                     }
                 }
 
@@ -1082,9 +1120,15 @@
                 if (pasaMetrica) {
                     const nac = h.nacionalidad || 'V';
                     const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
-                    const enfInfo = (h.padece_enfermedad || '').trim().toUpperCase();
-                    const medInfo = (h.cual_medicamento || '').trim().toUpperCase();
-                    let medStrPrint = medInfo ? medInfo : (enfInfo !== '' && enfInfo !== 'NO' && enfInfo !== 'NINGUNA' && enfInfo !== 'N/A' ? enfInfo : 'NINGUNO');
+                    
+                    const enf = cleanText(h.padece_enfermedad);
+                    const med = cleanText(h.cual_medicamento);
+                    const tieneEnf = enf !== '' && !negacionesSalud.includes(enf);
+                    const tieneMed = med !== '' && !negacionesSalud.includes(med);
+                    
+                    let diagInfo = "NINGUNO";
+                    if(tieneMed) diagInfo = med;
+                    else if (tieneEnf) diagInfo = `PADECE: ${enf} (No Especifica Tratamiento)`;
                     
                     filasReporte += `
                         <tr>
@@ -1094,7 +1138,7 @@
                             <td>${h.comunidad}</td>
                             <td>${h.calle}, Casa ${h.numero_casa}</td>
                             <td>${h.telefono || ''}</td>
-                            <td>${medStrPrint}</td>
+                            <td>${diagInfo}</td>
                         </tr>
                     `;
                 }

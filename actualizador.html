@@ -155,6 +155,7 @@
         .log-info { color: #00d2ff; }
         .log-warn { color: #ff9800; }
         .log-family { color: #b000ff; font-weight: bold; }
+        .log-health { color: #ff00ff; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -167,16 +168,12 @@
         
         <div class="panel-info">
             <strong style="color:#ff9800; font-size:14px; letter-spacing:1px;">📋 DICCIONARIO LOGÍSTICO ABSOLUTO — CAPAS DE AUDITORÍA ACTIVAS:</strong><br><br>
-            1. 🛡️ <b>Resguardo Territorial en Cascada:</b> Protege los campos residenciales. Arrastra y rellena de manera automática UBCH, Código Sigue, Comuna, Consejo Comunal y Comunidad desde la fila del Jefe hacia abajo para evitar celdas vacías o borrados accidentales en Firebase.<br>
-            2. 🪪 <b>Filtro de Extranjería (Regex E/V):</b> Evalúa el prefijo de la cédula en el Excel. Si detecta "E" o "E-", configura la nacionalidad como "E". Extrae el número puro, eliminando letras y puntos de millares para no romper búsquedas futuras.<br>
-            3. 🚸 <b>Escudo para Menores e Indocumentados:</b> Si en el campo cédula se lee "MENOR", "S/C", "NO" o "N/A", aborta la búsqueda numérica y activa el rastreo por coincidencia compuesta: Nombres + Apellidos + Comuna indexada.<br>
-            4. 🏠 <b>Separación Semántica de Vivienda:</b> Divide de forma quirúrgica la arquitectura de la propiedad. Detecta palabras clave para poblar el nuevo campo <u>tenencia_vivienda</u> (propia, alquilada, prestada, arrimado, compartida, cuidando) y limpia el tipo de estructura (casa, apto, town house, anexo, habitacion, rancho).<br>
-            5. ⚠️ <b>Regla Forzada Clínico-Estructural:</b> Si el tipo de vivienda es clasificado como "rancho" o "improvisada", el motor anula cualquier criterio del encuestador y fuerza las condiciones de la vivienda directamente a <i>malo</i>.<br>
-            6. 👨‍👩‍👧‍👦 <b>Análisis de Género y Jerarquía de Hogar:</b> Fija de forma obligatoria el rol de <i>Jefe de Hogar</i>. Al procesar las cargas familiares de abajo, cruza las marcas de Madre/Padre/Hijo con las columnas de género para inyectar explícitamente: <u>madre</u>, <u>padre</u>, <u>hijo</u> o <u>hija</u>.<br>
-            7. 💍 <b>Traductor de Parentescos Especiales:</b> Si la columna "OTRO" contiene descripciones textuales, el motor parsea el string y homologa los roles del buscador: <u>esposa</u>, <u>esposo</u>, <u>nieta</u>, <u>nieto</u>, <u>hermana</u> o <u>hermano</u>.<br>
-            8. 📅 <b>Lógica Cronológica e Indexación de Cédula Física:</b> Estructura las fechas en formato ISO (AAAA-MM-DD). Si la edad matemática deducida es inferior a los 9 años, el sistema marca de forma automatizada que el menor no posee Cédula Física en mano.<br>
-            9. ⛽ <b>Detección de Infraestructura Energética:</b> Escanea la columna de cilindros de gas; si contiene datos válidos (ej: 10kg, 18kg, Directo), configura de inmediato la variable <u>tiene_gas</u> en <i>si</i> y guarda el peso.<br>
-            10. 🎖️ <b>Normalización de Variables de Protección Social:</b> Purifica todas las respuestas "X", "SI" o "NO" del Excel al formato binario estricto (si/no) para los módulos de Trabajo, Escuela, Amor Mayor, Carnet de la Patria, Misión JGH, Discapacidad, Embarazo, Lactancia y Hogares de la Patria.
+            1. 🛡️ <b>Resguardo Territorial en Cascada:</b> Protege los campos residenciales. Arrastra y rellena de manera automática UBCH, Comuna, Consejo y Comunidad desde el Jefe hacia abajo.<br>
+            2. 🪪 <b>Filtro de Extranjería y Menores:</b> Limpia la cédula (E/V). Si lee "MENOR", "S/C" o "NO", ignora la cédula y hace búsqueda compuesta (Nombre+Apellido+Comuna).<br>
+            3. 🏠 <b>Separación Semántica de Vivienda:</b> Divide arquitectura (Apto/Casa/Rancho/Anexo) y Tenencia (Propia/Alquilada/Arrimado). Si es "rancho", fuerza condición a <i>malo</i>.<br>
+            4. 👨‍👩‍👧‍👦 <b>Análisis de Género y Jerarquía de Hogar:</b> Fija el <i>Jefe de Hogar</i>. Traduce y asigna madre, padre, hijo, hija, esposo, esposa según la marca "X" y el género.<br>
+            5. 🏥 <b>Motor Clínico Inteligente:</b> Elimina falsas medicinas ("NO INDICA", "NINGUNA", "SANO"). Limpia y estructura el perfil de salud para no contaminar el inventario médico.<br>
+            6. 🎖️ <b>Normalización de Protección Social:</b> Purifica todas las respuestas "X", "SI" o "NO" al formato binario estricto (si/no) para Amor Mayor, Carnet, JGH, Discapacidad, etc.
         </div>
 
         <input type="file" id="csvFile" accept=".csv">
@@ -233,7 +230,7 @@
         onAuthStateChanged(auth, async (user) => {
             if (user && user.email === "carlos.admin@alcaldia.com") {
                 autorizad = true;
-                printLog("Autenticación exitosa. Descargando censo completo de Firebase...", "log-success");
+                printLog("Autenticación exitosa. Descargando censo completo de Firebase para indexación local...", "log-success");
                 
                 try {
                     const snapshot = await get(child(ref(database), 'habitantes'));
@@ -340,7 +337,6 @@
                     
                     let ultimoJefeIdActivo = null;
 
-                    // BANCO DE MEMORIA DE CASCADA COMPLETA (EVITA HUECOS DE DATOS EN FAMILIARES)
                     let cUbch = "", cSigue = "", cComuna = "", cConsejo = "", cComunidad = "", cCalle = "", cCasa = "", cTipo = "", cCondicion = "", cTenencia = "";
 
                     for(let i = 0; i < totalRows; i++) {
@@ -352,7 +348,6 @@
                         let rowNombre = rowNombreCompleto.slice(0, Math.ceil(rowNombreCompleto.length / 2)).join(' ');
                         let rowApellido = rowNombreCompleto.slice(Math.ceil(rowNombreCompleto.length / 2)).join(' ');
                         
-                        // INGESTIÓN DE MEMORIA TERRITORIAL CRUDA EN CASCADA
                         if (cleanText(row['UBCH A LA QUE PERTENECE']) !== "") cUbch = cleanText(row['UBCH A LA QUE PERTENECE']);
                         if (cleanText(row['CODIGO SITUR ACTUAL']) !== "") cSigue = cleanText(row['CODIGO SITUR ACTUAL']);
                         if (cleanText(row['COMUNA']) !== "") cComuna = cleanText(row['COMUNA']);
@@ -375,7 +370,6 @@
                             rowCedulaNum = rowCedulaNum.replace(/\./g, '').trim();
                         }
 
-                        // Búsqueda cruzada usando el escudo de ubicación cascada con Comuna asegurada
                         if(esCedulaValida && (mapCedulas[rawCed] || mapCedulas[rowCedulaNum])) {
                             targetId = mapCedulas[rawCed] || mapCedulas[rowCedulaNum];
                         } else {
@@ -387,6 +381,7 @@
 
                         if(targetId) {
                             let updates = {};
+                            let cambiosRealizados = [];
                             let hOriginal = baseDatosFirebase[targetId];
 
                             if (esCedulaValida) {
@@ -433,13 +428,11 @@
 
                             if (tipoParsed === 'rancho') condicionParsed = 'malo';
 
-                            // Guardar en la cascada si la fila actual los trajo explísitos
                             if (casaRaw !== "") cCasa = casaRaw;
                             if (tipoVivRaw !== "" && !tipoVivRaw.includes('PROPIA') && !tipoVivRaw.includes('ALQUILAD')) cTipo = tipoParsed;
                             if (condicionParsed !== "regular") cCondicion = condicionParsed;
                             if (tenenciaParsed !== "") cTenencia = tenenciaParsed;
 
-                            // Inyección de bloque territorial e infraestructura garantizada
                             updates['ubch'] = cUbch;
                             updates['codigo_sigue_actual'] = cSigue;
                             updates['comuna'] = cComuna;
@@ -521,7 +514,40 @@
                                 }
                             }
 
-                            // 6. INYECTOR SOCIAL SEGURO
+                            // 6. 🚨 NUEVO MOTOR CLÍNICO DE SALUD Y MEDICAMENTOS 🚨
+                            let rawEnf = cleanText(row['PADECE DE ALGUNA ENFERMEDAD? INDIQUE.']);
+                            let rawMed = cleanText(row['TOMA ALGUN MEDICAMENTO? INDIQUE']);
+                            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
+
+                            let enfFinal = rawEnf;
+                            if (negacionesSalud.includes(rawEnf) || rawEnf === '') {
+                                enfFinal = '';
+                            }
+
+                            let medFinal = rawMed;
+                            let tomaMedFinal = 'si';
+                            if (negacionesSalud.includes(rawMed) || rawMed === '') {
+                                tomaMedFinal = 'no';
+                                medFinal = '';
+                            }
+                            
+                            // Si dice que NO en enfermedad y la medicina viene vacía o es negativa, forzamos a NO
+                            if (enfFinal === '' && (rawMed === '' || negacionesSalud.includes(rawMed))) {
+                                tomaMedFinal = 'no';
+                                medFinal = '';
+                            }
+
+                            // Actualiza de forma segura
+                            updates['padece_enfermedad'] = enfFinal;
+                            updates['toma_medicamento'] = tomaMedFinal;
+                            updates['cual_medicamento'] = medFinal;
+
+                            if(enfFinal !== '' || medFinal !== '') {
+                                cambiosRealizados.push(`Salud Actualizada 🏥`);
+                            }
+
+
+                            // 7. INYECTOR SOCIAL SEGURO
                             const normalizarYParchearCampo = (columnaExcel, claveFirebase) => {
                                 if (row[columnaExcel] !== undefined) {
                                     let celdaRaw = cleanText(row[columnaExcel]);
