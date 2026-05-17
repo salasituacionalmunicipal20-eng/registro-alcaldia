@@ -153,7 +153,6 @@
         .log-info { color: #00d2ff; }
         .log-warn { color: #ff9800; }
         .log-family { color: #b000ff; font-weight: bold; }
-        .log-health { color: #ff00ff; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -172,7 +171,7 @@
             4. 🏠 <b>Separación Semántica de Vivienda:</b> Divide de forma quirúrgica la arquitectura de la propiedad. Detecta palabras clave para poblar el campo <u>tenencia_vivienda</u> (propia, alquilada, prestada, arrimado, compartida) y limpia el tipo de estructura.<br>
             5. ⚠️ <b>Regla Forzada Clínico-Estructural:</b> Si el tipo de vivienda es clasificado como "rancho" o "improvisada", el motor anula cualquier criterio del encuestador y fuerza las condiciones de la vivienda directamente a <i>malo</i>.<br>
             6. 👨‍👩‍👧‍👦 <b>Análisis de Género y Jerarquía de Hogar:</b> Fija de forma obligatoria el rol de <i>Jefe de Hogar</i>. Al procesar las cargas familiares de abajo, cruza las marcas de Madre/Padre/Hijo con las columnas de género para inyectar explícitamente: <u>madre</u>, <u>padre</u>, <u>hijo</u> o <u>hija</u>.<br>
-            7. 💍 <b>Traductor de Parentescos Especiales:</b> Si la columna "OTRO" contiene descripciones textuales, el motor parsea el string y homologa los roles del buscador: <u>esposa</u>, <u>esposo</u>, <u>nieta</u>, <u>nieto</u>, <u>hermana</u> o <u>hermana</u>.<br>
+            7. 💍 <b>Traductor de Parentescos Especiales:</b> Si la columna "OTRO" contiene descripciones textuales, el motor parsea el string y homologa los roles del buscador: <u>esposa</u>, <u>esposo</u>, <u>nieta</u>, <u>nieto</u>, <u>hermana</u> o <u>hermano</u>.<br>
             8. 📅 <b>Lógica Cronológica e Indexación de Cédula Física:</b> Estructura las fechas en formato ISO (AAAA-MM-DD). Si la edad matemática deducida es inferior a los 9 años, el sistema marca de forma automatizada que el menor no posee Cédula Física en mano.<br>
             9. 🏥 <b>Motor Clínico Inteligente (Limpieza de Medicinas):</b> Elimina diagnósticos falsos ("NO INDICA", "NINGUNA", "SANO"). Si el campo de enfermedad viene vacío o negativo, purifica el perfil de salud para no contaminar las estadísticas médicas.<br>
             10. 🎖️ <b>Normalización de Variables de Protección Social:</b> Purifica todas las respuestas "X", "SI" o "NO" del Excel al formato binario estricto (si/no) para los módulos de Trabajo, Escuela, Amor Mayor, Carnet de la Patria, Misión JGH, Discapacidad, Embarazo y Lactancia.
@@ -280,7 +279,7 @@
                         baseDatosFirebase = snapshot.val();
                         printLog(`Snapshot cargado. ${Object.keys(baseDatosFirebase).length} habitantes indexados en memoria RAM.`, "log-ok");
                         document.getElementById('btnEjecutar').disabled = false;
-                        document.getElementById('btnEjecutar').textContent = "Ejecutar Inyección Demográfica de Cascada Perfecta 🚀";
+                        document.getElementById('btnEjecutar').textContent = "Ejecutar Motor en Cascada de Relleno Absoluto 🚀";
                     } else {
                         printLog("La base de datos central no contiene registros.", "log-err");
                     }
@@ -315,7 +314,7 @@
                 complete: async function(results) {
                     const csvRows = results.data;
                     const totalRows = csvRows.length;
-                    printLog(`Archivo parseado con éxito. Ejecutando escaneo en lote de ${totalRows} filas...`, "log-info");
+                    printLog("Archivo parseado con éxito. Procesando capas jerárquicas...", "log-info");
 
                     let mapCedulas = {};
                     let mapNombresCompletos = {};
@@ -346,7 +345,7 @@
                     let cUbch = "", cSigue = "", cComuna = "", cConsejo = "", cComunidad = "", cCalle = "", cCasa = "", cTipo = "casa", cCondicion = "regular", cTenencia = "";
 
                     for(let i = 0; i < totalRows; i++) {
-                        if (i % 150 === 0) await window.utilizarRetraso(); // Evita congelamiento de navegador
+                        if (i % 100 === 0) await window.utilizarRetraso(); // Libera RAM del Navegador
 
                         let row = csvRows[i];
                         let targetId = null;
@@ -404,7 +403,7 @@
 
                             if (esJefeFila) ultimoJefeIdActivo = targetId;
 
-                            // 1. INYECCIÓN OBLIGATORIA DE LA LÓGICA DE CASCADA RESIDENCIAL
+                            // 1. INYECCIÓN OBLIGATORIA DE LA LÓGICA DE CASCADA RESIDENCIAL RELATIVA AL JEFE
                             let casaRaw = cleanText(row['NUMERO DE CASA']);
                             let tipoVivRaw = cleanText(row['TIPO DE VIVIENDA']);
                             let condicionRaw = cleanText(row['CONDICIONES DE LA VIVIENDA']);
@@ -588,7 +587,7 @@
                                 if (updates[key] !== hOriginal[key] && updates[key] !== undefined && updates[key] !== "") {
                                     tieneCambiosReales = true;
                                 } else {
-                                    delete updates[key]; // Remueve campos vacíos o idénticos, blindando Firebase
+                                    delete updates[key]; 
                                 }
                             }
 
