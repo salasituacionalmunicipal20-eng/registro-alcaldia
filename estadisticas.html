@@ -226,6 +226,21 @@
         .btn-metric-print:hover { background-color: #555; }
 
         .print-only { display: none; }
+        
+        /* REGLA DE ORO: ESTILO ADICIONAL PARA POPUP EMERGENTE Y REQUERIMIENTO SÍNCRONO */
+        .hidden { display: none !important; }
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); z-index: 2000; display: flex; 
+            justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; 
+        }
+        .modal-content { 
+            background: #fff; padding: 30px; border-radius: 8px; width: 100%; 
+            max-width: 500px; position: relative; border-top: 6px solid var(--azul-oficial); 
+            color: #333; text-align: left; box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+        }
+        .close-modal { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; }
+        .close-modal:hover { color: var(--rojo-oficial); }
 
         @media print {
             body { 
@@ -233,7 +248,7 @@
                 padding: 0; 
                 font-family: Arial, sans-serif;
             }
-            .cintillo-gob, .top-nav, .search-panel, h2, .btn-metric-print { 
+            .cintillo-gob, .top-nav, .search-panel, h2, .btn-metric-print, .modal-overlay { 
                 display: none !important; 
             }
             .container { 
@@ -455,11 +470,12 @@
                 <div class="stat-title">Escolarizados</div>
                 <button class="btn-metric-print" onclick="imprimirMetrica('escolarizados')">🖨 PDF</button>
             </div>
+            
             <div class="stat-card c-8">
                 <span class="stat-icon">💊</span>
                 <div class="stat-number" id="statEnfermos">0</div>
                 <div class="stat-title">Enfermedades</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('enfermos')">🖨 PDF</button>
+                <button class="btn-metric-print" onclick="abrirModalMedicinas()">🖨 PDF</button>
             </div>
             
             <div class="stat-card c-9">
@@ -520,10 +536,31 @@
                         <th>Comunidad</th>
                         <th>Dirección</th>
                         <th>Teléfono</th>
+                        <th>Tratamiento / Medicina</th>
                     </tr>
                 </thead>
                 <tbody id="tablaReporteCuerpo"></tbody>
             </table>
+        </div>
+    </div>
+
+    <div id="modalMedicinas" class="modal-overlay hidden">
+        <div class="modal-content">
+            <span class="close-modal" onclick="cerrarModalMedicinas()">✖</span>
+            <h3 style="color: var(--azul-oficial); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; text-transform: uppercase; font-size: 16px; font-weight: bold;">📋 Reporte Avanzado de Tratamientos Médicos</h3>
+            <p style="font-size: 12px; color: #555; line-height: 1.5; margin-bottom: 20px;">Filtre el censo de salud por el nombre específico del medicamento que posee en inventario. El sistema listará únicamente a los habitantes con dicha prescripción activa en Charallave.</p>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 8px;">Seleccionar Filtro de Medicina:</label>
+                <select id="selMedicinaFiltro">
+                    <option value="TODOS">Generar Reporte Completo (Todas las Medicinas)</option>
+                </select>
+            </div>
+            
+            <div style="text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
+                <button type="button" style="padding: 10px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size:12px; margin-right: 8px;" onclick="cerrarModalMedicinas()">Cancelar</button>
+                <button type="button" style="padding: 10px 15px; background: var(--rojo-oficial); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size:12px; text-transform:uppercase;" onclick="procesarReporteMedicinas()">🖨 Generar Reporte PDF</button>
+            </div>
         </div>
     </div>
 
@@ -587,6 +624,106 @@
             }); 
         });
 
+        // --- SISTEMA DE MANEJO DE VENTANA EMERGENTE DE SALUD (POPUP) ---
+        window.abrirModalMedicinas = () => {
+            document.getElementById('modalMedicinas').classList.remove('hidden');
+        };
+        window.cerrarModalMedicinas = () => {
+            document.getElementById('modalMedicinas').classList.add('hidden');
+        };
+
+        function actualizarFiltroMedicinas() {
+            const selectMed = document.getElementById('selMedicinaFiltro');
+            if(!selectMed) return;
+            const valorActual = selectMed.value;
+            
+            let medUnicas = new Set();
+            for (let id in baseDeDatosHabitantes) {
+                let h = baseDeDatosHabitantes[id];
+                let med = cleanText(h.cual_medicamento);
+                if (med !== '' && med !== 'NO' && med !== 'NINGUNO' && med !== 'NINGUNA' && med !== 'N/A') {
+                    medUnicas.add(med);
+                }
+            }
+            
+            selectMed.innerHTML = '<option value="TODOS">Generar Reporte Completo (Todas las Medicinas)</option>';
+            Array.from(medUnicas).sort().forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                selectMed.appendChild(opt);
+            });
+            
+            if (valorActual && medUnicas.has(valorActual)) {
+                selectMed.value = valorActual;
+            } else {
+                selectMed.value = "TODOS";
+            }
+        }
+
+        window.procesarReporteMedicinas = () => {
+            const filtroMed = document.getElementById('selMedicinaFiltro').value;
+            
+            const fComuna = document.getElementById('fComuna').value.toUpperCase();
+            const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
+            const fUbch = document.getElementById('fUbch').value.toUpperCase();
+            const fCalle = document.getElementById('fCalle').value.toUpperCase();
+            const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
+            const fSexo = document.getElementById('fSexo').value.toLowerCase();
+            const fVoto = document.getElementById('fVoto').value.toUpperCase();
+            
+            let filasReporte = '';
+            
+            for (let id in baseDeDatosHabitantes) {
+                const h = baseDeDatosHabitantes[id];
+                const comunaStr = (h.comuna || '').toUpperCase();
+                const comunidadStr = (h.comunidad || '').toUpperCase();
+
+                if (fComuna && !comunaStr.includes(fComuna)) continue;
+                if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
+                if (fUbch && (h.ubch || '').trim().toUpperCase() !== fUbch) continue;
+                if (fCalle && (h.calle || '').trim().toUpperCase() !== fCalle) continue;
+                if (fParentesco && (h.parentesco || '').toLowerCase() !== fParentesco) continue;
+                if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
+                if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
+                
+                const med = cleanText(h.cual_medicamento);
+                const tieneMedicina = med !== '' && med !== 'NO' && med !== 'NINGUNO' && med !== 'NINGUNA' && med !== 'N/A';
+                
+                if (!tieneMedicina) continue;
+                if (filtroMed !== 'TODOS' && med !== filtroMed) continue;
+                
+                const edad = calcularEdad(h.fecha_nacimiento);
+                const nac = h.nacionalidad || 'V';
+                const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                
+                filasReporte += `
+                    <tr>
+                        <td>${h.nombre} ${h.apellido}</td>
+                        <td>${cedStr}</td>
+                        <td>${edad}</td>
+                        <td>${h.comunidad}</td>
+                        <td>${h.calle}, Casa ${h.numero_casa}</td>
+                        <td>${h.telefono || ''}</td>
+                        <td>${med}</td>
+                    </tr>
+                `;
+            }
+            
+            let nombreMetrica = filtroMed === 'TODOS' ? 'REPORTE GLOBAL DE TRATAMIENTOS CRÍTICOS' : `REPORTE ESPECÍFICO DE ASIGNACIÓN: ${filtroMed}`;
+            
+            document.getElementById('tituloReporte').textContent = nombreMetrica;
+            document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
+            document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
+            
+            window.cerrarModalMedicinas();
+            
+            setTimeout(() => {
+                window.print();
+                calcularEstadisticas(); 
+            }, 300);
+        };
+
         function cargarFiltrosTerritoriales() {
             const fComuna = document.getElementById('fComuna');
             const fComunidad = document.getElementById('fComunidad');
@@ -624,7 +761,6 @@
             });
         }
 
-        // REGLA DE ORO: Escaneo Inteligente unificado para Calles y UBCH
         function actualizarFiltrosInteligentes() {
             const fComunaSel = document.getElementById('fComuna').value.toUpperCase();
             const fComunidadSel = document.getElementById('fComunidad').value.toUpperCase();
@@ -652,7 +788,6 @@
                 if (u !== '') ubchUnicas.add(u);
             }
 
-            // Actualizar Calles
             fCalle.innerHTML = '<option value="">Todas las calles (Cargadas)</option>';
             Array.from(callesUnicas).sort().forEach(calle => {
                 const opt = document.createElement('option');
@@ -662,7 +797,6 @@
             if (seleccionCalle && callesUnicas.has(seleccionCalle)) fCalle.value = seleccionCalle;
             else fCalle.value = "";
 
-            // Actualizar UBCH
             if(fUbch) {
                 fUbch.innerHTML = '<option value="">Todas las UBCH (Cargadas)</option>';
                 Array.from(ubchUnicas).sort().forEach(ubch => {
@@ -676,7 +810,6 @@
         }
 
         document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
-            // Dispara el cálculo automático cuando no sean Comuna o Comunidad
             if(element.id !== 'fComuna' && element.id !== 'fComunidad') {
                 element.addEventListener('input', calcularEstadisticas); 
             }
@@ -686,22 +819,20 @@
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
                 actualizarFiltrosInteligentes();
+                actualizarFiltroMedicinas(); // Rellena dinámicamente las medicinas existentes
                 calcularEstadisticas(); 
             });
         }
 
         function calcularEdad(fecha) {
             if (!fecha) return 0;
-            
             const hoy = new Date(); 
             const cumpleanos = new Date(fecha);
             let edad = hoy.getFullYear() - cumpleanos.getFullYear();
             const m = hoy.getMonth() - cumpleanos.getMonth();
-            
             if (m < 0 || (m === 0 && hoy.getDate() < cumpleanos.getDate())) {
                 edad--;
             }
-            
             return edad;
         }
 
@@ -772,15 +903,9 @@
 
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
-                
-                const cumpleUbch = fUbch === "" || (h.ubch || '').trim().toUpperCase() === fUbch;
-                if (fUbch && !cumpleUbch) continue;
-                
-                const cumpleCalle = fCalle === "" || (h.calle || '').trim().toUpperCase() === fCalle;
-                if (fCalle && !cumpleCalle) continue;
-                
-                const cumpleParentesco = fParentesco === "" || (h.parentesco || '').toLowerCase() === fParentesco;
-                if (fParentesco && !cumpleParentesco) continue;
+                if (fUbch && (h.ubch || '').trim().toUpperCase() !== fUbch) continue;
+                if (fCalle && (h.calle || '').trim().toUpperCase() !== fCalle) continue;
+                if (fParentesco && (h.parentesco || '').toLowerCase() !== fParentesco) continue;
 
                 if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
                 if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
@@ -802,14 +927,10 @@
                 }
 
                 cTotal++;
-
                 const edad = calcularEdad(h.fecha_nacimiento);
                 if (edad >= 60) cAdultos++;
                 if (edad < 18) cNinos++;
-
-                if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') {
-                    cJefes++;
-                }
+                if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') cJefes++;
                 
                 if ((h.tiene_gas || '').toLowerCase() === 'si') {
                     const dirUnica = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
@@ -817,20 +938,20 @@
                 }
 
                 const enf = (h.padece_enfermedad || '').trim().toUpperCase();
-                if (enf !== '' && enf !== 'NO' && enf !== 'NINGUNA' && enf !== 'N/A') {
+                const medCelda = (h.cual_medicamento || '').trim().toUpperCase();
+                let medStrInfo = medCelda ? medCelda : (enf !== '' && enf !== 'NO' && enf !== 'NINGUNA' && enf !== 'N/A' ? enf : 'NINGUNO');
+
+                if (medCelda !== '' && medCelda !== 'NO' && medCelda !== 'NINGUNA' && medCelda !== 'N/A') {
                     cEnfermos++;
                 }
                 
                 if ((h.discapacitado || '').toUpperCase() === 'SI') cDiscapacidad++;
                 if ((h.embarazada || '').toUpperCase() === 'SI') cEmbarazadas++;
-                
                 if ((h.trabaja || '').toUpperCase() === 'SI') cTrabajan++;
                 if ((h.esta_escolarizado || '').toUpperCase() === 'SI') cEscolarizados++;
-                
                 if ((h.carnet_patria || '').toUpperCase() === 'SI') cPatria++;
                 if ((h.cobra_amor_mayor || '').toUpperCase() === 'SI') cAmor++;
                 
-                // Cuentas de votación
                 if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VD') cVD++;
                 if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VB') cVB++;
                 if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VO') cVO++;
@@ -846,11 +967,11 @@
                         <td>${h.comunidad}</td>
                         <td>${h.calle}, Casa ${h.numero_casa}</td>
                         <td>${h.telefono || ''}</td>
+                        <td>${medStrInfo}</td>
                     </tr>
                 `;
             }
 
-            // Actualizar tarjetas de la web
             document.getElementById('statTotal').textContent = cTotal;
             document.getElementById('statJefes').textContent = cJefes;
             document.getElementById('statGas').textContent = hogaresConGasUnicos.size; 
@@ -870,18 +991,15 @@
             if (fComuna) tituloHoja = `Reporte Demográfico: Comuna ${fComuna}`;
             if (fComunidad) tituloHoja = `Reporte Demográfico: Comunidad ${fComunidad} - ${fComuna}`;
 
-            // Escribir datos para el PDF
             document.getElementById('tituloReporte').textContent = tituloHoja;
             document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
             
-            // Renderizar resumen de métricas para el PDF
             const totalesContexto = {
                 total: cTotal, jefes: cJefes, gas: hogaresConGasUnicos.size, adultos: cAdultos,
                 ninos: cNinos, trabajan: cTrabajan, escolarizados: cEscolarizados, enfermos: cEnfermos,
                 discapacidad: cDiscapacidad, patria: cPatria, amor: cAmor, vd: cVD, vb: cVB, vo: cVO
             };
             document.getElementById('printMetricsSummary').innerHTML = imprimirResumenMetricas(totalesContexto);
-            
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
         }
 
@@ -904,21 +1022,14 @@
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
-                
                 const comunaStr = (h.comuna || '').toUpperCase();
                 const comunidadStr = (h.comunidad || '').toUpperCase();
 
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
-                
-                const cumpleUbch = fUbch === "" || (h.ubch || '').trim().toUpperCase() === fUbch;
-                if (fUbch && !cumpleUbch) continue;
-                
-                const cumpleCalle = fCalle === "" || (h.calle || '').trim().toUpperCase() === fCalle;
-                if (fCalle && !cumpleCalle) continue;
-                
-                const cumpleParentesco = fParentesco === "" || (h.parentesco || '').toLowerCase() === fParentesco;
-                if (fParentesco && !cumpleParentesco) continue;
+                if (fUbch && (h.ubch || '').trim().toUpperCase() !== fUbch) continue;
+                if (fCalle && (h.calle || '').trim().toUpperCase() !== fCalle) continue;
+                if (fParentesco && (h.parentesco || '').toLowerCase() !== fParentesco) continue;
 
                 if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
                 if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
@@ -943,75 +1054,34 @@
                 const edad = calcularEdad(h.fecha_nacimiento);
 
                 switch(tipo) {
-                    case 'total':
-                        pasaMetrica = true; 
-                        nombreMetrica = 'TOTAL POBLACIÓN'; 
-                        break;
-                    case 'jefes':
-                        if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') pasaMetrica = true;
-                        nombreMetrica = 'JEFES DE HOGAR'; 
-                        break;
+                    case 'total': pasaMetrica = true; nombreMetrica = 'TOTAL POBLACIÓN'; break;
+                    case 'jefes': if ((h.parentesco || '').toLowerCase() === 'jefe de hogar') pasaMetrica = true; nombreMetrica = 'JEFES DE HOGAR'; break;
                     case 'gas':
                         if ((h.tiene_gas || '').toLowerCase() === 'si') {
                             const dirUnica = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
                             const idHogar = h.jefe_hogar_id ? h.jefe_hogar_id : dirUnica;
-                            if(!hogaresGasImpresos.has(idHogar)) { 
-                                hogaresGasImpresos.add(idHogar); 
-                                pasaMetrica = true; 
-                            }
+                            if(!hogaresGasImpresos.has(idHogar)) { hogaresGasImpresos.add(idHogar); pasaMetrica = true; }
                         }
                         nombreMetrica = 'REPRESENTANTES DE HOGARES CON GAS (DEDUPLICADO)'; 
                         break;
-                    case 'adultos':
-                        if (edad >= 60) pasaMetrica = true; 
-                        nombreMetrica = 'ADULTOS MAYORES (60+)'; 
-                        break;
-                    case 'ninos':
-                        if (edad < 18) pasaMetrica = true; 
-                        nombreMetrica = 'MENORES DE EDAD (<18)'; 
-                        break;
-                    case 'trabajan':
-                        if ((h.trabaja || '').toUpperCase() === 'SI') pasaMetrica = true; 
-                        nombreMetrica = 'POBLACIÓN QUE TRABAJA'; 
-                        break;
-                    case 'escolarizados':
-                        if ((h.esta_escolarizado || '').toUpperCase() === 'SI') pasaMetrica = true; 
-                        nombreMetrica = 'POBLACIÓN ESCOLARIZADA'; 
-                        break;
-                    case 'enfermos':
-                        const enf2 = (h.padece_enfermedad || '').trim().toUpperCase();
-                        if (enf2 !== '' && enf2 !== 'NO' && enf2 !== 'NINGUNA' && enf2 !== 'N/A') pasaMetrica = true;
-                        nombreMetrica = 'PERSONAS CON ENFERMEDAD CRÓNICA'; 
-                        break;
-                    case 'discapacidad':
-                        if ((h.discapacitado || '').toUpperCase() === 'SI') pasaMetrica = true; 
-                        nombreMetrica = 'PERSONAS CON DISCAPACIDAD'; 
-                        break;
-                    case 'patria':
-                        if ((h.carnet_patria || '').toUpperCase() === 'SI') pasaMetrica = true; 
-                        nombreMetrica = 'CARNET DE LA PATRIA'; 
-                        break;
-                    case 'amor':
-                        if ((h.cobra_amor_mayor || '').toUpperCase() === 'SI') pasaMetrica = true; 
-                        nombreMetrica = 'BENEFICIARIOS AMOR MAYOR'; 
-                        break;
-                    case 'vd':
-                        if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VD') pasaMetrica = true; 
-                        nombreMetrica = 'VOTO DURO (VD)'; 
-                        break;
-                    case 'vb':
-                        if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VB') pasaMetrica = true; 
-                        nombreMetrica = 'VOTO BLANDO (VB)'; 
-                        break;
-                    case 'vo':
-                        if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VO') pasaMetrica = true; 
-                        nombreMetrica = 'VOTO OPOSITOR (VO)'; 
-                        break;
+                    case 'adultos': if (edad >= 60) pasaMetrica = true; nombreMetrica = 'ADULTOS MAYORES (60+)'; break;
+                    case 'ninos': if (edad < 18) pasaMetrica = true; nombreMetrica = 'MENORES DE EDAD (<18)'; break;
+                    case 'trabajan': if ((h.trabaja || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'POBLACIÓN QUE TRABAJA'; break;
+                    case 'escolarizados': if ((h.esta_escolarizado || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'POBLACIÓN ESCOLARIZADA'; break;
+                    case 'discapacidad': if ((h.discapacitado || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'PERSONAS CON DISCAPACIDAD'; break;
+                    case 'patria': if ((h.carnet_patria || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'CARNET DE LA PATRIA'; break;
+                    case 'amor': if ((h.cobra_amor_mayor || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'BENEFICIARIOS AMOR MAYOR'; break;
+                    case 'vd': if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VD') pasaMetrica = true; nombreMetrica = 'VOTO DURO (VD)'; break;
+                    case 'vb': if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VB') pasaMetrica = true; nombreMetrica = 'VOTO BLANDO (VB)'; break;
+                    case 'vo': if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VO') pasaMetrica = true; nombreMetrica = 'VOTO OPOSITOR (VO)'; break;
                 }
 
                 if (pasaMetrica) {
                     const nac = h.nacionalidad || 'V';
                     const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                    const enfInfo = (h.padece_enfermedad || '').trim().toUpperCase();
+                    const medInfo = (h.cual_medicamento || '').trim().toUpperCase();
+                    let medStrPrint = medInfo ? medInfo : (enfInfo !== '' && enfInfo !== 'NO' && enfInfo !== 'NINGUNA' && enfInfo !== 'N/A' ? enfInfo : 'NINGUNO');
                     
                     filasReporte += `
                         <tr>
@@ -1021,6 +1091,7 @@
                             <td>${h.comunidad}</td>
                             <td>${h.calle}, Casa ${h.numero_casa}</td>
                             <td>${h.telefono || ''}</td>
+                            <td>${medStrPrint}</td>
                         </tr>
                     `;
                 }
@@ -1028,7 +1099,6 @@
 
             document.getElementById('tituloReporte').textContent = `REPORTE ESPECÍFICO: ${nombreMetrica}`;
             document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
-            
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
 
             setTimeout(() => { 
@@ -1036,23 +1106,6 @@
                 calcularEstadisticas(); 
             }, 300);
         };
-
-        let inactivityTime = function () {
-            let time; 
-            window.onload = resetTimer; 
-            document.onmousemove = resetTimer; 
-            document.onkeypress = resetTimer;
-            
-            function logout() { 
-                signOut(auth).then(() => window.location.href = 'index.html'); 
-            }
-            
-            function resetTimer() { 
-                clearTimeout(time); 
-                time = setTimeout(logout, 900000); 
-            }
-        };
-        inactivityTime();
     </script>
 </body>
 </html>
