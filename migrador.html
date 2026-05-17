@@ -131,35 +131,6 @@
         .log-info { color: #00d2ff; }
         .log-warning { color: #ffc107; }
         .log-family { color: #b000ff; font-weight: bold; }
-
-        .progress-bar { 
-            width: 100%; 
-            background-color: #ddd; 
-            border-radius: 5px; 
-            margin-top: 20px; 
-            overflow: hidden; 
-            display: none; 
-            border: 1px solid #bbb;
-        }
-        
-        .progress-fill { 
-            height: 25px; 
-            background-color: var(--azul-oficial); 
-            width: 0%; 
-            transition: width 0.1s linear; 
-        }
-
-        .stats-panel {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            font-weight: bold;
-            font-size: 14px;
-            color: #333;
-            display: none;
-        }
-
-        .eta-text { color: var(--rojo-oficial); }
     </style>
 </head>
 <body>
@@ -168,11 +139,11 @@
             <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver al Panel Admin</button>
         </div>
 
-        <h1>Migrador Maestro de Carga Demográfica (Motor Inteligente Dual)</h1>
+        <h1>Migrador Maestro de Carga Demográfica (Motor Inteligente de Cascada)</h1>
         
         <div class="instrucciones" id="panelInstrucciones">
             <strong style="color:var(--azul-oficial); font-size:14px; letter-spacing:1px;">📋 DICCIONARIO LOGÍSTICO ABSOLUTO — CAPAS DE INGESTA ACTIVAS:</strong><br><br>
-            1. 🛡️ <b>Inyección Territorial 1x1 Exacta:</b> Extrae UBCH, Código Sigue, Comuna, Consejo Comunal, Comunidad y Calle directamente de la celda de cada individuo, evitando sobreescrituras ciegas en Firebase.<br>
+            1. 🛡️ <b>Resguardo Territorial en Cascada Absoluta:</b> Protege los campos residenciales. Arrastra y rellena de manera automática UBCH, Código Sigue, Comuna, Consejo Comunal, Comunidad, Calle y Vivienda desde la fila del Jefe hacia abajo para evitar celdas vacías en Firebase.<br>
             2. 🪪 <b>Filtro de Extranjería (Regex E/V):</b> Evalúa el prefijo de la cédula en el Excel. Si detecta "E" o "E-", configura la nacionalidad como "E". Extrae el número puro, eliminando letras y puntos de millares.<br>
             3. 🚸 <b>Escudo para Menores e Indocumentados:</b> Si en el campo cédula se lee "MENOR", "S/C" o "NO", aborta la búsqueda numérica e inyecta la configuración para cédula faltante.<br>
             4. 🏠 <b>Separación Semántica de Vivienda:</b> Divide de forma quirúrgica la arquitectura de la propiedad. Detecta palabras clave para poblar <u>tenencia_vivienda</u> (propia, alquilada, prestada, arrimado) y limpia el tipo de estructura.<br>
@@ -182,7 +153,7 @@
             8. 📅 <b>Lógica Cronológica e Indexación de Cédula Física:</b> Estructura las fechas en formato ISO. Si la edad matemática deducida es inferior a los 9 años, el sistema marca que el menor no posee Cédula Física en mano.<br>
             9. 🏥 <b>Motor Clínico Inteligente (Limpieza Médica):</b> Reemplaza las falsas medicinas ("NO INDICA", "NINGUNA", "SANO") por campos limpios, para no contaminar el inventario estadístico de salud.<br>
             10. 🎖️ <b>Normalización de Variables de Protección Social:</b> Purifica todas las respuestas "X", "SI" o "NO" del Excel al formato binario estricto (si/no) para los módulos de Trabajo, Escuela, Amor Mayor, Carnet, Misión JGH, Discapacidad y Hogares de la Patria.<br><br>
-            🔴 <b style="color:red;">SEGURIDAD:</b> El botón de subida se activará automáticamente al validar tus credenciales de Súper Administrador.
+            🔴 <b style="color:red;">SEGURIDAD DE RED:</b> Este módulo inyectará datos de forma exclusiva en Firebase para mantener el turbo de velocidad de la base de datos de Charallave.
         </div>
 
         <input type="file" id="archivoCSV" accept=".csv">
@@ -196,7 +167,7 @@
         <div class="stats-panel" id="statsPanel">
             <span id="txtCompletados">Procesados: 0 / 0</span>
             <span id="txtPorcentaje">0%</span>
-            <span id="txtEta" class="eta-text">Tiempo estimado: Calculando...</span>
+            <span id="txtEta" class="eta-text">Tiempo restante: Calculando...</span>
         </div>
 
         <div class="consola-wrapper" id="consolaLog"></div>
@@ -206,12 +177,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        
-        import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-        const supabaseUrl = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co';
-        const supabaseKey = 'sb_publishable_7dkBdGu87mnWz-acprRjzA_vHBujcwB';
-        const supabase = createClient(supabaseUrl, supabaseKey);
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -303,8 +268,10 @@
                     let subidos = 0;
                     const habitantesRef = ref(database, 'habitantes');
                     const tiempoInicio = Date.now();
-                    
                     let ultimoJefeIdActivo = null;
+
+                    // BANCO DE MEMORIA TERRITORIAL ININTERRUMPIDO EN CASCADA
+                    let cUbch = "", cSigue = "", cComuna = "", cConsejo = "", cComunidad = "", cCalle = "", cCasa = "", cTipo = "casa", cCondicion = "regular", cTenencia = "";
 
                     for (let i = 0; i < totalDatos; i++) {
                         let fila = datos[i];
@@ -315,13 +282,13 @@
                             let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
                             let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
 
-                            // EXTRACCIÓN 1X1 PURA DEL EXCEL
-                            let cUbch = cleanText(fila['UBCH A LA QUE PERTENECE']);
-                            let cSigue = cleanText(fila['CODIGO SITUR ACTUAL']);
-                            let cComuna = cleanText(fila['COMUNA']);
-                            let cConsejo = cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']);
-                            let cComunidad = cleanText(fila['COMUNIDAD']);
-                            let cCalle = cleanText(fila['CALLE']);
+                            // INGESTIÓN DE MEMORIA TERRITORIAL EN CASCADA (FIJA AL HABITANTE INDIVIDUAL)
+                            if (cleanText(fila['UBCH A LA QUE PERTENECE']) !== "") cUbch = cleanText(fila['UBCH A LA QUE PERTENECE']);
+                            if (cleanText(fila['CODIGO SITUR ACTUAL']) !== "") cSigue = cleanText(fila['CODIGO SITUR ACTUAL']);
+                            if (cleanText(fila['COMUNA']) !== "") cComuna = cleanText(fila['COMUNA']);
+                            if (cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']) !== "") cConsejo = cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']);
+                            if (cleanText(fila['COMUNIDAD']) !== "") cComunidad = cleanText(fila['COMUNIDAD']);
+                            if (cleanText(fila['CALLE']) !== "") cCalle = cleanText(fila['CALLE']);
 
                             let rawCed = cleanText(fila['CEDULA']);
                             let rowCedulaNum = rawCed;
@@ -348,22 +315,36 @@
                             else if(tipoVivRaw.includes('PRESTAD')) tenenciaParsed = 'prestada';
                             else if(tipoVivRaw.includes('ARRIMAD')) tenenciaParsed = 'arrimado';
                             else if(tipoVivRaw.includes('COMPARTID')) tenenciaParsed = 'compartida';
+                            else if(tipoVivRaw.includes('CUIDA')) tenenciaParsed = 'cuidando';
 
                             if(casaRaw === 'CASA') casaRaw = '';
 
-                            if (tipoVivRaw.includes('APTO')) tipoParsed = 'apto';
-                            else if (tipoVivRaw.includes('TOWN')) tipoParsed = 'town house';
-                            else if (tipoVivRaw.includes('RANCHO')) tipoParsed = 'rancho';
+                            if (tipoVivRaw.includes('APTO') || tipoVivRaw.includes('APARTAMENTO')) tipoParsed = 'apto';
+                            else if (tipoVivRaw.includes('TOWN') || tipoVivRaw.includes('TH')) tipoParsed = 'town house';
+                            else if (tipoVivRaw.includes('RANCHO') || tipoVivRaw.includes('BARRACA') || tipoVivRaw.includes('IMPROVISADA')) tipoParsed = 'rancho';
                             else if (tipoVivRaw.includes('ANEXO')) tipoParsed = 'anexo';
-                            else if (tipoVivRaw.includes('HABITACION')) tipoParsed = 'habitacion';
+                            else if (tipoVivRaw.includes('HABITACION') || tipoVivRaw.includes('PIEZA') || tipoVivRaw.includes('CUARTO')) tipoParsed = 'habitacion';
 
                             let evalCond = condicionRaw;
-                            if(tipoVivRaw.includes('ESTABLE') || tipoVivRaw.includes('BUEN') || tipoVivRaw.includes('MAL')) evalCond = tipoVivRaw;
+                            if(tipoVivRaw.includes('ESTABLE') || tipoVivRaw.includes('BUEN') || tipoVivRaw.includes('MAL') || tipoVivRaw.includes('REGULAR')) {
+                                evalCond = tipoVivRaw;
+                            }
 
-                            if(evalCond.includes('ESTABLE') || evalCond.includes('BUEN') || evalCond.includes('BIEN')) condicionParsed = 'bien';
-                            else if (evalCond.includes('MAL') || evalCond.includes('DETERIORADA') || evalCond.includes('PRECARIA')) condicionParsed = 'malo';
+                            if(evalCond.includes('ESTABLE') || evalCond.includes('BUEN') || evalCond.includes('BIEN') || evalCond.includes('EXCELENTE') || evalCond.includes('OPTIM')) {
+                                condicionParsed = 'bien';
+                            } else if (evalCond.includes('MAL') || evalCond.includes('DETERIORADA') || evalCond.includes('PRECARIA') || evalCond.includes('RIESGO') || evalCond.includes('DEPLORABLE')) {
+                                condicionParsed = 'malo';
+                            } else if (evalCond.includes('REGULAR') || evalCond.includes('MEDIO') || evalCond.includes('CONSTRUCCION')) {
+                                condicionParsed = 'regular';
+                            }
 
                             if (tipoParsed === 'rancho') condicionParsed = 'malo';
+
+                            // Guardamos en memoria si la fila actual los trajo explícitos
+                            if (casaRaw !== "") cCasa = casaRaw;
+                            if (tipoVivRaw !== "" && !tipoVivRaw.includes('PROPIA') && !tipoVivRaw.includes('ALQUILAD')) cTipo = tipoParsed;
+                            if (condicionParsed !== "regular") cCondicion = condicionParsed;
+                            if (tenenciaParsed !== "") cTenencia = tenenciaParsed;
 
                             let fechaEstructurada = parseFechaInteligente(fila['FECHA DE NACIMIENTO'], fila['EDAD']);
                             let estaCeduladoFinal = "si";
@@ -385,8 +366,7 @@
                             const firebaseId = nuevoRef.key;
 
                             let rowResponsabilidad = cleanText(fila['RESPONSABILIDAD CBI, CM']);
-                            let parentescoParsed = "otro";
-                            let jefeHogarId = "";
+                            let parentescoParsed = "otro", jefeHogarId = "";
 
                             if (rowResponsabilidad.includes("JEFE DE FAMILIA") || rowResponsabilidad.includes("JEFE")) {
                                 parentescoParsed = "jefe de hogar";
@@ -397,14 +377,21 @@
                                 let rHijo = cleanText(fila['HIJO']);
                                 let rOtro = cleanText(fila['OTRO']);
                                 
-                                if(rMadre === 'X' || rMadre === 'SI') parentescoParsed = 'madre';
-                                else if(rPadre === 'X' || rPadre === 'SI') parentescoParsed = 'padre';
-                                else if(rHijo === 'X' || rHijo === 'SI') parentescoParsed = (sexoParsed === 'femenino') ? 'hija' : 'hijo';
-                                else if(rOtro !== "" && rOtro !== "NO") {
+                                if(rMadre === 'X' || rMadre === 'SI' || rMadre.includes('MADRE')) parentescoParsed = 'madre';
+                                else if(rPadre === 'X' || rPadre === 'SI' || rPadre.includes('PADRE')) parentescoParsed = 'padre';
+                                else if(rHijo === 'X' || rHijo === 'SI' || rHijo.includes('HIJO') || rHijo.includes('HIJA')) {
+                                    parentescoParsed = (sexoParsed === 'femenino') ? 'hija' : 'hijo';
+                                } else if(rOtro !== "" && rOtro !== "NO") {
                                     if (rOtro.includes('ESPOSA')) parentescoParsed = 'esposa';
                                     else if (rOtro.includes('ESPOSO')) parentescoParsed = 'esposo';
                                     else if (rOtro.includes('NIETA')) parentescoParsed = 'nieta';
                                     else if (rOtro.includes('NIETO')) parentescoParsed = 'nieto';
+                                    else if (rOtro.includes('HERMANA')) parentescoParsed = 'hermana';
+                                    else if (rOtro.includes('HERMANO')) parentescoParsed = 'hermano';
+                                    else if (rOtro.includes('HIJA')) parentescoParsed = 'hija';
+                                    else if (rOtro.includes('HIJO')) parentescoParsed = (sexoParsed === 'femenino') ? 'hija' : 'hijo';
+                                    else if (rOtro.includes('MADRE')) parentescoParsed = 'madre';
+                                    else if (rOtro.includes('PADRE')) parentescoParsed = 'padre';
                                     else parentescoParsed = rOtro.toLowerCase();
                                 }
 
@@ -450,10 +437,10 @@
                                 consejo_comunal: cConsejo,
                                 comunidad: cComunidad,
                                 calle: cCalle,
-                                numero_casa: casaRaw,
-                                tipo_vivienda: tipoParsed || "casa",
-                                condiciones_vivienda: condicionParsed || "regular",
-                                tenencia_vivienda: tenenciaParsed,
+                                numero_casa: cCasa,
+                                tipo_vivienda: cTipo || "casa",
+                                condiciones_vivienda: cCondicion || "regular",
+                                tenencia_vivienda: cTenencia,
                                 responsabilidad_cbi_cm: rowResponsabilidad,
                                 tiene_gas: tieneGasParsed,
                                 tipo_cilindro_gas: tieneGasParsed === 'si' ? cilindroRaw : '',
@@ -469,11 +456,9 @@
                                 trabaja: ns(fila['TRABAJA?']),
                                 esta_escolarizado: ns(fila['ESTA ESCOLARIZADO?']),
                                 esta_cedulado: estaCeduladoFinal,
-                                
                                 padece_enfermedad: enfFinal,
                                 toma_medicamento: tomaMedFinal,
                                 cual_medicamento: medFinal,
-                                
                                 discapacitado: ns(fila['DISCAPACITADO?']),
                                 tipo_discapacidad: '',
                                 embarazada: ns(fila['EMBARAZADA?']),
@@ -490,8 +475,7 @@
                                 fecha_registro: new Date().toLocaleString()
                             };
 
-                            await set(nuevoRef, habitanteTraducido);
-                            await supabase.from('habitantes').insert([habitanteTraducido]);
+                            await set(nuevoRef, habitanteTraducido); // GUARDA TOTALMENTE EN FIREBASE
                             subidos++;
 
                             let porcentaje = (subidos / totalDatos) * 100;
@@ -501,7 +485,7 @@
                             
                             if (subidos % 20 === 0 || subidos === totalDatos) {
                                 let logColor = jefeHogarId ? "log-family" : "log-success";
-                                escribirLog(`[LIMPIO Y GUARDADO] 1x1: ${nombreParsed} ${apellidoParsed} ➔ Rol: ${parentescoParsed} | Comuna Asegurada`, logColor);
+                                escribirLog(`[MIGRADO FB] Fila ${i+1}: ${nombreParsed} ${apellidoParsed} ➔ Rol: ${parentescoParsed} | Territorio Asegurado`, logColor);
                             }
 
                         } catch (err) {
@@ -510,12 +494,10 @@
                     }
                     
                     document.getElementById('barraProgreso').style.width = "100%";
-                    document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
                     document.getElementById('txtPorcentaje').textContent = `100%`;
                     document.getElementById('txtEta').textContent = `Finalizado en ${formatoTiempo(Date.now() - tiempoInicio)}`;
-                    
-                    escribirLog(`✅ MIGRACIÓN MAESTRA COMPLETADA. ${subidos} registros depurados y vinculados en cascada a Firebase y Supabase.`, "log-supabase");
-                    alert("¡Operación completada! Los datos se han limpiado, vinculado y guardado perfectamente en ambas bases de datos.");
+                    escribirLog(`✅ MIGRACIÓN MAESTRA COMPLETADA EN FIREBASE.`, "log-success");
+                    alert("¡Operación completada! Los datos se han limpiado y guardado perfectamente en Firebase.");
                 }
             });
         };
