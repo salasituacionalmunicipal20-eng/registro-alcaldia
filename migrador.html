@@ -108,7 +108,7 @@
             border-radius: 5px;
             font-family: 'Courier New', Courier, monospace;
             font-size: 12px;
-            height: 300px;
+            height: 350px;
             overflow-y: auto;
             margin-top: 20px;
         }
@@ -129,11 +129,12 @@
             transition: width 0.1s linear;
         }
 
-        .linea-log { margin-bottom: 5px; }
+        .linea-log { margin-bottom: 5px; border-bottom: 1px dashed #333; padding-bottom: 3px;}
         .log-error { color: #ff4c4c; font-weight: bold; }
         .log-success { color: #00ff00; }
         .log-warning { color: #ffc107; font-weight: bold;}
-        .log-family { color: #b000ff; font-weight: bold; }
+        .log-family { color: #00d2ff; }
+        .log-jefe { color: #b000ff; font-weight: bold; }
         
         .stats-panel {
             display: flex;
@@ -151,15 +152,15 @@
             <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver al Panel Admin</button>
         </div>
 
-        <h1>Motor de Instalación Limpia (En 2 Fases)</h1>
+        <h1>Motor de Instalación Limpia (En 2 Fases Estrictas)</h1>
         
         <div class="instrucciones" id="panelInstrucciones">
-            <strong style="color:var(--rojo-oficial); font-size:14px; letter-spacing:1px;">🚨 PROTOCOLO DE RESETEO ABSOLUTO ACTIVADO:</strong><br><br>
-            1. 💥 <b>Wipe Out Seguro:</b> Borrado en lotes para vaciar Firebase sin causar error de Permisos.<br>
-            2. 🚀 <b>Fase 1 (Subida Total):</b> Se sube el 100% de los habitantes del Excel. NADIE SE OMITIRÁ. Todos heredan su residencia correspondiente para no dejar datos vacíos.<br>
-            3. 👨‍👩‍👧‍👦 <b>Fase 2 (Barrido de Jefes):</b> Una vez montados absolutamente todos los registros, el sistema hace un segundo escaneo. Al detectar un Jefe, agarra a los de abajo y les inyecta su <code>jefe_hogar_id</code> sin borrar ni modificar el resto de sus datos.<br>
-            4. 🪪 <b>Filtros Clínicos y de Identidad:</b> Limpieza de cédulas "E/V". Asignación de Roles por género (Madre, Padre, Esposa, Hija). Limpieza de medicinas (Elimina "NO INDICA", "NINGUNO").<br>
-            5. ☁️ <b>Operación Aislada Firebase:</b> Supabase está desconectado en esta herramienta para máxima velocidad.
+            <strong style="color:var(--rojo-oficial); font-size:14px; letter-spacing:1px;">🚨 PROTOCOLO DE EXTRACCIÓN 1X1 Y BARRIDO POSTERIOR:</strong><br><br>
+            1. 💥 <b>Wipe Out Seguro:</b> Borrado en lotes para vaciar Firebase de raíz sin errores de permisos.<br>
+            2. 🚀 <b>Fase 1 (Subida Pura sin Mezclas):</b> El sistema lee el Excel fila por fila. Aplica los filtros médicos, de vivienda y cédula acordados. Los sube a Firebase <b>exactamente con los datos territoriales que dice su fila</b>. Aquí NADIE hereda nada de nadie y NADIE se vincula todavía.<br>
+            3. 👨‍👩‍👧‍👦 <b>Fase 2 (Barrido de Jefes - Sin Borrar Nada):</b> Con todos los habitantes ya subidos de forma segura, el sistema recorre la lista. Si ve a un "Jefe", lo anota. A los que vengan debajo, solo les inyecta el <code>jefe_hogar_id</code> mediante un UPDATE, respetando el 100% de la data subida en la Fase 1.<br>
+            4. ⚡ <b>Consola en Tiempo Real:</b> El sistema no se quedará pegado. Verás línea por línea el trabajo en vivo.<br>
+            5. ☁️ <b>Operación Aislada Firebase:</b> Supabase está desconectado. Sincronización rápida y directa.
         </div>
 
         <input type="file" id="archivoCSV" accept=".csv">
@@ -173,7 +174,7 @@
         <div class="stats-panel" id="statsPanel">
             <span id="txtCompletados">Procesados: 0 / 0</span>
             <span id="txtPorcentaje">0%</span>
-            <span id="txtEta" style="color: var(--rojo-oficial);">Fase: Preparando...</span>
+            <span id="txtEta" style="color: var(--rojo-oficial);">Fase: Esperando archivo...</span>
         </div>
 
         <div class="consola-wrapper" id="consolaLog"></div>
@@ -200,8 +201,10 @@
             const linea = document.createElement('div');
             linea.className = `linea-log ${tipo}`;
             const hora = new Date().toLocaleTimeString('es-VE', { hour12: false });
-            linea.textContent = `[${hora}] > ${mensaje}`;
+            linea.innerHTML = `[${hora}] > ${mensaje}`;
             consola.appendChild(linea);
+            
+            // Auto-scroll hacia abajo
             consola.scrollTop = consola.scrollHeight;
         }
 
@@ -242,7 +245,8 @@
             return '';
         }
 
-        window.utilizarRetraso = () => new Promise(resolve => setTimeout(resolve, 1));
+        // FUNCIÓN RESPIRADOR PARA QUE EL NAVEGADOR NO SE QUEDE PEGADO
+        const refrescarUI = () => new Promise(resolve => setTimeout(resolve, 0));
 
         window.procesarCSV = async function() {
             const archivo = document.getElementById('archivoCSV').files[0];
@@ -265,46 +269,47 @@
                     // ==========================================
                     // PASO 1: WIPE OUT (BORRADO GENERAL)
                     // ==========================================
+                    document.getElementById('txtEta').textContent = `Preparando Borrado...`;
                     escribirLog("Iniciando protocolo de BORRADO GENERAL (Wipe Out)...", "log-warning");
                     try {
                         const snapshot = await get(child(ref(database), 'habitantes'));
                         if (snapshot.exists()) {
                             const registros = snapshot.val();
                             const keys = Object.keys(registros);
-                            escribirLog(`Destruyendo ${keys.length} registros (Bypass de seguridad por lotes)...`, "log-warning");
+                            escribirLog(`Destruyendo ${keys.length} registros en lotes...`, "log-warning");
                             
                             for (let i = 0; i < keys.length; i += 100) {
                                 const batch = keys.slice(i, i + 100);
                                 await Promise.all(batch.map(key => remove(ref(database, `habitantes/${key}`))));
+                                await refrescarUI(); // Mantiene la interfaz viva
                             }
                         }
-                        escribirLog("✅ BASE DE DATOS VACIADA. Iniciando FASE 1: Subida Total...", "log-success");
+                        escribirLog("✅ BASE DE DATOS VACIADA. Iniciando FASE 1...", "log-success");
                     } catch(e) {
                         escribirLog("❌ Fallo al borrar la base de datos: " + e.message, "log-error");
                         return;
                     }
 
                     // ==========================================
-                    // PASO 2: FASE 1 - SUBIDA MASIVA Y LIMPIEZA
+                    // PASO 2: FASE 1 - SUBIDA MASIVA 1x1
                     // ==========================================
                     let subidos = 0;
                     const habitantesRef = ref(database, 'habitantes');
                     
-                    // Memoria Territorial en Cascada (Solo se usará para rellenar campos en blanco de las familias)
-                    let cUbch = "", cSigue = "", cComuna = "", cConsejo = "", cComunidad = "", cCalle = "", cCasa = "", cTipo = "casa", cCondicion = "regular", cTenencia = "";
+                    // Lista temporal para la Fase 2 (Solo guarda ID y Rol para no gastar RAM)
+                    let mapaParaFase2 = [];
 
-                    // Arreglo para guardar el ID de Firebase y saber quién es Jefe para la Fase 2
-                    let mapaSubidosFase2 = [];
-
-                    document.getElementById('txtEta').textContent = `Fase 1: Subiendo Habitantes...`;
+                    document.getElementById('txtEta').textContent = `Fase 1: Inyectando Habitantes...`;
 
                     for (let i = 0; i < totalDatos; i++) {
-                        if (i % 150 === 0) await window.utilizarRetraso(); // Para no colgar el navegador
+                        // REGLA DE ORO DE RENDIMIENTO: Cada 10 filas, dejamos que el navegador actualice la pantalla
+                        if (i % 10 === 0) await refrescarUI(); 
                         
                         let fila = datos[i];
                         if (!fila['NOMBRE Y APELLIDO']) continue;
 
                         try {
+                            // 🪪 FILTRO DE CÉDULA
                             let rawCed = cleanText(fila['CEDULA']);
                             let rowCedulaNum = rawCed;
                             let rowNac = 'V';
@@ -322,27 +327,12 @@
                             let nombreParsed = nombreCompleto.slice(0, Math.ceil(nombreCompleto.length / 2)).join(' ');
                             let apellidoParsed = nombreCompleto.slice(Math.ceil(nombreCompleto.length / 2)).join(' ');
 
-                            // 🛡️ INGESTIÓN DE MEMORIA TERRITORIAL
-                            let rUbch = cleanText(fila['UBCH A LA QUE PERTENECE']);
-                            let rSigue = cleanText(fila['CODIGO SITUR ACTUAL']);
-                            let rComuna = cleanText(fila['COMUNA']);
-                            let rConsejo = cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']);
-                            let rComunidad = cleanText(fila['COMUNIDAD']);
-                            let rCalle = cleanText(fila['CALLE']);
-                            let rCasa = cleanText(fila['NUMERO DE CASA']);
+                            // 🏠 FILTRO DE VIVIENDA Y TERRITORIO (PURA, LECTURA DIRECTA DE LA FILA)
                             let rTipoViv = cleanText(fila['TIPO DE VIVIENDA']);
                             let rCondicion = cleanText(fila['CONDICIONES DE LA VIVIENDA']);
+                            let rCasa = cleanText(fila['NUMERO DE CASA']);
+                            if(rCasa === 'CASA') rCasa = '';
 
-                            // Guardamos en memoria todo lo que NO venga vacío.
-                            // Si la fila viene vacía, conservará el valor anterior (el del Jefe)
-                            if (rUbch !== "") cUbch = rUbch;
-                            if (rSigue !== "") cSigue = rSigue;
-                            if (rComuna !== "") cComuna = rComuna;
-                            if (rConsejo !== "") cConsejo = rConsejo;
-                            if (rComunidad !== "") cComunidad = rComunidad;
-                            if (rCalle !== "") cCalle = rCalle;
-                            if (rCasa !== "" && rCasa !== "CASA") cCasa = rCasa;
-                            
                             let tenenciaParsed = "";
                             let tipoParsed = "casa", condicionParsed = "regular";
 
@@ -362,10 +352,10 @@
 
                             if (tipoParsed === 'rancho') condicionParsed = 'malo';
 
-                            if (rTipoViv !== "" && !rTipoViv.includes('PROPIA') && !rTipoViv.includes('ALQUILAD')) cTipo = tipoParsed;
-                            if (rCondicion !== "") cCondicion = condicionParsed;
-                            if (tenenciaParsed !== "") cTenencia = tenenciaParsed;
+                            let finalTipo = (rTipoViv !== "" && !rTipoViv.includes('PROPIA') && !rTipoViv.includes('ALQUILAD')) ? tipoParsed : "casa";
+                            let finalCondicion = (rCondicion !== "") ? condicionParsed : "regular";
 
+                            // 📅 FILTRO CRONOLÓGICO Y SEXO
                             let fechaEstructurada = parseFechaInteligente(fila['FECHA DE NACIMIENTO'], fila['EDAD']);
                             let estaCeduladoFinal = "si";
 
@@ -380,16 +370,13 @@
                                 estaCeduladoFinal = 'no';
                             }
 
-                            // 👨‍👩‍👧‍👦 ASIGNACIÓN DE ROLES (PARENTESCO)
+                            // 👨‍👩‍👧‍👦 ASIGNACIÓN DE ROLES (PARA GUARDAR EN MEMORIA, AÚN NO SE VINCULAN)
                             let rowResponsabilidad = cleanText(fila['RESPONSABILIDAD CBI, CM']);
                             let parentescoParsed = "otro";
-                            let esJefeAbsoluto = false;
 
                             if (rowResponsabilidad.includes("JEFE DE FAMILIA") || rowResponsabilidad.includes("JEFE")) {
                                 parentescoParsed = "jefe de hogar";
-                                esJefeAbsoluto = true;
                             } else {
-                                // CORRECCIÓN DEL BUG: Usamos 'fila' en vez de 'row' para que el sistema no se detenga.
                                 let rMadre = cleanText(fila['MADRE']);
                                 let rPadre = cleanText(fila['PADRE']);
                                 let rHijo = cleanText(fila['HIJO']);
@@ -431,23 +418,26 @@
                             if (negacionesSalud.includes(rawMed) || rawMed === '') { tomaMedFinal = 'no'; medFinal = ''; }
                             if (enfFinal === '' && (rawMed === '' || negacionesSalud.includes(rawMed))) { tomaMedFinal = 'no'; medFinal = ''; }
 
+                            // CREACIÓN DEL REGISTRO FINAL FASE 1
                             const nuevoRef = push(habitantesRef);
                             const firebaseId = nuevoRef.key;
 
                             let habitanteTraducido = {
                                 id_firebase: firebaseId,
-                                jefe_hogar_id: "", // FASE 1: Se suben TODOS vacíos (Sin vinculación aún)
+                                jefe_hogar_id: "", // FASE 1: Se suben todos sueltos sin jefe asignado.
                                 
-                                ubch: cUbch,
-                                codigo_sigue_actual: cSigue,
-                                comuna: cComuna,
-                                consejo_comunal: cConsejo,
-                                comunidad: cComunidad,
-                                calle: cCalle,
-                                numero_casa: cCasa,
-                                tipo_vivienda: cTipo || "casa",
-                                condiciones_vivienda: cCondicion || "regular",
-                                tenencia_vivienda: cTenencia,
+                                // LECTURA DIRECTA DE LA FILA (Sin mezclar ni arrastrar nada)
+                                ubch: cleanText(fila['UBCH A LA QUE PERTENECE']),
+                                codigo_sigue_actual: cleanText(fila['CODIGO SITUR ACTUAL']),
+                                comuna: cleanText(fila['COMUNA']),
+                                consejo_comunal: cleanText(fila['NOMBRE DEL CONSEJO COMUNAL']),
+                                comunidad: cleanText(fila['COMUNIDAD']),
+                                calle: cleanText(fila['CALLE']),
+                                numero_casa: rCasa,
+                                
+                                tipo_vivienda: finalTipo,
+                                condiciones_vivienda: finalCondicion,
+                                tenencia_vivienda: tenenciaParsed,
                                 
                                 responsabilidad_cbi_cm: rowResponsabilidad,
                                 tiene_gas: tieneGasParsed,
@@ -483,51 +473,60 @@
                                 fecha_registro: new Date().toLocaleString()
                             };
 
-                            // GUARDAMOS EN FIREBASE
+                            // GUARDAMOS EN FIREBASE AL INSTANTE
                             await set(nuevoRef, habitanteTraducido);
                             subidos++;
 
-                            // REGISTRAMOS EN MEMORIA PARA LA FASE 2
-                            mapaSubidosFase2.push({
+                            // LO ANOTAMOS PARA LA FASE 2
+                            mapaParaFase2.push({
                                 id_fb: firebaseId,
-                                es_jefe: esJefeAbsoluto,
-                                nombre: nombreParsed,
-                                apellido: apellidoParsed,
-                                rol: parentescoParsed
+                                rol: parentescoParsed,
+                                nombre: nombreParsed
                             });
 
                             let porcentaje = (subidos / totalDatos) * 100;
                             document.getElementById('barraProgreso').style.width = porcentaje + "%";
                             document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
                             
+                            // Imprimir en consola en tiempo real
+                            if (parentescoParsed === 'jefe de hogar') {
+                                escribirLog(`[INGRESADO] 👑 JEFE: ${nombreParsed} ${apellidoParsed}`, "log-jefe");
+                            } else {
+                                escribirLog(`[INGRESADO] 👤 ${nombreParsed} ${apellidoParsed} (${parentescoParsed})`, "log-info");
+                            }
+
                         } catch (err) {
                             escribirLog(`❌ Error en fila ${i+1}: ${err.message}`, "log-error");
                         }
                     }
                     
-                    escribirLog(`✅ FASE 1 COMPLETADA. Se subieron ${subidos} habitantes sin omisiones.`, "log-success");
+                    escribirLog(`✅ FASE 1 COMPLETADA. Se subieron ${subidos} habitantes.`, "log-success");
 
                     // ==========================================
-                    // PASO 3: FASE 2 - BARRIDO DE VINCULACIÓN
+                    // PASO 3: FASE 2 - BARRIDO DE VINCULACIÓN (SIN BORRAR)
                     // ==========================================
-                    document.getElementById('txtEta').textContent = `Fase 2: Vinculando Núcleos Familiares...`;
-                    escribirLog(`Iniciando Fase 2: Escaneo y asignación de Jefes de Hogar...`, "log-info");
+                    document.getElementById('txtEta').textContent = `Fase 2: Vinculando Familias...`;
+                    escribirLog(`=================================`, "log-warning");
+                    escribirLog(`Iniciando Fase 2: Escaneo y asignación de Núcleos...`, "log-warning");
                     
                     let jefeActual = null;
                     let vinculados = 0;
 
-                    for (let j = 0; j < mapaSubidosFase2.length; j++) {
-                        if (j % 150 === 0) await window.utilizarRetraso();
+                    for (let j = 0; j < mapaParaFase2.length; j++) {
+                        // Respirador de la Fase 2
+                        if (j % 20 === 0) await refrescarUI();
 
-                        let h = mapaSubidosFase2[j];
+                        let h = mapaParaFase2[j];
                         
-                        if (h.es_jefe) {
+                        if (h.rol === 'jefe de hogar') {
                             jefeActual = h.id_fb; 
+                            escribirLog(`[NÚCLEO FIJADO] Marcando territorio de: ${h.nombre}`, "log-jefe");
                         } else {
                             if (jefeActual !== null) {
-                                // ACTUALIZAMOS ÚNICAMENTE EL CAMPO DE VINCULACIÓN
+                                // ACTUALIZAMOS ÚNICAMENTE EL CAMPO DE VINCULACIÓN EN FIREBASE
                                 await update(ref(database, `habitantes/${h.id_fb}`), { jefe_hogar_id: jefeActual });
                                 vinculados++;
+                                escribirLog(`   ↳ Familia vinculada al Jefe: ${h.nombre} (${h.rol})`, "log-family");
                             }
                         }
                     }
@@ -535,8 +534,9 @@
                     document.getElementById('barraProgreso').style.width = "100%";
                     document.getElementById('txtEta').textContent = `PROCESO 100% FINALIZADO`;
                     
-                    escribirLog(`✅ FASE 2 COMPLETADA. Se vincularon ${vinculados} familiares a sus Jefes de Hogar.`, "log-success");
-                    alert(`¡Instalación Limpia completada!\nSe subieron ${subidos} habitantes y se vincularon ${vinculados} cargas familiares.`);
+                    escribirLog(`=================================`, "log-warning");
+                    escribirLog(`✅ FASE 2 COMPLETADA. Se conectaron ${vinculados} familiares a sus Jefes de Hogar.`, "log-success");
+                    alert(`¡Instalación Limpia completada exitosamente!\n\n1. Se vació la base de datos.\n2. Se subieron ${subidos} habitantes individuales puros.\n3. Se estructuraron ${vinculados} vínculos familiares sin borrar datos.`);
                 }
             });
         };
