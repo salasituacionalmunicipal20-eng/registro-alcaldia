@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Migrador Inteligente - Instalación Limpia</title>
+    <title>Migrador Inteligente de Datos Masivos - Alcaldía</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         :root {
@@ -27,7 +27,7 @@
             max-width: 900px; 
             margin: auto; 
             box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
-            border-top: 8px solid var(--rojo-oficial); 
+            border-top: 8px solid var(--azul-oficial); 
         }
 
         .top-nav { 
@@ -49,7 +49,7 @@
         }
         
         h1 { 
-            color: var(--rojo-oficial); 
+            color: var(--azul-oficial); 
             margin-top: 0; 
             text-transform: uppercase; 
             font-size: 24px;
@@ -61,7 +61,7 @@
             text-align: left; 
             background: #fdfdfd; 
             padding: 20px; 
-            border-left: 4px solid var(--rojo-oficial); 
+            border-left: 4px solid var(--azul-oficial); 
             font-size: 14px; 
             margin-bottom: 20px; 
             line-height: 1.6;
@@ -79,7 +79,7 @@
         }
         
         button#btnSubir { 
-            background-color: #E30613; 
+            background-color: #28a745; 
             color: white; 
             border: none; 
             padding: 15px 30px; 
@@ -92,7 +92,7 @@
         }
         
         button#btnSubir:hover:not(:disabled) { 
-            background-color: #b7050f; 
+            background-color: #218838; 
         }
         
         button:disabled { 
@@ -124,7 +124,7 @@
         
         .progress-fill { 
             height: 25px; 
-            background-color: var(--rojo-oficial); 
+            background-color: var(--azul-oficial); 
             width: 0%; 
             transition: width 0.1s linear;
         }
@@ -152,15 +152,14 @@
             <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver al Panel Admin</button>
         </div>
 
-        <h1>Motor de Instalación Limpia (En 2 Fases Estrictas)</h1>
+        <h1>Motor de Migración Masiva (Solo Ingesta)</h1>
         
         <div class="instrucciones" id="panelInstrucciones">
-            <strong style="color:var(--rojo-oficial); font-size:14px; letter-spacing:1px;">🚨 PROTOCOLO DE EXTRACCIÓN 1X1 Y BARRIDO POSTERIOR:</strong><br><br>
-            1. 💥 <b>Wipe Out Seguro:</b> Borrado en lotes para vaciar Firebase de raíz sin errores de permisos.<br>
-            2. 🚀 <b>Fase 1 (Subida Pura sin Mezclas):</b> El sistema lee el Excel fila por fila. Aplica los filtros médicos, de vivienda y cédula acordados. Los sube a Firebase <b>exactamente con los datos territoriales que dice su fila</b>. Aquí NADIE hereda nada de nadie y NADIE se vincula todavía.<br>
-            3. 👨‍👩‍👧‍👦 <b>Fase 2 (Barrido de Jefes - Sin Borrar Nada):</b> Con todos los habitantes ya subidos de forma segura, el sistema recorre la lista. Si ve a un "Jefe", lo anota. A los que vengan debajo, solo les inyecta el <code>jefe_hogar_id</code> mediante un UPDATE, respetando el 100% de la data subida en la Fase 1.<br>
-            4. ⚡ <b>Consola en Tiempo Real:</b> El sistema no se quedará pegado. Verás línea por línea el trabajo en vivo.<br>
-            5. ☁️ <b>Operación Aislada Firebase:</b> Supabase está desconectado. Sincronización rápida y directa.
+            <strong style="color:var(--azul-oficial); font-size:14px; letter-spacing:1px;">🚨 PROTOCOLO DE EXTRACCIÓN 1X1 Y BARRIDO POSTERIOR:</strong><br><br>
+            1. 🚀 <b>Fase 1 (Subida Pura sin Mezclas):</b> El sistema lee el Excel fila por fila. Aplica los filtros médicos, de vivienda y cédula acordados. Los sube a Firebase <b>exactamente con los datos territoriales que dice su fila</b>. Aquí NADIE hereda nada de nadie y NADIE se vincula todavía.<br>
+            2. 👨‍👩‍👧‍👦 <b>Fase 2 (Barrido de Jefes - Sin Borrar Nada):</b> Con todos los habitantes ya subidos de forma segura, el sistema recorre la lista. Si ve a un "Jefe", lo anota. A los que vengan debajo, solo les inyecta el <code>jefe_hogar_id</code> mediante un UPDATE, respetando el 100% de la data subida en la Fase 1.<br>
+            3. ⚡ <b>Consola en Tiempo Real:</b> El sistema no se quedará pegado. Verás línea por línea el trabajo en vivo.<br>
+            4. ☁️ <b>Operación Aislada Firebase:</b> Supabase está desconectado. Sincronización rápida y directa.
         </div>
 
         <input type="file" id="archivoCSV" accept=".csv">
@@ -174,7 +173,7 @@
         <div class="stats-panel" id="statsPanel">
             <span id="txtCompletados">Procesados: 0 / 0</span>
             <span id="txtPorcentaje">0%</span>
-            <span id="txtEta" style="color: var(--rojo-oficial);">Fase: Esperando archivo...</span>
+            <span id="txtEta" style="color: var(--azul-oficial);">Fase: Esperando archivo...</span>
         </div>
 
         <div class="consola-wrapper" id="consolaLog"></div>
@@ -182,7 +181,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, set, remove, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, set, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -218,7 +217,7 @@
                     usuarioActivo = user;
                     const btn = document.getElementById('btnSubir');
                     btn.disabled = false;
-                    btn.textContent = "BORRAR BASE DE DATOS Y SUBIR EXCEL 🚀";
+                    btn.textContent = "INICIAR MIGRACIÓN MASIVA 🚀";
                     escribirLog(`PERMISOS VALIDADOS. Autenticado como Súper Administrador.`, "log-success");
                 } else {
                     usuarioActivo = null;
@@ -251,9 +250,6 @@
         window.procesarCSV = async function() {
             const archivo = document.getElementById('archivoCSV').files[0];
             if (!archivo) return alert("Seleccione un archivo CSV primero.");
-            
-            const confirmar = confirm("⚠️ ADVERTENCIA EXTREMA: Está a punto de BORRAR TODA LA BASE DE DATOS ACTUAL en Firebase para reemplazarla con este Excel desde cero. ¿Está completamente seguro?");
-            if(!confirmar) return;
 
             document.getElementById('btnSubir').disabled = true;
             document.getElementById('barraWrapper').style.display = "block";
@@ -265,33 +261,9 @@
                 complete: async function(results) {
                     const datos = results.data;
                     const totalDatos = datos.length;
-                    
-                    // ==========================================
-                    // PASO 1: WIPE OUT (BORRADO GENERAL)
-                    // ==========================================
-                    document.getElementById('txtEta').textContent = `Preparando Borrado...`;
-                    escribirLog("Iniciando protocolo de BORRADO GENERAL (Wipe Out)...", "log-warning");
-                    try {
-                        const snapshot = await get(child(ref(database), 'habitantes'));
-                        if (snapshot.exists()) {
-                            const registros = snapshot.val();
-                            const keys = Object.keys(registros);
-                            escribirLog(`Destruyendo ${keys.length} registros en lotes...`, "log-warning");
-                            
-                            for (let i = 0; i < keys.length; i += 100) {
-                                const batch = keys.slice(i, i + 100);
-                                await Promise.all(batch.map(key => remove(ref(database, `habitantes/${key}`))));
-                                await refrescarUI(); // Mantiene la interfaz viva
-                            }
-                        }
-                        escribirLog("✅ BASE DE DATOS VACIADA. Iniciando FASE 1...", "log-success");
-                    } catch(e) {
-                        escribirLog("❌ Fallo al borrar la base de datos: " + e.message, "log-error");
-                        return;
-                    }
 
                     // ==========================================
-                    // PASO 2: FASE 1 - SUBIDA MASIVA 1x1
+                    // FASE 1: SUBIDA MASIVA 1x1
                     // ==========================================
                     let subidos = 0;
                     const habitantesRef = ref(database, 'habitantes');
@@ -300,6 +272,7 @@
                     let mapaParaFase2 = [];
 
                     document.getElementById('txtEta').textContent = `Fase 1: Inyectando Habitantes...`;
+                    escribirLog("Iniciando FASE 1: Subiendo todos los registros a la base de datos...", "log-success");
 
                     for (let i = 0; i < totalDatos; i++) {
                         // REGLA DE ORO DE RENDIMIENTO: Cada 10 filas, dejamos que el navegador actualice la pantalla
@@ -469,7 +442,7 @@
                                 vd_vb_vo_seleccion: cleanText(fila['VD']) ? 'VD' : (cleanText(fila['VB']) ? 'VB' : (cleanText(fila['VO']) ? 'VO' : '')),
                                 vd_vb_vo_detalle: '',
                                 registrado_por_uid: usuarioActivo.uid,
-                                registrado_por_nombre: "CARLOS ADMIN (INSTALACIÓN LIMPIA)",
+                                registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN MASIVA)",
                                 fecha_registro: new Date().toLocaleString()
                             };
 
@@ -503,7 +476,7 @@
                     escribirLog(`✅ FASE 1 COMPLETADA. Se subieron ${subidos} habitantes.`, "log-success");
 
                     // ==========================================
-                    // PASO 3: FASE 2 - BARRIDO DE VINCULACIÓN (SIN BORRAR)
+                    // FASE 2 - BARRIDO DE VINCULACIÓN (SIN BORRAR)
                     // ==========================================
                     document.getElementById('txtEta').textContent = `Fase 2: Vinculando Familias...`;
                     escribirLog(`=================================`, "log-warning");
@@ -536,7 +509,9 @@
                     
                     escribirLog(`=================================`, "log-warning");
                     escribirLog(`✅ FASE 2 COMPLETADA. Se conectaron ${vinculados} familiares a sus Jefes de Hogar.`, "log-success");
-                    alert(`¡Instalación Limpia completada exitosamente!\n\n1. Se vació la base de datos.\n2. Se subieron ${subidos} habitantes individuales puros.\n3. Se estructuraron ${vinculados} vínculos familiares sin borrar datos.`);
+                    alert(`¡Ingesta de Datos completada exitosamente!\n\n1. Se subieron ${subidos} habitantes individuales puros.\n2. Se estructuraron ${vinculados} vínculos familiares sin borrar datos.`);
+                    
+                    document.getElementById('btnSubir').disabled = false;
                 }
             });
         };
