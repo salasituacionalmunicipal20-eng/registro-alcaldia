@@ -421,10 +421,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="top-nav">
-            <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button>
-        </div>
-
+        <div class="top-nav"><button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button></div>
         <h1>Centro de Mando y Auditoría de Red</h1>
         
         <div class="dashboard-section-title">🖥️ 1. Diagnóstico de Conexiones e Infraestructura</div>
@@ -823,11 +820,8 @@
 
                 for(let i = 0; i < total; i++) {
                     let id_fb = keysFirebase[i];
+                    // Se envía el registro tal cual está en Firebase, conservando el jefe_hogar_id
                     let registro = { ...baseDatosBruta[id_fb], id_firebase: id_fb };
-                    
-                    // 🛡️ ESCUDO SANITIZADOR PARA SUPABASE
-                    // Eliminamos variables exclusivas de Firebase que rompen la tabla de PostgreSQL
-                    delete registro.jefe_hogar_id;
 
                     loteSupabase.push(registro);
 
@@ -883,7 +877,6 @@
             try {
                 for (let i = 0; i < keys.length; i += 100) {
                     const lote = keys.slice(i, i + 100);
-                    // Ejecuta la eliminación a nivel de nodo hijo (Bypass de seguridad de Firebase)
                     await Promise.all(lote.map(key => remove(ref(database, `habitantes/${key}`))));
                     escribirSyncLog(`Destruidos: ${Math.min(i + 100, keys.length)} / ${keys.length} expedientes.`, "sync-info");
                 }
