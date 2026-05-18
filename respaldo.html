@@ -421,7 +421,10 @@
 </head>
 <body>
     <div class="container">
-        <div class="top-nav"><button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button></div>
+        <div class="top-nav">
+            <button type="button" class="btn-back" onclick="location.href='admin.html'">← Volver a Operaciones</button>
+        </div>
+
         <h1>Centro de Mando y Auditoría de Red</h1>
         
         <div class="dashboard-section-title">🖥️ 1. Diagnóstico de Conexiones e Infraestructura</div>
@@ -547,6 +550,12 @@
             </div>
         </div>
 
+        <div class="dashboard-section-title">📊 5. Historial de Auditoría de Sesiones (Bitácora de Accesos)</div>
+        <div class="sync-management-panel" style="text-align: left; margin-bottom: 30px;">
+            <div class="sync-console" id="historyConsoleBox" style="height: 220px; color: #ff9800;">
+                <div class="sync-line">Cargando registros históricos de inicio y cierre de sesión...</div>
+            </div>
+        </div>
         <div class="live-panels-container">
             <div class="live-panel">
                 <h3>📋 Live Feed (Firebase)</h3>
@@ -600,7 +609,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set, onDisconnect, update, child, get, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, set, onDisconnect, update, child, get, remove, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         
         import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -626,6 +635,7 @@
         let baseDatosBruta = {};
         let sincronizando = false;
         let erroresJS = 0;
+        let logKeyActual = null; // Variable interna de la bitácora
 
         window.onerror = function(msg, url, line) {
             erroresJS++;
@@ -712,10 +722,30 @@
                     ultima_accion: 'Auditando métricas de salud y rendimiento'
                 });
 
+                // --- INTEGRACIÓN: INYECTOR DE TICKET DE ENTRADA EN BITÁCORA ---
+                const historialRef = ref(database, 'historial_sesiones');
+                const nuevaSesionRef = push(historialRef);
+                logKeyActual = nuevaSesionRef.key;
+                
+                set(nuevaSesionRef, {
+                    usuario: 'CARLOS ADMIN',
+                    rol: 'ADMIN',
+                    modulo: 'Centro de Mando 16x',
+                    fecha: new Date().toLocaleDateString('es-VE'),
+                    entrada: new Date().toLocaleTimeString('es-VE', { hour12: false }),
+                    salida: 'CONECTADO 🟢'
+                });
+                
+                // Centinela automático por desconexión repentina
+                onDisconnect(ref(database, `historial_sesiones/${logKeyActual}`)).update({
+                    salida: new Date().toLocaleTimeString('es-VE', { hour12: false }) + ' (DESCONECTADO 🔴)'
+                });
+                // -------------------------------------------------------------
+
                 iniciarMonitoreoFirebase();
                 iniciarRadarPresencia();
                 monitorearSupabase();
-                setInterval(monitorearSupabase, 5000);
+                iniciarMonitoreoHistorialSesiones(); // Escucha global de la bitácora
                 
                 const failoverSwitch = document.getElementById('failoverSwitch');
                 const lblEstadoSwitch = document.getElementById('lblEstadoSwitch');
@@ -749,6 +779,34 @@
                 });
             }
         });
+
+        // --- INTEGRACIÓN: MOTOR DE LECTURA DE ACCESOS HISTÓRICOS ---
+        function iniciarMonitoreoHistorialSesiones() {
+            onValue(ref(database, 'historial_sesiones'), (snapshot) => {
+                const box = document.getElementById('historyConsoleBox');
+                if(!box) return;
+                box.innerHTML = '';
+                if(snapshot.exists()) {
+                    const data = snapshot.val();
+                    const keys = Object.keys(data).reverse().slice(0, 40); // Muestra los últimos 40 eventos
+                    keys.forEach(key => {
+                        const s = data[key];
+                        const div = document.createElement('div');
+                        let claseTipo = 'sync-info';
+                        
+                        if(s.salida.includes('🔴') || s.salida.includes('SALIDA')) claseTipo = 'sync-err';
+                        if(s.salida.includes('🟢')) claseTipo = 'sync-success';
+                        
+                        div.className = `sync-line ${claseTipo}`;
+                        div.innerHTML = `📅 <b>[${s.fecha}]</b> | 👤 <b>${s.usuario}</b> (${s.rol}) | 📍 Módulo: <u>${s.modulo}</u> | 📥 Entrada: <span style="color:#00ff00">${s.entrada}</span> | 📤 Salida/Estado: <span>${s.salida}</span>`;
+                        box.appendChild(div);
+                    });
+                } else {
+                    box.innerHTML = '<div class="sync-line">No hay registros de sesiones en la bitácora todavía.</div>';
+                }
+            });
+        }
+        // -----------------------------------------------------------
 
         function escribirSyncLog(mensaje, tipo = "sync-info") {
             const box = document.getElementById('syncConsoleBox');
@@ -820,7 +878,6 @@
 
                 for(let i = 0; i < total; i++) {
                     let id_fb = keysFirebase[i];
-                    // Se envía el registro tal cual está en Firebase, conservando el jefe_hogar_id
                     let registro = { ...baseDatosBruta[id_fb], id_firebase: id_fb };
 
                     loteSupabase.push(registro);
@@ -849,7 +906,6 @@
             monitorearSupabase();
         };
 
-        // 💥 MOTOR DE PURGA ABSOLUTO POR BYPASS SECUENCIAL (ELIMINA EL PERMISSION_DENIED)
         window.ejecutarBorradoGeneralFirebase = async () => {
             const keys = Object.keys(baseDatosBruta);
             if (keys.length === 0) {
