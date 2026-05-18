@@ -51,7 +51,7 @@
     <div class="container">
         <div class="top-nav">
             <button type="button" class="btn-nav" id="btnVolver" onclick="location.href='admin.html'">← Volver al Panel Principal</button>
-            <button type="button" class="btn-nav" onclick="location.href='usuarios.html'">👥 Ver Usuarios Registrados</button>
+            <button type="button" class="btn-nav" id="btnCerrarSesion">Cerrar Sesión</button>
         </div>
 
         <div class="gob-header">
@@ -95,14 +95,12 @@
                     </select>
                 </div>
 
-                <div class="full-width">
-                    <label for="comunas_asignadas">Comunas Asignadas (Bloqueo de Territorio):</label>
-                    <p style="font-size: 11px; color: #E30613; margin-top:0; margin-bottom: 5px;">*Mantenga presionada la tecla CTRL para seleccionar varias comunas a la vez</p>
-                    <select id="comunas_asignadas" multiple size="6" required style="height: auto;">
-                        <option value="">Cargando comunas...</option>
-                    </select>
+                <div class="full-width" id="cajaComunas">
+                    <label>Comunas Asignadas (Marque los cuadritos):</label>
+                    <div id="listaCuadritos" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background-color: #f9f9f9; padding: 15px; border: 1px solid var(--gris-borde); border-radius: 5px; max-height: 200px; overflow-y: auto;">
+                        <span style="color: #666; font-size: 13px;">Cargando comunas...</span>
+                    </div>
                 </div>
-
                 <div class="full-width" style="border-top: 1px solid #eee; margin-top: 10px; padding-top: 20px;">
                     <label for="newUsername">ID de Usuario (Sin @):</label>
                     <input type="text" id="newUsername" placeholder="Ej: juan.perez" required>
@@ -116,7 +114,7 @@
             <p class="success-msg" id="successMsg">¡Operador registrado exitosamente en el sistema!</p>
             <p class="error-msg" id="errorMsg">Error al crear usuario.</p>
 
-            <button type="submit" id="btnCrear">🛡️ Crear y Habilitar Operador</button>
+            <button type="submit" id="btnCrear">REGISTRAR OPERADOR DE SISTEMA</button>
         </form>
     </div>
 
@@ -163,7 +161,7 @@
         };
         inactivityTime();
 
-        onAuthStateChanged(auth, async (user) => {
+        onAuthStateChanged(auth, (user) => {
             if (!user) {
                 window.location.href = "index.html";
             }
@@ -173,30 +171,40 @@
             signOut(auth).then(() => window.location.href = "index.html");
         });
 
-        const selComunas = document.getElementById('comunas_asignadas');
-        
-        function cargarComunasAlSelect() {
+        // ----- LÓGICA DE CARGA DE CUADRITOS DE COMUNAS -----
+        const cajaComunas = document.getElementById('cajaComunas');
+        const listaCuadritos = document.getElementById('listaCuadritos');
+
+        function cargarComunasEnCuadritos() {
             get(child(ref(database), 'filtros_territoriales')).then(snap => {
-                selComunas.innerHTML = '';
+                listaCuadritos.innerHTML = '';
                 if(snap.exists()){
                     const data = snap.val();
                     for(let c in data) {
-                        selComunas.innerHTML += `<option value="${c}">${c}</option>`;
+                        listaCuadritos.innerHTML += `
+                            <label style="font-weight: normal; display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+                                <input type="checkbox" name="chk_comuna" value="${c}" style="width: 18px; height: 18px; cursor: pointer;">
+                                ${c}
+                            </label>
+                        `;
                     }
+                } else {
+                    listaCuadritos.innerHTML = '<span style="color:red;">No se encontraron comunas en la base de datos.</span>';
                 }
             });
         }
-        cargarComunasAlSelect();
+        
+        cargarComunasEnCuadritos();
 
+        // Ocultar la caja de cuadritos si se elige Admin
         document.getElementById('rol').addEventListener('change', (e) => {
             if(e.target.value === 'admin') {
-                selComunas.innerHTML = '<option value="TODAS" selected>TODAS (Acceso Global de Administrador)</option>';
-                selComunas.disabled = true;
+                cajaComunas.style.display = 'none';
             } else {
-                selComunas.disabled = false;
-                cargarComunasAlSelect();
+                cajaComunas.style.display = 'block';
             }
         });
+        // ---------------------------------------------------
 
         const createForm = document.getElementById('createUserForm');
         const successMsg = document.getElementById('successMsg');
@@ -207,27 +215,30 @@
             successMsg.style.display = 'none';
             errorMsg.style.display = 'none';
 
-            const nombre = document.getElementById('nombre').value.toUpperCase();
-            const apellido = document.getElementById('apellido').value.toUpperCase();
-            const cargo = document.getElementById('cargo').value.toUpperCase();
-            const rol = document.getElementById('rol').value;
+            const nombre = document.getElementById('nombre').value;
+            const apellido = document.getElementById('apellido').value;
+            const cargo = document.getElementById('cargo').value;
+            const rol = document.getElementById('rol').value; 
             
-            // CAPTURAMOS EL ARREGLO DE COMUNAS MÚLTIPLES
-            let arrayComunas = Array.from(selComunas.selectedOptions).map(opt => opt.value);
-            
+            // --- CAPTURA DE LAS COMUNAS MARCADAS ---
+            let arrayComunas = [];
+            if (rol === 'admin') {
+                arrayComunas = ['TODAS'];
+            } else {
+                const marcados = document.querySelectorAll('input[name="chk_comuna"]:checked');
+                marcados.forEach(chk => arrayComunas.push(chk.value));
+                
+                if (arrayComunas.length === 0) {
+                    errorMsg.textContent = "Error: Debe marcar al menos un cuadrito (Comuna) para el operador.";
+                    errorMsg.style.display = 'block'; 
+                    return;
+                }
+            }
+            // ---------------------------------------
+
             const newUsername = document.getElementById('newUsername').value.trim();
             const newPassword = document.getElementById('newPassword').value;
             const emailFalso = newUsername + "@alcaldia.com";
-
-            if (rol === 'operador' && arrayComunas.length === 0) {
-                errorMsg.textContent = "Error: Un operador regular debe tener al menos una comuna asignada.";
-                errorMsg.style.display = 'block'; 
-                return;
-            }
-
-            if (rol === 'admin') {
-                arrayComunas = ['TODAS'];
-            }
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(secondaryAuth, emailFalso, newPassword);
@@ -238,7 +249,7 @@
                     apellido: apellido,
                     cargo: cargo,
                     rol: rol, 
-                    comunas_asignadas: arrayComunas, // GUARDAMOS COMO ARRAY
+                    comunas_asignadas: arrayComunas, // AQUÍ GUARDAMOS EL ARREGLO
                     usuario: newUsername,
                     cambio_obligatorio: true,
                     fecha_registro: new Date().toISOString()
@@ -246,8 +257,10 @@
 
                 successMsg.style.display = 'block';
                 createForm.reset();
-                selComunas.disabled = false;
-                cargarComunasAlSelect();
+                
+                // Limpiar los cuadritos marcados
+                document.querySelectorAll('input[name="chk_comuna"]:checked').forEach(chk => chk.checked = false);
+                
                 await signOut(secondaryAuth);
             } catch (error) {
                 console.error(error);
