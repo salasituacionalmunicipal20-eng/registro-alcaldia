@@ -51,7 +51,7 @@
             align-items: center; 
             border-bottom: 2px solid var(--gris-borde); 
             padding-bottom: 20px; 
-            margin-bottom: 20px;
+            margin-bottom: 20px; 
         }
         
         .gob-header img { 
@@ -62,7 +62,7 @@
         .header-titles { 
             text-align: center; 
             flex-grow: 1; 
-            padding: 0 20px;
+            padding: 0 20px; 
         }
         
         .header-titles h1 { 
@@ -86,7 +86,7 @@
             justify-content: flex-end; 
             gap: 10px; 
             margin-bottom: 20px; 
-            flex-wrap: wrap;
+            flex-wrap: wrap; 
         }
         
         .btn-nav { 
@@ -98,7 +98,7 @@
             cursor: pointer; 
             font-size: 12px; 
             font-weight: bold; 
-            text-transform: uppercase;
+            text-transform: uppercase; 
         }
         
         .btn-nav:hover { background-color: #555; }
@@ -117,7 +117,7 @@
             cursor: pointer; 
             font-size: 12px; 
             font-weight: bold; 
-            text-transform: uppercase;
+            text-transform: uppercase; 
         }
         
         .btn-reporte:hover { background-color: #138496; }
@@ -128,7 +128,7 @@
             font-size: 20px; 
             text-transform: uppercase; 
             border-bottom: 2px solid var(--azul-oficial); 
-            padding-bottom: 5px;
+            padding-bottom: 5px; 
         }
         
         .search-panel { 
@@ -137,7 +137,7 @@
             border-radius: 8px; 
             border: 1px solid var(--gris-borde); 
             margin-bottom: 20px; 
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.02); 
         }
         
         .search-grid { 
@@ -151,7 +151,8 @@
             font-size: 13px; 
             color: #333; 
             display: block; 
-            margin-bottom: 5px;
+            margin-bottom: 5px; 
+            margin-top: 15px;
         }
         
         input, select, textarea { 
@@ -161,10 +162,10 @@
             border-radius: 4px; 
             box-sizing: border-box; 
             font-size: 14px; 
-            transition: 0.3s;
+            transition: 0.3s; 
         }
         
-        input:focus, select:focus { 
+        input:focus, select:focus, textarea:focus { 
             outline: none; 
             border-color: var(--azul-oficial); 
             box-shadow: 0 0 5px rgba(0, 74, 153, 0.2); 
@@ -174,7 +175,7 @@
             background-color: #e9ecef; 
             color: #6c757d; 
             cursor: not-allowed; 
-            border-color: #ddd;
+            border-color: #ddd; 
         }
         
         .controls-panel {
@@ -187,7 +188,7 @@
         .stats { 
             font-weight: bold; 
             color: var(--rojo-oficial); 
-            font-size: 16px;
+            font-size: 16px; 
         }
 
         .pagination-container {
@@ -237,7 +238,7 @@
             background-color: var(--azul-oficial); 
             color: white; 
             text-transform: uppercase; 
-            font-size: 12px;
+            font-size: 12px; 
         }
         
         tr:nth-child(even) { background-color: #f2f2f2; }
@@ -251,9 +252,11 @@
             border-radius: 3px; 
             cursor: pointer; 
             margin-left: 5px; 
-            font-weight: bold;
+            font-weight: bold; 
         }
         
+        .btn-delete:hover { background: #b7050f; }
+
         .btn-edit { 
             background: #28a745; 
             color: white; 
@@ -261,8 +264,10 @@
             padding: 6px 10px; 
             border-radius: 3px; 
             cursor: pointer; 
-            font-weight: bold;
+            font-weight: bold; 
         }
+
+        .btn-edit:hover { background: #218838; }
         
         .hidden { display: none !important; }
 
@@ -272,7 +277,7 @@
             border-radius: 8px; 
             border: 1px solid var(--azul-oficial); 
             box-shadow: 0 0 15px rgba(0,0,0,0.1); 
-            margin-top: 20px;
+            margin-top: 20px; 
         }
         
         .section-title { 
@@ -281,7 +286,7 @@
             padding-bottom: 5px; 
             color: var(--azul-oficial); 
             font-size: 18px; 
-            text-transform: uppercase;
+            text-transform: uppercase; 
         }
         
         .form-grid { 
@@ -297,7 +302,7 @@
             justify-content: space-between; 
             margin-top: 30px; 
             border-top: 2px solid #eee; 
-            padding-top: 20px;
+            padding-top: 20px; 
         }
         
         .btn-guardar-cambios { 
@@ -309,7 +314,7 @@
             font-weight: bold; 
             cursor: pointer; 
             font-size: 15px; 
-            text-transform: uppercase;
+            text-transform: uppercase; 
         }
         
         .btn-guardar-cambios:hover { background-color: #003366; }
@@ -322,7 +327,7 @@
             border-radius: 4px; 
             font-weight: bold; 
             cursor: pointer; 
-            font-size: 15px;
+            font-size: 15px; 
         }
         
         .btn-cancelar:hover { background-color: #5a6268; }
@@ -333,7 +338,7 @@
             font-weight: bold; 
             margin-top: -5px; 
             margin-bottom: 10px; 
-            display: none;
+            display: none; 
         }
 
         .grupo-familiar-box { 
@@ -344,20 +349,26 @@
             margin-top: 15px; 
         }
 
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .top-nav { flex-direction: column; align-items: stretch; }
+        }
+
         @media print {
             .cintillo-gob, .top-nav, .search-panel, h2, .edit-panel, .controls-panel, .pagination-container, .no-print { 
                 display: none !important; 
             }
             body { 
                 background-color: white; 
-                padding: 0;
+                padding: 0; 
             }
             .container { 
                 box-shadow: none; 
                 border: none; 
                 padding: 0; 
                 margin: 0; 
-                max-width: 100%;
+                max-width: 100%; 
             }
             table { font-size: 11px; width: 100%; }
             th { background-color: #ccc !important; color: black !important; }
@@ -453,7 +464,7 @@
             <div class="controls-panel">
                 <div class="stats" id="totalResultados">Cargando base de datos...</div>
                 <div>
-                    <label style="display:inline; margin-right:5px; font-weight:bold;">Mostrar:</label>
+                    <label style="display:inline; margin-right:5px; font-weight:bold; margin-top:0;">Mostrar:</label>
                     <select id="selectPaginacion" style="width: auto; padding: 5px;">
                         <option value="15">15 registros</option>
                         <option value="25">25 registros</option>
@@ -693,7 +704,7 @@
                 <h3 class="section-title">4. Estatus de Salud</h3>
                 <div class="form-grid">
                     <div class="full-width">
-                        <label>¿Padece alguna enfermedad?:</label>
+                        <label>¿Padece alguna enfermedad? (Especifique o deje en blanco):</label>
                         <input type="text" id="e_padece_enfermedad" name="padece_enfermedad">
                     </div>
                     
@@ -867,7 +878,7 @@
             esAdmin = false;
             if (user.email === "carlos.admin@alcaldia.com") {
                 esAdmin = true;
-                window.perfilOperador = { rol: 'admin', comuna_asignada: 'TODAS' };
+                window.perfilOperador = { rol: 'admin', comunas_asignadas: ['TODAS'] };
             } else {
                 try {
                     const snap = await get(child(ref(database), `operadores/${user.uid}`));
@@ -966,7 +977,7 @@
             document.body.removeChild(a);
         };
 
-        // INYECCIÓN: CARGA DE FILTROS TERRITORIALES CON BLOQUEO RBAC
+        // INYECCIÓN: Lógica para bloquear la comuna en consulta si es un operador
         function cargarFiltrosTerritoriales(esAdmin) {
             const fComuna = document.getElementById('fComuna');
             const fComunidad = document.getElementById('fComunidad');
@@ -976,25 +987,35 @@
                 if (snapshot.exists()) {
                     datosTerritoriales = snapshot.val();
                     
-                    if (!esAdmin && window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== 'TODAS') {
-                        let miComuna = window.perfilOperador.comuna_asignada;
-                        fComuna.innerHTML = `<option value="${miComuna}">${miComuna}</option>`;
-                        eComuna.innerHTML = `<option value="${miComuna}">${miComuna}</option>`;
-                        
-                        fComuna.value = miComuna;
-                        eComuna.value = miComuna;
+                    let misComunas = [];
+                    if (window.perfilOperador) {
+                        misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+                    }
 
-                        // Bloquear interacciones
-                        fComuna.style.pointerEvents = "none";
-                        fComuna.style.backgroundColor = "#e9ecef";
-                        eComuna.style.pointerEvents = "none";
-                        eComuna.style.backgroundColor = "#e9ecef";
-                        
-                        // Carga automática de comunidades
-                        fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; 
-                        fComunidad.disabled = false;
-                        if (datosTerritoriales[miComuna]) {
-                            datosTerritoriales[miComuna].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+                    if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                        fComuna.innerHTML = '<option value="">Consolidado (Mis Comunas Autorizadas)</option>';
+                        eComuna.innerHTML = '<option value="">Seleccione</option>';
+
+                        misComunas.forEach(c => {
+                            if(datosTerritoriales[c]) {
+                                fComuna.innerHTML += `<option value="${c}">${c}</option>`;
+                                eComuna.innerHTML += `<option value="${c}">${c}</option>`;
+                            }
+                        });
+
+                        // Si por casualidad solo tiene 1, se la auto-seleccionamos y bloqueamos
+                        if(misComunas.length === 1) {
+                            fComuna.value = misComunas[0];
+                            eComuna.value = misComunas[0];
+                            
+                            fComuna.style.pointerEvents = "none";
+                            fComuna.style.backgroundColor = "#e9ecef";
+                            eComuna.style.pointerEvents = "none";
+                            eComuna.style.backgroundColor = "#e9ecef";
+                            
+                            fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; 
+                            fComunidad.disabled = false;
+                            datosTerritoriales[misComunas[0]].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
                         }
                     } else {
                         fComuna.innerHTML = '<option value="">Todas las comunas...</option>';
@@ -1056,6 +1077,11 @@
 
             let callesUnicas = new Set();
             let ubchUnicas = new Set();
+            
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
 
             for (let id in baseDeDatosHabitantes) {
                 let h = baseDeDatosHabitantes[id];
@@ -1063,6 +1089,11 @@
                 let u = (h.ubch || '').trim().toUpperCase();
                 let com = (h.comuna || '').toUpperCase();
                 let comu = (h.comunidad || '').toUpperCase();
+
+                // INYECCIÓN RBAC: No le mostramos calles de comunas que no le tocan
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(com)) continue;
+                }
 
                 if (fComunaSel && !com.includes(fComunaSel)) continue;
                 if (fComunidadSel && !comu.includes(fComunidadSel)) continue;
@@ -1092,6 +1123,12 @@
             }
         }
 
+        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
+            if(element.id !== 'fComuna' && element.id !== 'fComunidad') {
+                element.addEventListener('input', filtrarTabla); 
+            }
+        });
+
         function cargarDatos() {
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
@@ -1103,15 +1140,14 @@
         function filtrarTabla() {
             const fNom = document.getElementById('fNombre').value.toLowerCase();
             const fCed = document.getElementById('fCedula').value.toLowerCase();
-            const fComuna = document.getElementById('fComuna').value.toLowerCase();
-            const fComunidad = document.getElementById('fComunidad').value.toLowerCase();
+            const fComuna = document.getElementById('fComuna').value.toUpperCase();
+            const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
             
             const fUbch = document.getElementById('fUbch').value.toUpperCase();
             const fCalle = document.getElementById('fCalle').value.toUpperCase();
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
             const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
 
-            // RASTREADOR ESPÍA DE BÚSQUEDA
             if (window.presenciaRef) {
                 let accionStr = 'Explorando la base de datos...';
                 if (fCed !== '') accionStr = `Buscando la cédula: ${fCed}`;
@@ -1123,22 +1159,27 @@
             }
 
             datosFiltrados = [];
+            
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
                 
                 // INYECCIÓN: ESCUDO DE SEGURIDAD RBAC EN LA BÚSQUEDA Y RENDERIZADO
-                const comunaDelHabitante = h.comuna || '';
-                if (!esAdmin && window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== "TODAS") {
-                    if (comunaDelHabitante !== window.perfilOperador.comuna_asignada) continue;
+                const comunaDelHabitante = (h.comuna || '').toUpperCase();
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes("TODAS")) {
+                    if (!misComunas.includes(comunaDelHabitante)) continue;
                 }
 
                 const nombreCompleto = `${h.nombre || ''} ${h.apellido || ''}`.toLowerCase();
                 
                 const cumpleNom = nombreCompleto.includes(fNom);
                 const cumpleCed = (h.cedula || '').toLowerCase().includes(fCed);
-                const cumpleComuna = (h.comuna || '').toLowerCase().includes(fComuna);
-                const cumpleComunidad = (h.comunidad || '').toLowerCase().includes(fComunidad);
+                const cumpleComuna = comunaDelHabitante.includes(fComuna);
+                const cumpleComunidad = (h.comunidad || '').toUpperCase().includes(fComunidad);
                 
                 const cumpleCalle = fCalle === "" || (h.calle || '').trim().toUpperCase() === fCalle;
                 const cumpleUbch = fUbch === "" || (h.ubch || '').trim().toUpperCase() === fUbch;
@@ -1217,12 +1258,6 @@
             }
         }
 
-        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
-            if(element.id !== 'fComuna' && element.id !== 'fComunidad') {
-                element.addEventListener('input', filtrarTabla); 
-            }
-        });
-
         window.eliminarRegistro = (id) => {
             if(confirm("ALERTA DE SEGURIDAD: ¿Seguro que desea eliminar permanentemente este habitante?")) {
                 if (window.presenciaRef) {
@@ -1247,14 +1282,19 @@
                 selectLibres.innerHTML = '';
                 let htmlActuales = '<strong>Familiares vinculados:</strong><ul style="margin-top:5px; padding-left: 20px; color:#333;">';
                 let tieneActuales = false;
+                
+                let misComunas = [];
+                if (window.perfilOperador) {
+                    misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+                }
 
                 for (let id in baseDeDatosHabitantes) {
                     const h = baseDeDatosHabitantes[id];
                     if (id === idActualEdicion) continue;
 
-                    // INYECCIÓN: Si está restringido, no puede ver ni vincular personas de otra comuna
-                    if (!esAdmin && window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== "TODAS") {
-                        if (h.comuna !== window.perfilOperador.comuna_asignada) continue;
+                    // INYECCIÓN: Si está restringido, no puede ver ni vincular personas de comunas ajenas
+                    if (!esAdmin && misComunas.length > 0 && !misComunas.includes("TODAS")) {
+                        if (!misComunas.includes(h.comuna)) continue;
                     }
 
                     if (h.jefe_hogar_id === idActualEdicion) {
@@ -1475,9 +1515,13 @@
             const formData = new FormData(e.target);
             const datosEditados = Object.fromEntries(formData.entries());
             
-            // INYECCIÓN: Forzamos la comuna si está bloqueada en la vista de edición
-            if(!esAdmin && window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== 'TODAS'){
-                datosEditados.comuna = window.perfilOperador.comuna_asignada;
+            // INYECCIÓN RBAC: Forzamos la comuna original si está bloqueada en la vista de edición
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
+            if(!esAdmin && misComunas.length === 1 && !misComunas.includes('TODAS')){
+                datosEditados.comuna = misComunas[0];
             }
 
             const dataFinal = { 

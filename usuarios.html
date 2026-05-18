@@ -13,7 +13,7 @@
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background-color: var(--gris-fondo); padding: 20px 0; padding-top: 30px; }
         .cintillo-gob { width: 100%; background-color: #222; color: #fff; text-align: center; padding: 6px 0; font-size: 11px; font-weight: bold; letter-spacing: 1px; position: fixed; top: 0; left: 0; z-index: 1000; }
-        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 1000px; margin: 40px auto; border-top: 8px solid var(--rojo-oficial); }
+        .container { background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); max-width: 1100px; margin: 40px auto; border-top: 8px solid var(--rojo-oficial); }
         
         .gob-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gris-borde); padding-bottom: 20px; margin-bottom: 20px;}
         .gob-header img { height: 70px; object-fit: contain; }
@@ -71,7 +71,8 @@
                         <th>Nombres y Apellidos</th>
                         <th>Cargo</th>
                         <th>Rol (Nivel)</th>
-                        <th>Comuna Autorizada</th> <th>ID Usuario</th>
+                        <th>Territorios Autorizados</th>
+                        <th>ID Usuario</th>
                         <th>Estado de Clave</th>
                         <th>Acciones</th>
                     </tr>
@@ -138,13 +139,16 @@
                             : '<span class="status-badge status-active">Clave Personalizada</span>';
                             
                         const nivel = user.rol === "admin" ? "Administrador" : "Operador";
-                        const comunaEtiq = user.comuna_asignada || 'TODAS'; // INYECCIÓN
+                        
+                        // LECTURA DE ARRAY MULTI-COMUNA
+                        let misComunas = user.comunas_asignadas || (user.comuna_asignada ? [user.comuna_asignada] : ['TODAS']);
+                        let comunaEtiq = misComunas.join(', ');
 
                         tr.innerHTML = `
                             <td><strong>${user.nombre} ${user.apellido}</strong></td>
                             <td>${user.cargo}</td>
                             <td style="color:#004a99; font-weight:bold;">${nivel}</td>
-                            <td style="color:var(--rojo-oficial); font-weight:bold;">${comunaEtiq}</td>
+                            <td style="color:var(--rojo-oficial); font-weight:bold; font-size:11px;">${comunaEtiq}</td>
                             <td><code>${user.usuario}</code></td>
                             <td>${estadoClave}</td>
                             <td>

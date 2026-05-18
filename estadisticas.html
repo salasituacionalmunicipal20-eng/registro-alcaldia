@@ -327,7 +327,7 @@
     <div class="container">
         <div class="top-nav">
             <button type="button" class="btn-nav btn-pdf" onclick="window.print()">🖨 Generar Reporte PDF (Global)</button>
-            <button type="button" id="btnAdminPanel" class="btn-nav hidden" style="background-color: var(--rojo-oficial);">⚙ Panel Admin</button>
+            <button type="button" id="btnAdminPanel" class="btn-nav hidden" style="background-color: var(--rojo-oficial);" onclick="location.href='admin.html'">⚙ Panel Admin</button>
             <button type="button" id="btnVolver" class="btn-nav" onclick="location.href='registro.html'">← Volver a Registro</button>
             <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
         </div>
@@ -581,6 +581,8 @@
         
         let baseDeDatosHabitantes = {}; 
         let datosTerritoriales = {}; 
+        let esAdmin = false;
+        window.perfilOperador = null; // INYECCIÓN
 
         function cleanText(txt) {
             return (txt || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
@@ -592,21 +594,23 @@
                 return; 
             }
             
-            let isAdmin = false;
+            esAdmin = false;
             if (user.email === "carlos.admin@alcaldia.com") { 
-                isAdmin = true; 
+                esAdmin = true;
+                window.perfilOperador = { rol: 'admin', comunas_asignadas: ['TODAS'] };
             } else {
                 try {
                     const snap = await get(child(ref(database), `operadores/${user.uid}`));
-                    if (snap.exists() && snap.val().rol === "admin") {
-                        isAdmin = true;
+                    if (snap.exists()) {
+                        window.perfilOperador = snap.val();
+                        if (window.perfilOperador.rol === "admin") esAdmin = true;
                     }
                 } catch(e) {
                     console.error(e);
                 }
             }
             
-            if (isAdmin) {
+            if (esAdmin) {
                 const btnAdmin = document.getElementById('btnAdminPanel');
                 btnAdmin.classList.remove('hidden');
                 btnAdmin.addEventListener('click', () => { 
@@ -631,124 +635,7 @@
             document.getElementById('modalMedicinas').classList.add('hidden');
         };
 
-        function actualizarFiltroMedicinas() {
-            const selectMed = document.getElementById('selMedicinaFiltro');
-            if(!selectMed) return;
-            const valorActual = selectMed.value;
-            
-            let medUnicas = new Set();
-            // Palabras que no son medicinas
-            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
-
-            for (let id in baseDeDatosHabitantes) {
-                let h = baseDeDatosHabitantes[id];
-                let med = cleanText(h.cual_medicamento);
-                
-                if (med && !negacionesSalud.includes(med)) {
-                    // Separador clínico de compuestos: Corta por comas, "Y", "E", o barra.
-                    let partes = med.split(/,| Y | E |\//);
-                    partes.forEach(p => {
-                        let m = p.trim();
-                        if (m && !negacionesSalud.includes(m)) {
-                            medUnicas.add(m);
-                        }
-                    });
-                }
-            }
-            
-            selectMed.innerHTML = '<option value="TODOS">Generar Reporte Completo (Todas las Medicinas y Pacientes)</option>';
-            Array.from(medUnicas).sort().forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = m;
-                selectMed.appendChild(opt);
-            });
-            
-            if (valorActual && medUnicas.has(valorActual)) {
-                selectMed.value = valorActual;
-            } else {
-                selectMed.value = "TODOS";
-            }
-        }
-
-        window.procesarReporteMedicinas = () => {
-            const filtroMed = document.getElementById('selMedicinaFiltro').value;
-            
-            const fComuna = document.getElementById('fComuna').value.toUpperCase();
-            const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
-            const fUbch = document.getElementById('fUbch').value.toUpperCase();
-            const fCalle = document.getElementById('fCalle').value.toUpperCase();
-            const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
-            const fSexo = document.getElementById('fSexo').value.toLowerCase();
-            const fVoto = document.getElementById('fVoto').value.toUpperCase();
-            
-            let filasReporte = '';
-            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
-            
-            for (let id in baseDeDatosHabitantes) {
-                const h = baseDeDatosHabitantes[id];
-                const comunaStr = (h.comuna || '').toUpperCase();
-                const comunidadStr = (h.comunidad || '').toUpperCase();
-
-                if (fComuna && !comunaStr.includes(fComuna)) continue;
-                if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
-                if (fUbch && (h.ubch || '').trim().toUpperCase() !== fUbch) continue;
-                if (fCalle && (h.calle || '').trim().toUpperCase() !== fCalle) continue;
-                if (fParentesco && (h.parentesco || '').toLowerCase() !== fParentesco) continue;
-                if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
-                if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
-                
-                const med = cleanText(h.cual_medicamento);
-                const enf = cleanText(h.padece_enfermedad);
-                
-                // Si la medicina está en el array de negaciones o está vacía, no tiene medicina
-                const tieneMedicina = med !== '' && !negacionesSalud.includes(med);
-                const tieneEnfermedad = enf !== '' && !negacionesSalud.includes(enf);
-                
-                // Para el reporte de "Enfermos/Pacientes", deben tener o una medicina o una enfermedad
-                if (!tieneMedicina && !tieneEnfermedad) continue;
-                
-                if (filtroMed !== 'TODOS') {
-                    // Si selecciona un filtro específico, buscarlo dentro de las medicinas de esta persona
-                    let partes = med.split(/,| Y | E |\//).map(p => p.trim());
-                    let coincide = partes.some(p => p.includes(filtroMed) || filtroMed.includes(p));
-                    if (!coincide) continue;
-                }
-                
-                const edad = calcularEdad(h.fecha_nacimiento);
-                const nac = h.nacionalidad || 'V';
-                const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
-                
-                let medStrPrint = med;
-                if(!tieneMedicina && tieneEnfermedad) medStrPrint = `PADECE: ${enf} (No Especifica Tratamiento)`;
-                
-                filasReporte += `
-                    <tr>
-                        <td>${h.nombre} ${h.apellido}</td>
-                        <td>${cedStr}</td>
-                        <td>${edad}</td>
-                        <td>${h.comunidad}</td>
-                        <td>${h.calle}, Casa ${h.numero_casa}</td>
-                        <td>${h.telefono || ''}</td>
-                        <td>${medStrPrint}</td>
-                    </tr>
-                `;
-            }
-            
-            let nombreMetrica = filtroMed === 'TODOS' ? 'REPORTE GLOBAL DE PACIENTES Y TRATAMIENTOS CRÍTICOS' : `REPORTE ESPECÍFICO DE ASIGNACIÓN MÉDICA: ${filtroMed}`;
-            
-            document.getElementById('tituloReporte').textContent = nombreMetrica;
-            document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
-            document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
-            
-            window.cerrarModalMedicinas();
-            
-            setTimeout(() => {
-                window.print();
-                calcularEstadisticas(); 
-            }, 300);
-        };
-
+        // INYECCIÓN: Lógica para bloquear la comuna en estadísticas permitiendo selección múltiple
         function cargarFiltrosTerritoriales() {
             const fComuna = document.getElementById('fComuna');
             const fComunidad = document.getElementById('fComunidad');
@@ -756,28 +643,55 @@
             get(child(ref(database), `filtros_territoriales`)).then((snapshot) => {
                 if (snapshot.exists()) {
                     datosTerritoriales = snapshot.val();
-                    fComuna.innerHTML = '<option value="">TODAS LAS COMUNAS (Consolidado Municipal)</option>';
                     
-                    for (const comuna in datosTerritoriales) {
-                        fComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
+                    let misComunas = [];
+                    if (window.perfilOperador) {
+                        misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
                     }
-                }
-            });
 
-            fComuna.addEventListener('change', (e) => {
-                const sel = e.target.value;
-                if (sel && datosTerritoriales[sel]) {
-                    fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; 
-                    fComunidad.disabled = false;
-                    datosTerritoriales[sel].forEach(c => {
-                        fComunidad.innerHTML += `<option value="${c}">${c}</option>`;
+                    if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                        fComuna.innerHTML = '<option value="">Consolidado (Mis Comunas Autorizadas)</option>';
+                        
+                        misComunas.forEach(c => {
+                            if(datosTerritoriales[c]) {
+                                fComuna.innerHTML += `<option value="${c}">${c}</option>`;
+                            }
+                        });
+
+                        // Si por casualidad solo tiene 1, se la auto-seleccionamos y bloqueamos
+                        if (misComunas.length === 1) {
+                            fComuna.value = misComunas[0];
+                            fComuna.style.pointerEvents = "none";
+                            fComuna.style.backgroundColor = "#e9ecef";
+                            
+                            fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; 
+                            fComunidad.disabled = false;
+                            datosTerritoriales[misComunas[0]].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+                        }
+                    } else {
+                        // Flujo normal para admins o global
+                        fComuna.innerHTML = '<option value="">TODAS LAS COMUNAS (Consolidado Municipal)</option>';
+                        for (const comuna in datosTerritoriales) {
+                            fComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
+                        }
+                    }
+
+                    fComuna.addEventListener('change', (e) => {
+                        const sel = e.target.value;
+                        if (sel && datosTerritoriales[sel]) {
+                            fComunidad.innerHTML = '<option value="">Todas las comunidades...</option>'; 
+                            fComunidad.disabled = false;
+                            datosTerritoriales[sel].forEach(c => {
+                                fComunidad.innerHTML += `<option value="${c}">${c}</option>`;
+                            });
+                        } else {
+                            fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; 
+                            fComunidad.disabled = true;
+                        }
+                        actualizarFiltrosInteligentes();
+                        calcularEstadisticas(); 
                     });
-                } else {
-                    fComunidad.innerHTML = '<option value="">Seleccione primero una comuna...</option>'; 
-                    fComunidad.disabled = true;
                 }
-                actualizarFiltrosInteligentes();
-                calcularEstadisticas(); 
             });
             
             fComunidad.addEventListener('change', () => {
@@ -798,6 +712,11 @@
 
             let callesUnicas = new Set();
             let ubchUnicas = new Set();
+            
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
 
             for (let id in baseDeDatosHabitantes) {
                 let h = baseDeDatosHabitantes[id];
@@ -805,6 +724,11 @@
                 let u = (h.ubch || '').trim().toUpperCase();
                 let com = (h.comuna || '').toUpperCase();
                 let comu = (h.comunidad || '').toUpperCase();
+
+                // INYECCIÓN RBAC: No le mostramos opciones de comunas que no le tocan
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(com)) continue;
+                }
 
                 if (fComunaSel && !com.includes(fComunaSel)) continue;
                 if (fComunidadSel && !comu.includes(fComunidadSel)) continue;
@@ -847,6 +771,56 @@
                 actualizarFiltroMedicinas(); 
                 calcularEstadisticas(); 
             });
+        }
+
+        function actualizarFiltroMedicinas() {
+            const selectMed = document.getElementById('selMedicinaFiltro');
+            if(!selectMed) return;
+            const valorActual = selectMed.value;
+            
+            let medUnicas = new Set();
+            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
+            
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
+
+            for (let id in baseDeDatosHabitantes) {
+                let h = baseDeDatosHabitantes[id];
+                const comunaStr = (h.comuna || '').toUpperCase();
+
+                // INYECCIÓN RBAC PARA MEDICINAS
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(comunaStr)) continue;
+                }
+
+                let med = cleanText(h.cual_medicamento);
+                
+                if (med && !negacionesSalud.includes(med)) {
+                    let partes = med.split(/,| Y | E |\//);
+                    partes.forEach(p => {
+                        let m = p.trim();
+                        if (m && !negacionesSalud.includes(m)) {
+                            medUnicas.add(m);
+                        }
+                    });
+                }
+            }
+            
+            selectMed.innerHTML = '<option value="TODOS">Generar Reporte Completo (Todas las Medicinas y Pacientes)</option>';
+            Array.from(medUnicas).sort().forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                selectMed.appendChild(opt);
+            });
+            
+            if (valorActual && medUnicas.has(valorActual)) {
+                selectMed.value = valorActual;
+            } else {
+                selectMed.value = "TODOS";
+            }
         }
 
         function calcularEdad(fecha) {
@@ -922,11 +896,21 @@
             let filasReporte = '';
             
             const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
+            
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
 
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
                 const comunaStr = (h.comuna || '').toUpperCase();
                 const comunidadStr = (h.comunidad || '').toUpperCase();
+
+                // INYECCIÓN: ESCUDO DE SEGURIDAD RBAC EN EL CONTEO ESTADÍSTICO
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(comunaStr)) continue;
+                }
 
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
@@ -950,7 +934,6 @@
                     if (fCondicion === 'enfermedad') {
                         const enf = cleanText(h.padece_enfermedad);
                         const med = cleanText(h.cual_medicamento);
-                        // Cuenta si tiene enfermedad REAL o Medicina REAL
                         const tieneEnfermedad = enf !== '' && !negacionesSalud.includes(enf);
                         const tieneMedicina = med !== '' && !negacionesSalud.includes(med);
                         if (!tieneEnfermedad && !tieneMedicina) continue;
@@ -1039,6 +1022,90 @@
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
         }
 
+        window.procesarReporteMedicinas = () => {
+            const filtroMed = document.getElementById('selMedicinaFiltro').value;
+            const fComuna = document.getElementById('fComuna').value.toUpperCase();
+            const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
+            const fUbch = document.getElementById('fUbch').value.toUpperCase();
+            const fCalle = document.getElementById('fCalle').value.toUpperCase();
+            const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
+            const fSexo = document.getElementById('fSexo').value.toLowerCase();
+            const fVoto = document.getElementById('fVoto').value.toUpperCase();
+            
+            let filasReporte = '';
+            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
+            
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
+
+            for (let id in baseDeDatosHabitantes) {
+                const h = baseDeDatosHabitantes[id];
+                const comunaStr = (h.comuna || '').toUpperCase();
+                const comunidadStr = (h.comunidad || '').toUpperCase();
+
+                // INYECCIÓN: ESCUDO DE SEGURIDAD RBAC EN EL PDF DE MEDICINAS
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(comunaStr)) continue;
+                }
+
+                if (fComuna && !comunaStr.includes(fComuna)) continue;
+                if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
+                if (fUbch && (h.ubch || '').trim().toUpperCase() !== fUbch) continue;
+                if (fCalle && (h.calle || '').trim().toUpperCase() !== fCalle) continue;
+                if (fParentesco && (h.parentesco || '').toLowerCase() !== fParentesco) continue;
+                if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
+                if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
+                
+                const med = cleanText(h.cual_medicamento);
+                const enf = cleanText(h.padece_enfermedad);
+                
+                const tieneMedicina = med !== '' && !negacionesSalud.includes(med);
+                const tieneEnfermedad = enf !== '' && !negacionesSalud.includes(enf);
+                
+                if (!tieneMedicina && !tieneEnfermedad) continue;
+                
+                if (filtroMed !== 'TODOS') {
+                    let partes = med.split(/,| Y | E |\//).map(p => p.trim());
+                    let coincide = partes.some(p => p.includes(filtroMed) || filtroMed.includes(p));
+                    if (!coincide) continue;
+                }
+                
+                const edad = calcularEdad(h.fecha_nacimiento);
+                const nac = h.nacionalidad || 'V';
+                const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                
+                let medStrPrint = med;
+                if(!tieneMedicina && tieneEnfermedad) medStrPrint = `PADECE: ${enf} (No Especifica Tratamiento)`;
+                
+                filasReporte += `
+                    <tr>
+                        <td>${h.nombre} ${h.apellido}</td>
+                        <td>${cedStr}</td>
+                        <td>${edad}</td>
+                        <td>${h.comunidad}</td>
+                        <td>${h.calle}, Casa ${h.numero_casa}</td>
+                        <td>${h.telefono || ''}</td>
+                        <td>${medStrPrint}</td>
+                    </tr>
+                `;
+            }
+            
+            let nombreMetrica = filtroMed === 'TODOS' ? 'REPORTE GLOBAL DE PACIENTES Y TRATAMIENTOS CRÍTICOS' : `REPORTE ESPECÍFICO DE ASIGNACIÓN MÉDICA: ${filtroMed}`;
+            
+            document.getElementById('tituloReporte').textContent = nombreMetrica;
+            document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
+            document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
+            
+            window.cerrarModalMedicinas();
+            
+            setTimeout(() => {
+                window.print();
+                calcularEstadisticas(); 
+            }, 300);
+        };
+
         window.imprimirMetrica = (tipo) => {
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
@@ -1058,10 +1125,20 @@
             
             const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
 
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
+
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
                 const comunaStr = (h.comuna || '').toUpperCase();
                 const comunidadStr = (h.comunidad || '').toUpperCase();
+
+                // INYECCIÓN: ESCUDO DE SEGURIDAD RBAC EN EL PDF DE CUALQUIER MÉTRICA
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(comunaStr)) continue;
+                }
 
                 if (fComuna && !comunaStr.includes(fComuna)) continue;
                 if (fComunidad && !comunidadStr.includes(fComunidad)) continue;

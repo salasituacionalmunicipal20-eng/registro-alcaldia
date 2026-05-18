@@ -51,7 +51,7 @@
     <div class="container">
         <div class="top-nav">
             <button type="button" class="btn-nav" id="btnVolver" onclick="location.href='admin.html'">← Volver al Panel Principal</button>
-            <button type="button" class="btn-nav" id="btnCerrarSesion">Cerrar Sesión</button>
+            <button type="button" class="btn-nav" onclick="location.href='usuarios.html'">👥 Ver Usuarios Registrados</button>
         </div>
 
         <div class="gob-header">
@@ -96,8 +96,9 @@
                 </div>
 
                 <div class="full-width">
-                    <label for="comuna_asignada">Comuna Asignada (Bloqueo de Territorio):</label>
-                    <select id="comuna_asignada" required>
+                    <label for="comunas_asignadas">Comunas Asignadas (Bloqueo de Territorio):</label>
+                    <p style="font-size: 11px; color: #E30613; margin-top:0; margin-bottom: 5px;">*Mantenga presionada la tecla CTRL para seleccionar varias comunas a la vez</p>
+                    <select id="comunas_asignadas" multiple size="6" required style="height: auto;">
                         <option value="">Cargando comunas...</option>
                     </select>
                 </div>
@@ -115,7 +116,7 @@
             <p class="success-msg" id="successMsg">¡Operador registrado exitosamente en el sistema!</p>
             <p class="error-msg" id="errorMsg">Error al crear usuario.</p>
 
-            <button type="submit" id="btnCrear">REGISTRAR OPERADOR DE SISTEMA</button>
+            <button type="submit" id="btnCrear">🛡️ Crear y Habilitar Operador</button>
         </form>
     </div>
 
@@ -172,30 +173,28 @@
             signOut(auth).then(() => window.location.href = "index.html");
         });
 
-        // INYECCIÓN: Lógica para cargar comunas y bloquear según el rol
-        const selComuna = document.getElementById('comuna_asignada');
-        get(child(ref(database), 'filtros_territoriales')).then(snap => {
-            selComuna.innerHTML = '<option value="">Seleccione la comuna a asignar</option>';
-            if(snap.exists()){
-                const data = snap.val();
-                for(let c in data) {
-                    selComuna.innerHTML += `<option value="${c}">${c}</option>`;
+        const selComunas = document.getElementById('comunas_asignadas');
+        
+        function cargarComunasAlSelect() {
+            get(child(ref(database), 'filtros_territoriales')).then(snap => {
+                selComunas.innerHTML = '';
+                if(snap.exists()){
+                    const data = snap.val();
+                    for(let c in data) {
+                        selComunas.innerHTML += `<option value="${c}">${c}</option>`;
+                    }
                 }
-            }
-        });
+            });
+        }
+        cargarComunasAlSelect();
 
         document.getElementById('rol').addEventListener('change', (e) => {
             if(e.target.value === 'admin') {
-                selComuna.innerHTML = '<option value="TODAS">TODAS (Acceso Global de Administrador)</option>';
-                selComuna.disabled = true;
+                selComunas.innerHTML = '<option value="TODAS" selected>TODAS (Acceso Global de Administrador)</option>';
+                selComunas.disabled = true;
             } else {
-                selComuna.disabled = false;
-                get(child(ref(database), 'filtros_territoriales')).then(snap => {
-                    selComuna.innerHTML = '<option value="">Seleccione la comuna a asignar</option>';
-                    if(snap.exists()){
-                        for(let c in snap.val()) selComuna.innerHTML += `<option value="${c}">${c}</option>`;
-                    }
-                });
+                selComunas.disabled = false;
+                cargarComunasAlSelect();
             }
         });
 
@@ -208,20 +207,26 @@
             successMsg.style.display = 'none';
             errorMsg.style.display = 'none';
 
-            const nombre = document.getElementById('nombre').value;
-            const apellido = document.getElementById('apellido').value;
-            const cargo = document.getElementById('cargo').value;
+            const nombre = document.getElementById('nombre').value.toUpperCase();
+            const apellido = document.getElementById('apellido').value.toUpperCase();
+            const cargo = document.getElementById('cargo').value.toUpperCase();
             const rol = document.getElementById('rol').value;
-            const comuna_asignada = selComuna.value; // INYECCIÓN: Capturamos la comuna
+            
+            // CAPTURAMOS EL ARREGLO DE COMUNAS MÚLTIPLES
+            let arrayComunas = Array.from(selComunas.selectedOptions).map(opt => opt.value);
+            
             const newUsername = document.getElementById('newUsername').value.trim();
             const newPassword = document.getElementById('newPassword').value;
             const emailFalso = newUsername + "@alcaldia.com";
 
-            // INYECCIÓN: Validación de seguridad
-            if (rol === 'operador' && (!comuna_asignada || comuna_asignada === 'TODAS')) {
-                errorMsg.textContent = "Error: Un operador regular debe tener una comuna específica asignada.";
+            if (rol === 'operador' && arrayComunas.length === 0) {
+                errorMsg.textContent = "Error: Un operador regular debe tener al menos una comuna asignada.";
                 errorMsg.style.display = 'block'; 
                 return;
+            }
+
+            if (rol === 'admin') {
+                arrayComunas = ['TODAS'];
             }
 
             try {
@@ -233,7 +238,7 @@
                     apellido: apellido,
                     cargo: cargo,
                     rol: rol, 
-                    comuna_asignada: comuna_asignada, // INYECCIÓN: Se guarda en Firebase
+                    comunas_asignadas: arrayComunas, // GUARDAMOS COMO ARRAY
                     usuario: newUsername,
                     cambio_obligatorio: true,
                     fecha_registro: new Date().toISOString()
@@ -241,7 +246,8 @@
 
                 successMsg.style.display = 'block';
                 createForm.reset();
-                selComuna.disabled = false;
+                selComunas.disabled = false;
+                cargarComunasAlSelect();
                 await signOut(secondaryAuth);
             } catch (error) {
                 console.error(error);

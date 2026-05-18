@@ -46,7 +46,6 @@
             border-top: 8px solid var(--rojo-oficial);
         }
         
-        /* Encabezado Gubernamental */
         .gob-header { 
             display: flex; 
             justify-content: space-between; 
@@ -83,7 +82,6 @@
             font-weight: bold; 
         }
         
-        /* Botonera superior */
         .top-nav { 
             display: flex; 
             justify-content: flex-end; 
@@ -110,7 +108,6 @@
         #btnCambiarClave { background-color: #ff9800; color: #000; }
         #btnCambiarClave:hover { background-color: #e68a00; }
 
-        /* Barra de progreso oficial */
         .progress-wrapper { 
             position: relative; 
             margin: 30px 0 50px 0; 
@@ -178,7 +175,6 @@
             font-size: 18px;
         }
 
-        /* Formularios estilo oficial */
         label { 
             display: block; 
             margin-bottom: 8px; 
@@ -224,7 +220,6 @@
             text-transform: uppercase;
         }
 
-        /* Estilos del Wizard (Pantallas) */
         .step { display: none; animation: fadeIn 0.4s; }
         .step.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -274,7 +269,6 @@
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
         .full-width { grid-column: span 2; }
         
-        /* Estilos de la ventana flotante (Modal) */
         .modal-overlay { 
             position: fixed; 
             top: 0; 
@@ -953,7 +947,7 @@
             let esAdmin = false;
             if (user.email === "carlos.admin@alcaldia.com") {
                 esAdmin = true;
-                window.perfilOperador = { rol: 'admin', comuna_asignada: 'TODAS' };
+                window.perfilOperador = { rol: 'admin', comunas_asignadas: ['TODAS'] };
             } else {
                 try {
                     const snap = await get(child(ref(database), `operadores/${user.uid}`));
@@ -976,7 +970,7 @@
                 });
             }
 
-            // INYECCIÓN: Inicializa las comunas considerando si el usuario está bloqueado a una sola
+            // INYECCIÓN: Inicializa las comunas considerando si el usuario está bloqueado a varias
             cargarFiltrosTerritoriales(esAdmin);
 
             // --- INICIO CÓDIGO RADAR ESPÍA ---
@@ -1000,7 +994,7 @@
             // --- FIN CÓDIGO RADAR ESPÍA ---
         });
 
-        // INYECCIÓN: Lógica para bloquear la comuna si es un operador
+        // INYECCIÓN: Lógica para bloquear la comuna en el registro pero permitiendo opciones múltiples si las tiene
         function cargarFiltrosTerritoriales(esAdmin) {
             const dbRef = ref(database);
             const comunaSelect = document.getElementById('comuna');
@@ -1010,26 +1004,32 @@
                 if (snapshot.exists()) {
                     const datosTerritoriales = snapshot.val();
                     
-                    if (!esAdmin && window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== 'TODAS') {
-                        // Bloqueo de Comuna
-                        let miComuna = window.perfilOperador.comuna_asignada;
-                        comunaSelect.innerHTML = `<option value="${miComuna}">${miComuna}</option>`;
-                        comunaSelect.value = miComuna;
-                        comunaSelect.style.pointerEvents = "none";
-                        comunaSelect.style.backgroundColor = "#e9ecef";
+                    let misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
 
-                        // Carga automática de comunidades de esa comuna
-                        comunidadSelect.innerHTML = '<option value="">Seleccione la Comunidad</option>';
-                        if (datosTerritoriales[miComuna]) {
-                            datosTerritoriales[miComuna].forEach(comunidad => {
-                                const option = document.createElement('option');
-                                option.value = comunidad;
-                                option.textContent = comunidad;
-                                comunidadSelect.appendChild(option);
-                            });
-                        }
+                    if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                        comunaSelect.innerHTML = '<option value="">Seleccione la Comuna / Circuito autorizada</option>';
+                        
+                        misComunas.forEach(c => {
+                            if(datosTerritoriales[c]) {
+                                comunaSelect.innerHTML += `<option value="${c}">${c}</option>`;
+                            }
+                        });
+
+                        comunaSelect.addEventListener('change', (e) => {
+                            const comunaSeleccionada = e.target.value;
+                            comunidadSelect.innerHTML = '<option value="">Seleccione la Comunidad</option>';
+                            if (comunaSeleccionada && datosTerritoriales[comunaSeleccionada]) {
+                                datosTerritoriales[comunaSeleccionada].forEach(comunidad => {
+                                    const option = document.createElement('option');
+                                    option.value = comunidad;
+                                    option.textContent = comunidad;
+                                    comunidadSelect.appendChild(option);
+                                });
+                            }
+                        });
+
                     } else {
-                        // Flujo normal para admins
+                        // Flujo normal para admins o global
                         comunaSelect.innerHTML = '<option value="">Seleccione la Comuna / Circuito</option>';
                         for (const comuna in datosTerritoriales) {
                             const option = document.createElement('option');
@@ -1306,9 +1306,14 @@
                 const formData = new FormData(form);
                 const habitanteData = Object.fromEntries(formData.entries());
                 
-                // INYECCIÓN: Si el selector estaba bloqueado, forzamos que tome la comuna correcta
-                if(window.perfilOperador && window.perfilOperador.comuna_asignada && window.perfilOperador.comuna_asignada !== 'TODAS'){
-                    habitanteData.comuna = window.perfilOperador.comuna_asignada;
+                // INYECCIÓN DE SEGURIDAD
+                let misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+                if(!userSnap.exists() || userSnap.val().rol !== 'admin') {
+                    if (misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                        if (!misComunas.includes(habitanteData.comuna)) {
+                            throw new Error("Intento de registro en comuna no autorizada.");
+                        }
+                    }
                 }
 
                 habitanteData.registrado_por_uid = user.uid;
@@ -1370,7 +1375,7 @@
 
             } catch (error) {
                 console.error(error);
-                alert('Error al guardar. Revise su conexión.');
+                alert('Error al guardar. Revise su conexión y permisos.');
             }
         });
         
