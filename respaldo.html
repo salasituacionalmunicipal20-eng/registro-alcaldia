@@ -556,6 +556,7 @@
                 <div class="sync-line">Cargando registros históricos de inicio y cierre de sesión...</div>
             </div>
         </div>
+
         <div class="live-panels-container">
             <div class="live-panel">
                 <h3>📋 Live Feed (Firebase)</h3>
@@ -635,7 +636,7 @@
         let baseDatosBruta = {};
         let sincronizando = false;
         let erroresJS = 0;
-        let logKeyActual = null; // Variable interna de la bitácora
+        let logKeyActual = null; 
 
         window.onerror = function(msg, url, line) {
             erroresJS++;
@@ -722,7 +723,6 @@
                     ultima_accion: 'Auditando métricas de salud y rendimiento'
                 });
 
-                // --- INTEGRACIÓN: INYECTOR DE TICKET DE ENTRADA EN BITÁCORA ---
                 const historialRef = ref(database, 'historial_sesiones');
                 const nuevaSesionRef = push(historialRef);
                 logKeyActual = nuevaSesionRef.key;
@@ -736,16 +736,14 @@
                     salida: 'CONECTADO 🟢'
                 });
                 
-                // Centinela automático por desconexión repentina
                 onDisconnect(ref(database, `historial_sesiones/${logKeyActual}`)).update({
                     salida: new Date().toLocaleTimeString('es-VE', { hour12: false }) + ' (DESCONECTADO 🔴)'
                 });
-                // -------------------------------------------------------------
 
                 iniciarMonitoreoFirebase();
                 iniciarRadarPresencia();
                 monitorearSupabase();
-                iniciarMonitoreoHistorialSesiones(); // Escucha global de la bitácora
+                iniciarMonitoreoHistorialSesiones(); 
                 
                 const failoverSwitch = document.getElementById('failoverSwitch');
                 const lblEstadoSwitch = document.getElementById('lblEstadoSwitch');
@@ -780,33 +778,46 @@
             }
         });
 
-        // --- INTEGRACIÓN: MOTOR DE LECTURA DE ACCESOS HISTÓRICOS ---
+        // --- SOLUCIÓN: ESCUDO ANTI-CRASH EN LECTURA DE BITÁCORA ---
         function iniciarMonitoreoHistorialSesiones() {
             onValue(ref(database, 'historial_sesiones'), (snapshot) => {
                 const box = document.getElementById('historyConsoleBox');
                 if(!box) return;
-                box.innerHTML = '';
+                
                 if(snapshot.exists()) {
+                    box.innerHTML = ''; 
                     const data = snapshot.val();
-                    const keys = Object.keys(data).reverse().slice(0, 40); // Muestra los últimos 40 eventos
+                    const keys = Object.keys(data).reverse().slice(0, 40); 
+                    
                     keys.forEach(key => {
-                        const s = data[key];
+                        const s = data[key] || {};
                         const div = document.createElement('div');
                         let claseTipo = 'sync-info';
                         
-                        if(s.salida.includes('🔴') || s.salida.includes('SALIDA')) claseTipo = 'sync-err';
-                        if(s.salida.includes('🟢')) claseTipo = 'sync-success';
+                        // Protección contra registros antiguos vacíos o rotos
+                        const salidaStr = s.salida || 'Estado desconocido';
+                        const fechaStr = s.fecha || '--/--/----';
+                        const usuStr = s.usuario || 'Usuario Desconocido';
+                        const rolStr = s.rol || '---';
+                        const modStr = s.modulo || '---';
+                        const entStr = s.entrada || '--:--';
+                        
+                        if(salidaStr.includes('🔴') || salidaStr.includes('SALIDA')) claseTipo = 'sync-err';
+                        if(salidaStr.includes('🟢')) claseTipo = 'sync-success';
                         
                         div.className = `sync-line ${claseTipo}`;
-                        div.innerHTML = `📅 <b>[${s.fecha}]</b> | 👤 <b>${s.usuario}</b> (${s.rol}) | 📍 Módulo: <u>${s.modulo}</u> | 📥 Entrada: <span style="color:#00ff00">${s.entrada}</span> | 📤 Salida/Estado: <span>${s.salida}</span>`;
+                        div.innerHTML = `📅 <b>[${fechaStr}]</b> | 👤 <b>${usuStr}</b> (${rolStr}) | 📍 Módulo: <u>${modStr}</u> | 📥 Entrada: <span style="color:#00ff00">${entStr}</span> | 📤 Salida/Estado: <span>${salidaStr}</span>`;
                         box.appendChild(div);
                     });
                 } else {
-                    box.innerHTML = '<div class="sync-line">No hay registros de sesiones en la bitácora todavía.</div>';
+                    box.innerHTML = '<div class="sync-line" style="color:#aaa;">No hay registros de sesiones en la bitácora todavía.</div>';
                 }
+            }, (error) => {
+                const box = document.getElementById('historyConsoleBox');
+                if(box) box.innerHTML = `<div class="sync-line sync-err">Error de lectura en Firebase: ${error.message}</div>`;
             });
         }
-        // -----------------------------------------------------------
+        // ----------------------------------------------------------
 
         function escribirSyncLog(mensaje, tipo = "sync-info") {
             const box = document.getElementById('syncConsoleBox');
