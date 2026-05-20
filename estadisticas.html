@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Estadístico - Alcaldía</title>
+    <title>Panel Estadístico y Business Intelligence - Alcaldía</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
         :root { 
             --rojo-oficial: #E30613; 
@@ -225,6 +227,36 @@
         
         .btn-metric-print:hover { background-color: #555; }
 
+        /* INYECCIÓN: Estilos para el nuevo Dashboard de Inteligencia */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .chart-card {
+            background: white;
+            border: 1px solid var(--gris-borde);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .chart-card h3 {
+            color: var(--azul-oficial);
+            margin-top: 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
         .print-only { display: none; }
         
         .hidden { display: none !important; }
@@ -240,6 +272,10 @@
         }
         .close-modal { position: absolute; top: 15px; right: 20px; cursor: pointer; font-size: 24px; font-weight: bold; color: #aaa; }
         .close-modal:hover { color: var(--rojo-oficial); }
+
+        @media (max-width: 800px) {
+            .charts-grid { grid-template-columns: 1fr; }
+        }
 
         @media print {
             body { 
@@ -264,6 +300,17 @@
                 margin-bottom: 15px;
             }
             .header-titles h1 { font-size: 16px; color: #000; }
+
+            /* Acomodo de los gráficos para impresión */
+            .charts-grid { 
+                display: grid !important; 
+                grid-template-columns: 1fr 1fr !important; 
+                gap: 10px !important; 
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+            }
+            .chart-card { border: 1px solid #999; padding: 10px; box-shadow: none;}
+            .chart-container { height: 180px !important; }
 
             .print-only { display: block; }
             
@@ -316,7 +363,7 @@
             .stat-number { font-size: 16px; }
             .stat-title { font-size: 8px; margin-bottom: 0;}
             
-            table { width: 100%; border-collapse: collapse; font-size: 9px; }
+            table { width: 100%; border-collapse: collapse; font-size: 9px; page-break-before: auto;}
             th, td { border: 1px solid #000; padding: 4px; text-align: left; }
             th { background-color: #eee !important; color: #000 !important; font-weight: bold; text-transform: uppercase;}
         }
@@ -425,93 +472,39 @@
 
         <h2>Métricas Actualizadas</h2>
         <div class="stats-grid">
-            <div class="stat-card c-1">
-                <span class="stat-icon">👥</span>
-                <div class="stat-number" id="statTotal">0</div>
-                <div class="stat-title">Total Personas</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('total')">🖨 PDF</button>
-            </div>
-            <div class="stat-card c-2">
-                <span class="stat-icon">👑</span>
-                <div class="stat-number" id="statJefes">0</div>
-                <div class="stat-title">Jefes de Hogar</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('jefes')">🖨 PDF</button>
-            </div>
-            <div class="stat-card c-3">
-                <span class="stat-icon">🔥</span>
-                <div class="stat-number" id="statGas">0</div>
-                <div class="stat-title">Hogares con Gas</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('gas')">🖨 PDF</button>
-            </div>
-            <div class="stat-card c-4">
-                <span class="stat-icon">🧓🏽</span>
-                <div class="stat-number" id="statAdultos">0</div>
-                <div class="stat-title">Adultos (60+)</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('adultos')">🖨 PDF</button>
-            </div>
-            
-            <div class="stat-card c-5">
-                <span class="stat-icon">👦🏽</span>
-                <div class="stat-number" id="statNinos">0</div>
-                <div class="stat-title">Menores (< 18)</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('ninos')">🖨 PDF</button>
-            </div>
-            <div class="stat-card c-6">
-                <span class="stat-icon">💼</span>
-                <div class="stat-number" id="statTrabajan">0</div>
-                <div class="stat-title">Población Activa</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('trabajan')">🖨 PDF</button>
-            </div>
-            <div class="stat-card c-7">
-                <span class="stat-icon">🎒</span>
-                <div class="stat-number" id="statEscolarizados">0</div>
-                <div class="stat-title">Escolarizados</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('escolarizados')">🖨 PDF</button>
-            </div>
-            
-            <div class="stat-card c-8">
-                <span class="stat-icon">💊</span>
-                <div class="stat-number" id="statEnfermos">0</div>
-                <div class="stat-title">Pacientes Médicos</div>
-                <button class="btn-metric-print" onclick="abrirModalMedicinas()">🖨 FILTRAR PDF</button>
-            </div>
-            
-            <div class="stat-card c-9">
-                <span class="stat-icon">♿</span>
-                <div class="stat-number" id="statDiscapacidad">0</div>
-                <div class="stat-title">Discapacidad</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('discapacidad')">🖨 PDF</button>
-            </div>
-            <div class="stat-card c-10">
-                <span class="stat-icon">🪪</span>
-                <div class="stat-number" id="statPatria">0</div>
-                <div class="stat-title">Carnet de la Patria</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('patria')">🖨 PDF</button>
-            </div>
-            <div class="stat-card c-11">
-                <span class="stat-icon">👴🏽</span>
-                <div class="stat-number" id="statAmor">0</div>
-                <div class="stat-title">Amor Mayor</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('amor')">🖨 PDF</button>
-            </div>
-            <div class="stat-card c-12">
-                <span class="stat-icon">🔴</span>
-                <div class="stat-number" id="statVD">0</div>
-                <div class="stat-title">Voto Duro (VD)</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('vd')">🖨 PDF</button>
-            </div>
+            <div class="stat-card c-1"><span class="stat-icon">👥</span><div class="stat-number" id="statTotal">0</div><div class="stat-title">Total Personas</div><button class="btn-metric-print" onclick="imprimirMetrica('total')">🖨 PDF</button></div>
+            <div class="stat-card c-2"><span class="stat-icon">👑</span><div class="stat-number" id="statJefes">0</div><div class="stat-title">Jefes de Hogar</div><button class="btn-metric-print" onclick="imprimirMetrica('jefes')">🖨 PDF</button></div>
+            <div class="stat-card c-3"><span class="stat-icon">🔥</span><div class="stat-number" id="statGas">0</div><div class="stat-title">Hogares con Gas</div><button class="btn-metric-print" onclick="imprimirMetrica('gas')">🖨 PDF</button></div>
+            <div class="stat-card c-4"><span class="stat-icon">🧓🏽</span><div class="stat-number" id="statAdultos">0</div><div class="stat-title">Adultos (60+)</div><button class="btn-metric-print" onclick="imprimirMetrica('adultos')">🖨 PDF</button></div>
+            <div class="stat-card c-5"><span class="stat-icon">👦🏽</span><div class="stat-number" id="statNinos">0</div><div class="stat-title">Menores (< 18)</div><button class="btn-metric-print" onclick="imprimirMetrica('ninos')">🖨 PDF</button></div>
+            <div class="stat-card c-6"><span class="stat-icon">💼</span><div class="stat-number" id="statTrabajan">0</div><div class="stat-title">Población Activa</div><button class="btn-metric-print" onclick="imprimirMetrica('trabajan')">🖨 PDF</button></div>
+            <div class="stat-card c-7"><span class="stat-icon">🎒</span><div class="stat-number" id="statEscolarizados">0</div><div class="stat-title">Escolarizados</div><button class="btn-metric-print" onclick="imprimirMetrica('escolarizados')">🖨 PDF</button></div>
+            <div class="stat-card c-8"><span class="stat-icon">💊</span><div class="stat-number" id="statEnfermos">0</div><div class="stat-title">Pacientes Médicos</div><button class="btn-metric-print" onclick="abrirModalMedicinas()">🖨 FILTRAR PDF</button></div>
+            <div class="stat-card c-9"><span class="stat-icon">♿</span><div class="stat-number" id="statDiscapacidad">0</div><div class="stat-title">Discapacidad</div><button class="btn-metric-print" onclick="imprimirMetrica('discapacidad')">🖨 PDF</button></div>
+            <div class="stat-card c-10"><span class="stat-icon">🪪</span><div class="stat-number" id="statPatria">0</div><div class="stat-title">Carnet Patria</div><button class="btn-metric-print" onclick="imprimirMetrica('patria')">🖨 PDF</button></div>
+            <div class="stat-card c-11"><span class="stat-icon">👴🏽</span><div class="stat-number" id="statAmor">0</div><div class="stat-title">Amor Mayor</div><button class="btn-metric-print" onclick="imprimirMetrica('amor')">🖨 PDF</button></div>
+            <div class="stat-card c-12"><span class="stat-icon">🔴</span><div class="stat-number" id="statVD">0</div><div class="stat-title">Voto Duro (VD)</div><button class="btn-metric-print" onclick="imprimirMetrica('vd')">🖨 PDF</button></div>
+            <div class="stat-card c-13"><span class="stat-icon">🟡</span><div class="stat-number" id="statVB">0</div><div class="stat-title">Voto Blando (VB)</div><button class="btn-metric-print" onclick="imprimirMetrica('vb')">🖨 PDF</button></div>
+            <div class="stat-card c-14"><span class="stat-icon">⚪</span><div class="stat-number" id="statVO">0</div><div class="stat-title">Voto Opositor (VO)</div><button class="btn-metric-print" onclick="imprimirMetrica('vo')">🖨 PDF</button></div>
+        </div>
 
-            <div class="stat-card c-13">
-                <span class="stat-icon">🟡</span>
-                <div class="stat-number" id="statVB">0</div>
-                <div class="stat-title">Voto Blando (VB)</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('vb')">🖨 PDF</button>
+        <h2>Panel de Inteligencia de Datos (BI)</h2>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>🔴 Termómetro Electoral</h3>
+                <div class="chart-container"><canvas id="chartElectoral"></canvas></div>
             </div>
-            <div class="stat-card c-14">
-                <span class="stat-icon">⚪</span>
-                <div class="stat-number" id="statVO">0</div>
-                <div class="stat-title">Voto Opositor (VO)</div>
-                <button class="btn-metric-print" onclick="imprimirMetrica('vo')">🖨 PDF</button>
+            <div class="chart-card">
+                <h3>👫 Radiografía Demográfica</h3>
+                <div class="chart-container"><canvas id="chartDemografico"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>🛡️ Mapa de Protección Social</h3>
+                <div class="chart-container"><canvas id="chartSocial"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>🏥 Curva de Vulnerabilidad (Salud)</h3>
+                <div class="chart-container"><canvas id="chartVulnerabilidad"></canvas></div>
             </div>
         </div>
 
@@ -582,7 +575,13 @@
         let baseDeDatosHabitantes = {}; 
         let datosTerritoriales = {}; 
         let esAdmin = false;
-        window.perfilOperador = null; // INYECCIÓN
+        window.perfilOperador = null; 
+
+        // INYECCIÓN: Variables Globales de los Gráficos Chart.js
+        let chartElectoralInst = null;
+        let chartDemograficoInst = null;
+        let chartSocialInst = null;
+        let chartVulnerabilidadInst = null;
 
         function cleanText(txt) {
             return (txt || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
@@ -635,7 +634,6 @@
             document.getElementById('modalMedicinas').classList.add('hidden');
         };
 
-        // INYECCIÓN: Lógica para bloquear la comuna en estadísticas permitiendo selección múltiple
         function cargarFiltrosTerritoriales() {
             const fComuna = document.getElementById('fComuna');
             const fComunidad = document.getElementById('fComunidad');
@@ -658,7 +656,6 @@
                             }
                         });
 
-                        // Si por casualidad solo tiene 1, se la auto-seleccionamos y bloqueamos
                         if (misComunas.length === 1) {
                             fComuna.value = misComunas[0];
                             fComuna.style.pointerEvents = "none";
@@ -669,7 +666,6 @@
                             datosTerritoriales[misComunas[0]].forEach(c => fComunidad.innerHTML += `<option value="${c}">${c}</option>`);
                         }
                     } else {
-                        // Flujo normal para admins o global
                         fComuna.innerHTML = '<option value="">TODAS LAS COMUNAS (Consolidado Municipal)</option>';
                         for (const comuna in datosTerritoriales) {
                             fComuna.innerHTML += `<option value="${comuna}">${comuna}</option>`;
@@ -725,7 +721,6 @@
                 let com = (h.comuna || '').toUpperCase();
                 let comu = (h.comunidad || '').toUpperCase();
 
-                // INYECCIÓN RBAC: No le mostramos opciones de comunas que no le tocan
                 if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
                     if (!misComunas.includes(com)) continue;
                 }
@@ -790,7 +785,6 @@
                 let h = baseDeDatosHabitantes[id];
                 const comunaStr = (h.comuna || '').toUpperCase();
 
-                // INYECCIÓN RBAC PARA MEDICINAS
                 if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
                     if (!misComunas.includes(comunaStr)) continue;
                 }
@@ -874,6 +868,97 @@
             `;
         }
 
+        // INYECCIÓN: Función constructora del Cerebro Gráfico
+        function actualizarGraficos(d) {
+            // Destruir gráficos previos para redibujar limpios
+            if(chartElectoralInst) chartElectoralInst.destroy();
+            if(chartDemograficoInst) chartDemograficoInst.destroy();
+            if(chartSocialInst) chartSocialInst.destroy();
+            if(chartVulnerabilidadInst) chartVulnerabilidadInst.destroy();
+
+            // 1. Termómetro Electoral (Doughnut)
+            const ctxElectoral = document.getElementById('chartElectoral').getContext('2d');
+            chartElectoralInst = new Chart(ctxElectoral, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Voto Duro (VD)', 'Voto Blando (VB)', 'Voto Opositor (VO)'],
+                    datasets: [{
+                        data: [d.vd, d.vb, d.vo],
+                        backgroundColor: ['#E30613', '#ffc107', '#6c757d'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '60%'
+                }
+            });
+
+            // 2. Radiografía Demográfica (Pie)
+            const ctxDemo = document.getElementById('chartDemografico').getContext('2d');
+            chartDemograficoInst = new Chart(ctxDemo, {
+                type: 'pie',
+                data: {
+                    labels: ['Hombres', 'Mujeres', 'Adultos Mayores', 'Menores'],
+                    datasets: [{
+                        data: [d.masculino, d.femenino, d.adultos, d.ninos],
+                        backgroundColor: ['#004a99', '#e83e8c', '#28a745', '#17a2b8'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { position: 'bottom' } } 
+                }
+            });
+
+            // 3. Mapa de Protección Social (Bar Horizontal)
+            const ctxSocial = document.getElementById('chartSocial').getContext('2d');
+            chartSocialInst = new Chart(ctxSocial, {
+                type: 'bar',
+                data: {
+                    labels: ['Carnet Patria', 'Amor Mayor', 'Hogares Patria', 'José Gregorio'],
+                    datasets: [{
+                        label: 'Habitantes Beneficiados',
+                        data: [d.patria, d.amor, d.hogares, d.jgh],
+                        backgroundColor: '#3ecf8e',
+                        borderRadius: 4
+                    }]
+                },
+                options: { 
+                    indexAxis: 'y', 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true } }
+                }
+            });
+
+            // 4. Curva de Vulnerabilidad Médica (Bar Vertical)
+            const ctxVul = document.getElementById('chartVulnerabilidad').getContext('2d');
+            chartVulnerabilidadInst = new Chart(ctxVul, {
+                type: 'bar',
+                data: {
+                    labels: ['Enfermedad Crónica', 'Discapacidad', 'Embarazadas'],
+                    datasets: [{
+                        label: 'Casos Detectados',
+                        data: [d.enfermos, d.discapacidad, d.embarazadas],
+                        backgroundColor: ['#dc3545', '#6f42c1', '#fd7e14'],
+                        borderRadius: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } }, 
+                    scales: { y: { beginAtZero: true } } 
+                }
+            });
+        }
+
         function calcularEstadisticas() {
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
@@ -887,10 +972,12 @@
             const fBeneficio = document.getElementById('fBeneficio').value.toLowerCase();
             const fCondicion = document.getElementById('fCondicion').value.toLowerCase();
 
+            // Variables para Contadores + Gráficos
             let cTotal = 0, cAdultos = 0, cEnfermos = 0, cDiscapacidad = 0, cJefes = 0;
             let cNinos = 0, cTrabajan = 0, cEscolarizados = 0;
             let cPatria = 0, cAmor = 0, cEmbarazadas = 0;
             let cVD = 0, cVB = 0, cVO = 0;
+            let cMasculino = 0, cFemenino = 0, cHogares = 0, cJgh = 0; // Variables nuevas para Gráficos
             
             let hogaresConGasUnicos = new Set();
             let filasReporte = '';
@@ -907,7 +994,6 @@
                 const comunaStr = (h.comuna || '').toUpperCase();
                 const comunidadStr = (h.comunidad || '').toUpperCase();
 
-                // INYECCIÓN: ESCUDO DE SEGURIDAD RBAC EN EL CONTEO ESTADÍSTICO
                 if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
                     if (!misComunas.includes(comunaStr)) continue;
                 }
@@ -956,9 +1042,7 @@
                 const tieneEnf = enf !== '' && !negacionesSalud.includes(enf);
                 const tieneMed = med !== '' && !negacionesSalud.includes(med);
 
-                if (tieneEnf || tieneMed) {
-                    cEnfermos++;
-                }
+                if (tieneEnf || tieneMed) cEnfermos++;
                 
                 if ((h.discapacitado || '').toUpperCase() === 'SI') cDiscapacidad++;
                 if ((h.embarazada || '').toUpperCase() === 'SI') cEmbarazadas++;
@@ -966,10 +1050,15 @@
                 if ((h.esta_escolarizado || '').toUpperCase() === 'SI') cEscolarizados++;
                 if ((h.carnet_patria || '').toUpperCase() === 'SI') cPatria++;
                 if ((h.cobra_amor_mayor || '').toUpperCase() === 'SI') cAmor++;
+                if ((h.hogares_patria_bono || '').toUpperCase() === 'SI') cHogares++;
+                if ((h.mision_jose_gregorio || '').toUpperCase() === 'SI') cJgh++;
                 
                 if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VD') cVD++;
                 if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VB') cVB++;
                 if ((h.vd_vb_vo_seleccion || '').toUpperCase() === 'VO') cVO++;
+                
+                if ((h.sexo || '').toLowerCase() === 'masculino') cMasculino++;
+                if ((h.sexo || '').toLowerCase() === 'femenino') cFemenino++;
 
                 const nac = h.nacionalidad || 'V';
                 const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
@@ -1016,8 +1105,13 @@
             const totalesContexto = {
                 total: cTotal, jefes: cJefes, gas: hogaresConGasUnicos.size, adultos: cAdultos,
                 ninos: cNinos, trabajan: cTrabajan, escolarizados: cEscolarizados, enfermos: cEnfermos,
-                discapacidad: cDiscapacidad, patria: cPatria, amor: cAmor, vd: cVD, vb: cVB, vo: cVO
+                discapacidad: cDiscapacidad, patria: cPatria, amor: cAmor, vd: cVD, vb: cVB, vo: cVO,
+                masculino: cMasculino, femenino: cFemenino, hogares: cHogares, jgh: cJgh, embarazadas: cEmbarazadas
             };
+            
+            // Llama al motor visual para inyectar la data procesada en los canvas
+            actualizarGraficos(totalesContexto);
+
             document.getElementById('printMetricsSummary').innerHTML = imprimirResumenMetricas(totalesContexto);
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
         }
@@ -1045,7 +1139,6 @@
                 const comunaStr = (h.comuna || '').toUpperCase();
                 const comunidadStr = (h.comunidad || '').toUpperCase();
 
-                // INYECCIÓN: ESCUDO DE SEGURIDAD RBAC EN EL PDF DE MEDICINAS
                 if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
                     if (!misComunas.includes(comunaStr)) continue;
                 }
@@ -1135,7 +1228,6 @@
                 const comunaStr = (h.comuna || '').toUpperCase();
                 const comunidadStr = (h.comunidad || '').toUpperCase();
 
-                // INYECCIÓN: ESCUDO DE SEGURIDAD RBAC EN EL PDF DE CUALQUIER MÉTRICA
                 if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
                     if (!misComunas.includes(comunaStr)) continue;
                 }
