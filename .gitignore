@@ -1,0 +1,18 @@
+# Artefacto de `npm install --prefix false`
+false/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Node (por si en algún momento se agrega)
+node_modules/

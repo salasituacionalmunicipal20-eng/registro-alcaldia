@@ -96,7 +96,8 @@
             projectId: "alcaldia-admin",
             storageBucket: "alcaldia-admin.firebasestorage.app",
             messagingSenderId: "945828226894",
-            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -141,8 +142,8 @@
                         const nivel = user.rol === "admin" ? "Administrador" : "Operador";
                         
                         // LECTURA DE ARRAY MULTI-COMUNA
-                        let misComunas = user.comunas_asignadas || (user.comuna_asignada ? [user.comuna_asignada] : ['TODAS']);
-                        let comunaEtiq = misComunas.join(', ');
+                        let misComunas = user.comunas_asignadas || (user.comuna_asignada ? [user.comuna_asignada] : []);
+                        let comunaEtiq = misComunas.length ? misComunas.join(', ') : 'Sin asignar';
 
                         tr.innerHTML = `
                             <td><strong>${user.nombre} ${user.apellido}</strong></td>
