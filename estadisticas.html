@@ -227,7 +227,6 @@
         
         .btn-metric-print:hover { background-color: #555; }
 
-        /* INYECCIÓN: Estilos para el nuevo Dashboard de Inteligencia */
         .charts-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -301,7 +300,6 @@
             }
             .header-titles h1 { font-size: 16px; color: #000; }
 
-            /* Acomodo de los gráficos para impresión */
             .charts-grid { 
                 display: grid !important; 
                 grid-template-columns: 1fr 1fr !important; 
@@ -476,8 +474,20 @@
             <div class="stat-card c-2"><span class="stat-icon">👑</span><div class="stat-number" id="statJefes">0</div><div class="stat-title">Jefes de Hogar</div><button class="btn-metric-print" onclick="imprimirMetrica('jefes')">🖨 PDF</button></div>
             <div class="stat-card c-3"><span class="stat-icon">🔥</span><div class="stat-number" id="statGas">0</div><div class="stat-title">Hogares con Gas</div><button class="btn-metric-print" onclick="imprimirMetrica('gas')">🖨 PDF</button></div>
             <div class="stat-card c-4"><span class="stat-icon">🧓🏽</span><div class="stat-number" id="statAdultos">0</div><div class="stat-title">Adultos (60+)</div><button class="btn-metric-print" onclick="imprimirMetrica('adultos')">🖨 PDF</button></div>
-            <div class="stat-card c-5"><span class="stat-icon">👦🏽</span><div class="stat-number" id="statNinos">0</div><div class="stat-title">Menores (< 18)</div><button class="btn-metric-print" onclick="imprimirMetrica('ninos')">🖨 PDF</button></div>
-            <div class="stat-card c-6"><span class="stat-icon">💼</span><div class="stat-number" id="statTrabajan">0</div><div class="stat-title">Población Activa</div><button class="btn-metric-print" onclick="imprimirMetrica('trabajan')">🖨 PDF</button></div>
+            
+            <div class="stat-card c-5">
+                <span class="stat-icon">👦🏽</span>
+                <div class="stat-number" id="statNinos">0</div>
+                <div class="stat-title">Menores (< 18)</div>
+                <button class="btn-metric-print" onclick="abrirModalNinos()">🖨 FILTRAR PDF</button>
+            </div>
+            
+            <div class="stat-card c-6">
+                <span class="stat-icon">💼</span>
+                <div class="stat-number" id="statTrabajan">0</div>
+                <div class="stat-title">Trabajadores</div> <button class="btn-metric-print" onclick="imprimirMetrica('trabajan')">🖨 PDF</button>
+            </div>
+            
             <div class="stat-card c-7"><span class="stat-icon">🎒</span><div class="stat-number" id="statEscolarizados">0</div><div class="stat-title">Escolarizados</div><button class="btn-metric-print" onclick="imprimirMetrica('escolarizados')">🖨 PDF</button></div>
             <div class="stat-card c-8"><span class="stat-icon">💊</span><div class="stat-number" id="statEnfermos">0</div><div class="stat-title">Pacientes Médicos</div><button class="btn-metric-print" onclick="abrirModalMedicinas()">🖨 FILTRAR PDF</button></div>
             <div class="stat-card c-9"><span class="stat-icon">♿</span><div class="stat-number" id="statDiscapacidad">0</div><div class="stat-title">Discapacidad</div><button class="btn-metric-print" onclick="imprimirMetrica('discapacidad')">🖨 PDF</button></div>
@@ -553,6 +563,30 @@
         </div>
     </div>
 
+    <div id="modalNinos" class="modal-overlay hidden">
+        <div class="modal-content">
+            <span class="close-modal" onclick="cerrarModalNinos()">✖</span>
+            <h3 style="color: var(--azul-oficial); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; text-transform: uppercase; font-size: 16px; font-weight: bold;">👦🏽 Reporte Filtrado de Menores de Edad</h3>
+            <p style="font-size: 12px; color: #555; line-height: 1.5; margin-bottom: 20px;">Filtre la población menor de edad estableciendo un rango específico (ej. de 0 a 5 años para atención temprana o escolaridad).</p>
+            
+            <div style="margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label style="font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 8px;">Edad Mínima:</label>
+                    <input type="number" id="minEdadNinos" min="0" max="17" value="0" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label style="font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 8px;">Edad Máxima:</label>
+                    <input type="number" id="maxEdadNinos" min="0" max="17" value="17" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;">
+                </div>
+            </div>
+            
+            <div style="text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
+                <button type="button" style="padding: 10px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size:12px; margin-right: 8px;" onclick="cerrarModalNinos()">Cancelar</button>
+                <button type="button" style="padding: 10px 15px; background: var(--rojo-oficial); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size:12px; text-transform:uppercase;" onclick="procesarReporteNinos()">🖨 Generar Reporte PDF</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -577,7 +611,6 @@
         let esAdmin = false;
         window.perfilOperador = null; 
 
-        // INYECCIÓN: Variables Globales de los Gráficos Chart.js
         let chartElectoralInst = null;
         let chartDemograficoInst = null;
         let chartSocialInst = null;
@@ -632,6 +665,14 @@
         };
         window.cerrarModalMedicinas = () => {
             document.getElementById('modalMedicinas').classList.add('hidden');
+        };
+
+        // Modal para los Menores de Edad
+        window.abrirModalNinos = () => {
+            document.getElementById('modalNinos').classList.remove('hidden');
+        };
+        window.cerrarModalNinos = () => {
+            document.getElementById('modalNinos').classList.add('hidden');
         };
 
         function cargarFiltrosTerritoriales() {
@@ -856,7 +897,7 @@
                 <div><strong>Hogares con Gas:</strong> ${t.gas}</div>
                 <div><strong>Adultos (60+):</strong> ${t.adultos}</div>
                 <div><strong>Menores (< 18):</strong> ${t.ninos}</div>
-                <div><strong>Población Activa:</strong> ${t.trabajan}</div>
+                <div><strong>Trabajadores:</strong> ${t.trabajan}</div>
                 <div><strong>Escolarizados:</strong> ${t.escolarizados}</div>
                 <div><strong>Pacientes Médicos:</strong> ${t.enfermos}</div>
                 <div><strong>Con Discapacidad:</strong> ${t.discapacidad}</div>
@@ -868,15 +909,12 @@
             `;
         }
 
-        // INYECCIÓN: Función constructora del Cerebro Gráfico
         function actualizarGraficos(d) {
-            // Destruir gráficos previos para redibujar limpios
             if(chartElectoralInst) chartElectoralInst.destroy();
             if(chartDemograficoInst) chartDemograficoInst.destroy();
             if(chartSocialInst) chartSocialInst.destroy();
             if(chartVulnerabilidadInst) chartVulnerabilidadInst.destroy();
 
-            // 1. Termómetro Electoral (Doughnut)
             const ctxElectoral = document.getElementById('chartElectoral').getContext('2d');
             chartElectoralInst = new Chart(ctxElectoral, {
                 type: 'doughnut',
@@ -896,7 +934,6 @@
                 }
             });
 
-            // 2. Radiografía Demográfica (Pie)
             const ctxDemo = document.getElementById('chartDemografico').getContext('2d');
             chartDemograficoInst = new Chart(ctxDemo, {
                 type: 'pie',
@@ -915,7 +952,6 @@
                 }
             });
 
-            // 3. Mapa de Protección Social (Bar Horizontal)
             const ctxSocial = document.getElementById('chartSocial').getContext('2d');
             chartSocialInst = new Chart(ctxSocial, {
                 type: 'bar',
@@ -937,7 +973,6 @@
                 }
             });
 
-            // 4. Curva de Vulnerabilidad Médica (Bar Vertical)
             const ctxVul = document.getElementById('chartVulnerabilidad').getContext('2d');
             chartVulnerabilidadInst = new Chart(ctxVul, {
                 type: 'bar',
@@ -972,12 +1007,11 @@
             const fBeneficio = document.getElementById('fBeneficio').value.toLowerCase();
             const fCondicion = document.getElementById('fCondicion').value.toLowerCase();
 
-            // Variables para Contadores + Gráficos
             let cTotal = 0, cAdultos = 0, cEnfermos = 0, cDiscapacidad = 0, cJefes = 0;
             let cNinos = 0, cTrabajan = 0, cEscolarizados = 0;
             let cPatria = 0, cAmor = 0, cEmbarazadas = 0;
             let cVD = 0, cVB = 0, cVO = 0;
-            let cMasculino = 0, cFemenino = 0, cHogares = 0, cJgh = 0; // Variables nuevas para Gráficos
+            let cMasculino = 0, cFemenino = 0, cHogares = 0, cJgh = 0; 
             
             let hogaresConGasUnicos = new Set();
             let filasReporte = '';
@@ -1109,7 +1143,6 @@
                 masculino: cMasculino, femenino: cFemenino, hogares: cHogares, jgh: cJgh, embarazadas: cEmbarazadas
             };
             
-            // Llama al motor visual para inyectar la data procesada en los canvas
             actualizarGraficos(totalesContexto);
 
             document.getElementById('printMetricsSummary').innerHTML = imprimirResumenMetricas(totalesContexto);
@@ -1199,6 +1232,92 @@
             }, 300);
         };
 
+        // INYECCIÓN: LÓGICA DE FILTRADO Y GENERACIÓN DE REPORTE DE NIÑOS
+        window.procesarReporteNinos = () => {
+            const minEdad = parseInt(document.getElementById('minEdadNinos').value) || 0;
+            const maxEdad = parseInt(document.getElementById('maxEdadNinos').value) || 17;
+            
+            if(minEdad > maxEdad) {
+                alert("La edad mínima no puede ser mayor a la máxima.");
+                return;
+            }
+
+            const fComuna = document.getElementById('fComuna').value.toUpperCase();
+            const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
+            const fUbch = document.getElementById('fUbch').value.toUpperCase();
+            const fCalle = document.getElementById('fCalle').value.toUpperCase();
+            const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
+            const fSexo = document.getElementById('fSexo').value.toLowerCase();
+            const fVoto = document.getElementById('fVoto').value.toUpperCase();
+            
+            let filasReporte = '';
+            const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
+            
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
+
+            for (let id in baseDeDatosHabitantes) {
+                const h = baseDeDatosHabitantes[id];
+                const comunaStr = (h.comuna || '').toUpperCase();
+                const comunidadStr = (h.comunidad || '').toUpperCase();
+
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(comunaStr)) continue;
+                }
+
+                if (fComuna && !comunaStr.includes(fComuna)) continue;
+                if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
+                if (fUbch && (h.ubch || '').trim().toUpperCase() !== fUbch) continue;
+                if (fCalle && (h.calle || '').trim().toUpperCase() !== fCalle) continue;
+                if (fParentesco && (h.parentesco || '').toLowerCase() !== fParentesco) continue;
+                if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
+                if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
+                
+                const edad = calcularEdad(h.fecha_nacimiento);
+                
+                if (edad < minEdad || edad > maxEdad) continue;
+                
+                const med = cleanText(h.cual_medicamento);
+                const enf = cleanText(h.padece_enfermedad);
+                const tieneMedicina = med !== '' && !negacionesSalud.includes(med);
+                const tieneEnfermedad = enf !== '' && !negacionesSalud.includes(enf);
+                
+                const nac = h.nacionalidad || 'V';
+                const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                
+                let medStrPrint = "NINGUNO";
+                if(tieneMedicina) medStrPrint = med;
+                else if (tieneEnfermedad) medStrPrint = `PADECE: ${enf} (No Especifica Tratamiento)`;
+                
+                filasReporte += `
+                    <tr>
+                        <td>${h.nombre} ${h.apellido}</td>
+                        <td>${cedStr}</td>
+                        <td>${edad}</td>
+                        <td>${h.comunidad}</td>
+                        <td>${h.calle}, Casa ${h.numero_casa}</td>
+                        <td>${h.telefono || ''}</td>
+                        <td>${medStrPrint}</td>
+                    </tr>
+                `;
+            }
+            
+            let nombreMetrica = `REPORTE DE MENORES DE EDAD (Rango: ${minEdad} a ${maxEdad} años)`;
+            
+            document.getElementById('tituloReporte').textContent = nombreMetrica;
+            document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
+            document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
+            
+            window.cerrarModalNinos();
+            
+            setTimeout(() => {
+                window.print();
+                calcularEstadisticas(); 
+            }, 300);
+        };
+
         window.imprimirMetrica = (tipo) => {
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
@@ -1276,7 +1395,7 @@
                         break;
                     case 'adultos': if (edad >= 60) pasaMetrica = true; nombreMetrica = 'ADULTOS MAYORES (60+)'; break;
                     case 'ninos': if (edad < 18) pasaMetrica = true; nombreMetrica = 'MENORES DE EDAD (<18)'; break;
-                    case 'trabajan': if ((h.trabaja || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'POBLACIÓN QUE TRABAJA'; break;
+                    case 'trabajan': if ((h.trabaja || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'TRABAJADORES'; break;
                     case 'escolarizados': if ((h.esta_escolarizado || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'POBLACIÓN ESCOLARIZADA'; break;
                     case 'discapacidad': if ((h.discapacitado || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'PERSONAS CON DISCAPACIDAD'; break;
                     case 'patria': if ((h.carnet_patria || '').toUpperCase() === 'SI') pasaMetrica = true; nombreMetrica = 'CARNET DE LA PATRIA'; break;
