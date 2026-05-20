@@ -154,6 +154,75 @@
                 errorMsg.style.display = 'block';
             }
         });
+
+        // ==========================================
+        // CIERRE AUTOMÁTICO POR INACTIVIDAD (10 min)
+        // Aviso modal con countdown 30s antes + pausa durante operaciones largas.
+        // API pública: window.iniciarOperacionLarga() / window.finalizarOperacionLarga()
+        // ==========================================
+        (() => {
+            const TIMEOUT_MS = 10 * 60 * 1000;
+            const WARNING_MS = 30 * 1000;
+            const CHECK_INTERVAL = 1000;
+            let ultimaActividad = Date.now();
+            let operacionEnCurso = false;
+            let cerrandoSesion = false;
+            let avisoActivo = false;
+
+            const ocultarAviso = () => {
+                const m = document.getElementById('modalInactividadAviso');
+                if (m) m.style.display = 'none';
+                avisoActivo = false;
+            };
+            const reset = () => {
+                if (cerrandoSesion) return;
+                ultimaActividad = Date.now();
+                if (avisoActivo) ocultarAviso();
+            };
+            ['mousemove','mousedown','keydown','scroll','touchstart','click'].forEach(ev =>
+                window.addEventListener(ev, reset, { passive: true, capture: true })
+            );
+
+            window.iniciarOperacionLarga = () => { operacionEnCurso = true; ocultarAviso(); };
+            window.finalizarOperacionLarga = () => { operacionEnCurso = false; ultimaActividad = Date.now(); };
+
+            const mostrarAviso = (segs) => {
+                let modal = document.getElementById('modalInactividadAviso');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'modalInactividadAviso';
+                    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:999999;display:flex;justify-content:center;align-items:center;font-family:"Segoe UI",sans-serif;';
+                    modal.innerHTML = '<div style="background:#fff;padding:30px 40px;border-radius:10px;max-width:450px;text-align:center;border-top:6px solid #E30613;box-shadow:0 10px 40px rgba(0,0,0,0.6);"><div style="font-size:48px;margin-bottom:10px;">⏱️</div><h2 style="margin:0 0 8px 0;color:#E30613;font-size:20px;text-transform:uppercase;letter-spacing:1px;">Sesión por Expirar</h2><p style="margin:0 0 15px 0;color:#333;font-size:14px;">Tu sesión se cerrará por inactividad en:</p><div id="modalInactividadContador" style="font-size:56px;font-weight:bold;color:#E30613;margin:5px 0;font-family:\'Courier New\',monospace;line-height:1;">30</div><p style="margin:8px 0 18px 0;color:#666;font-size:11px;">segundos</p><button id="modalInactividadBoton" type="button" style="background:#28a745;color:#fff;border:none;padding:12px 30px;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px;box-shadow:0 3px 8px rgba(40,167,69,0.4);">✓ Continuar Sesión</button></div>';
+                    document.body.appendChild(modal);
+                    document.getElementById('modalInactividadBoton').addEventListener('click', (e) => { e.stopPropagation(); reset(); });
+                }
+                modal.style.display = 'flex';
+                const c = document.getElementById('modalInactividadContador');
+                if (c) c.textContent = segs;
+                avisoActivo = true;
+            };
+
+            setInterval(async () => {
+                if (cerrandoSesion || operacionEnCurso) return;
+                const restante = TIMEOUT_MS - (Date.now() - ultimaActividad);
+                if (restante <= 0) {
+                    cerrandoSesion = true;
+                    ocultarAviso();
+                    try {
+                        if (window.presenciaRef && typeof update === 'function') {
+                            await update(window.presenciaRef, { estado: 'offline', ultima_accion: 'Sesión cerrada por inactividad (10 min)' });
+                        }
+                    } catch(e) {}
+                    try { await signOut(auth); } catch(e) {}
+                    alert('Tu sesión se cerró por inactividad (10 minutos sin acción).');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                if (restante <= WARNING_MS) {
+                    mostrarAviso(Math.ceil(restante / 1000));
+                }
+            }, CHECK_INTERVAL);
+        })();
     </script>
 </body>
 </html>
