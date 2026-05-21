@@ -619,6 +619,12 @@
                             <option value="nieta">Nieta</option>
                         </select>
                     </div>
+                    <div style="display: flex; align-items: center; padding-top: 22px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: #fff3cd; padding: 10px 14px; border: 1px solid #ffc107; border-radius: 6px; font-weight: bold; color: #856404; margin: 0;">
+                            <input type="checkbox" id="fSoloConObservaciones" style="width: 18px; height: 18px; cursor: pointer; margin: 0;">
+                            🚩 Solo con observaciones de carga (revisar)
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -670,7 +676,12 @@
         <div id="vistaEdicion" class="edit-panel hidden">
             <h2>EXPEDIENTE DEL HABITANTE</h2>
             <p id="avisoBloqueo" class="lock-warning">🔒 Los datos personales están bloqueados por seguridad. Solo el Administrador puede modificarlos.</p>
-            
+            <div id="avisoObservacionesCarga" class="hidden" style="background:#fff3cd; border:2px solid #ffc107; padding:14px 18px; border-radius:8px; margin-bottom:18px; color:#856404;">
+                <div style="font-weight:bold; font-size:14px; margin-bottom:6px;">🚩 ESTE REGISTRO TIENE OBSERVACIONES DE CARGA</div>
+                <div id="textoObservacionesCarga" style="font-size:13px;"></div>
+                <div style="font-size:11px; color:#999; margin-top:6px;">Revise y corrija los campos marcados con "SIN ASIGNAR" o "SIN NOMBRE". Al guardar el registro, la observación se borrará automáticamente si todos los campos quedan completos.</div>
+            </div>
+
             <form id="formEdicion">
                 
                 <h3 class="section-title">1. Ubicación Territorial</h3>
@@ -1370,11 +1381,12 @@
             const fCed = document.getElementById('fCedula').value.toLowerCase();
             const fComuna = document.getElementById('fComuna').value.toUpperCase();
             const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
-            
+
             const fUbch = document.getElementById('fUbch').value.toUpperCase();
             const fCalle = document.getElementById('fCalle').value.toUpperCase();
             const fVoto = document.getElementById('fVoto').value.toUpperCase();
             const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
+            const fSoloConObservaciones = document.getElementById('fSoloConObservaciones')?.checked || false;
 
             if (window.presenciaRef) {
                 let accionStr = 'Explorando la base de datos...';
@@ -1413,8 +1425,9 @@
                 const cumpleUbch = fUbch === "" || (h.ubch || '').trim().toUpperCase() === fUbch;
                 const cumpleVoto = fVoto === "" || (h.vd_vb_vo_seleccion || '').toUpperCase() === fVoto;
                 const cumpleParentesco = fParentesco === "" || (h.parentesco || '').toLowerCase() === fParentesco;
+                const cumpleObservaciones = !fSoloConObservaciones || ((h.observaciones_carga || '').toString().trim() !== '');
 
-                if (cumpleNom && cumpleCed && cumpleComuna && cumpleComunidad && cumpleCalle && cumpleUbch && cumpleVoto && cumpleParentesco) {
+                if (cumpleNom && cumpleCed && cumpleComuna && cumpleComunidad && cumpleCalle && cumpleUbch && cumpleVoto && cumpleParentesco && cumpleObservaciones) {
                     datosFiltrados.push({ id: id, h: h });
                 }
             }
@@ -1439,9 +1452,16 @@
                 const nac = h.nacionalidad ? h.nacionalidad + '-' : 'V-';
                 const cedFinal = h.cedula ? (nac + h.cedula) : 'S/C';
 
+                const obsCarga = (h.observaciones_carga || '').toString().trim();
+                const banderitaObs = obsCarga
+                    ? `<span title="${obsCarga.replace(/"/g, '&quot;')}" style="display:inline-block; margin-right:6px; color:#dc3545; cursor:help; font-size:14px;">🚩</span>`
+                    : '';
+                const filaResaltada = obsCarga ? 'background-color: #fff8e1;' : '';
+
                 const tr = document.createElement('tr');
+                tr.setAttribute('style', filaResaltada);
                 tr.innerHTML = `
-                    <td><strong>${h.nombre} ${h.apellido}</strong></td>
+                    <td>${banderitaObs}<strong>${h.nombre} ${h.apellido}</strong></td>
                     <td>${cedFinal}</td>
                     <td>${h.ubch || ''}</td>
                     <td>${h.comunidad}</td>
@@ -1599,6 +1619,19 @@
 
             document.getElementById('vistaConsultas').classList.add('hidden');
             document.getElementById('vistaEdicion').classList.remove('hidden');
+
+            // Banner amarillo de observaciones de carga (solo aparece si el migrador lo marcó)
+            const avisoObs = document.getElementById('avisoObservacionesCarga');
+            const textoObs = document.getElementById('textoObservacionesCarga');
+            const obsTexto = (h.observaciones_carga || '').toString().trim();
+            if (avisoObs && textoObs) {
+                if (obsTexto) {
+                    textoObs.textContent = obsTexto;
+                    avisoObs.classList.remove('hidden');
+                } else {
+                    avisoObs.classList.add('hidden');
+                }
+            }
 
             const camposPersonales = [
                 'e_tiene_cedula', 'e_nacionalidad', 'e_nombre', 'e_apellido', 
@@ -1764,10 +1797,21 @@
                 datosEditados.comuna = misComunas[0];
             }
 
-            const dataFinal = { 
-                ...baseDeDatosHabitantes[idActualEdicion], 
-                ...datosEditados 
+            const dataFinal = {
+                ...baseDeDatosHabitantes[idActualEdicion],
+                ...datosEditados
             };
+
+            // Limpia observaciones_carga automáticamente si el admin corrigió los campos problemáticos
+            const obsActuales = (dataFinal.observaciones_carga || '').toString();
+            if (obsActuales) {
+                const nombreOk = dataFinal.nombre && !dataFinal.nombre.toString().toUpperCase().startsWith('SIN NOMBRE');
+                const comunaOk = dataFinal.comuna && dataFinal.comuna.toString().toUpperCase() !== 'SIN ASIGNAR';
+                const comunidadOk = dataFinal.comunidad && dataFinal.comunidad.toString().toUpperCase() !== 'SIN ASIGNAR';
+                if (nombreOk && comunaOk && comunidadOk && !obsActuales.includes('ERROR DE PROCESAMIENTO')) {
+                    dataFinal.observaciones_carga = '';
+                }
+            }
 
             try {
                 await update(ref(database, `habitantes/${idActualEdicion}`), dataFinal);
