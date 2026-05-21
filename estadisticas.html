@@ -314,6 +314,23 @@
             display: flex;
             align-items: flex-start;
             gap: 12px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            position: relative;
+        }
+        .alerta-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        }
+        .alerta-card::after {
+            content: '👁 Ver detalle';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 10px;
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: uppercase;
         }
         .alerta-card.severa { border-left-color: #dc3545; background: #fff5f5; }
         .alerta-card.media { border-left-color: #d97706; background: #fffaeb; }
@@ -971,6 +988,27 @@
         </div>
     </div>
 
+    <div id="modalAlertaDetalle" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 95vw; width: 1100px; max-height: 90vh; padding: 25px; display: flex; flex-direction: column;">
+            <span class="close-modal" onclick="cerrarModalAlertaDetalle()">✖</span>
+            <h3 id="tituloAlertaDetalle" style="color: var(--azul-oficial); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; text-transform: uppercase; font-size: 16px; font-weight: bold;">Detalle</h3>
+            <p id="subtituloAlertaDetalle" style="font-size: 12px; color: #555; line-height: 1.5; margin-bottom: 15px;"></p>
+            <div style="flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead id="theadAlertaDetalle" style="background: var(--azul-oficial); color: white; position: sticky; top: 0;"></thead>
+                    <tbody id="tbodyAlertaDetalle"></tbody>
+                </table>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid #eee; margin-top: 15px;">
+                <span id="conteoAlertaDetalle" style="font-size: 13px; color: #475569; font-weight: 600;"></span>
+                <div>
+                    <button type="button" style="padding: 10px 15px; background: var(--verde-monitor, #16a34a); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px; margin-right: 8px;" onclick="exportarAlertaCSV()">📥 Exportar CSV</button>
+                    <button type="button" style="padding: 10px 15px; background: var(--rojo-oficial); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;" onclick="imprimirAlertaPDF()">🖨 Generar PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="modalNinos" class="modal-overlay hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="cerrarModalNinos()">✖</span>
@@ -1533,6 +1571,7 @@
         }
 
         // Genera la banda de alertas críticas según el estado de los datos.
+        // Cada tarjeta es clickeable y abre un modal con la lista de habitantes correspondiente.
         function actualizarBandaAlertas(cTotal, cObservaciones) {
             const banda = document.getElementById('bandaAlertas');
             if (!banda) return;
@@ -1541,18 +1580,15 @@
 
             const alertas = [];
 
-            // 1. Habitantes con observaciones del migrador (no urgentísimo pero llamada a corregir)
             if (cObservaciones > 0) {
                 alertas.push({
-                    sev: 'media',
-                    icono: '🚩',
+                    sev: 'media', icono: '🚩', tipo: 'observaciones',
                     numero: cObservaciones,
                     titulo: 'Con Observaciones de Carga',
-                    descripcion: `Hay ${cObservaciones} habitantes con campos por completar (sin comuna, sin nombre, etc.). Revíselos en consulta.html.`
+                    descripcion: `Hay ${cObservaciones} habitantes con campos por completar. Click para ver la lista.`
                 });
             }
 
-            // 2. Cédulas duplicadas (mismo número en >1 habitante de los filtrados)
             const cedulas = new Map();
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -1563,15 +1599,13 @@
             const duplicadas = Array.from(cedulas.values()).filter(v => v > 1).length;
             if (duplicadas > 0) {
                 alertas.push({
-                    sev: 'severa',
-                    icono: '⚠️',
+                    sev: 'severa', icono: '⚠️', tipo: 'duplicadas',
                     numero: duplicadas,
                     titulo: 'Cédulas Duplicadas',
-                    descripcion: `${duplicadas} números de cédula aparecen en más de un habitante. Esto suele indicar registros duplicados que deben fusionarse.`
+                    descripcion: `${duplicadas} números de cédula aparecen en más de un habitante. Click para ver cuáles.`
                 });
             }
 
-            // 3. Adultos sin cédula (≥9 años sin cédula registrada)
             let sinCedulaAdultos = 0;
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -1581,15 +1615,13 @@
             }
             if (sinCedulaAdultos > 0) {
                 alertas.push({
-                    sev: 'severa',
-                    icono: '🪪',
+                    sev: 'severa', icono: '🪪', tipo: 'sin_cedula',
                     numero: sinCedulaAdultos,
                     titulo: 'Adultos sin Cédula',
-                    descripcion: `${sinCedulaAdultos} habitantes mayores de 9 años no tienen cédula registrada. Pueden requerir trámite de identificación.`
+                    descripcion: `${sinCedulaAdultos} habitantes ≥9 años sin cédula registrada. Click para ver la lista.`
                 });
             }
 
-            // 4. Hogares en rancho (vivienda precaria)
             const hogaresRancho = new Set();
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -1600,15 +1632,13 @@
             }
             if (hogaresRancho.size > 0) {
                 alertas.push({
-                    sev: 'media',
-                    icono: '🏚️',
+                    sev: 'media', icono: '🏚️', tipo: 'rancho',
                     numero: hogaresRancho.size,
                     titulo: 'Hogares en Rancho',
-                    descripcion: `${hogaresRancho.size} hogares con vivienda tipo rancho. Atención prioritaria de servicios sociales.`
+                    descripcion: `${hogaresRancho.size} hogares con vivienda tipo rancho. Click para ver la lista.`
                 });
             }
 
-            // 5. Embarazadas + lactantes (programa maternal)
             let cEmbLact = 0;
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
@@ -1616,18 +1646,18 @@
             }
             if (cEmbLact > 0) {
                 alertas.push({
-                    sev: 'info',
-                    icono: '🤱',
+                    sev: 'info', icono: '🤱', tipo: 'maternal',
                     numero: cEmbLact,
                     titulo: 'Maternal en Seguimiento',
-                    descripcion: `${cEmbLact} mujeres embarazadas o en lactancia activa. Mantener seguimiento del programa.`
+                    descripcion: `${cEmbLact} mujeres embarazadas o en lactancia activa. Click para ver la lista.`
                 });
             }
 
-            // Render
             alertas.forEach(a => {
                 const div = document.createElement('div');
                 div.className = `alerta-card ${a.sev}`;
+                div.setAttribute('data-tipo', a.tipo);
+                div.setAttribute('title', 'Click para ver detalle');
                 div.innerHTML = `
                     <div class="alerta-icono">${a.icono}</div>
                     <div class="alerta-cuerpo">
@@ -1636,9 +1666,231 @@
                         <div class="alerta-descripcion">${a.descripcion}</div>
                     </div>
                 `;
+                div.addEventListener('click', () => abrirDetalleAlerta(a.tipo, a.titulo, a.icono));
                 banda.appendChild(div);
             });
         }
+
+        // Estado en memoria del modal de detalle (para export/print)
+        let _alertaDetalleActual = { titulo: '', registros: [], columnas: [] };
+
+        // Abre el modal con la lista de habitantes correspondiente al tipo de alerta clickeada.
+        window.abrirDetalleAlerta = (tipo, titulo, icono) => {
+            const registros = construirListaAlerta(tipo);
+            const columnas = columnasParaAlerta(tipo);
+            _alertaDetalleActual = { titulo: `${icono} ${titulo}`, registros, columnas, tipo };
+
+            document.getElementById('tituloAlertaDetalle').textContent = `${icono} ${titulo} — ${registros.length} registros`;
+            document.getElementById('subtituloAlertaDetalle').innerHTML = descripcionAlerta(tipo, registros.length);
+
+            const thead = document.getElementById('theadAlertaDetalle');
+            thead.innerHTML = '<tr>' + columnas.map(c => `<th style="padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; border-right: 1px solid rgba(255,255,255,0.2);">${c.label}</th>`).join('') + '</tr>';
+
+            const tbody = document.getElementById('tbodyAlertaDetalle');
+            if (registros.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${columnas.length}" style="padding: 30px; text-align: center; color: #94a3b8;">Sin registros.</td></tr>`;
+            } else {
+                tbody.innerHTML = registros.map((r, i) => {
+                    const fondo = i % 2 === 0 ? 'background:#fff;' : 'background:#f8fafc;';
+                    return '<tr style="' + fondo + ' border-bottom:1px solid #e2e8f0;">' +
+                        columnas.map(c => `<td style="padding: 8px 12px; border-right: 1px solid #f1f5f9;">${c.render ? c.render(r) : (r[c.key] || '—')}</td>`).join('') +
+                    '</tr>';
+                }).join('');
+            }
+
+            document.getElementById('conteoAlertaDetalle').textContent = `Total: ${registros.length} registros`;
+            document.getElementById('modalAlertaDetalle').classList.remove('hidden');
+        };
+
+        window.cerrarModalAlertaDetalle = () => {
+            document.getElementById('modalAlertaDetalle').classList.add('hidden');
+        };
+
+        // Construye la lista de habitantes correspondiente a cada tipo de alerta.
+        function construirListaAlerta(tipo) {
+            const lista = [];
+
+            const formato = (h, id) => {
+                const edad = calcularEdad(h.fecha_nacimiento);
+                const ced = h.cedula ? `${h.nacionalidad || 'V'}-${h.cedula}` : 'S/C';
+                return {
+                    id, nombre: `${h.nombre || ''} ${h.apellido || ''}`.trim() || '(sin nombre)',
+                    cedula: ced, edad,
+                    comuna: h.comuna || '', comunidad: h.comunidad || '',
+                    direccion: `${h.calle || ''}${h.numero_casa ? ', Casa ' + h.numero_casa : ''}`.trim() || '—',
+                    telefono: h.telefono || '',
+                    parentesco: h.parentesco || '', sexo: h.sexo || '',
+                    tipo_vivienda: h.tipo_vivienda || '',
+                    embarazada: (h.embarazada || '').toLowerCase() === 'si',
+                    lactancia: (h.lactancia_materna || '').toLowerCase() === 'si',
+                    observaciones: h.observaciones_carga || '',
+                    cedulaRaw: (h.cedula || '').toString().trim(),
+                    _h: h
+                };
+            };
+
+            if (tipo === 'observaciones') {
+                for (let id in baseDeDatosHabitantes) {
+                    const h = baseDeDatosHabitantes[id];
+                    if ((h.observaciones_carga || '').toString().trim()) lista.push(formato(h, id));
+                }
+            } else if (tipo === 'duplicadas') {
+                // Agrupar por cédula y mostrar SOLO las que tienen más de un habitante con el mismo número
+                const porCedula = new Map();
+                for (let id in baseDeDatosHabitantes) {
+                    const h = baseDeDatosHabitantes[id];
+                    const ced = (h.cedula || '').toString().trim();
+                    if (!ced) continue;
+                    if (!porCedula.has(ced)) porCedula.set(ced, []);
+                    porCedula.get(ced).push(formato(h, id));
+                }
+                porCedula.forEach((arr, ced) => {
+                    if (arr.length > 1) {
+                        arr.forEach(r => {
+                            r._grupo = ced;
+                            r._copias = arr.length;
+                            lista.push(r);
+                        });
+                    }
+                });
+                // Ordenar por cédula para que las copias queden juntas
+                lista.sort((a, b) => (a._grupo || '').localeCompare(b._grupo || ''));
+            } else if (tipo === 'sin_cedula') {
+                for (let id in baseDeDatosHabitantes) {
+                    const h = baseDeDatosHabitantes[id];
+                    const edad = calcularEdad(h.fecha_nacimiento);
+                    const sinCed = !h.cedula || (h.cedula || '').toString().trim() === '' || (h.tiene_cedula || '').toLowerCase() === 'no';
+                    if (edad >= 9 && sinCed) lista.push(formato(h, id));
+                }
+                lista.sort((a, b) => (b.edad || 0) - (a.edad || 0));
+            } else if (tipo === 'rancho') {
+                // Solo jefes o el primer integrante de cada hogar tipo rancho
+                const hogaresVistos = new Set();
+                for (let id in baseDeDatosHabitantes) {
+                    const h = baseDeDatosHabitantes[id];
+                    if ((h.tipo_vivienda || '').toLowerCase() !== 'rancho') continue;
+                    const dirH = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
+                    const idHogar = h.jefe_hogar_id || dirH;
+                    if (hogaresVistos.has(idHogar)) continue;
+                    hogaresVistos.add(idHogar);
+                    lista.push(formato(h, id));
+                }
+            } else if (tipo === 'maternal') {
+                for (let id in baseDeDatosHabitantes) {
+                    const h = baseDeDatosHabitantes[id];
+                    if ((h.embarazada || '').toLowerCase() === 'si' || (h.lactancia_materna || '').toLowerCase() === 'si') {
+                        lista.push(formato(h, id));
+                    }
+                }
+            }
+            return lista;
+        }
+
+        function columnasParaAlerta(tipo) {
+            const base = [
+                { key: 'nombre', label: 'Nombre Completo' },
+                { key: 'cedula', label: 'Cédula' },
+                { key: 'edad', label: 'Edad' },
+                { key: 'comuna', label: 'Comuna' },
+                { key: 'comunidad', label: 'Comunidad' },
+                { key: 'direccion', label: 'Dirección' },
+                { key: 'telefono', label: 'Teléfono' }
+            ];
+            if (tipo === 'duplicadas') {
+                return [
+                    { key: '_grupo', label: '⚠️ Cédula Duplicada', render: r => `<b style="color:#dc3545;">${r._grupo}</b> <span style="color:#94a3b8;">(${r._copias} copias)</span>` },
+                    ...base.slice(0, 6)
+                ];
+            }
+            if (tipo === 'observaciones') {
+                return [
+                    ...base.slice(0, 6),
+                    { key: 'observaciones', label: '🚩 Observación', render: r => `<span style="color:#dc3545; font-weight:700;">${r.observaciones}</span>` }
+                ];
+            }
+            if (tipo === 'maternal') {
+                return [
+                    ...base.slice(0, 6),
+                    { key: 'estado_maternal', label: 'Estado', render: r => (r.embarazada ? '🤰 Embarazada' : '') + (r.embarazada && r.lactancia ? ' + ' : '') + (r.lactancia ? '🍼 Lactancia' : '') }
+                ];
+            }
+            if (tipo === 'rancho') {
+                return [
+                    ...base,
+                    { key: 'parentesco', label: 'Rol Familiar' }
+                ];
+            }
+            // sin_cedula
+            return [
+                ...base,
+                { key: 'parentesco', label: 'Rol Familiar' }
+            ];
+        }
+
+        function descripcionAlerta(tipo, n) {
+            switch (tipo) {
+                case 'duplicadas': return `Listado agrupado: cada cédula duplicada aparece varias veces juntas. Fusioná o corregí los registros desde el <a href="verificador.html" style="color:var(--azul-oficial); font-weight:bold;">Verificador</a>.`;
+                case 'sin_cedula': return `Habitantes mayores de 9 años sin cédula registrada. Pueden requerir trámite. Ordenados por edad descendente.`;
+                case 'observaciones': return `Habitantes a los que el migrador les marcó observaciones. Pueden completarse desde el <a href="verificador.html" style="color:var(--azul-oficial); font-weight:bold;">Verificador</a> o desde <a href="consulta.html" style="color:var(--azul-oficial); font-weight:bold;">Consulta</a>.`;
+                case 'rancho': return `Un representante por hogar deduplicado por jefe de hogar o por dirección.`;
+                case 'maternal': return `Mujeres con embarazo activo o en período de lactancia.`;
+                default: return '';
+            }
+        }
+
+        // Export CSV de la lista actualmente visible en el modal
+        window.exportarAlertaCSV = () => {
+            const { titulo, registros, columnas } = _alertaDetalleActual;
+            if (registros.length === 0) { alert('No hay registros para exportar.'); return; }
+            const e = (v) => '"' + (v == null ? '' : v.toString().replace(/"/g, '""').replace(/<[^>]+>/g, '').replace(/[\r\n]+/g, ' | ')) + '"';
+            let csv = '﻿' + columnas.map(c => e(c.label)).join(',') + '\n';
+            registros.forEach(r => {
+                csv += columnas.map(c => {
+                    const v = c.render ? c.render(r) : r[c.key];
+                    return e(v);
+                }).join(',') + '\n';
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const fecha = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `ALERTA_${titulo.replace(/[^A-Za-z0-9]+/g, '_')}_${fecha}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        // Imprime la lista como PDF reutilizando la infraestructura del reporte global
+        window.imprimirAlertaPDF = () => {
+            const { titulo, registros, columnas } = _alertaDetalleActual;
+            if (registros.length === 0) { alert('No hay registros para imprimir.'); return; }
+
+            document.getElementById('tituloReporte').textContent = `${titulo.toUpperCase()} — ${registros.length} registros`;
+            document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
+
+            // Reutilizamos la tabla del reporte global: 7 columnas standard
+            let filasReporte = '';
+            registros.forEach(r => {
+                const detalleExtra = r._grupo
+                    ? `Cédula dup.: ${r._grupo} (${r._copias} copias)`
+                    : (r.observaciones || (r.embarazada || r.lactancia ? ((r.embarazada ? 'EMBARAZADA' : '') + (r.embarazada && r.lactancia ? ' + ' : '') + (r.lactancia ? 'LACTANCIA' : '')) : (r.tipo_vivienda || '—')));
+                filasReporte += `
+                    <tr>
+                        <td>${r.nombre}</td>
+                        <td>${r.cedula}</td>
+                        <td>${r.edad}</td>
+                        <td>${r.comunidad}</td>
+                        <td>${r.direccion}</td>
+                        <td>${r.telefono}</td>
+                        <td>${detalleExtra}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
+            cerrarModalAlertaDetalle();
+            setTimeout(() => { prepararPrint(); window.print(); calcularEstadisticas(); }, 300);
+        };
 
         // Devuelve la cantidad de bombonas que tiene un hogar. Solo cuenta si tiene_gas==='si'
         // Y el tipo NO es "gas directo" (que es por tubería y no usa bombonas).
