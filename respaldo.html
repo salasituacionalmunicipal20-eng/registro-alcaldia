@@ -1380,14 +1380,7 @@
                     let limpio = texto.toString().replace(/"/g, '""').replace(/(\r\n|\n|\r)/gm, " | ");
                     return `"${limpio}"`;
                 };
-                // Compat: si padece_enfermedad trae texto del esquema viejo, lo movemos a cual_enfermedad
-                let padeceFlag = h.padece_enfermedad;
-                let cualEnf = h.cual_enfermedad;
-                if (padeceFlag && padeceFlag !== 'si' && padeceFlag !== 'no') {
-                    cualEnf = cualEnf || padeceFlag;
-                    padeceFlag = 'si';
-                }
-                csv += `${e(id)},${e(h.ubch)},${e(h.codigo_sigue_actual)},${e(h.comuna)},${e(h.consejo_comunal)},${e(h.comunidad)},${e(h.calle)},${e(h.numero_casa)},${e(h.tipo_vivienda)},${e(h.tenencia_vivienda)},${e(h.condiciones_vivienda)},${e(h.responsabilidad_cbi_cm)},${e(h.tiene_gas)},${e(h.tipo_cilindro_gas)},${e(h.cantidad_cilindro_gas)},${e(h.nombre)},${e(h.apellido)},${e(h.tiene_cedula)},${e(h.nacionalidad)},${e(h.cedula)},${e(h.telefono)},${e(h.fecha_nacimiento)},${e(h.sexo)},${e(h.parentesco)},${e(h.profesion)},${e(h.trabaja)},${e(h.esta_escolarizado)},${e(h.esta_cedulado)},${e(padeceFlag)},${e(cualEnf)},${e(h.toma_medicamento)},${e(h.cual_medicamento)},${e(h.discapacitado)},${e(h.tipo_discapacidad)},${e(h.embarazada)},${e(h.lactancia_materna)},${e(h.cobra_amor_mayor)},${e(h.carnet_patria)},${e(h.mision_jose_gregorio)},${e(h.hogares_patria_bono)},${e(h.donde_vota)},${e(h.vd_vb_vo_seleccion)},${e(h.vd_vb_vo_detalle)},${e(h.registrado_por_nombre)},${e(h.fecha_registro)}\n`;
+                csv += `${e(id)},${e(h.ubch)},${e(h.codigo_sigue_actual)},${e(h.comuna)},${e(h.consejo_comunal)},${e(h.comunidad)},${e(h.calle)},${e(h.numero_casa)},${e(h.tipo_vivienda)},${e(h.tenencia_vivienda)},${e(h.condiciones_vivienda)},${e(h.responsabilidad_cbi_cm)},${e(h.tiene_gas)},${e(h.tipo_cilindro_gas)},${e(h.cantidad_cilindro_gas)},${e(h.nombre)},${e(h.apellido)},${e(h.tiene_cedula)},${e(h.nacionalidad)},${e(h.cedula)},${e(h.telefono)},${e(h.fecha_nacimiento)},${e(h.sexo)},${e(h.parentesco)},${e(h.profesion)},${e(h.trabaja)},${e(h.esta_escolarizado)},${e(h.esta_cedulado)},${e(h.padece_enfermedad)},${e(h.cual_enfermedad)},${e(h.toma_medicamento)},${e(h.cual_medicamento)},${e(h.discapacitado)},${e(h.tipo_discapacidad)},${e(h.embarazada)},${e(h.lactancia_materna)},${e(h.cobra_amor_mayor)},${e(h.carnet_patria)},${e(h.mision_jose_gregorio)},${e(h.hogares_patria_bono)},${e(h.donde_vota)},${e(h.vd_vb_vo_seleccion)},${e(h.vd_vb_vo_detalle)},${e(h.registrado_por_nombre)},${e(h.fecha_registro)}\n`;
             }
 
             const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });

@@ -1009,25 +1009,14 @@
             return 1;
         }
 
-        // Helper compat para enfermedad/medicamento. Detecta el esquema nuevo (flag si/no + texto separado)
-        // y también registros viejos donde padece_enfermedad / cual_medicamento traen el texto directo.
-        // Devuelve { tieneEnf, tieneMed, enf, med } listo para reportes.
-        function evaluarSalud(h, negacionesSalud) {
-            const padeceRaw = (h.padece_enfermedad || '').toString().trim();
-            const padeceLower = padeceRaw.toLowerCase();
-            const tomaMedRaw = (h.toma_medicamento || '').toString().trim().toLowerCase();
-
-            let enf = cleanText(h.cual_enfermedad);
-            // Fallback esquema viejo: padece_enfermedad tiene texto descriptivo, no 'si'/'no'
-            if (!enf && padeceRaw && padeceLower !== 'si' && padeceLower !== 'no') {
-                const txt = cleanText(h.padece_enfermedad);
-                if (!negacionesSalud.includes(txt)) enf = txt;
-            }
-            const tieneEnf = padeceLower === 'si' || (enf !== '' && !negacionesSalud.includes(enf));
-
+        // Lee enfermedad y medicamento del esquema actual:
+        //   padece_enfermedad / toma_medicamento → flag 'si'/'no'
+        //   cual_enfermedad / cual_medicamento → texto descriptivo (puede venir vacío)
+        function evaluarSalud(h) {
+            const enf = cleanText(h.cual_enfermedad);
             const med = cleanText(h.cual_medicamento);
-            const tieneMed = tomaMedRaw === 'si' || (med !== '' && !negacionesSalud.includes(med));
-
+            const tieneEnf = (h.padece_enfermedad || '').toString().toLowerCase() === 'si';
+            const tieneMed = (h.toma_medicamento || '').toString().toLowerCase() === 'si';
             return { tieneEnf, tieneMed, enf, med };
         }
 
@@ -1250,7 +1239,7 @@
                     if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'enfermedad') {
-                        const ev = evaluarSalud(h, negacionesSalud);
+                        const ev = evaluarSalud(h);
                         if (!ev.tieneEnf && !ev.tieneMed) continue;
                     }
                 }
@@ -1271,7 +1260,7 @@
                     }
                 }
 
-                const { tieneEnf, tieneMed, enf, med } = evaluarSalud(h, negacionesSalud);
+                const { tieneEnf, tieneMed, enf, med } = evaluarSalud(h);
 
                 // Acumulado de profesiones (solo si trabaja)
                 if ((h.trabaja || '').toLowerCase() === 'si') {
@@ -1395,7 +1384,7 @@
                 if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
                 if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
                 
-                const { tieneEnf: tieneEnfermedad, tieneMed: tieneMedicina, enf, med } = evaluarSalud(h, negacionesSalud);
+                const { tieneEnf: tieneEnfermedad, tieneMed: tieneMedicina, enf, med } = evaluarSalud(h);
 
                 if (!tieneMedicina && !tieneEnfermedad) continue;
 
@@ -1487,7 +1476,7 @@
                 
                 if (edad < minEdad || edad > maxEdad) continue;
                 
-                const { tieneEnf: tieneEnfermedad, tieneMed: tieneMedicina, enf, med } = evaluarSalud(h, negacionesSalud);
+                const { tieneEnf: tieneEnfermedad, tieneMed: tieneMedicina, enf, med } = evaluarSalud(h);
 
                 const nac = h.nacionalidad || 'V';
                 const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
@@ -1577,7 +1566,7 @@
                     if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'enfermedad') {
-                        const ev = evaluarSalud(h, negacionesSalud);
+                        const ev = evaluarSalud(h);
                         if (!ev.tieneEnf && !ev.tieneMed) continue;
                     }
                 }
@@ -1625,7 +1614,7 @@
                     const nac = h.nacionalidad || 'V';
                     const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
                     
-                    const { tieneEnf, tieneMed, enf, med } = evaluarSalud(h, negacionesSalud);
+                    const { tieneEnf, tieneMed, enf, med } = evaluarSalud(h);
                     
                     let diagInfo = "NINGUNO";
                     if (tipo === 'cilindros') {

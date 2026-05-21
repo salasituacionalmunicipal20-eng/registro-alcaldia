@@ -1662,16 +1662,8 @@
             llenarCampo('e_trabaja', h.trabaja); 
             llenarCampo('e_esta_escolarizado', h.esta_escolarizado); 
             llenarCampo('e_esta_cedulado', h.esta_cedulado);
-            // Compat: si el registro viejo tenía texto en padece_enfermedad, lo migramos al vuelo
-            let padeceVal = h.padece_enfermedad;
-            let cualEnfVal = h.cual_enfermedad || '';
-            if (padeceVal && padeceVal !== 'si' && padeceVal !== 'no') {
-                // Es un texto descriptivo del esquema viejo → trasvasamos
-                cualEnfVal = cualEnfVal || padeceVal;
-                padeceVal = 'si';
-            }
-            llenarCampo('e_padece_enfermedad', padeceVal);
-            llenarCampo('e_cual_enfermedad', cualEnfVal);
+            llenarCampo('e_padece_enfermedad', h.padece_enfermedad);
+            llenarCampo('e_cual_enfermedad', h.cual_enfermedad);
             llenarCampo('e_toma_medicamento', h.toma_medicamento);
             llenarCampo('e_cual_medicamento', h.cual_medicamento);
             llenarCampo('e_discapacitado', h.discapacitado); 
@@ -1706,7 +1698,7 @@
             if(h.discapacitado === 'si') document.getElementById('e_tipo_discapacidad_wrapper').classList.remove('hidden');
             else document.getElementById('e_tipo_discapacidad_wrapper').classList.add('hidden');
 
-            if(padeceVal === 'si') document.getElementById('e_cual_enfermedad_wrapper').classList.remove('hidden');
+            if(h.padece_enfermedad === 'si') document.getElementById('e_cual_enfermedad_wrapper').classList.remove('hidden');
             else document.getElementById('e_cual_enfermedad_wrapper').classList.add('hidden');
             
             checkEdadElectoral(h.fecha_nacimiento, 'e_donde_vota_wrapper', 'e_estatus_electoral_wrapper', 'e_vd_vb_vo_detalle_wrapper', 'e_vd_vb_vo_seleccion', 'e_donde_vota');
