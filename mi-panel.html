@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Panel · Alcaldía de Cristóbal Rojas</title>
+    <style>
+        :root {
+            --azul-oficial: #003366;
+            --azul-claro: #0284c7;
+            --rojo-oficial: #E30613;
+            --verde: #16a34a;
+            --naranja: #d97706;
+            --violeta: #7c3aed;
+            --gris: #64748b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+            color: #1e293b;
+            min-height: 100vh;
+        }
+        .cintillo-gob {
+            background: linear-gradient(90deg, #ffd700 0%, #0033a0 50%, #cf142b 100%);
+            color: white; text-align: center; font-size: 11px; padding: 6px 10px; font-weight: bold;
+        }
+        .top-bar {
+            background: #0f172a; color: white; padding: 14px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .top-bar h1 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .btn {
+            background: var(--azul-claro); color: white; border: none;
+            padding: 8px 14px; border-radius: 6px; font-size: 12px;
+            font-weight: bold; cursor: pointer; text-transform: uppercase;
+        }
+        .btn-volver { background: var(--rojo-oficial); }
+
+        .container { padding: 25px 30px; max-width: 1400px; margin: 0 auto; }
+
+        .saludo {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 6px solid var(--azul-oficial);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .saludo h2 { margin: 0 0 8px 0; font-size: 26px; color: var(--azul-oficial); font-family: Georgia, serif; }
+        .saludo .sub { color: var(--gris); font-size: 13px; }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .kpi {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border-top: 5px solid;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .kpi.azul { border-top-color: var(--azul-claro); }
+        .kpi.verde { border-top-color: var(--verde); }
+        .kpi.naranja { border-top-color: var(--naranja); }
+        .kpi.rojo { border-top-color: var(--rojo-oficial); }
+        .kpi.violeta { border-top-color: var(--violeta); }
+        .kpi .icono { font-size: 24px; margin-bottom: 4px; }
+        .kpi .numero { font-size: 32px; font-weight: 900; line-height: 1; margin: 8px 0; font-family: Georgia, serif; color: #1e293b; }
+        .kpi .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--gris);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .kpi .sub { font-size: 12px; color: var(--azul-oficial); margin-top: 4px; font-weight: 600; }
+
+        .secciones {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) {
+            .secciones { grid-template-columns: 1fr; }
+        }
+
+        .seccion {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .seccion h3 {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            color: var(--azul-oficial);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .seccion h3 a {
+            font-size: 11px;
+            color: var(--azul-claro);
+            text-decoration: none;
+            font-weight: 600;
+            text-transform: none;
+        }
+
+        .item-lista {
+            padding: 10px 12px;
+            border-left: 3px solid;
+            margin-bottom: 8px;
+            background: #f8fafc;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .item-lista.urgente { border-left-color: var(--rojo-oficial); background: #fef2f2; }
+        .item-lista.normal { border-left-color: var(--azul-claro); }
+        .item-lista.cumplido { border-left-color: var(--verde); opacity: 0.7; }
+        .item-lista .titulo { font-weight: 700; color: #1e293b; margin-bottom: 3px; }
+        .item-lista .meta { font-size: 11px; color: var(--gris); }
+
+        .vacio { text-align: center; padding: 30px 20px; color: var(--gris); font-style: italic; }
+
+        .productividad-bar {
+            background: #f1f5f9;
+            border-radius: 6px;
+            overflow: hidden;
+            height: 8px;
+            margin: 10px 0;
+        }
+        .productividad-bar > div {
+            background: linear-gradient(90deg, var(--verde), var(--azul-claro));
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .acceso-rapido {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .acceso-rapido a {
+            background: var(--azul-oficial);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: transform 0.15s;
+        }
+        .acceso-rapido a:hover { transform: translateY(-2px); }
+        .acceso-rapido a.amarillo { background: var(--naranja); }
+        .acceso-rapido a.verde { background: var(--verde); }
+        .acceso-rapido a.violeta { background: var(--violeta); }
+        .acceso-rapido a.rojo { background: var(--rojo-oficial); }
+    </style>
+</head>
+<body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA · ESTADO MIRANDA · ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
+    <div class="top-bar">
+        <h1>👤 Mi Panel Personal</h1>
+        <button class="btn btn-volver" onclick="location.href='admin.html'">← Panel General</button>
+    </div>
+
+    <div class="container">
+
+        <div class="saludo">
+            <h2 id="saludoNombre">Hola...</h2>
+            <div class="sub" id="saludoSub">Cargando tus indicadores personales...</div>
+        </div>
+
+        <div class="kpis">
+            <div class="kpi azul">
+                <div class="icono">📝</div>
+                <div class="numero" id="kpiHabitantes">0</div>
+                <div class="label">Habitantes que cargué</div>
+                <div class="sub" id="kpiHabitantesSub"></div>
+            </div>
+            <div class="kpi verde">
+                <div class="icono">📋</div>
+                <div class="numero" id="kpiVisitas">0</div>
+                <div class="label">Visitas que registré</div>
+                <div class="sub" id="kpiVisitasSub"></div>
+            </div>
+            <div class="kpi naranja">
+                <div class="icono">🎯</div>
+                <div class="numero" id="kpiCompromisos">0</div>
+                <div class="label">Compromisos abiertos</div>
+                <div class="sub" id="kpiCompromisosSub"></div>
+            </div>
+            <div class="kpi rojo">
+                <div class="icono">🎫</div>
+                <div class="numero" id="kpiTickets">0</div>
+                <div class="label">Tickets creados</div>
+                <div class="sub" id="kpiTicketsSub"></div>
+            </div>
+            <div class="kpi violeta">
+                <div class="icono">📊</div>
+                <div class="numero" id="kpiProductividad">0%</div>
+                <div class="label">Mi productividad</div>
+                <div class="productividad-bar"><div id="barraProductividad" style="width:0%"></div></div>
+                <div class="sub" id="kpiProductividadSub"></div>
+            </div>
+        </div>
+
+        <div class="secciones">
+
+            <div class="seccion">
+                <h3>🎯 Mis compromisos urgentes <a href="compromisos.html">Ver todos →</a></h3>
+                <div id="listaCompromisos"></div>
+            </div>
+
+            <div class="seccion">
+                <h3>📋 Mis últimas visitas <a href="compromisos.html">Ver bitácora →</a></h3>
+                <div id="listaVisitas"></div>
+            </div>
+
+            <div class="seccion">
+                <h3>📝 Habitantes que registré recientemente <a href="consulta.html">Ir a Consulta →</a></h3>
+                <div id="listaHabitantes"></div>
+            </div>
+
+            <div class="seccion">
+                <h3>🎫 Tickets activos que creé <a href="tickets.html">Ver tickets →</a></h3>
+                <div id="listaTickets"></div>
+            </div>
+
+        </div>
+
+        <div class="seccion" style="margin-top: 20px;">
+            <h3>⚡ Acceso rápido</h3>
+            <div class="acceso-rapido">
+                <a href="registro.html">📝 Nuevo Habitante</a>
+                <a href="consulta.html" class="amarillo">🔍 Consultar</a>
+                <a href="compromisos.html" class="verde">🎯 Compromisos</a>
+                <a href="tickets.html" class="rojo">🎫 Tickets</a>
+                <a href="constancias.html" class="violeta">📄 Constancias</a>
+                <a href="estadisticas.html">📊 Estadísticas</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        let usuarioActual = null;
+        let perfilOperador = null;
+
+        const $ = (id) => document.getElementById(id);
+        const escapeHtml = (s) => (s == null ? '' : s.toString()
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            usuarioActual = user;
+            try {
+                const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                if (snap.exists()) perfilOperador = snap.val();
+            } catch (e) {}
+
+            const nombre = perfilOperador
+                ? `${perfilOperador.nombre || ''} ${perfilOperador.apellido || ''}`.trim() || user.email
+                : (user.email === 'carlos.admin@alcaldia.com' ? 'Carlos' : user.email);
+            const ahora = new Date();
+            const hora = ahora.getHours();
+            const saludo = hora < 12 ? 'Buenos días' : (hora < 19 ? 'Buenas tardes' : 'Buenas noches');
+            $('saludoNombre').textContent = `${saludo}, ${nombre.split(' ')[0]} 👋`;
+            $('saludoSub').innerHTML = `Hoy es <b>${ahora.toLocaleDateString('es-VE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</b> · Su rol: ${perfilOperador?.rol || (user.email === 'carlos.admin@alcaldia.com' ? 'super-admin' : 'usuario')}`;
+
+            iniciarSuscripciones();
+        });
+
+        let habitantes = {};
+        let visitas = [];
+        let tickets = [];
+
+        function iniciarSuscripciones() {
+            onValue(ref(database, 'habitantes'), (snap) => {
+                habitantes = snap.val() || {};
+                actualizarHabitantes();
+            });
+            onValue(ref(database, 'visitas'), (snap) => {
+                const data = snap.val() || {};
+                visitas = Object.keys(data).map(k => ({ id: k, ...data[k] }));
+                actualizarVisitas();
+                actualizarCompromisos();
+            });
+            onValue(ref(database, 'tickets'), (snap) => {
+                const data = snap.val() || {};
+                tickets = Object.keys(data).map(k => ({ id: k, ...data[k] }));
+                actualizarTickets();
+            });
+        }
+
+        function actualizarHabitantes() {
+            const mios = [];
+            const total = Object.keys(habitantes).length;
+            for (const id in habitantes) {
+                const h = habitantes[id];
+                if (h.registrado_por_uid === usuarioActual.uid) mios.push({ id, h });
+            }
+            $('kpiHabitantes').textContent = mios.length;
+            $('kpiHabitantesSub').textContent = total > 0 ? `${((mios.length / total) * 100).toFixed(1)}% del total municipal` : '';
+
+            // Lista de los 5 más recientes (por timestamp si lo tienen)
+            mios.sort((a, b) => {
+                const ta = new Date(a.h.fecha_registro || 0).getTime();
+                const tb = new Date(b.h.fecha_registro || 0).getTime();
+                return tb - ta;
+            });
+
+            const cont = $('listaHabitantes');
+            if (mios.length === 0) {
+                cont.innerHTML = '<div class="vacio">No has cargado habitantes todavía.</div>';
+            } else {
+                cont.innerHTML = mios.slice(0, 5).map(({ h }) => {
+                    const ced = h.cedula ? `${h.nacionalidad || 'V'}-${h.cedula}` : 'S/C';
+                    return `
+                        <div class="item-lista normal">
+                            <div class="titulo">${escapeHtml(h.nombre || '')} ${escapeHtml(h.apellido || '')}</div>
+                            <div class="meta">C.I: ${ced} · ${escapeHtml(h.comuna || '')} · ${escapeHtml(h.fecha_registro || '')}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            calcularProductividad(mios.length);
+        }
+
+        function actualizarVisitas() {
+            const mias = visitas.filter(v => v.operador_uid === usuarioActual.uid);
+            const totalGlobal = visitas.length;
+            $('kpiVisitas').textContent = mias.length;
+            $('kpiVisitasSub').textContent = totalGlobal > 0 ? `${((mias.length / totalGlobal) * 100).toFixed(1)}% del total registrado` : '';
+
+            // Últimas 5
+            mias.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            const cont = $('listaVisitas');
+            if (mias.length === 0) {
+                cont.innerHTML = '<div class="vacio">No has registrado visitas todavía.</div>';
+            } else {
+                cont.innerHTML = mias.slice(0, 5).map(v => {
+                    const h = habitantes[v.id_hogar] || {};
+                    const hogar = h.nombre ? `${h.nombre} ${h.apellido || ''}` : `Hogar ${v.id_hogar.slice(-6)}`;
+                    return `
+                        <div class="item-lista normal">
+                            <div class="titulo">${escapeHtml(v.motivo || 'Sin motivo')} · ${escapeHtml(hogar)}</div>
+                            <div class="meta">${escapeHtml(v.fecha || '')} · ${escapeHtml((v.observaciones || '').substring(0, 80))}${(v.observaciones || '').length > 80 ? '...' : ''}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function actualizarCompromisos() {
+            const misCompromisos = visitas.filter(v =>
+                v.operador_uid === usuarioActual.uid &&
+                v.compromiso &&
+                v.compromiso.toString().trim() &&
+                (v.estado_compromiso || 'abierto') !== 'cumplido'
+            );
+            $('kpiCompromisos').textContent = misCompromisos.length;
+
+            // Contar vencidos
+            const hoy = new Date().toISOString().slice(0, 10);
+            const vencidos = misCompromisos.filter(v => v.fecha_limite && v.fecha_limite < hoy).length;
+            $('kpiCompromisosSub').textContent = vencidos > 0
+                ? `⚠️ ${vencidos} VENCIDOS — acción urgente`
+                : (misCompromisos.length > 0 ? 'En plazo' : 'Sin compromisos abiertos');
+
+            // Lista (urgentes primero)
+            misCompromisos.sort((a, b) => {
+                const fa = a.fecha_limite || '9999-12-31';
+                const fb = b.fecha_limite || '9999-12-31';
+                return fa.localeCompare(fb);
+            });
+            const cont = $('listaCompromisos');
+            if (misCompromisos.length === 0) {
+                cont.innerHTML = '<div class="vacio">🎉 No tenés compromisos abiertos.</div>';
+            } else {
+                cont.innerHTML = misCompromisos.slice(0, 5).map(v => {
+                    const h = habitantes[v.id_hogar] || {};
+                    const hogar = h.nombre ? `${h.nombre} ${h.apellido || ''}` : `Hogar`;
+                    const vencido = v.fecha_limite && v.fecha_limite < hoy;
+                    const clase = vencido ? 'urgente' : 'normal';
+                    const fechaLabel = v.fecha_limite
+                        ? (vencido ? `⚠️ Venció el ${v.fecha_limite}` : `📅 Para el ${v.fecha_limite}`)
+                        : 'Sin fecha límite';
+                    return `
+                        <div class="item-lista ${clase}">
+                            <div class="titulo">🎯 ${escapeHtml(v.compromiso)}</div>
+                            <div class="meta"><b>${fechaLabel}</b> · ${escapeHtml(hogar)} · ${escapeHtml(h.comuna || '')}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function actualizarTickets() {
+            const mios = tickets.filter(t => t.creado_por_uid === usuarioActual.uid);
+            const activos = mios.filter(t => {
+                const e = t.estado || 'abierto';
+                return e === 'abierto' || e === 'gestion';
+            });
+            $('kpiTickets').textContent = mios.length;
+            $('kpiTicketsSub').textContent = activos.length > 0 ? `${activos.length} activos sin resolver` : 'Todos resueltos';
+
+            mios.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            const cont = $('listaTickets');
+            if (activos.length === 0) {
+                cont.innerHTML = mios.length > 0
+                    ? '<div class="vacio">🎉 Todos tus tickets fueron resueltos.</div>'
+                    : '<div class="vacio">No has creado tickets todavía.</div>';
+            } else {
+                cont.innerHTML = activos.slice(0, 5).map(t => {
+                    const estado = t.estado || 'abierto';
+                    const clase = t.prioridad === 'alta' ? 'urgente' : 'normal';
+                    return `
+                        <div class="item-lista ${clase}">
+                            <div class="titulo">${escapeHtml(t.categoria || 'otro').toUpperCase()} · ${escapeHtml(t.titulo || '')}</div>
+                            <div class="meta">📌 ${estado.toUpperCase()} · Prioridad ${t.prioridad || 'media'} · ${escapeHtml(t.comuna || '')} · ${escapeHtml(t.fecha_creacion || '')}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function calcularProductividad(misRegistros) {
+            // Calculamos por operador para ver el promedio del equipo
+            const conteoOperadores = new Map();
+            for (const id in habitantes) {
+                const uid = habitantes[id].registrado_por_uid;
+                if (!uid) continue;
+                conteoOperadores.set(uid, (conteoOperadores.get(uid) || 0) + 1);
+            }
+            const conteos = Array.from(conteoOperadores.values());
+            const promedio = conteos.length > 0 ? conteos.reduce((a, b) => a + b, 0) / conteos.length : 0;
+
+            const ratio = promedio > 0 ? Math.min(100, (misRegistros / promedio) * 100) : 0;
+            $('kpiProductividad').textContent = Math.round(ratio) + '%';
+            $('barraProductividad').style.width = Math.min(100, ratio) + '%';
+            $('kpiProductividadSub').textContent = promedio > 0
+                ? `Promedio del equipo: ${Math.round(promedio)} habitantes · Vos: ${misRegistros}`
+                : 'Sin datos para comparar';
+        }
+    </script>
+</body>
+</html>
