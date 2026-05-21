@@ -260,7 +260,7 @@
             <div id="cardVerificador" class="card card-verificador hidden" onclick="location.href='verificador.html'" style="border-top: 4px solid #ffd700;">
                 <span class="card-icon">🗂️</span>
                 <div class="card-title">Verificador de Base de Datos</div>
-                <div class="card-desc">Vista tipo Excel para inspeccionar y corregir la base completa, celda por celda. (Solo Carlos).</div>
+                <div class="card-desc">Vista tipo Excel para inspeccionar y corregir la base completa, celda por celda.</div>
             </div>
 
         </div>
@@ -290,16 +290,23 @@
             if (!user) {
                 window.location.href = "index.html";
             } else {
-                // Si es Carlos Admin, desbloquea las herramientas críticas
+                // El Verificador es visible para CUALQUIER administrador (Carlos o admins regulares)
+                // Las herramientas críticas de Carlos (migrador, bóveda) quedan reservadas solo para él.
+                let esAdmin = false;
                 if (user.email === "carlos.admin@alcaldia.com") {
                     document.getElementById('cardMigracion').classList.remove('hidden');
                     document.getElementById('cardRespaldo').classList.remove('hidden');
-                    document.getElementById('cardVerificador').classList.remove('hidden');
+                    esAdmin = true;
                 } else {
                     const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
                     if (!snapshot.exists() || snapshot.val().rol !== "admin") {
                         window.location.href = "index.html";
+                        return;
                     }
+                    esAdmin = true;
+                }
+                if (esAdmin) {
+                    document.getElementById('cardVerificador').classList.remove('hidden');
                 }
             }
         });

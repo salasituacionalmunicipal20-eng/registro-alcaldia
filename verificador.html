@@ -289,7 +289,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -306,12 +306,20 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        // ⛔ ACCESO RESTRINGIDO: SOLO CARLOS ADMIN
-        onAuthStateChanged(auth, (user) => {
-            if (!user || user.email !== "carlos.admin@alcaldia.com") {
-                document.body.innerHTML = "<h1 style='text-align:center; padding: 60px; color:#dc3545; font-family: sans-serif;'>⛔ ACCESO RESTRINGIDO<br><span style='font-size:14px; color:#666;'>Esta herramienta es exclusiva del Súper Administrador.</span></h1>";
-                setTimeout(() => window.location.href = 'index.html', 2500);
+        // ⛔ ACCESO: cualquier usuario con rol 'admin' (Carlos es admin de facto por su correo)
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
             }
+            if (user.email === "carlos.admin@alcaldia.com") return; // súper admin pasa directo
+            // Otros usuarios: verificar contra /operadores/{uid} que tengan rol admin
+            try {
+                const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                if (snap.exists() && snap.val().rol === 'admin') return;
+            } catch (e) { /* ignorado, cae al bloqueo */ }
+            document.body.innerHTML = "<h1 style='text-align:center; padding: 60px; color:#dc3545; font-family: sans-serif;'>⛔ ACCESO RESTRINGIDO<br><span style='font-size:14px; color:#666;'>Esta herramienta es exclusiva para administradores.</span></h1>";
+            setTimeout(() => window.location.href = 'index.html', 2500);
         });
 
         // ============================================================
