@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compromisos · Alcaldía de Cristóbal Rojas</title>
+    <style>
+        :root {
+            --azul-oficial: #003366;
+            --azul-claro: #0284c7;
+            --rojo-oficial: #E30613;
+            --verde: #16a34a;
+            --naranja: #d97706;
+            --gris: #64748b;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: "Segoe UI", sans-serif; background: #f1f5f9; color: #1e293b; }
+        .cintillo-gob {
+            background: linear-gradient(90deg, #ffd700 0%, #0033a0 50%, #cf142b 100%);
+            color: white;
+            text-align: center;
+            font-size: 11px;
+            padding: 6px 10px;
+            font-weight: bold;
+        }
+        .top-bar {
+            background: #0f172a;
+            color: white;
+            padding: 12px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .top-bar h1 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .btn {
+            background: var(--azul-claro);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-volver { background: var(--rojo-oficial); }
+
+        .container { padding: 25px 30px; }
+
+        .resumen-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .tab-card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            cursor: pointer;
+            border-top: 4px solid;
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .tab-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
+        .tab-card.activa { box-shadow: 0 0 0 3px var(--azul-oficial); }
+        .tab-card .icono { font-size: 22px; margin-bottom: 6px; }
+        .tab-card .numero {
+            font-size: 30px;
+            font-weight: 900;
+            line-height: 1;
+            margin: 4px 0;
+            font-family: Georgia, serif;
+        }
+        .tab-card .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--gris);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .tab-card.vencidos { border-top-color: var(--rojo-oficial); }
+        .tab-card.vencidos .numero { color: var(--rojo-oficial); }
+        .tab-card.abiertos { border-top-color: var(--naranja); }
+        .tab-card.abiertos .numero { color: var(--naranja); }
+        .tab-card.cumplidos { border-top-color: var(--verde); }
+        .tab-card.cumplidos .numero { color: var(--verde); }
+        .tab-card.todos { border-top-color: var(--azul-oficial); }
+        .tab-card.todos .numero { color: var(--azul-oficial); }
+
+        .filtros {
+            background: white;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .filtros label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gris);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .filtros input, .filtros select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .lista-compromisos { display: grid; gap: 10px; }
+        .compromiso-card {
+            background: white;
+            border-left: 5px solid;
+            padding: 14px 18px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+        .compromiso-card.vencido { border-left-color: var(--rojo-oficial); background: #fef2f2; }
+        .compromiso-card.abierto { border-left-color: var(--naranja); }
+        .compromiso-card.cumplido { border-left-color: var(--verde); opacity: 0.85; }
+
+        .compromiso-info .texto { font-weight: 700; color: #1e293b; font-size: 14px; margin-bottom: 6px; }
+        .compromiso-info .meta {
+            font-size: 12px;
+            color: var(--gris);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+        .compromiso-info .meta b { color: var(--azul-oficial); }
+        .compromiso-info .badge-fecha {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .compromiso-info .badge-fecha.vencido { background: var(--rojo-oficial); color: white; }
+        .compromiso-info .badge-fecha.proximo { background: var(--naranja); color: white; }
+        .compromiso-info .badge-fecha.normal { background: #e0e7ff; color: var(--azul-oficial); }
+        .compromiso-info .badge-fecha.cumplido { background: var(--verde); color: white; }
+
+        .acciones-card { display: flex; flex-direction: column; gap: 6px; }
+        .acciones-card button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-cumplir { background: var(--verde); color: white; }
+        .btn-reabrir { background: var(--azul-claro); color: white; }
+        .btn-expediente { background: #f1f5f9; color: var(--azul-oficial); border: 1px solid #cbd5e1 !important; }
+
+        .vacio {
+            text-align: center;
+            padding: 50px 20px;
+            background: white;
+            border-radius: 10px;
+            color: var(--gris);
+            font-style: italic;
+            font-size: 14px;
+        }
+        .vacio .icono-gigante { font-size: 60px; opacity: 0.3; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA · ESTADO MIRANDA · ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
+    <div class="top-bar">
+        <h1>🎯 Compromisos · Seguimiento de Bitácora</h1>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-volver" onclick="location.href='admin.html'">← Panel Admin</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <div class="resumen-tabs" id="resumenTabs">
+            <div class="tab-card vencidos activa" data-tab="vencidos">
+                <div class="icono">⚠️</div>
+                <div class="numero" id="conteoVencidos">0</div>
+                <div class="label">Vencidos (acción urgente)</div>
+            </div>
+            <div class="tab-card abiertos" data-tab="abiertos">
+                <div class="icono">🎯</div>
+                <div class="numero" id="conteoAbiertos">0</div>
+                <div class="label">Abiertos (en plazo)</div>
+            </div>
+            <div class="tab-card cumplidos" data-tab="cumplidos">
+                <div class="icono">✅</div>
+                <div class="numero" id="conteoCumplidos">0</div>
+                <div class="label">Cumplidos</div>
+            </div>
+            <div class="tab-card todos" data-tab="todos">
+                <div class="icono">📋</div>
+                <div class="numero" id="conteoTotal">0</div>
+                <div class="label">Total con compromiso</div>
+            </div>
+        </div>
+
+        <div class="filtros">
+            <div>
+                <label>Buscar:</label>
+                <input type="search" id="fBuscar" placeholder="Texto del compromiso, hogar u operador...">
+            </div>
+            <div>
+                <label>Operador que registró:</label>
+                <select id="fOperador"><option value="">Todos los operadores</option></select>
+            </div>
+            <div>
+                <label>Solo míos:</label>
+                <select id="fMios">
+                    <option value="no">No (mostrar todos)</option>
+                    <option value="si">Sí (solo los que yo registré)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="lista-compromisos" id="lista"></div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        let usuarioActual = null;
+        let esAdmin = false;
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            usuarioActual = user;
+            if (user.email === 'carlos.admin@alcaldia.com') {
+                esAdmin = true;
+            } else {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    if (snap.exists() && snap.val().rol === 'admin') esAdmin = true;
+                } catch (e) {}
+            }
+            iniciarSuscripcion();
+        });
+
+        let visitas = [];
+        let habitantes = {};
+        let tabActiva = 'vencidos';
+
+        function iniciarSuscripcion() {
+            onValue(ref(database, 'visitas'), (snap) => {
+                const data = snap.val() || {};
+                visitas = Object.keys(data)
+                    .map(k => ({ id: k, ...data[k] }))
+                    .filter(v => v.compromiso && v.compromiso.toString().trim());
+                renderizar();
+            });
+            onValue(ref(database, 'habitantes'), (snap) => {
+                habitantes = snap.val() || {};
+                renderizar();
+            });
+        }
+
+        function clasificar(v) {
+            const estado = v.estado_compromiso || 'abierto';
+            if (estado === 'cumplido') return 'cumplido';
+            const fl = v.fecha_limite;
+            if (fl && new Date(fl) < new Date(new Date().toISOString().slice(0,10))) return 'vencido';
+            return 'abierto';
+        }
+
+        function popularFiltros() {
+            const operadoresMap = new Map();
+            visitas.forEach(v => {
+                if (v.operador_uid) operadoresMap.set(v.operador_uid, v.operador_nombre || v.operador_uid);
+            });
+            const sel = document.getElementById('fOperador');
+            const val = sel.value;
+            sel.innerHTML = '<option value="">Todos los operadores</option>';
+            operadoresMap.forEach((nombre, uid) => {
+                const o = document.createElement('option'); o.value = uid; o.textContent = nombre;
+                sel.appendChild(o);
+            });
+            if (val) sel.value = val;
+        }
+
+        function nombreHogar(idHogar) {
+            const h = habitantes[idHogar];
+            return h ? `${h.nombre || ''} ${h.apellido || ''}`.trim() + ` · ${h.comuna || ''}` : `Hogar ${idHogar.slice(-6)}`;
+        }
+
+        const escapeHtml = (s) => (s == null ? '' : s.toString()
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+
+        function renderizar() {
+            popularFiltros();
+            const q = (document.getElementById('fBuscar').value || '').toLowerCase().trim();
+            const fOp = document.getElementById('fOperador').value;
+            const soloMios = document.getElementById('fMios').value === 'si';
+
+            // Clasificar y contar
+            const grupos = { vencido: [], abierto: [], cumplido: [] };
+            visitas.forEach(v => {
+                grupos[clasificar(v)].push(v);
+            });
+            document.getElementById('conteoVencidos').textContent = grupos.vencido.length;
+            document.getElementById('conteoAbiertos').textContent = grupos.abierto.length;
+            document.getElementById('conteoCumplidos').textContent = grupos.cumplido.length;
+            document.getElementById('conteoTotal').textContent = visitas.length;
+
+            // Lista filtrada por tab
+            let lista = tabActiva === 'todos' ? visitas.slice() : grupos[tabActiva.replace('s','')] || [];
+            // Ajuste: las pestañas terminan en 's' (vencidos→vencido etc.)
+            if (tabActiva === 'vencidos') lista = grupos.vencido;
+            if (tabActiva === 'abiertos') lista = grupos.abierto;
+            if (tabActiva === 'cumplidos') lista = grupos.cumplido;
+            if (tabActiva === 'todos') lista = visitas;
+
+            // Filtros adicionales
+            if (fOp) lista = lista.filter(v => v.operador_uid === fOp);
+            if (soloMios && usuarioActual) lista = lista.filter(v => v.operador_uid === usuarioActual.uid);
+            if (q) {
+                lista = lista.filter(v => {
+                    const t = `${v.compromiso || ''} ${v.operador_nombre || ''} ${nombreHogar(v.id_hogar)}`.toLowerCase();
+                    return t.includes(q);
+                });
+            }
+
+            // Ordenar: vencidos por fecha límite ASC, abiertos también, cumplidos por timestamp DESC
+            lista.sort((a, b) => {
+                const ca = clasificar(a), cb = clasificar(b);
+                if (ca === 'cumplido' && cb === 'cumplido') return (b.timestamp || 0) - (a.timestamp || 0);
+                const fa = a.fecha_limite || '9999-12-31';
+                const fb = b.fecha_limite || '9999-12-31';
+                return fa.localeCompare(fb);
+            });
+
+            const cont = document.getElementById('lista');
+            if (lista.length === 0) {
+                cont.innerHTML = `<div class="vacio"><div class="icono-gigante">🎉</div>No hay compromisos en esta categoría.</div>`;
+                return;
+            }
+
+            const hoy = new Date().toISOString().slice(0, 10);
+            cont.innerHTML = lista.map(v => {
+                const clase = clasificar(v);
+                const fechaLim = v.fecha_limite || '';
+                let badgeFecha;
+                if (clase === 'cumplido') {
+                    badgeFecha = `<span class="badge-fecha cumplido">✅ Cumplido ${v.fecha_cumplido ? '· ' + v.fecha_cumplido : ''}</span>`;
+                } else if (clase === 'vencido') {
+                    badgeFecha = `<span class="badge-fecha vencido">⚠️ Venció ${fechaLim}</span>`;
+                } else if (fechaLim) {
+                    const diffDias = Math.ceil((new Date(fechaLim) - new Date(hoy)) / (1000*60*60*24));
+                    const tipo = diffDias <= 2 ? 'proximo' : 'normal';
+                    badgeFecha = `<span class="badge-fecha ${tipo}">📅 ${fechaLim} (en ${diffDias} día${diffDias===1?'':'s'})</span>`;
+                } else {
+                    badgeFecha = `<span class="badge-fecha normal">Sin fecha límite</span>`;
+                }
+
+                const btnAccion = clase === 'cumplido'
+                    ? `<button class="btn-reabrir" onclick="window._cambiarEstado('${v.id}','abierto')">↻ Reabrir</button>`
+                    : `<button class="btn-cumplir" onclick="window._cambiarEstado('${v.id}','cumplido')">✓ Marcar Cumplido</button>`;
+
+                return `
+                    <div class="compromiso-card ${clase}">
+                        <div class="compromiso-info">
+                            <div class="texto">🎯 ${escapeHtml(v.compromiso)}</div>
+                            <div class="meta">
+                                ${badgeFecha}
+                                <span><b>Hogar:</b> ${escapeHtml(nombreHogar(v.id_hogar))}</span>
+                            </div>
+                            <div class="meta" style="font-size:11px; color:#94a3b8;">
+                                <span>📋 ${escapeHtml(v.motivo || '')}</span>
+                                <span>👤 ${escapeHtml(v.operador_nombre || '')}</span>
+                                <span>📅 ${escapeHtml(v.fecha || '')}</span>
+                            </div>
+                        </div>
+                        <div class="acciones-card">
+                            ${btnAccion}
+                            <button class="btn-expediente" onclick="window.location.href='consulta.html'">📂 Ir a Consulta</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window._cambiarEstado = async (id, nuevoEstado) => {
+            try {
+                await update(ref(database, `visitas/${id}`), {
+                    estado_compromiso: nuevoEstado,
+                    fecha_cumplido: nuevoEstado === 'cumplido' ? new Date().toLocaleString('es-VE') : ''
+                });
+            } catch (e) { alert('Error: ' + e.message); }
+        };
+
+        // Tabs
+        document.querySelectorAll('.tab-card').forEach(t => {
+            t.addEventListener('click', () => {
+                document.querySelectorAll('.tab-card').forEach(x => x.classList.remove('activa'));
+                t.classList.add('activa');
+                tabActiva = t.dataset.tab;
+                renderizar();
+            });
+        });
+
+        ['fBuscar', 'fOperador', 'fMios'].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', renderizar);
+            el.addEventListener('change', renderizar);
+        });
+    </script>
+</body>
+</html>

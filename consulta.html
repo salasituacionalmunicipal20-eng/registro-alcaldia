@@ -1064,7 +1064,7 @@
                 <h3 class="section-title">📋 Bitácora de Visitas / Atenciones</h3>
                 <div class="bitacora-wrapper">
                     <div class="bitacora-form">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 10px;">
                             <div>
                                 <label style="font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase;">Motivo de la visita:</label>
                                 <select id="bitacora_motivo" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
@@ -1083,7 +1083,11 @@
                             </div>
                             <div>
                                 <label style="font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase;">Compromiso / Pendiente:</label>
-                                <input type="text" id="bitacora_compromiso" placeholder="(Opcional) Ej. Entregar medicamento el 25/05" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                                <input type="text" id="bitacora_compromiso" placeholder="(Opcional) Ej. Entregar medicamento" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase;">Fecha límite:</label>
+                                <input type="date" id="bitacora_fecha_limite" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;">
                             </div>
                         </div>
                         <label style="font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase;">Observaciones de la visita:</label>
@@ -1901,11 +1905,30 @@
             }
             cont.innerHTML = visitas.map(v => {
                 const fechaFmt = v.fecha || (v.timestamp ? new Date(v.timestamp).toLocaleString('es-VE') : '—');
-                const compromisoHTML = v.compromiso
-                    ? `<div class="compromiso">🎯 <b>Compromiso:</b> ${escapeHtml(v.compromiso)}</div>`
-                    : '';
                 const obsHTML = v.observaciones ? `<div class="observ">${escapeHtml(v.observaciones)}</div>` : '';
                 const puedeBorrar = esAdmin || v.operador_uid === (auth.currentUser ? auth.currentUser.uid : '');
+
+                // Compromiso con estado y botón cumplir/reabrir
+                let compromisoHTML = '';
+                if (v.compromiso) {
+                    const estado = v.estado_compromiso || 'abierto';
+                    const fechaLim = v.fecha_limite || '';
+                    const vencido = fechaLim && estado === 'abierto' && new Date(fechaLim) < new Date(new Date().toISOString().slice(0,10));
+                    const bgColor = estado === 'cumplido' ? '#dcfce7' : (vencido ? '#fee2e2' : '#fef3c7');
+                    const txtColor = estado === 'cumplido' ? '#14532d' : (vencido ? '#7f1d1d' : '#78350f');
+                    const icono = estado === 'cumplido' ? '✅' : (vencido ? '⚠️' : '🎯');
+                    const estadoLabel = estado === 'cumplido' ? 'CUMPLIDO' : (vencido ? `VENCIDO (${fechaLim})` : (fechaLim ? `Para el ${fechaLim}` : 'PENDIENTE'));
+                    const btnCambioEstado = estado === 'cumplido'
+                        ? `<button onclick="window.marcarCompromiso('${v.id}','abierto')" style="background:none;border:none;color:#0284c7;cursor:pointer;font-weight:bold;padding:2px 6px;font-size:11px;">↻ Reabrir</button>`
+                        : `<button onclick="window.marcarCompromiso('${v.id}','cumplido')" style="background:#16a34a;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:11px;margin-left:8px;">✓ Marcar Cumplido</button>`;
+                    compromisoHTML = `
+                        <div class="compromiso" style="background:${bgColor};color:${txtColor};">
+                            ${icono} <b>${estadoLabel}:</b> ${escapeHtml(v.compromiso)}
+                            ${btnCambioEstado}
+                        </div>
+                    `;
+                }
+
                 const accionesHTML = puedeBorrar
                     ? `<div class="acciones"><button onclick="window.eliminarVisita('${v.id}')">Eliminar</button></div>`
                     : '';
@@ -1932,6 +1955,7 @@
             const motivo = document.getElementById('bitacora_motivo').value;
             const observ = document.getElementById('bitacora_observaciones').value.trim();
             const compr = document.getElementById('bitacora_compromiso').value.trim();
+            const fechaLim = document.getElementById('bitacora_fecha_limite').value;
             const msg = document.getElementById('bitacora_mensaje');
 
             if (!observ) {
@@ -1960,11 +1984,14 @@
                     operador_nombre: opNombre,
                     motivo, observaciones: observ,
                     compromiso: compr || '',
+                    fecha_limite: fechaLim || '',
+                    estado_compromiso: compr ? 'abierto' : '', // si hay compromiso, queda abierto
                     fecha: new Date().toLocaleString('es-VE'),
                     timestamp: Date.now()
                 });
                 document.getElementById('bitacora_observaciones').value = '';
                 document.getElementById('bitacora_compromiso').value = '';
+                document.getElementById('bitacora_fecha_limite').value = '';
                 document.getElementById('bitacora_motivo').selectedIndex = 0;
                 msg.textContent = '✅ Visita registrada';
                 msg.style.color = 'var(--verde-monitor, #16a34a)';
@@ -1972,6 +1999,17 @@
             } catch (err) {
                 msg.textContent = '⛔ Error: ' + err.message;
                 msg.style.color = 'var(--rojo-oficial)';
+            }
+        };
+
+        window.marcarCompromiso = async (id, nuevoEstado) => {
+            try {
+                await update(ref(database, `visitas/${id}`), {
+                    estado_compromiso: nuevoEstado,
+                    fecha_cumplido: nuevoEstado === 'cumplido' ? new Date().toLocaleString('es-VE') : ''
+                });
+            } catch (err) {
+                alert('No se pudo actualizar el compromiso: ' + err.message);
             }
         };
 

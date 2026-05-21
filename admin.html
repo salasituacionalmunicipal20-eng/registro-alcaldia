@@ -175,6 +175,8 @@
         .card-mapa::before { background-color: #16a34a; }
         .card-auditoria { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 1px solid #94a3b8; }
         .card-auditoria::before { background-color: #6b7280; }
+        .card-compromisos { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fcd34d; }
+        .card-compromisos::before { background-color: #d97706; }
 
         .card-icon { 
             font-size: 50px; 
@@ -249,6 +251,12 @@
                 <span class="card-icon">📊</span>
                 <div class="card-title">Estadísticas</div>
                 <div class="card-desc">Panel de analíticas, métricas municipales y generación de reportes PDF.</div>
+            </div>
+
+            <div class="card card-compromisos" onclick="location.href='compromisos.html'" style="border-top: 4px solid #d97706;">
+                <span class="card-icon">🎯</span>
+                <div class="card-title">Compromisos Pendientes</div>
+                <div class="card-desc">Seguimiento de promesas/pendientes registrados en bitácoras de visita. Vencidos, abiertos y cumplidos.</div>
             </div>
 
             <div id="cardMigracion" class="card card-migracion hidden" onclick="location.href='migrador.html'">
