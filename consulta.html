@@ -1403,10 +1403,26 @@
                 const sel = e.target.value;
                 const eComunidad = document.getElementById('e_comunidad');
                 eComunidad.innerHTML = '<option value="">Seleccione</option>';
-                
+
+                // Union de comunidades: catalogo + las que estan en uso en /habitantes
+                const setCd = new Set();
                 if (sel && datosTerritoriales[sel]) {
-                    datosTerritoriales[sel].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+                    (datosTerritoriales[sel] || []).forEach(c => setCd.add(c));
                 }
+                if (sel) {
+                    Object.values(baseDeDatosHabitantes).forEach(hab => {
+                        if (hab && String(hab.comuna || '').trim() === sel) {
+                            const cd = String(hab.comunidad || '').trim();
+                            if (cd) setCd.add(cd);
+                        }
+                    });
+                }
+                Array.from(setCd).sort().forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c; opt.textContent = c;
+                    eComunidad.appendChild(opt);
+                });
+
                 if (idActualEdicion) {
                     actualizarVistaFamiliares();
                 }
@@ -1791,36 +1807,84 @@
                 }
             };
 
-            // Para selects: si el valor guardado no existe entre las opciones del catalogo,
-            // lo inyectamos como opcion fuera-de-catalogo para que se vea lo realmente almacenado
-            // (en lugar de aparecer en blanco). El usuario puede mantenerlo, corregirlo o limpiarlo.
-            const llenarSelectConFallback = (idElemento, valor) => {
-                const sel = document.getElementById(idElemento);
-                if (!sel) return;
-                const v = (valor == null) ? '' : String(valor);
-                if (v === '') { sel.value = ''; return; }
-                const existe = Array.from(sel.options).some(opt => opt.value === v);
-                if (!existe) {
-                    const opt = document.createElement('option');
-                    opt.value = v;
-                    opt.textContent = `${v} (fuera de catalogo)`;
-                    opt.dataset.fueraCatalogo = '1';
-                    sel.appendChild(opt);
+            // Recolecta valores reales en uso en /habitantes para que los dropdowns
+            // reflejen el estado vivo de la base, no solo el catalogo estatico.
+            // Respeta RBAC: para operadores, solo se consideran sus comunas asignadas.
+            const comunasEnUso = new Set();
+            const comunidadesPorComuna = {};
+            let comunasPermitidas = null;
+            if (!esAdmin && window.perfilOperador) {
+                const mc = window.perfilOperador.comunas_asignadas
+                    || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+                if (mc.length > 0 && !mc.includes('TODAS')) {
+                    comunasPermitidas = new Set(mc);
                 }
-                sel.value = v;
-            };
+            }
+            Object.values(baseDeDatosHabitantes).forEach(hab => {
+                const c = hab && hab.comuna ? String(hab.comuna).trim() : '';
+                if (!c) return;
+                if (comunasPermitidas && !comunasPermitidas.has(c)) return;
+                comunasEnUso.add(c);
+                const cd = hab.comunidad ? String(hab.comunidad).trim() : '';
+                if (cd) {
+                    if (!comunidadesPorComuna[c]) comunidadesPorComuna[c] = new Set();
+                    comunidadesPorComuna[c].add(cd);
+                }
+            });
+            // Agrega tambien lo que diga el catalogo (datosTerritoriales)
+            Object.keys(datosTerritoriales || {}).forEach(c => {
+                if (comunasPermitidas && !comunasPermitidas.has(c)) return;
+                comunasEnUso.add(c);
+                (datosTerritoriales[c] || []).forEach(cd => {
+                    if (!comunidadesPorComuna[c]) comunidadesPorComuna[c] = new Set();
+                    comunidadesPorComuna[c].add(cd);
+                });
+            });
+
+            // Re-popula e_comuna con la union (catalogo + en uso), ordenada
+            const eComuna = document.getElementById('e_comuna');
+            const placeholderComuna = eComuna.options[0] ? eComuna.options[0].cloneNode(true) : null;
+            eComuna.innerHTML = '';
+            if (placeholderComuna) eComuna.appendChild(placeholderComuna);
+            Array.from(comunasEnUso).sort().forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                eComuna.appendChild(opt);
+            });
 
             llenarCampo('e_ubch', h.ubch);
             llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual);
-            llenarSelectConFallback('e_comuna', h.comuna);
 
+            // Si la comuna guardada no esta entre las opciones (ni catalogo ni en uso), la inyectamos
+            // sin marcarla, para que el operador vea exactamente lo que hay almacenado.
+            const valComuna = h.comuna ? String(h.comuna) : '';
+            if (valComuna && !Array.from(eComuna.options).some(o => o.value === valComuna)) {
+                const opt = document.createElement('option');
+                opt.value = valComuna;
+                opt.textContent = valComuna;
+                eComuna.appendChild(opt);
+            }
+            eComuna.value = valComuna;
+
+            // Re-popula e_comunidad para la comuna actual con la union (catalogo + en uso)
             const eComunidad = document.getElementById('e_comunidad');
             eComunidad.innerHTML = '<option value="">Seleccione</option>';
-            if (h.comuna && datosTerritoriales[h.comuna]) {
-                datosTerritoriales[h.comuna].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
+            const setComunidades = comunidadesPorComuna[valComuna] || new Set();
+            Array.from(setComunidades).sort().forEach(cd => {
+                const opt = document.createElement('option');
+                opt.value = cd;
+                opt.textContent = cd;
+                eComunidad.appendChild(opt);
+            });
+            const valComunidad = h.comunidad ? String(h.comunidad) : '';
+            if (valComunidad && !Array.from(eComunidad.options).some(o => o.value === valComunidad)) {
+                const opt = document.createElement('option');
+                opt.value = valComunidad;
+                opt.textContent = valComunidad;
+                eComunidad.appendChild(opt);
             }
-
-            llenarSelectConFallback('e_comunidad', h.comunidad);
+            eComunidad.value = valComunidad;
             llenarCampo('e_consejo_comunal', h.consejo_comunal); 
             llenarCampo('e_calle', h.calle); 
             llenarCampo('e_numero_casa', h.numero_casa); 
