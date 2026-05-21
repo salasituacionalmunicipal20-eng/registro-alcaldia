@@ -362,7 +362,7 @@
 
         .action-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             border-top: 1px dashed #333;
             padding-top: 30px;
@@ -397,8 +397,6 @@
         .btn-json { background-color: #ff9800; color: black; }
         .btn-json:hover:not(:disabled) { background-color: #e68a00; transform: translateY(-3px); }
 
-        .btn-migrator { background-color: var(--azul-oficial); color: white; }
-        .btn-migrator:hover:not(:disabled) { background-color: #003366; transform: translateY(-3px); }
 
         .btn-wipeout-master { background-color: #7a0007; color: white; border: 1px solid var(--rojo-oficial); }
         .btn-wipeout-master:hover:not(:disabled) { background-color: var(--rojo-oficial); transform: translateY(-3px); box-shadow: 0 0 15px rgba(227,6,19,0.4); }
@@ -612,12 +610,6 @@
                 <span style="font-size:9px; font-weight:normal;">Matriz de Firebase</span>
             </button>
 
-            <button class="btn-action btn-migrator" onclick="location.href='migrador.html'">
-                <span class="btn-icon">🚀</span>
-                Migrador Maestro
-                <span style="font-size:9px; font-weight:normal;">Ingresar Excel Nuevo</span>
-            </button>
-            
             <button class="btn-action btn-wipeout-master" id="btnWipeOutMaster" onclick="ejecutarBorradoGeneralFirebase()" disabled>
                 <span class="btn-icon">💥</span>
                 Borrar Base Firebase
