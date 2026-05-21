@@ -169,6 +169,8 @@
         .card-respaldo .card-desc { color: #aaa; }
         .card-verificador { background: #fffbeb; border: 1px solid #fcd34d; }
         .card-verificador::before { background-color: #ffd700; }
+        .card-dashboard { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; }
+        .card-dashboard::before { background-color: #003366; }
 
         .card-icon { 
             font-size: 50px; 
@@ -263,6 +265,12 @@
                 <div class="card-desc">Vista tipo Excel para inspeccionar y corregir la base completa, celda por celda.</div>
             </div>
 
+            <div id="cardDashboard" class="card card-dashboard hidden" onclick="location.href='dashboard-ejecutivo.html'" style="border-top: 4px solid #003366;">
+                <span class="card-icon">📊</span>
+                <div class="card-title">Dashboard Ejecutivo</div>
+                <div class="card-desc">Vista institucional formal con indicadores clave por comuna para reuniones de la Alcaldesa.</div>
+            </div>
+
         </div>
     </div>
 
@@ -307,6 +315,7 @@
                 }
                 if (esAdmin) {
                     document.getElementById('cardVerificador').classList.remove('hidden');
+                    document.getElementById('cardDashboard').classList.remove('hidden');
                 }
             }
         });

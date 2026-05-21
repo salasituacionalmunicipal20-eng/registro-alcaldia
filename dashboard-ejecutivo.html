@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Ejecutivo · Alcaldía de Cristóbal Rojas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --azul-oficial: #003366;
+            --azul-claro: #0284c7;
+            --rojo-oficial: #E30613;
+            --verde: #16a34a;
+            --oro: #d97706;
+            --gris: #64748b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            color: #1e293b;
+            min-height: 100vh;
+        }
+        .cintillo-gob {
+            background: linear-gradient(90deg, #ffd700 0%, #0033a0 50%, #cf142b 100%);
+            color: white;
+            text-align: center;
+            font-size: 11px;
+            padding: 6px 10px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .header-ejecutivo {
+            background: linear-gradient(135deg, var(--azul-oficial) 0%, #001a33 100%);
+            color: white;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .header-ejecutivo h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: Georgia, serif;
+        }
+        .header-ejecutivo .subtitulo {
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 9px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn:hover { background: rgba(255,255,255,0.25); }
+        .btn-back { background: var(--rojo-oficial); border-color: var(--rojo-oficial); }
+        .btn-print { background: white; color: var(--azul-oficial); }
+
+        .container { padding: 30px 40px; max-width: 1600px; margin: 0 auto; }
+
+        .seccion-titulo {
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--azul-oficial);
+            margin: 30px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azul-oficial);
+            letter-spacing: 1px;
+            font-family: Georgia, serif;
+        }
+
+        /* KPIs principales */
+        .kpis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .kpi-card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border-top: 5px solid;
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.04) 50%);
+        }
+        .kpi-card.azul { border-top-color: var(--azul-claro); }
+        .kpi-card.verde { border-top-color: var(--verde); }
+        .kpi-card.oro { border-top-color: var(--oro); }
+        .kpi-card.rojo { border-top-color: var(--rojo-oficial); }
+        .kpi-card.violeta { border-top-color: #7c3aed; }
+        .kpi-card.cyan { border-top-color: #0891b2; }
+        .kpi-icono { font-size: 24px; margin-bottom: 6px; }
+        .kpi-numero {
+            font-size: 32px;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1;
+            margin: 6px 0;
+            font-family: Georgia, serif;
+        }
+        .kpi-label {
+            font-size: 11px;
+            color: var(--gris);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 700;
+        }
+        .kpi-sub {
+            font-size: 12px;
+            color: var(--azul-oficial);
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        /* Tabla por comuna */
+        .tabla-comunas-wrap {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            padding: 20px;
+            overflow-x: auto;
+        }
+        .tabla-comunas {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .tabla-comunas thead th {
+            background: var(--azul-oficial);
+            color: white;
+            padding: 12px 10px;
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-align: right;
+            border-right: 1px solid #1e3a5f;
+        }
+        .tabla-comunas thead th:first-child { text-align: left; }
+        .tabla-comunas tbody tr { border-bottom: 1px solid #e2e8f0; }
+        .tabla-comunas tbody tr:nth-child(even) { background: #f8fafc; }
+        .tabla-comunas tbody tr:hover { background: #e0f2fe; }
+        .tabla-comunas td {
+            padding: 10px;
+            text-align: right;
+        }
+        .tabla-comunas td:first-child {
+            text-align: left;
+            font-weight: 700;
+            color: var(--azul-oficial);
+            border-left: 4px solid transparent;
+            padding-left: 12px;
+        }
+        .tabla-comunas tbody tr:hover td:first-child { border-left-color: var(--rojo-oficial); }
+        .tabla-comunas tfoot td {
+            background: #e0e7ff;
+            color: var(--azul-oficial);
+            font-weight: 800;
+            border-top: 2px solid var(--azul-oficial);
+        }
+
+        /* Gráficos */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 25px;
+        }
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+        .chart-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            color: var(--azul-oficial);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            font-family: Georgia, serif;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+        .chart-container { position: relative; height: 280px; }
+
+        .footer-ejecutivo {
+            margin-top: 50px;
+            padding: 20px 40px;
+            text-align: center;
+            color: var(--gris);
+            font-size: 12px;
+            border-top: 1px solid #cbd5e1;
+        }
+
+        @media (max-width: 900px) {
+            .charts-row { grid-template-columns: 1fr; }
+            .container { padding: 15px; }
+            .header-ejecutivo { padding: 18px; }
+        }
+
+        @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body { background: white; }
+            .header-controls, .btn { display: none !important; }
+            .kpi-card, .chart-card, .tabla-comunas-wrap { break-inside: avoid; box-shadow: none; border: 1px solid #cbd5e1; }
+            .header-ejecutivo { background: white !important; color: var(--azul-oficial) !important; border-bottom: 3px solid var(--azul-oficial); }
+            .header-ejecutivo h1 { color: var(--azul-oficial) !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA · ESTADO MIRANDA · ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
+    <div class="header-ejecutivo">
+        <div>
+            <h1>📊 Dashboard Ejecutivo</h1>
+            <div class="subtitulo">Indicadores Institucionales · Sala Situacional · <span id="fechaHoy"></span></div>
+        </div>
+        <div class="header-controls">
+            <button class="btn btn-print" onclick="window.print()">🖨 Imprimir</button>
+            <button class="btn btn-back" onclick="location.href='admin.html'">← Panel Admin</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <div class="seccion-titulo">Indicadores Generales Municipales</div>
+        <div class="kpis-grid">
+            <div class="kpi-card azul">
+                <div class="kpi-icono">👥</div>
+                <div class="kpi-numero" id="kpiTotal">—</div>
+                <div class="kpi-label">Población Censada</div>
+                <div class="kpi-sub" id="kpiTotalSub"></div>
+            </div>
+            <div class="kpi-card verde">
+                <div class="kpi-icono">🏠</div>
+                <div class="kpi-numero" id="kpiHogares">—</div>
+                <div class="kpi-label">Hogares</div>
+                <div class="kpi-sub" id="kpiHogaresSub"></div>
+            </div>
+            <div class="kpi-card oro">
+                <div class="kpi-icono">🪪</div>
+                <div class="kpi-numero" id="kpiCarnetPct">—</div>
+                <div class="kpi-label">Cobertura Carnet Patria</div>
+                <div class="kpi-sub" id="kpiCarnetSub"></div>
+            </div>
+            <div class="kpi-card violeta">
+                <div class="kpi-icono">👴🏽</div>
+                <div class="kpi-numero" id="kpiAmorMayor">—</div>
+                <div class="kpi-label">Beneficiarios Amor Mayor</div>
+                <div class="kpi-sub" id="kpiAmorSub"></div>
+            </div>
+            <div class="kpi-card cyan">
+                <div class="kpi-icono">🔥</div>
+                <div class="kpi-numero" id="kpiGas">—</div>
+                <div class="kpi-label">Hogares con Servicio Gas</div>
+                <div class="kpi-sub" id="kpiGasSub"></div>
+            </div>
+            <div class="kpi-card rojo">
+                <div class="kpi-icono">🏚️</div>
+                <div class="kpi-numero" id="kpiVulnerables">—</div>
+                <div class="kpi-label">Hogares en Vulnerabilidad</div>
+                <div class="kpi-sub">Rancho o condición precaria</div>
+            </div>
+        </div>
+
+        <div class="seccion-titulo">Indicadores Demográficos</div>
+        <div class="kpis-grid">
+            <div class="kpi-card verde">
+                <div class="kpi-icono">👶</div>
+                <div class="kpi-numero" id="kpiNinos">—</div>
+                <div class="kpi-label">Menores de 18</div>
+            </div>
+            <div class="kpi-card azul">
+                <div class="kpi-icono">🎒</div>
+                <div class="kpi-numero" id="kpiEscolarizados">—</div>
+                <div class="kpi-label">Escolarizados</div>
+                <div class="kpi-sub" id="kpiEscolarSub"></div>
+            </div>
+            <div class="kpi-card oro">
+                <div class="kpi-icono">🧓🏽</div>
+                <div class="kpi-numero" id="kpiAdultosM">—</div>
+                <div class="kpi-label">Adultos Mayores (60+)</div>
+            </div>
+            <div class="kpi-card rojo">
+                <div class="kpi-icono">🤱</div>
+                <div class="kpi-numero" id="kpiMaternal">—</div>
+                <div class="kpi-label">Maternal en Seguimiento</div>
+                <div class="kpi-sub">Embarazadas + lactancia</div>
+            </div>
+            <div class="kpi-card violeta">
+                <div class="kpi-icono">♿</div>
+                <div class="kpi-numero" id="kpiDiscap">—</div>
+                <div class="kpi-label">Con Discapacidad</div>
+            </div>
+            <div class="kpi-card cyan">
+                <div class="kpi-icono">💼</div>
+                <div class="kpi-numero" id="kpiTrabajadores">—</div>
+                <div class="kpi-label">Trabajadores</div>
+                <div class="kpi-sub" id="kpiTrabSub"></div>
+            </div>
+        </div>
+
+        <div class="seccion-titulo">Resumen por Comuna</div>
+        <div class="tabla-comunas-wrap">
+            <table class="tabla-comunas" id="tablaComunas">
+                <thead>
+                    <tr>
+                        <th>COMUNA / CIRCUITO</th>
+                        <th>Habitantes</th>
+                        <th>Hogares</th>
+                        <th>Menores</th>
+                        <th>Adultos +60</th>
+                        <th>Carnet Patria</th>
+                        <th>Amor Mayor</th>
+                        <th>Hogares c/Gas</th>
+                        <th>En Rancho</th>
+                        <th>Con Disc.</th>
+                        <th>Maternal</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot><tr id="totalesComunas"></tr></tfoot>
+            </table>
+        </div>
+
+        <div class="seccion-titulo">Análisis Visual</div>
+        <div class="charts-row">
+            <div class="chart-card">
+                <h3>Top 5 Comunas por Población</h3>
+                <div class="chart-container"><canvas id="chartTop"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Estructura de la Población por Edad</h3>
+                <div class="chart-container"><canvas id="chartEdad"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Mapa Electoral del Municipio</h3>
+                <div class="chart-container"><canvas id="chartElectoral"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Cobertura Programas Sociales</h3>
+                <div class="chart-container"><canvas id="chartProgramas"></canvas></div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="footer-ejecutivo">
+        <strong>Alcaldía del Municipio Cristóbal Rojas · Charallave · Estado Miranda</strong><br>
+        Documento institucional · Generado por la Sala Situacional · Datos en tiempo real
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Acceso: cualquier admin puede ver el dashboard
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            if (user.email === 'carlos.admin@alcaldia.com') return;
+            try {
+                const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                if (snap.exists() && snap.val().rol === 'admin') return;
+            } catch (e) { /* cae a bloqueo */ }
+            document.body.innerHTML = "<h1 style='text-align:center; padding:60px; color:#dc3545; font-family:sans-serif;'>⛔ ACCESO RESTRINGIDO<br><span style='font-size:14px; color:#666;'>Esta vista es solo para directores y administradores.</span></h1>";
+            setTimeout(() => window.location.href = 'index.html', 2500);
+        });
+
+        // Fecha en el header
+        document.getElementById('fechaHoy').textContent = new Date().toLocaleDateString('es-VE', {
+            day: '2-digit', month: 'long', year: 'numeric'
+        });
+
+        function calcularEdad(fechaStr) {
+            if (!fechaStr) return -1;
+            const f = new Date(fechaStr);
+            if (isNaN(f.getTime())) return -1;
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - f.getFullYear();
+            const m = hoy.getMonth() - f.getMonth();
+            if (m < 0 || (m === 0 && hoy.getDate() < f.getDate())) edad--;
+            return edad;
+        }
+
+        const fmt = (n) => n.toLocaleString('es-VE');
+        const pct = (n, total) => total > 0 ? ((n / total) * 100).toFixed(1) + '%' : '0%';
+
+        let charts = {};
+        function destruirCharts() {
+            Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
+            charts = {};
+        }
+
+        function calcularYRenderizar(data) {
+            const habs = Object.values(data);
+            const total = habs.length;
+
+            // Contadores globales
+            let cMenores = 0, cAdultosM = 0, cTrabajadores = 0, cEscolarizados = 0;
+            let cCarnet = 0, cAmor = 0, cMisionJGH = 0, cHogaresPatria = 0;
+            let cDiscapacidad = 0, cMaternal = 0;
+            let cVD = 0, cVB = 0, cVO = 0;
+            const hogaresSet = new Set();
+            const hogaresGasSet = new Set();
+            const hogaresVulnerables = new Set();
+            const histoEdad = [0, 0, 0, 0, 0, 0, 0, 0, 0]; // 0-9, 10-19, ..., 80+
+
+            // Por comuna
+            const porComuna = new Map();
+            function getComuna(c) {
+                if (!porComuna.has(c)) porComuna.set(c, {
+                    nombre: c, habitantes: 0, hogares: new Set(), gas: new Set(), rancho: new Set(),
+                    menores: 0, adultos60: 0, carnet: 0, amor: 0, discap: 0, maternal: 0
+                });
+                return porComuna.get(c);
+            }
+
+            for (const h of habs) {
+                const edad = calcularEdad(h.fecha_nacimiento);
+                const comuna = (h.comuna || 'SIN ASIGNAR').toUpperCase();
+                const c = getComuna(comuna);
+                c.habitantes++;
+
+                const dirHogar = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
+                const idHogar = h.jefe_hogar_id || dirHogar;
+                hogaresSet.add(idHogar);
+                c.hogares.add(idHogar);
+
+                if (edad >= 0 && edad < 18) { cMenores++; c.menores++; }
+                if (edad >= 60) { cAdultosM++; c.adultos60++; }
+                if ((h.trabaja || '').toLowerCase() === 'si') cTrabajadores++;
+                if ((h.esta_escolarizado || '').toLowerCase() === 'si') cEscolarizados++;
+                if ((h.carnet_patria || '').toLowerCase() === 'si') { cCarnet++; c.carnet++; }
+                if ((h.cobra_amor_mayor || '').toLowerCase() === 'si') { cAmor++; c.amor++; }
+                if ((h.mision_jose_gregorio || '').toLowerCase() === 'si') cMisionJGH++;
+                if ((h.hogares_patria_bono || '').toLowerCase() === 'si') cHogaresPatria++;
+                if ((h.discapacitado || '').toLowerCase() === 'si') { cDiscapacidad++; c.discap++; }
+                if ((h.embarazada || '').toLowerCase() === 'si' || (h.lactancia_materna || '').toLowerCase() === 'si') {
+                    cMaternal++; c.maternal++;
+                }
+
+                if ((h.tiene_gas || '').toLowerCase() === 'si') {
+                    hogaresGasSet.add(idHogar);
+                    c.gas.add(idHogar);
+                }
+                if ((h.tipo_vivienda || '').toLowerCase() === 'rancho') {
+                    hogaresVulnerables.add(idHogar);
+                    c.rancho.add(idHogar);
+                }
+
+                const voto = (h.vd_vb_vo_seleccion || '').toUpperCase();
+                if (voto === 'VD') cVD++;
+                else if (voto === 'VB') cVB++;
+                else if (voto === 'VO') cVO++;
+
+                if (edad >= 0) {
+                    const bin = Math.min(8, Math.floor(edad / 10));
+                    histoEdad[bin]++;
+                }
+            }
+
+            // Render KPIs
+            document.getElementById('kpiTotal').textContent = fmt(total);
+            document.getElementById('kpiTotalSub').textContent = `${porComuna.size} comunas censadas`;
+            document.getElementById('kpiHogares').textContent = fmt(hogaresSet.size);
+            document.getElementById('kpiHogaresSub').textContent = hogaresSet.size > 0 ? `${(total / hogaresSet.size).toFixed(1)} personas/hogar` : '';
+            document.getElementById('kpiCarnetPct').textContent = pct(cCarnet, total);
+            document.getElementById('kpiCarnetSub').textContent = `${fmt(cCarnet)} carnetizados`;
+            document.getElementById('kpiAmorMayor').textContent = fmt(cAmor);
+            document.getElementById('kpiAmorSub').textContent = cAdultosM > 0 ? `${pct(cAmor, cAdultosM)} de los adultos mayores` : '';
+            document.getElementById('kpiGas').textContent = fmt(hogaresGasSet.size);
+            document.getElementById('kpiGasSub').textContent = hogaresSet.size > 0 ? `${pct(hogaresGasSet.size, hogaresSet.size)} de cobertura` : '';
+            document.getElementById('kpiVulnerables').textContent = fmt(hogaresVulnerables.size);
+
+            document.getElementById('kpiNinos').textContent = fmt(cMenores);
+            document.getElementById('kpiEscolarizados').textContent = fmt(cEscolarizados);
+            document.getElementById('kpiEscolarSub').textContent = cMenores > 0 ? `${pct(cEscolarizados, cMenores)} de los menores` : '';
+            document.getElementById('kpiAdultosM').textContent = fmt(cAdultosM);
+            document.getElementById('kpiMaternal').textContent = fmt(cMaternal);
+            document.getElementById('kpiDiscap').textContent = fmt(cDiscapacidad);
+            document.getElementById('kpiTrabajadores').textContent = fmt(cTrabajadores);
+            document.getElementById('kpiTrabSub').textContent = total > 0 ? `${pct(cTrabajadores, total)} población activa` : '';
+
+            // Tabla por comuna (ordenada por habitantes desc)
+            const comunasArr = Array.from(porComuna.values()).sort((a, b) => b.habitantes - a.habitantes);
+            const tbody = document.querySelector('#tablaComunas tbody');
+            tbody.innerHTML = comunasArr.map(c => `
+                <tr>
+                    <td>${c.nombre}</td>
+                    <td>${fmt(c.habitantes)}</td>
+                    <td>${fmt(c.hogares.size)}</td>
+                    <td>${fmt(c.menores)}</td>
+                    <td>${fmt(c.adultos60)}</td>
+                    <td>${fmt(c.carnet)}</td>
+                    <td>${fmt(c.amor)}</td>
+                    <td>${fmt(c.gas.size)}</td>
+                    <td>${fmt(c.rancho.size)}</td>
+                    <td>${fmt(c.discap)}</td>
+                    <td>${fmt(c.maternal)}</td>
+                </tr>
+            `).join('');
+            // Totales
+            const tot = (key, isSet) => comunasArr.reduce((s, c) => s + (isSet ? c[key].size : c[key]), 0);
+            document.getElementById('totalesComunas').innerHTML = `
+                <td>TOTAL MUNICIPIO</td>
+                <td>${fmt(tot('habitantes', false))}</td>
+                <td>${fmt(tot('hogares', true))}</td>
+                <td>${fmt(tot('menores', false))}</td>
+                <td>${fmt(tot('adultos60', false))}</td>
+                <td>${fmt(tot('carnet', false))}</td>
+                <td>${fmt(tot('amor', false))}</td>
+                <td>${fmt(tot('gas', true))}</td>
+                <td>${fmt(tot('rancho', true))}</td>
+                <td>${fmt(tot('discap', false))}</td>
+                <td>${fmt(tot('maternal', false))}</td>
+            `;
+
+            // ============ CHARTS ============
+            destruirCharts();
+            const top5 = comunasArr.slice(0, 5);
+            charts.top = new Chart(document.getElementById('chartTop').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: top5.map(c => c.nombre.length > 25 ? c.nombre.substring(0, 25) + '…' : c.nombre),
+                    datasets: [{
+                        label: 'Habitantes', data: top5.map(c => c.habitantes),
+                        backgroundColor: ['#003366', '#0284c7', '#0891b2', '#16a34a', '#d97706'],
+                        borderRadius: 6
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true } } }
+            });
+
+            charts.edad = new Chart(document.getElementById('chartEdad').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['0-9','10-19','20-29','30-39','40-49','50-59','60-69','70-79','80+'],
+                    datasets: [{
+                        label: 'Habitantes', data: histoEdad,
+                        backgroundColor: '#0284c7', borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } } }
+            });
+
+            charts.electoral = new Chart(document.getElementById('chartElectoral').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Voto Duro (VD)', 'Voto Blando (VB)', 'Voto Opositor (VO)', 'Sin clasificar'],
+                    datasets: [{
+                        data: [cVD, cVB, cVO, total - cVD - cVB - cVO],
+                        backgroundColor: ['#E30613', '#d97706', '#64748b', '#cbd5e1']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }, cutout: '55%' }
+            });
+
+            charts.programas = new Chart(document.getElementById('chartProgramas').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Carnet Patria', 'Amor Mayor', 'Misión JGH', 'Hogares Patria'],
+                    datasets: [{
+                        label: 'Beneficiarios', data: [cCarnet, cAmor, cMisionJGH, cHogaresPatria],
+                        backgroundColor: ['#0284c7', '#d97706', '#16a34a', '#7c3aed'],
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        onValue(ref(database, 'habitantes'), (snap) => {
+            calcularYRenderizar(snap.val() || {});
+        });
+    </script>
+</body>
+</html>
