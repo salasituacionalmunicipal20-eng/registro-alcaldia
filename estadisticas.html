@@ -598,6 +598,19 @@
                 font-weight: bold;
             }
 
+            /* Modo "Lista de Convocatoria" — añade checkboxes y celdas de seguimiento */
+            body.modo-convocatoria table th:first-child,
+            body.modo-convocatoria table td:first-child {
+                width: 30px;
+                text-align: center;
+            }
+            body.modo-convocatoria table td:first-child::before {
+                content: "☐";
+                font-size: 18px;
+                color: #000;
+            }
+            body.modo-convocatoria .print-metrics-summary { display: none; }
+
             /* Tabla del reporte */
             table {
                 width: 100%;
@@ -663,6 +676,7 @@
         <div class="top-nav">
             <button type="button" class="btn-nav btn-pdf" onclick="prepararPrint(); window.print();">🖨 Generar Reporte PDF (Global)</button>
             <button type="button" class="btn-nav" style="background-color: #16a34a; color: white;" onclick="exportarReporteCSV()">📥 Exportar CSV</button>
+            <button type="button" class="btn-nav" style="background-color: #d97706; color: white;" onclick="generarListaConvocatoria()">📞 Lista para Llamadas</button>
             <button type="button" id="btnAdminPanel" class="btn-nav hidden" style="background-color: var(--rojo-oficial);" onclick="location.href='admin.html'">⚙ Panel Admin</button>
             <button type="button" id="btnVolver" class="btn-nav" onclick="location.href='registro.html'">← Volver a Registro</button>
             <button type="button" id="btnCerrarSesion" class="btn-nav">Cerrar Sesión</button>
@@ -1233,6 +1247,94 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+        };
+
+        // Genera una lista para llamadas telefónicas / convocatoria con los filtros activos.
+        // Es un PDF imprimible con checkboxes para tachar contactos completados.
+        window.generarListaConvocatoria = () => {
+            const habitantes = obtenerHabitantesFiltrados();
+            if (habitantes.length === 0) {
+                alert('No hay habitantes que cumplan los filtros actuales.');
+                return;
+            }
+            if (habitantes.length > 500) {
+                if (!confirm(`Hay ${habitantes.length} habitantes en la lista. ¿Generar de todos modos? (puede salir muy largo)`)) return;
+            }
+
+            // Reordenamos por comuna y luego apellido para imprimir agrupado
+            habitantes.sort((a, b) => {
+                const c = (a.h.comuna || '').localeCompare(b.h.comuna || '');
+                if (c !== 0) return c;
+                return (a.h.apellido || '').localeCompare(b.h.apellido || '');
+            });
+
+            // Construir filas con foco en datos de contacto
+            let filas = '';
+            habitantes.forEach((item) => {
+                const h = item.h;
+                const edad = item.edad;
+                const nac = h.nacionalidad || 'V';
+                const ced = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+                const tel = h.telefono || '—';
+                const dir = `${h.comunidad || ''}${h.calle ? ' · ' + h.calle : ''}${h.numero_casa ? ' · Casa ' + h.numero_casa : ''}`;
+                filas += `
+                    <tr>
+                        <td></td>
+                        <td>${h.nombre || ''} ${h.apellido || ''}</td>
+                        <td>${ced}</td>
+                        <td>${edad}</td>
+                        <td><b style="font-size:11pt;">${tel}</b></td>
+                        <td>${dir}</td>
+                        <td style="min-width:120px;">&nbsp;</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('tituloReporte').textContent = `LISTA DE CONVOCATORIA — ${habitantes.length} CONTACTOS`;
+            document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
+
+            // Reemplazamos toda la tabla del reporte (no solo el body) para usar cabeceras propias
+            const tabla = document.querySelector('.print-only table');
+            tabla.innerHTML = `
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">☐</th>
+                        <th>Nombre y Apellido</th>
+                        <th>Cédula</th>
+                        <th>Edad</th>
+                        <th>Teléfono</th>
+                        <th>Dirección</th>
+                        <th>Resultado / Notas</th>
+                    </tr>
+                </thead>
+                <tbody>${filas}</tbody>
+            `;
+
+            document.body.classList.add('modo-convocatoria');
+            prepararPrint();
+
+            setTimeout(() => {
+                window.print();
+                // Restaurar después de imprimir
+                setTimeout(() => {
+                    document.body.classList.remove('modo-convocatoria');
+                    tabla.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th style="width: 22%;">Nombres y Apellidos</th>
+                                <th style="width: 11%;">Cédula</th>
+                                <th style="width: 5%;">Edad</th>
+                                <th style="width: 15%;">Comunidad</th>
+                                <th style="width: 17%;">Dirección</th>
+                                <th style="width: 10%;">Teléfono</th>
+                                <th style="width: 20%;">Diagnóstico / Tratamiento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaReporteCuerpo"></tbody>
+                    `;
+                    calcularEstadisticas();
+                }, 500);
+            }, 300);
         };
 
         // Limpia TODOS los filtros del panel demográfico de un solo golpe
