@@ -182,6 +182,26 @@
             4. ☁️ <b>Operación Aislada Firebase:</b> Supabase está desconectado. Sincronización rápida y directa.
         </div>
 
+        <div style="background: #fffbeb; border: 2px solid #fcd34d; padding: 14px 18px; border-radius: 8px; margin-bottom: 15px; text-align: left;">
+            <strong style="color: #92400e; font-size: 13px; text-transform: uppercase;">📋 Modo de carga:</strong>
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                    <input type="radio" name="modoCarga" value="reemplazar" checked style="margin-top: 4px;">
+                    <div>
+                        <strong style="color: #b91c1c;">🔄 Reemplazar todo (Destructivo)</strong>
+                        <div style="font-size: 12px; color: #555; margin-top: 2px;">Sube todas las filas como NUEVAS. Si la base ya tiene datos, se DUPLICARÁN. Use solo después de un wipe total.</div>
+                    </div>
+                </label>
+                <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+                    <input type="radio" name="modoCarga" value="incremental" style="margin-top: 4px;">
+                    <div>
+                        <strong style="color: #16a34a;">➕ Agregar nuevos (Incremental, Recomendado)</strong>
+                        <div style="font-size: 12px; color: #555; margin-top: 2px;">Detecta habitantes ya existentes por cédula y los OMITE (no se duplican). Solo agrega filas con cédulas nuevas o sin cédula. Seguro de correr varias veces.</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
         <input type="file" id="archivoCSV" accept=".csv">
         <br>
         <button id="btnSubir" onclick="procesarCSV()" disabled>Verificando Credenciales...</button>
@@ -282,6 +302,31 @@
             document.getElementById('statsPanel').style.display = "flex";
             ultimaCorridaIds = []; // Inicia limpio; se llena fila por fila en Fase 1
             if (typeof window.iniciarOperacionLarga === 'function') window.iniciarOperacionLarga();
+
+            // Lee el modo seleccionado: reemplazar (default) o incremental (omite duplicados por cédula)
+            const modoCarga = document.querySelector('input[name="modoCarga"]:checked').value;
+
+            // Si es incremental, cargamos el snapshot actual de cédulas ya en Firebase
+            const cedulasExistentes = new Set();
+            let omitidosPorDuplicado = 0;
+            if (modoCarga === 'incremental') {
+                escribirLog("Modo INCREMENTAL: leyendo cédulas existentes en Firebase para evitar duplicados...", "log-warning");
+                try {
+                    const snap = await get(child(ref(database), 'habitantes'));
+                    if (snap.exists()) {
+                        const data = snap.val();
+                        for (const id in data) {
+                            const ced = (data[id].cedula || '').toString().trim();
+                            if (ced) cedulasExistentes.add(ced);
+                        }
+                    }
+                    escribirLog(`✅ ${cedulasExistentes.size} cédulas ya registradas en Firebase. Las filas del CSV con esas cédulas se OMITIRÁN.`, "log-success");
+                } catch (err) {
+                    escribirLog(`⚠️ No se pudo leer la base actual: ${err.message}. Se procede sin omitir duplicados.`, "log-error");
+                }
+            } else {
+                escribirLog("Modo REEMPLAZAR: todas las filas se subirán como nuevas (sin check de duplicados).", "log-warning");
+            }
 
             Papa.parse(archivo, {
                 header: true,
@@ -453,6 +498,13 @@
                                 if (!/^\d+$/.test(rowCedulaNum)) { esCedulaValida = false; rowCedulaNum = ''; }
                             } else {
                                 rowCedulaNum = '';
+                            }
+
+                            // 🚧 MODO INCREMENTAL: si la cédula ya existe en Firebase, omitimos esta fila
+                            if (modoCarga === 'incremental' && esCedulaValida && cedulasExistentes.has(rowCedulaNum)) {
+                                omitidosPorDuplicado++;
+                                escribirLog(`⏭️ Fila ${i+1} omitida (cédula <b>${rowNac}-${rowCedulaNum}</b> ya existe en Firebase): ${fila['NOMBRE Y APELLIDO']}`, "log-warning");
+                                continue;
                             }
 
                             let nombreCompleto = cleanText(fila['NOMBRE Y APELLIDO']).split(' ');
@@ -634,6 +686,8 @@
                             // GUARDAMOS EN FIREBASE AL INSTANTE
                             await set(nuevoRef, habitanteTraducido);
                             subidos++;
+                            // Si la cédula es válida, la registramos como existente para detectar duplicados DENTRO del propio CSV
+                            if (esCedulaValida && rowCedulaNum) cedulasExistentes.add(rowCedulaNum);
                             if (observaciones.length > 0) {
                                 conAdvertencia++;
                                 listaConAdvertencia.push({
@@ -721,7 +775,7 @@
                         }
                     }
 
-                    escribirLog(`✅ FASE 1 COMPLETADA. Resumen: ${subidos} habitantes subidos, ${conHerencia} completados heredando del jefe del hogar, ${conAdvertencia} con advertencias (defaults aplicados), ${conError} rescatados tras error, ${filasVacias} filas vacías ignoradas. Total CSV: ${totalDatos}.`, "log-success");
+                    escribirLog(`✅ FASE 1 COMPLETADA. Resumen: ${subidos} habitantes subidos, ${conHerencia} completados heredando del jefe del hogar, ${conAdvertencia} con advertencias (defaults aplicados), ${conError} rescatados tras error, ${omitidosPorDuplicado} omitidos por cédula duplicada (modo incremental), ${filasVacias} filas vacías ignoradas. Total CSV: ${totalDatos}.`, "log-success");
 
                     // ==========================================
                     // FASE 2 - BARRIDO DE VINCULACIÓN (SIN BORRAR)
@@ -811,14 +865,16 @@
 
                     alert(
                         `¡Ingesta de Datos completada!\n\n` +
+                        `Modo: ${modoCarga === 'incremental' ? 'INCREMENTAL (omite duplicados)' : 'REEMPLAZAR (todo nuevo)'}\n` +
                         `CSV original: ${totalDatos} filas\n` +
                         `  ✅ Subidos correctamente: ${subidos - conAdvertencia - conError}\n` +
                         `  🔗 Completados heredando del jefe del hogar: ${conHerencia}\n` +
                         `  ⚠️ Subidos con advertencias (defaults aplicados): ${conAdvertencia}\n` +
                         `  🆘 Rescatados tras error de procesamiento: ${conError}\n` +
+                        (omitidosPorDuplicado > 0 ? `  ⏭️ Omitidos por cédula ya existente: ${omitidosPorDuplicado}\n` : '') +
                         `  ⏭️ Filas vacías ignoradas: ${filasVacias}\n` +
                         `  ─────────────────────────\n` +
-                        `  📦 Total en Firebase: ${subidos}\n` +
+                        `  📦 Total agregados a Firebase: ${subidos}\n` +
                         `  🔗 Vínculos familiares creados: ${vinculados}\n\n` +
                         `Los habitantes con advertencias tienen el campo "observaciones_carga" lleno. Revisalos en consulta.html para corregir manualmente.\n\n` +
                         `Si necesitás deshacer esta corrida, usá el botón rojo de REVERSA antes de cerrar o recargar la página.`
