@@ -179,6 +179,8 @@
         .card-compromisos::before { background-color: #d97706; }
         .card-tickets { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1px solid #fca5a5; }
         .card-tickets::before { background-color: #ef4444; }
+        .card-constancias { background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%); border: 1px solid #c4b5fd; }
+        .card-constancias::before { background-color: #7c3aed; }
 
         .card-icon { 
             font-size: 50px; 
@@ -265,6 +267,12 @@
                 <span class="card-icon">🎫</span>
                 <div class="card-title">Tickets y Reclamos</div>
                 <div class="card-desc">Gestión de reclamos ciudadanos por categoría (agua, luz, salud, seguridad, etc.) con flujo abierto → gestión → resuelto.</div>
+            </div>
+
+            <div class="card card-constancias" onclick="location.href='constancias.html'" style="border-top: 4px solid #7c3aed;">
+                <span class="card-icon">📄</span>
+                <div class="card-title">Constancias y Notificaciones</div>
+                <div class="card-desc">Genere documentos oficiales con plantillas: residencia, llamado de atención, felicitación, notificación de bono, autorizaciones.</div>
             </div>
 
             <div id="cardMigracion" class="card card-migracion hidden" onclick="location.href='migrador.html'">

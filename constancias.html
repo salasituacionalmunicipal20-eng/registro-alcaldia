@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constancias y Notificaciones · Alcaldía de Cristóbal Rojas</title>
+    <style>
+        :root {
+            --azul-oficial: #003366;
+            --azul-claro: #0284c7;
+            --rojo-oficial: #E30613;
+            --verde: #16a34a;
+            --gris: #64748b;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: "Segoe UI", sans-serif; background: #f1f5f9; color: #1e293b; }
+        .cintillo-gob {
+            background: linear-gradient(90deg, #ffd700 0%, #0033a0 50%, #cf142b 100%);
+            color: white; text-align: center; font-size: 11px; padding: 6px 10px; font-weight: bold;
+        }
+        .top-bar {
+            background: #0f172a; color: white; padding: 12px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .top-bar h1 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .btn {
+            background: var(--azul-claro); color: white; border: none;
+            padding: 8px 14px; border-radius: 6px; font-size: 12px;
+            font-weight: bold; cursor: pointer; text-transform: uppercase;
+        }
+        .btn-volver { background: var(--rojo-oficial); }
+        .btn-imprimir { background: var(--verde); }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            height: calc(100vh - 80px);
+        }
+
+        .panel-izquierdo {
+            background: white;
+            border-right: 2px solid #e2e8f0;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .panel-izquierdo h3 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: var(--azul-oficial);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--azul-oficial);
+            padding-bottom: 5px;
+        }
+        .grupo { margin-bottom: 18px; }
+        .grupo label {
+            display: block;
+            font-size: 11px;
+            color: var(--gris);
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .grupo input, .grupo select, .grupo textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .plantilla-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 14px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: border 0.15s, background 0.15s;
+        }
+        .plantilla-card:hover { border-color: var(--azul-claro); background: #f0f7ff; }
+        .plantilla-card.activa { border-color: var(--azul-oficial); background: #e0e7ff; }
+        .plantilla-card .nombre { font-weight: bold; font-size: 13px; color: var(--azul-oficial); margin-bottom: 3px; }
+        .plantilla-card .desc { font-size: 11px; color: var(--gris); line-height: 1.4; }
+
+        .panel-vista {
+            padding: 25px 35px;
+            overflow-y: auto;
+            background: #e2e8f0;
+        }
+
+        .documento {
+            background: white;
+            margin: 0 auto;
+            padding: 50px 60px;
+            max-width: 800px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            min-height: 600px;
+            font-family: "Times New Roman", Georgia, serif;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #000;
+        }
+        .documento .cabecera {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 70px 1fr 70px;
+            gap: 15px;
+            align-items: center;
+        }
+        .documento .cabecera img { width: 60px; height: 60px; object-fit: contain; }
+        .documento .cabecera .titulo-republica {
+            font-size: 9pt;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 0 0 4px 0;
+        }
+        .documento .cabecera .titulo-alcaldia {
+            font-size: 13pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 0;
+            font-family: Georgia, serif;
+        }
+        .documento .cabecera .subtitulo {
+            font-size: 9pt;
+            font-style: italic;
+            margin-top: 3px;
+        }
+        .documento .titulo-doc {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 30px 0;
+            letter-spacing: 1.5px;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 10px 0;
+        }
+        .documento .cuerpo {
+            text-align: justify;
+            margin-bottom: 40px;
+        }
+        .documento .firma {
+            margin-top: 60px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        .documento .firma > div {
+            text-align: center;
+            border-top: 1px solid #000;
+            padding-top: 6px;
+            font-size: 11pt;
+        }
+        .documento .pie {
+            margin-top: 40px;
+            border-top: 1px solid #999;
+            padding-top: 8px;
+            font-size: 9pt;
+            color: #666;
+            text-align: center;
+        }
+
+        @media print {
+            @page { size: A4 portrait; margin: 12mm 14mm; }
+            body { background: white; }
+            .cintillo-gob, .top-bar, .panel-izquierdo, .panel-vista { display: contents; }
+            .layout { display: block; }
+            .panel-vista { background: white; padding: 0; }
+            .documento { box-shadow: none; padding: 0; margin: 0; max-width: 100%; min-height: auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA · ESTADO MIRANDA · ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
+    <div class="top-bar">
+        <h1>📄 Constancias y Notificaciones</h1>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-imprimir" onclick="prepararEImprimir()">🖨 Imprimir / PDF</button>
+            <button class="btn btn-volver" onclick="location.href='admin.html'">← Panel Admin</button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <aside class="panel-izquierdo">
+
+            <h3>1. Plantilla</h3>
+            <div id="listaPlantillas"></div>
+
+            <h3 style="margin-top:20px;">2. Habitante</h3>
+            <div class="grupo">
+                <label>Buscar habitante:</label>
+                <input type="search" id="buscarHabitante" placeholder="Nombre o cédula..." list="dlHabitantes">
+                <datalist id="dlHabitantes"></datalist>
+                <small style="font-size:11px; color:var(--gris);">Empezá a escribir y elegí de la lista.</small>
+            </div>
+
+            <h3 style="margin-top:20px;">3. Datos del documento</h3>
+            <div class="grupo">
+                <label>Lugar y fecha:</label>
+                <input type="text" id="lugarFecha" value="">
+            </div>
+            <div class="grupo">
+                <label>Funcionario que firma:</label>
+                <input type="text" id="funcionarioFirma" value="" placeholder="Nombre y apellido">
+            </div>
+            <div class="grupo">
+                <label>Cargo del funcionario:</label>
+                <input type="text" id="funcionarioCargo" value="" placeholder="Ej. Director de Comunidad">
+            </div>
+            <div class="grupo">
+                <label>Texto adicional (opcional):</label>
+                <textarea id="textoExtra" rows="3" placeholder="Agregue una nota o párrafo extra..."></textarea>
+            </div>
+
+        </aside>
+
+        <main class="panel-vista">
+            <div class="documento" id="documento">
+                <div class="cabecera">
+                    <img src="psuv.jpg" alt="PSUV">
+                    <div>
+                        <p class="titulo-republica">República Bolivariana de Venezuela · Estado Miranda</p>
+                        <h2 class="titulo-alcaldia">Alcaldía del Municipio Cristóbal Rojas</h2>
+                        <p class="subtitulo">Sala Situacional · Charallave</p>
+                    </div>
+                    <img src="escudo municipal.jpg" alt="Escudo">
+                </div>
+                <div class="titulo-doc" id="docTitulo">SELECCIONE UNA PLANTILLA</div>
+                <div class="cuerpo" id="docCuerpo">
+                    <p style="text-align:center; color:#999; font-style:italic;">
+                        Elija una plantilla del panel izquierdo y un habitante para previsualizar el documento.
+                    </p>
+                </div>
+                <div class="firma" id="docFirma" style="display:none;">
+                    <div>
+                        <strong id="firmaNombre">—</strong><br>
+                        <span id="firmaCargo">—</span>
+                    </div>
+                    <div>
+                        El Solicitante<br>
+                        <span style="font-size:10pt; color:#666;">Firma / Huella</span>
+                    </div>
+                </div>
+                <div class="pie">
+                    Documento generado por la Sala Situacional · Alcaldía de Cristóbal Rojas
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            if (user.email === 'carlos.admin@alcaldia.com') return;
+            try {
+                const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                if (snap.exists()) return; // cualquier operador puede generar constancias
+            } catch (e) {}
+        });
+
+        // ============================================================
+        // PLANTILLAS
+        // Cada plantilla tiene un nombre, descripción corta y dos funciones que
+        // generan el título y cuerpo según los datos del habitante.
+        // Las variables disponibles: {nombre} {apellido} {cedula} {direccion}
+        // {comuna} {comunidad} {fechaHoy} {textoExtra} {edad}
+        // ============================================================
+        const PLANTILLAS = [
+            {
+                id: 'residencia',
+                nombre: 'Constancia de Residencia',
+                desc: 'Certifica que el habitante reside en una dirección dentro del municipio.',
+                titulo: 'CONSTANCIA DE RESIDENCIA',
+                cuerpo: (h, ctx) => `
+                    <p>Quien suscribe, en su carácter de funcionario público de la <b>Alcaldía del Municipio Cristóbal Rojas</b>, hace constar por medio de la presente que el (la) ciudadano(a):</p>
+                    <p style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin: 25px 0;">
+                        ${h.nombre} ${h.apellido}
+                    </p>
+                    <p>Titular de la cédula de identidad <b>${h.cedula}</b>, reside en la dirección: <b>${h.direccion}</b>, comunidad <b>${h.comunidad}</b>, parroquia <b>${h.comuna}</b>, del Municipio Cristóbal Rojas del Estado Bolivariano de Miranda.</p>
+                    <p>La presente constancia se expide a petición de la parte interesada, en <b>${ctx.lugarFecha}</b>, para los fines legales que estime conveniente.</p>
+                    ${ctx.textoExtra ? `<p style="margin-top:20px;">${ctx.textoExtra}</p>` : ''}
+                `
+            },
+            {
+                id: 'convocatoria_jornada',
+                nombre: 'Notificación de Jornada',
+                desc: 'Invita formalmente al habitante a una jornada (salud, vacunación, etc.).',
+                titulo: 'NOTIFICACIÓN DE JORNADA INSTITUCIONAL',
+                cuerpo: (h, ctx) => `
+                    <p>Por medio de la presente, la <b>Alcaldía del Municipio Cristóbal Rojas</b> tiene el agrado de notificar al ciudadano(a):</p>
+                    <p style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin: 25px 0;">
+                        ${h.nombre} ${h.apellido}
+                    </p>
+                    <p>Cédula <b>${h.cedula}</b>, residente en <b>${h.direccion}</b>, comunidad <b>${h.comunidad}</b>, sobre la realización de una jornada institucional en su sector.</p>
+                    <p>${ctx.textoExtra || '<i>(Detalles de la jornada: especifique fecha, hora y motivo en el campo "Texto adicional" del formulario.)</i>'}</p>
+                    <p style="margin-top:20px;">Se agradece su confirmación de asistencia y se le invita a difundir la presente notificación entre los vecinos del sector.</p>
+                    <p>Cordialmente,</p>
+                `
+            },
+            {
+                id: 'llamado_atencion',
+                nombre: 'Llamado de Atención',
+                desc: 'Notifica formalmente una inasistencia o falta de un trabajador/servidor.',
+                titulo: 'LLAMADO DE ATENCIÓN INSTITUCIONAL',
+                cuerpo: (h, ctx) => `
+                    <p>Por medio de la presente comunicación oficial, se le notifica al servidor(a) público(a):</p>
+                    <p style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin: 25px 0;">
+                        ${h.nombre} ${h.apellido}
+                    </p>
+                    <p>Titular de la cédula de identidad <b>${h.cedula}</b>, lo siguiente:</p>
+                    <p style="background:#fef3c7; padding:14px; border-left:4px solid #d97706; margin: 20px 0;">
+                        ${ctx.textoExtra || '<i>(Detalle aquí el motivo del llamado de atención en el campo "Texto adicional".)</i>'}
+                    </p>
+                    <p>Se le exhorta a regularizar la situación a la brevedad posible y se deja constancia formal del presente llamado de atención para los fines administrativos correspondientes.</p>
+                `
+            },
+            {
+                id: 'felicitacion_nacimiento',
+                nombre: 'Felicitación por Nacimiento',
+                desc: 'Felicita formalmente a una familia por el nacimiento de un nuevo miembro.',
+                titulo: 'CARTA DE FELICITACIÓN',
+                cuerpo: (h, ctx) => `
+                    <p>La <b>Alcaldía del Municipio Cristóbal Rojas</b>, en nombre de toda la comunidad del Municipio, se complace en felicitar a la familia del ciudadano(a):</p>
+                    <p style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin: 25px 0;">
+                        ${h.nombre} ${h.apellido}
+                    </p>
+                    <p>Residente en <b>${h.direccion}</b>, comunidad <b>${h.comunidad}</b>, por el feliz acontecimiento del nacimiento de su nuevo miembro familiar.</p>
+                    <p>Le hacemos llegar nuestras más sinceras felicitaciones y le recordamos que esta institución está a la disposición para acompañarlo en los trámites de registro civil, programa Hogares de la Patria y atención maternal y de la primera infancia.</p>
+                    ${ctx.textoExtra ? `<p style="margin-top:20px;">${ctx.textoExtra}</p>` : ''}
+                    <p style="margin-top:20px;">Con sentimientos de aprecio y consideración,</p>
+                `
+            },
+            {
+                id: 'notif_bono',
+                nombre: 'Notificación de Bono',
+                desc: 'Avisa al habitante que tiene un bono pendiente por retirar.',
+                titulo: 'NOTIFICACIÓN DE BONO INSTITUCIONAL',
+                cuerpo: (h, ctx) => `
+                    <p>La <b>Alcaldía del Municipio Cristóbal Rojas</b> notifica al ciudadano(a):</p>
+                    <p style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin: 25px 0;">
+                        ${h.nombre} ${h.apellido}
+                    </p>
+                    <p>Cédula <b>${h.cedula}</b>, residente en <b>${h.comunidad}</b>, que se encuentra disponible para su retiro un bono institucional pendiente de entrega.</p>
+                    <p>${ctx.textoExtra || '<i>(Indique en "Texto adicional" el tipo de bono, lugar de retiro, fecha límite y documentación requerida.)</i>'}</p>
+                    <p style="margin-top:20px;">Se le recuerda que el plazo de retiro es <b>improrrogable</b>, motivo por el cual le rogamos atender este aviso a la brevedad.</p>
+                `
+            },
+            {
+                id: 'autorizacion',
+                nombre: 'Autorización Genérica',
+                desc: 'Plantilla flexible para cualquier autorización oficial (uso de espacios, permisos, etc.).',
+                titulo: 'AUTORIZACIÓN OFICIAL',
+                cuerpo: (h, ctx) => `
+                    <p>La <b>Alcaldía del Municipio Cristóbal Rojas</b> AUTORIZA al ciudadano(a):</p>
+                    <p style="text-align:center; font-weight:bold; font-size:14pt; text-transform:uppercase; margin: 25px 0;">
+                        ${h.nombre} ${h.apellido}
+                    </p>
+                    <p>Cédula de identidad <b>${h.cedula}</b>, residente en <b>${h.direccion}</b>, comunidad <b>${h.comunidad}</b>, a lo siguiente:</p>
+                    <p style="background:#f0f7ff; padding:14px; border-left:4px solid var(--azul-oficial); margin: 20px 0;">
+                        ${ctx.textoExtra || '<i>(Describa en "Texto adicional" qué se está autorizando.)</i>'}
+                    </p>
+                    <p>La presente autorización se emite para los fines legales correspondientes en la fecha indicada al pie.</p>
+                `
+            }
+        ];
+
+        let plantillaActual = null;
+        let habitantes = {};
+        let habitanteActual = null;
+
+        const $ = (id) => document.getElementById(id);
+
+        // Renderizar lista de plantillas
+        const listaCont = $('listaPlantillas');
+        PLANTILLAS.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'plantilla-card';
+            div.dataset.id = p.id;
+            div.innerHTML = `<div class="nombre">${p.nombre}</div><div class="desc">${p.desc}</div>`;
+            div.addEventListener('click', () => {
+                document.querySelectorAll('.plantilla-card').forEach(c => c.classList.remove('activa'));
+                div.classList.add('activa');
+                plantillaActual = p;
+                renderizarDocumento();
+            });
+            listaCont.appendChild(div);
+        });
+
+        // Cargar habitantes para datalist
+        onValue(ref(database, 'habitantes'), (snap) => {
+            habitantes = snap.val() || {};
+            const dl = $('dlHabitantes');
+            dl.innerHTML = '';
+            Object.values(habitantes).slice(0, 4000).forEach(h => {
+                const ced = h.cedula ? `${h.nacionalidad || 'V'}-${h.cedula}` : 'S/C';
+                const opt = document.createElement('option');
+                opt.value = `${h.nombre || ''} ${h.apellido || ''} (${ced})`;
+                dl.appendChild(opt);
+            });
+        });
+
+        $('buscarHabitante').addEventListener('input', () => {
+            const txt = $('buscarHabitante').value.trim();
+            const match = txt.match(/\(([VE]-?\d+|S\/C)\)$/i);
+            if (match) {
+                const cedBuscar = match[1].replace(/^[VE]-?/i, '');
+                for (const id in habitantes) {
+                    if ((habitantes[id].cedula || '').toString().trim() === cedBuscar) {
+                        habitanteActual = habitantes[id];
+                        renderizarDocumento();
+                        return;
+                    }
+                }
+            } else {
+                habitanteActual = null;
+                renderizarDocumento();
+            }
+        });
+
+        // Fecha por defecto
+        $('lugarFecha').value = `Charallave, ${new Date().toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+
+        ['lugarFecha', 'funcionarioFirma', 'funcionarioCargo', 'textoExtra'].forEach(id => {
+            $(id).addEventListener('input', renderizarDocumento);
+        });
+
+        function renderizarDocumento() {
+            if (!plantillaActual) {
+                $('docTitulo').textContent = 'SELECCIONE UNA PLANTILLA';
+                $('docCuerpo').innerHTML = '<p style="text-align:center; color:#999; font-style:italic;">Elija una plantilla del panel izquierdo y un habitante para previsualizar el documento.</p>';
+                $('docFirma').style.display = 'none';
+                return;
+            }
+            if (!habitanteActual) {
+                $('docTitulo').textContent = plantillaActual.titulo;
+                $('docCuerpo').innerHTML = '<p style="text-align:center; color:#999; font-style:italic;">Seleccione un habitante para generar el documento.</p>';
+                $('docFirma').style.display = 'none';
+                return;
+            }
+
+            const h = habitanteActual;
+            const ced = h.cedula ? `${h.nacionalidad || 'V'}-${h.cedula}` : 'S/C';
+            const direccion = `${h.calle || ''}${h.numero_casa ? ', Casa ' + h.numero_casa : ''}`.trim() || h.comunidad || '—';
+            const ctx = {
+                lugarFecha: $('lugarFecha').value,
+                textoExtra: $('textoExtra').value.trim().replace(/\n/g, '<br>'),
+                fechaHoy: new Date().toLocaleDateString('es-VE')
+            };
+
+            $('docTitulo').textContent = plantillaActual.titulo;
+            $('docCuerpo').innerHTML = plantillaActual.cuerpo({
+                nombre: h.nombre || '',
+                apellido: h.apellido || '',
+                cedula: ced,
+                direccion, comuna: h.comuna || '', comunidad: h.comunidad || ''
+            }, ctx) + `<p style="text-align:right; margin-top:30px;">${ctx.lugarFecha}</p>`;
+
+            $('docFirma').style.display = 'grid';
+            $('firmaNombre').textContent = $('funcionarioFirma').value || '___________________';
+            $('firmaCargo').textContent = $('funcionarioCargo').value || 'Funcionario Autorizado';
+        }
+
+        window.prepararEImprimir = () => {
+            if (!plantillaActual || !habitanteActual) {
+                alert('Seleccione una plantilla y un habitante antes de imprimir.');
+                return;
+            }
+            window.print();
+        };
+    </script>
+</body>
+</html>
