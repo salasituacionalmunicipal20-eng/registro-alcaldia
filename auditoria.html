@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría de Cambios · Alcaldía de Cristóbal Rojas</title>
+    <style>
+        :root {
+            --azul-oficial: #003366;
+            --azul-claro: #0284c7;
+            --rojo-oficial: #E30613;
+            --verde: #16a34a;
+            --gris: #64748b;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: "Segoe UI", sans-serif; background: #f1f5f9; color: #1e293b; }
+        .cintillo-gob {
+            background: linear-gradient(90deg, #ffd700 0%, #0033a0 50%, #cf142b 100%);
+            color: white;
+            text-align: center;
+            font-size: 11px;
+            padding: 6px 10px;
+            font-weight: bold;
+        }
+        .top-bar {
+            background: #0f172a;
+            color: white;
+            padding: 12px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .top-bar h1 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .btn {
+            background: var(--azul-claro);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn-volver { background: var(--rojo-oficial); }
+        .btn-csv { background: var(--verde); }
+
+        .panel-filtros {
+            background: white;
+            padding: 14px 25px;
+            border-bottom: 1px solid #cbd5e1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+        .panel-filtros label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gris);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .panel-filtros input, .panel-filtros select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .panel-filtros .botones { display: flex; gap: 8px; }
+
+        .info-bar {
+            background: #fef3c7;
+            padding: 8px 25px;
+            font-size: 13px;
+            color: #78350f;
+            border-bottom: 1px solid #fcd34d;
+        }
+        .info-bar b { color: var(--azul-oficial); font-size: 15px; }
+
+        .tabla-wrapper {
+            background: white;
+            max-height: calc(100vh - 220px);
+            overflow: auto;
+            border-top: 2px solid var(--azul-oficial);
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        thead { position: sticky; top: 0; z-index: 5; }
+        thead th {
+            background: var(--azul-oficial);
+            color: white;
+            padding: 11px 10px;
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 11px;
+            font-weight: 700;
+            border-right: 1px solid #1e3a5f;
+        }
+        tbody tr { border-bottom: 1px solid #e2e8f0; }
+        tbody tr:nth-child(even) { background: #f8fafc; }
+        tbody tr:hover { background: #e0f2fe; }
+        tbody td { padding: 9px 10px; vertical-align: top; }
+        .badge-campo {
+            display: inline-block;
+            background: #dbeafe;
+            color: var(--azul-oficial);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: monospace;
+        }
+        .valor-anterior { color: var(--rojo-oficial); text-decoration: line-through; font-size: 11px; }
+        .valor-nuevo { color: var(--verde); font-weight: 700; font-size: 12px; }
+        .meta-fecha { color: var(--gris); font-size: 11px; }
+        .meta-usuario { color: var(--azul-oficial); font-weight: 700; font-size: 12px; }
+        .badge-tipo {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .badge-tipo.update { background: #dbeafe; color: var(--azul-oficial); }
+        .badge-tipo.create { background: #dcfce7; color: var(--verde); }
+        .badge-tipo.delete { background: #fee2e2; color: var(--rojo-oficial); }
+
+        .paginacion {
+            padding: 12px 25px;
+            background: white;
+            border-top: 1px solid #cbd5e1;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            align-items: center;
+        }
+        .paginacion button {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--azul-oficial);
+        }
+        .paginacion button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagina-info { padding: 0 12px; font-weight: bold; color: #475569; }
+    </style>
+</head>
+<body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA · ESTADO MIRANDA · ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
+    <div class="top-bar">
+        <h1>📜 Auditoría de Cambios · Trazabilidad de la Base de Datos</h1>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-csv" onclick="exportarCSV()">📥 Exportar CSV</button>
+            <button class="btn btn-volver" onclick="location.href='admin.html'">← Panel Admin</button>
+        </div>
+    </div>
+
+    <div class="panel-filtros">
+        <div>
+            <label>Buscar habitante:</label>
+            <input type="search" id="fHabitante" placeholder="Nombre o ID...">
+        </div>
+        <div>
+            <label>Operador que cambió:</label>
+            <select id="fUsuario"><option value="">Todos</option></select>
+        </div>
+        <div>
+            <label>Campo modificado:</label>
+            <select id="fCampo"><option value="">Todos</option></select>
+        </div>
+        <div>
+            <label>Tipo:</label>
+            <select id="fTipo">
+                <option value="">Todos</option>
+                <option value="update">Modificación</option>
+                <option value="create">Creación</option>
+                <option value="delete">Eliminación</option>
+            </select>
+        </div>
+        <div>
+            <label>Periodo:</label>
+            <select id="fPeriodo">
+                <option value="24h">Últimas 24 horas</option>
+                <option value="7d" selected>Últimos 7 días</option>
+                <option value="30d">Últimos 30 días</option>
+                <option value="todo">Todo el historial</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="info-bar">
+        Mostrando <b id="lblTotal">0</b> eventos del historial — los registros se mantienen aunque se borre el habitante.
+    </div>
+
+    <div class="tabla-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:120px;">Fecha</th>
+                    <th style="width:160px;">Operador</th>
+                    <th style="width:90px;">Tipo</th>
+                    <th style="width:180px;">Habitante</th>
+                    <th style="width:160px;">Campo</th>
+                    <th>Cambio</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoTabla"></tbody>
+        </table>
+    </div>
+
+    <div class="paginacion" id="paginacion"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Acceso: cualquier admin
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            if (user.email === 'carlos.admin@alcaldia.com') return;
+            try {
+                const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                if (snap.exists() && snap.val().rol === 'admin') return;
+            } catch (e) {}
+            document.body.innerHTML = "<h1 style='text-align:center; padding:60px; color:#dc3545;'>⛔ ACCESO RESTRINGIDO</h1>";
+            setTimeout(() => window.location.href = 'index.html', 2500);
+        });
+
+        let cambios = [];
+        let filtrados = [];
+        let pagina = 1;
+        const POR_PAGINA = 50;
+
+        const escapeHtml = (s) => (s == null ? '' : s.toString()
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+
+        function aplicarFiltros() {
+            const fHab = document.getElementById('fHabitante').value.toLowerCase().trim();
+            const fUsu = document.getElementById('fUsuario').value;
+            const fCam = document.getElementById('fCampo').value;
+            const fTip = document.getElementById('fTipo').value;
+            const fPer = document.getElementById('fPeriodo').value;
+
+            const ahora = Date.now();
+            const ventana = {
+                '24h': 24 * 3600 * 1000,
+                '7d':  7 * 24 * 3600 * 1000,
+                '30d': 30 * 24 * 3600 * 1000,
+                'todo': Infinity
+            }[fPer];
+
+            filtrados = cambios.filter(c => {
+                if (ventana !== Infinity && (ahora - (c.timestamp || 0)) > ventana) return false;
+                if (fUsu && c.usuario_uid !== fUsu) return false;
+                if (fCam && c.campo !== fCam) return false;
+                if (fTip && c.tipo !== fTip) return false;
+                if (fHab) {
+                    const t = `${c.habitante_nombre || ''} ${c.habitante_id || ''}`.toLowerCase();
+                    if (!t.includes(fHab)) return false;
+                }
+                return true;
+            });
+            filtrados.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            pagina = 1;
+            renderizar();
+        }
+
+        function renderizar() {
+            document.getElementById('lblTotal').textContent = filtrados.length;
+            const tbody = document.getElementById('cuerpoTabla');
+            const inicio = (pagina - 1) * POR_PAGINA;
+            const slice = filtrados.slice(inicio, inicio + POR_PAGINA);
+
+            if (slice.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding:40px; text-align:center; color:#94a3b8; font-style:italic;">No hay eventos en el historial con los filtros actuales.</td></tr>';
+            } else {
+                tbody.innerHTML = slice.map(c => {
+                    const fecha = c.fecha || new Date(c.timestamp || 0).toLocaleString('es-VE');
+                    const tipo = c.tipo || 'update';
+                    const claseTipo = tipo;
+                    let cambioHtml;
+                    if (tipo === 'create') {
+                        cambioHtml = `<span class="valor-nuevo">📝 ${escapeHtml(c.valor_nuevo)}</span>`;
+                    } else if (tipo === 'delete') {
+                        cambioHtml = `<span class="valor-anterior">🗑️ ${escapeHtml(c.valor_anterior)}</span>`;
+                    } else {
+                        cambioHtml = `
+                            <span class="valor-anterior">${escapeHtml(c.valor_anterior) || '(vacío)'}</span>
+                            <span style="color:#94a3b8; margin: 0 6px;">→</span>
+                            <span class="valor-nuevo">${escapeHtml(c.valor_nuevo) || '(vacío)'}</span>
+                        `;
+                    }
+                    return `
+                        <tr>
+                            <td class="meta-fecha">${fecha}</td>
+                            <td class="meta-usuario">${escapeHtml(c.usuario_nombre || c.usuario_email || '—')}</td>
+                            <td><span class="badge-tipo ${claseTipo}">${tipo}</span></td>
+                            <td>${escapeHtml(c.habitante_nombre || c.habitante_id || '—')}</td>
+                            <td><span class="badge-campo">${escapeHtml(c.campo || '—')}</span></td>
+                            <td>${cambioHtml}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            renderizarPaginacion();
+        }
+
+        function renderizarPaginacion() {
+            const cont = document.getElementById('paginacion');
+            const total = Math.ceil(filtrados.length / POR_PAGINA);
+            if (total <= 1) { cont.innerHTML = ''; return; }
+            cont.innerHTML = `
+                <button onclick="window._irPagina(1)" ${pagina===1?'disabled':''}>« Primera</button>
+                <button onclick="window._irPagina(${pagina-1})" ${pagina===1?'disabled':''}>‹ Anterior</button>
+                <span class="pagina-info">Página ${pagina} de ${total}</span>
+                <button onclick="window._irPagina(${pagina+1})" ${pagina===total?'disabled':''}>Siguiente ›</button>
+                <button onclick="window._irPagina(${total})" ${pagina===total?'disabled':''}>Última »</button>
+            `;
+        }
+        window._irPagina = (p) => { pagina = p; renderizar(); };
+
+        function popularFiltros() {
+            const usuariosSet = new Map();
+            const camposSet = new Set();
+            cambios.forEach(c => {
+                if (c.usuario_uid) usuariosSet.set(c.usuario_uid, c.usuario_nombre || c.usuario_email || c.usuario_uid);
+                if (c.campo) camposSet.add(c.campo);
+            });
+            const selU = document.getElementById('fUsuario');
+            const valU = selU.value;
+            selU.innerHTML = '<option value="">Todos</option>';
+            usuariosSet.forEach((nombre, uid) => {
+                const o = document.createElement('option'); o.value = uid; o.textContent = nombre;
+                selU.appendChild(o);
+            });
+            if (valU) selU.value = valU;
+
+            const selC = document.getElementById('fCampo');
+            const valC = selC.value;
+            selC.innerHTML = '<option value="">Todos</option>';
+            Array.from(camposSet).sort().forEach(c => {
+                const o = document.createElement('option'); o.value = c; o.textContent = c;
+                selC.appendChild(o);
+            });
+            if (valC) selC.value = valC;
+        }
+
+        window.exportarCSV = () => {
+            if (filtrados.length === 0) { alert('No hay eventos para exportar.'); return; }
+            const e = (v) => '"' + (v == null ? '' : v.toString().replace(/"/g, '""').replace(/[\r\n]+/g, ' ')) + '"';
+            let csv = '﻿Fecha,Operador,Email,Tipo,Habitante,Campo,Valor Anterior,Valor Nuevo\n';
+            filtrados.forEach(c => {
+                csv += [c.fecha, c.usuario_nombre, c.usuario_email, c.tipo,
+                        c.habitante_nombre, c.campo, c.valor_anterior, c.valor_nuevo].map(e).join(',') + '\n';
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `AUDITORIA_CAMBIOS_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        };
+
+        // Listeners
+        ['fHabitante', 'fUsuario', 'fCampo', 'fTipo', 'fPeriodo'].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', () => { clearTimeout(window._d); window._d = setTimeout(aplicarFiltros, 200); });
+            el.addEventListener('change', aplicarFiltros);
+        });
+
+        onValue(ref(database, 'historial_cambios'), (snap) => {
+            const data = snap.val() || {};
+            cambios = Object.keys(data).map(id => ({ _id: id, ...data[id] }));
+            popularFiltros();
+            aplicarFiltros();
+        });
+    </script>
+</body>
+</html>

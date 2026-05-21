@@ -173,6 +173,8 @@
         .card-dashboard::before { background-color: #003366; }
         .card-mapa { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #86efac; }
         .card-mapa::before { background-color: #16a34a; }
+        .card-auditoria { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 1px solid #94a3b8; }
+        .card-auditoria::before { background-color: #6b7280; }
 
         .card-icon { 
             font-size: 50px; 
@@ -279,6 +281,12 @@
                 <div class="card-desc">Geolocalización de hogares censados sobre OpenStreetMap. Filtros por comuna, vulnerabilidad y voto.</div>
             </div>
 
+            <div id="cardAuditoria" class="card card-auditoria hidden" onclick="location.href='auditoria.html'" style="border-top: 4px solid #6b7280;">
+                <span class="card-icon">📜</span>
+                <div class="card-title">Auditoría de Cambios</div>
+                <div class="card-desc">Historial completo de cada modificación: quién, cuándo, qué campo, valor anterior y nuevo. Trazabilidad legal.</div>
+            </div>
+
         </div>
     </div>
 
@@ -325,6 +333,7 @@
                     document.getElementById('cardVerificador').classList.remove('hidden');
                     document.getElementById('cardDashboard').classList.remove('hidden');
                     document.getElementById('cardMapa').classList.remove('hidden');
+                    document.getElementById('cardAuditoria').classList.remove('hidden');
                 }
             }
         });

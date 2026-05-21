@@ -289,7 +289,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, update, get, child, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -545,12 +545,41 @@
 
         // ============================================================
         // GUARDADO EN FIREBASE — debounce no necesario, ya es onBlur
+        // Cada cambio se registra automáticamente en /historial_cambios
         // ============================================================
+        async function registrarCambioEnHistorial(habitanteId, campo, valorAnterior, valorNuevo) {
+            try {
+                const user = auth.currentUser;
+                const h = baseDatos[habitanteId] || {};
+                const cambioRef = push(ref(database, 'historial_cambios'));
+                await set(cambioRef, {
+                    habitante_id: habitanteId,
+                    habitante_nombre: `${h.nombre || ''} ${h.apellido || ''}`.trim() || '(sin nombre)',
+                    campo,
+                    valor_anterior: valorAnterior == null ? '' : valorAnterior.toString(),
+                    valor_nuevo: valorNuevo == null ? '' : valorNuevo.toString(),
+                    tipo: 'update',
+                    origen: 'verificador',
+                    usuario_uid: user ? user.uid : 'desconocido',
+                    usuario_email: user ? user.email : 'desconocido',
+                    usuario_nombre: user && user.email === 'carlos.admin@alcaldia.com' ? 'CARLOS ADMIN' : (user ? user.email : 'Desconocido'),
+                    fecha: new Date().toLocaleString('es-VE'),
+                    timestamp: Date.now()
+                });
+            } catch (e) {
+                // No bloqueamos el guardado si el log falla — solo lo reportamos en consola
+                console.warn('No se pudo registrar el cambio en el historial:', e);
+            }
+        }
+
         async function guardarCelda(id, campo, valor, elemento) {
             elemento.classList.add('guardando');
             elemento.classList.remove('guardado', 'error');
+            const valorAnterior = elemento.dataset.original || '';
             try {
                 await update(ref(database, `habitantes/${id}`), { [campo]: valor });
+                // Registrar en historial (fire-and-forget; no bloqueamos el feedback)
+                registrarCambioEnHistorial(id, campo, valorAnterior, valor);
                 elemento.dataset.original = valor;
                 elemento.classList.remove('guardando');
                 elemento.classList.add('guardado');

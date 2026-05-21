@@ -1604,7 +1604,28 @@
                 if (window.presenciaRef) {
                     update(window.presenciaRef, { ultima_accion: `⚠️ Eliminando registro permanente (ID: ${id})` });
                 }
-                remove(ref(database, `habitantes/${id}`)).catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
+                const h = baseDeDatosHabitantes[id] || {};
+                const user = auth.currentUser;
+                const usuarioNombre = window.perfilOperador
+                    ? `${window.perfilOperador.nombre || ''} ${window.perfilOperador.apellido || ''}`.trim() || user.email
+                    : (user.email === 'carlos.admin@alcaldia.com' ? 'CARLOS ADMIN' : user.email);
+                remove(ref(database, `habitantes/${id}`))
+                    .then(() => {
+                        // Log de eliminación en el historial — fire and forget
+                        const refC = push(ref(database, 'historial_cambios'));
+                        set(refC, {
+                            habitante_id: id,
+                            habitante_nombre: `${h.nombre || ''} ${h.apellido || ''}`.trim() || '(sin nombre)',
+                            campo: '__ELIMINADO__',
+                            valor_anterior: `Cédula: ${h.cedula || 'S/C'} · Comuna: ${h.comuna || ''}`,
+                            valor_nuevo: '',
+                            tipo: 'delete', origen: 'consulta',
+                            usuario_uid: user.uid, usuario_email: user.email, usuario_nombre: usuarioNombre,
+                            fecha: new Date().toLocaleString('es-VE'),
+                            timestamp: Date.now()
+                        }).catch(() => {});
+                    })
+                    .catch((error) => alert("Sistema bloqueado: No tienes permisos para borrar."));
             }
         };
 
@@ -2039,8 +2060,40 @@
             }
 
             try {
+                // Detectar campos modificados vs valores anteriores ANTES del update
+                const original = baseDeDatosHabitantes[idActualEdicion] || {};
+                const camposCambiados = [];
+                Object.keys(datosEditados).forEach(k => {
+                    const vAnt = original[k] == null ? '' : original[k].toString();
+                    const vNuevo = datosEditados[k] == null ? '' : datosEditados[k].toString();
+                    if (vAnt !== vNuevo) {
+                        camposCambiados.push({ campo: k, anterior: vAnt, nuevo: vNuevo });
+                    }
+                });
+
                 await update(ref(database, `habitantes/${idActualEdicion}`), dataFinal);
-                
+
+                // Registrar cada campo modificado en el historial (fire-and-forget)
+                if (camposCambiados.length > 0) {
+                    const user = auth.currentUser;
+                    const nombreHab = `${original.nombre || ''} ${original.apellido || ''}`.trim() || '(sin nombre)';
+                    const usuarioNombre = window.perfilOperador
+                        ? `${window.perfilOperador.nombre || ''} ${window.perfilOperador.apellido || ''}`.trim() || user.email
+                        : (user.email === 'carlos.admin@alcaldia.com' ? 'CARLOS ADMIN' : user.email);
+                    camposCambiados.forEach(({ campo, anterior, nuevo }) => {
+                        const refC = push(ref(database, 'historial_cambios'));
+                        set(refC, {
+                            habitante_id: idActualEdicion,
+                            habitante_nombre: nombreHab,
+                            campo, valor_anterior: anterior, valor_nuevo: nuevo,
+                            tipo: 'update', origen: 'consulta',
+                            usuario_uid: user.uid, usuario_email: user.email, usuario_nombre: usuarioNombre,
+                            fecha: new Date().toLocaleString('es-VE'),
+                            timestamp: Date.now()
+                        }).catch(() => {});
+                    });
+                }
+
                 const selectLibres = document.getElementById('e_dependientes_libres');
                 if (selectLibres && !document.getElementById('e_grupo_familiar_wrapper').classList.contains('hidden')) {
                     const seleccionados = Array.from(selectLibres.selectedOptions).map(opt => opt.value);
