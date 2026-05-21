@@ -996,15 +996,39 @@
             }
         }
 
-        // Convierte "1", "2", "uno", "dos"... a número; valores no reconocibles cuentan como 1 (un cilindro)
+        // Convierte "1", "2", "uno", "dos"... a número.
+        // Esta función solo se invoca cuando tiene_gas === 'si', por lo que el default es 1
+        // (asumimos al menos un cilindro si el hogar tiene gas pero la cantidad no se registró).
         function parseCantidadCilindros(raw) {
             const s = (raw || '').toString().trim().toLowerCase();
-            if (s === '') return 0;
+            if (s === '') return 1;
             const n = parseInt(s);
             if (!isNaN(n) && n > 0) return n;
             const palabras = { 'uno': 1, 'una': 1, 'dos': 2, 'tres': 3, 'cuatro': 4, 'cinco': 5, 'seis': 6, 'siete': 7, 'ocho': 8, 'nueve': 9, 'diez': 10 };
             if (palabras[s] != null) return palabras[s];
             return 1;
+        }
+
+        // Helper compat para enfermedad/medicamento. Detecta el esquema nuevo (flag si/no + texto separado)
+        // y también registros viejos donde padece_enfermedad / cual_medicamento traen el texto directo.
+        // Devuelve { tieneEnf, tieneMed, enf, med } listo para reportes.
+        function evaluarSalud(h, negacionesSalud) {
+            const padeceRaw = (h.padece_enfermedad || '').toString().trim();
+            const padeceLower = padeceRaw.toLowerCase();
+            const tomaMedRaw = (h.toma_medicamento || '').toString().trim().toLowerCase();
+
+            let enf = cleanText(h.cual_enfermedad);
+            // Fallback esquema viejo: padece_enfermedad tiene texto descriptivo, no 'si'/'no'
+            if (!enf && padeceRaw && padeceLower !== 'si' && padeceLower !== 'no') {
+                const txt = cleanText(h.padece_enfermedad);
+                if (!negacionesSalud.includes(txt)) enf = txt;
+            }
+            const tieneEnf = padeceLower === 'si' || (enf !== '' && !negacionesSalud.includes(enf));
+
+            const med = cleanText(h.cual_medicamento);
+            const tieneMed = tomaMedRaw === 'si' || (med !== '' && !negacionesSalud.includes(med));
+
+            return { tieneEnf, tieneMed, enf, med };
         }
 
         function calcularEdad(fecha) {
@@ -1226,11 +1250,8 @@
                     if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'enfermedad') {
-                        const enf = cleanText(h.cual_enfermedad);
-                        const med = cleanText(h.cual_medicamento);
-                        const tieneEnfermedad = (h.padece_enfermedad || '').toLowerCase() === 'si' || (enf !== '' && !negacionesSalud.includes(enf));
-                        const tieneMedicina = (h.toma_medicamento || '').toLowerCase() === 'si' || (med !== '' && !negacionesSalud.includes(med));
-                        if (!tieneEnfermedad && !tieneMedicina) continue;
+                        const ev = evaluarSalud(h, negacionesSalud);
+                        if (!ev.tieneEnf && !ev.tieneMed) continue;
                     }
                 }
 
@@ -1250,10 +1271,7 @@
                     }
                 }
 
-                const enf = cleanText(h.cual_enfermedad);
-                const med = cleanText(h.cual_medicamento);
-                const tieneEnf = (h.padece_enfermedad || '').toLowerCase() === 'si' || (enf !== '' && !negacionesSalud.includes(enf));
-                const tieneMed = (h.toma_medicamento || '').toLowerCase() === 'si' || (med !== '' && !negacionesSalud.includes(med));
+                const { tieneEnf, tieneMed, enf, med } = evaluarSalud(h, negacionesSalud);
 
                 // Acumulado de profesiones (solo si trabaja)
                 if ((h.trabaja || '').toLowerCase() === 'si') {
@@ -1377,24 +1395,20 @@
                 if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
                 if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
                 
-                const med = cleanText(h.cual_medicamento);
-                const enf = cleanText(h.cual_enfermedad);
-
-                const tieneMedicina = (h.toma_medicamento || '').toLowerCase() === 'si' || (med !== '' && !negacionesSalud.includes(med));
-                const tieneEnfermedad = (h.padece_enfermedad || '').toLowerCase() === 'si' || (enf !== '' && !negacionesSalud.includes(enf));
+                const { tieneEnf: tieneEnfermedad, tieneMed: tieneMedicina, enf, med } = evaluarSalud(h, negacionesSalud);
 
                 if (!tieneMedicina && !tieneEnfermedad) continue;
-                
+
                 if (filtroMed !== 'TODOS') {
                     let partes = med.split(/,| Y | E |\//).map(p => p.trim());
                     let coincide = partes.some(p => p.includes(filtroMed) || filtroMed.includes(p));
                     if (!coincide) continue;
                 }
-                
+
                 const edad = calcularEdad(h.fecha_nacimiento);
                 const nac = h.nacionalidad || 'V';
                 const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
-                
+
                 let medStrPrint = med;
                 if(!tieneMedicina && tieneEnfermedad) medStrPrint = enf ? `PADECE: ${enf} (No Especifica Tratamiento)` : `PADECE ENFERMEDAD (No Especificada)`;
                 
@@ -1473,14 +1487,11 @@
                 
                 if (edad < minEdad || edad > maxEdad) continue;
                 
-                const med = cleanText(h.cual_medicamento);
-                const enf = cleanText(h.cual_enfermedad);
-                const tieneMedicina = (h.toma_medicamento || '').toLowerCase() === 'si' || (med !== '' && !negacionesSalud.includes(med));
-                const tieneEnfermedad = (h.padece_enfermedad || '').toLowerCase() === 'si' || (enf !== '' && !negacionesSalud.includes(enf));
+                const { tieneEnf: tieneEnfermedad, tieneMed: tieneMedicina, enf, med } = evaluarSalud(h, negacionesSalud);
 
                 const nac = h.nacionalidad || 'V';
                 const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
-                
+
                 let medStrPrint = "NINGUNO";
                 if(tieneMedicina) medStrPrint = med;
                 else if (tieneEnfermedad) medStrPrint = enf ? `PADECE: ${enf} (No Especifica Tratamiento)` : `PADECE ENFERMEDAD (No Especificada)`;
@@ -1566,11 +1577,8 @@
                     if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
                     if (fCondicion === 'enfermedad') {
-                        const enf = cleanText(h.cual_enfermedad);
-                        const med = cleanText(h.cual_medicamento);
-                        const tieneEnfermedad = (h.padece_enfermedad || '').toLowerCase() === 'si' || (enf !== '' && !negacionesSalud.includes(enf));
-                        const tieneMedicina = (h.toma_medicamento || '').toLowerCase() === 'si' || (med !== '' && !negacionesSalud.includes(med));
-                        if (!tieneEnfermedad && !tieneMedicina) continue;
+                        const ev = evaluarSalud(h, negacionesSalud);
+                        if (!ev.tieneEnf && !ev.tieneMed) continue;
                     }
                 }
 
@@ -1617,10 +1625,7 @@
                     const nac = h.nacionalidad || 'V';
                     const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
                     
-                    const enf = cleanText(h.cual_enfermedad);
-                    const med = cleanText(h.cual_medicamento);
-                    const tieneEnf = (h.padece_enfermedad || '').toLowerCase() === 'si' || (enf !== '' && !negacionesSalud.includes(enf));
-                    const tieneMed = (h.toma_medicamento || '').toLowerCase() === 'si' || (med !== '' && !negacionesSalud.includes(med));
+                    const { tieneEnf, tieneMed, enf, med } = evaluarSalud(h, negacionesSalud);
                     
                     let diagInfo = "NINGUNO";
                     if (tipo === 'cilindros') {
