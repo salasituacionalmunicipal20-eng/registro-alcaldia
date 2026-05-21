@@ -300,6 +300,9 @@
                     let conAdvertencia = 0;   // se subió pero con valores por defecto
                     let conError = 0;          // se subió tras error de procesamiento
                     let filasVacias = 0;       // fila totalmente vacía en el CSV (todos los campos en blanco)
+                    // Detalle de cada registro con advertencias para mostrar al final
+                    const listaConAdvertencia = []; // [{fila, nombre, cedula, observaciones, id_firebase}]
+                    const listaConError = [];       // [{fila, nombre, cedula, mensaje, id_firebase}]
                     const habitantesRef = ref(database, 'habitantes');
 
                     // Lista temporal para la Fase 2 (Solo guarda ID y Rol para no gastar RAM)
@@ -554,7 +557,16 @@
                             // GUARDAMOS EN FIREBASE AL INSTANTE
                             await set(nuevoRef, habitanteTraducido);
                             subidos++;
-                            if (observaciones.length > 0) conAdvertencia++;
+                            if (observaciones.length > 0) {
+                                conAdvertencia++;
+                                listaConAdvertencia.push({
+                                    fila: i + 1,
+                                    nombre: `${nombreParsed} ${apellidoParsed}`.trim() || '(sin nombre)',
+                                    cedula: esCedulaValida ? `${rowNac}-${rowCedulaNum}` : 'S/C',
+                                    observaciones: observaciones.join(' | '),
+                                    id_firebase: firebaseId
+                                });
+                            }
                             ultimaCorridaIds.push(firebaseId); // Rastreo para botón de reversa
 
                             // LO ANOTAMOS PARA LA FASE 2
@@ -618,6 +630,13 @@
                                 });
                                 ultimaCorridaIds.push(idError);
                                 conError++;
+                                listaConError.push({
+                                    fila: i + 1,
+                                    nombre: (fila['NOMBRE Y APELLIDO'] || `(fila ${i+1})`).toString().toUpperCase(),
+                                    cedula: (fila['CEDULA'] || 'S/C').toString().trim(),
+                                    mensaje: err.message,
+                                    id_firebase: idError
+                                });
                                 escribirLog(`   ↳ Fila ${i+1} guardada como respaldo mínimo. Revisar en consulta.html.`, "log-warning");
                             } catch (err2) {
                                 escribirLog(`   ↳ Tampoco se pudo guardar el respaldo de la fila ${i+1}: ${err2.message}. Esta fila se PERDIÓ.`, "log-error");
@@ -678,6 +697,31 @@
                     
                     escribirLog(`=================================`, "log-warning");
                     escribirLog(`✅ FASE 2 COMPLETADA. Se conectaron ${vinculados} familiares a sus Jefes de Hogar.`, "log-success");
+
+                    // 📋 DUMP DE HABITANTES CON ADVERTENCIAS Y ERRORES — para que el admin pueda identificarlos
+                    if (listaConAdvertencia.length > 0) {
+                        escribirLog(`=================================`, "log-warning");
+                        escribirLog(`⚠️ LISTA DE ${listaConAdvertencia.length} HABITANTES SUBIDOS CON ADVERTENCIAS (revisar y corregir manualmente):`, "log-warning");
+                        listaConAdvertencia.forEach((h) => {
+                            escribirLog(
+                                `   • Fila ${h.fila} → <b>${h.nombre}</b> · C.I: ${h.cedula} · ID: ...${h.id_firebase.slice(-6)} · ⚠️ ${h.observaciones}`,
+                                "log-warning"
+                            );
+                        });
+                    }
+                    if (listaConError.length > 0) {
+                        escribirLog(`=================================`, "log-error");
+                        escribirLog(`🆘 LISTA DE ${listaConError.length} HABITANTES RESCATADOS TRAS ERROR (datos mínimos, completar a mano):`, "log-error");
+                        listaConError.forEach((h) => {
+                            escribirLog(
+                                `   • Fila ${h.fila} → <b>${h.nombre}</b> · C.I: ${h.cedula} · ID: ...${h.id_firebase.slice(-6)} · ❌ ${h.mensaje}`,
+                                "log-error"
+                            );
+                        });
+                    }
+                    if (listaConAdvertencia.length === 0 && listaConError.length === 0) {
+                        escribirLog(`🎉 No hubo advertencias ni errores. Carga 100% limpia.`, "log-success");
+                    }
 
                     // Habilitar botón de reversa (solo válido en esta sesión del navegador)
                     if (ultimaCorridaIds.length > 0) {

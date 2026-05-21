@@ -995,11 +995,13 @@
             }
         }
 
-        // Convierte "1", "2", "uno", "dos"... a número.
-        // Esta función solo se invoca cuando tiene_gas === 'si', por lo que el default es 1
-        // (asumimos al menos un cilindro si el hogar tiene gas pero la cantidad no se registró).
-        function parseCantidadCilindros(raw) {
-            const s = (raw || '').toString().trim().toLowerCase();
+        // Devuelve la cantidad de bombonas que tiene un hogar. Solo cuenta si tiene_gas==='si'
+        // Y el tipo NO es "gas directo" (que es por tubería y no usa bombonas).
+        function contarCilindrosDelHogar(h) {
+            if ((h.tiene_gas || '').toString().toLowerCase() !== 'si') return 0;
+            const tipo = (h.tipo_cilindro_gas || '').toString().toLowerCase();
+            if (tipo.includes('directo') || tipo.includes('tuber')) return 0;
+            const s = (h.cantidad_cilindro_gas || '').toString().trim().toLowerCase();
             if (s === '') return 1;
             const n = parseInt(s);
             if (!isNaN(n) && n > 0) return n;
@@ -1252,8 +1254,8 @@
                     const idHogarGas = h.jefe_hogar_id ? h.jefe_hogar_id : dirUnica;
                     if (!hogaresConGasUnicos.has(idHogarGas)) {
                         hogaresConGasUnicos.add(idHogarGas);
-                        // Suma cilindros del hogar — acepta números o palabras ("uno", "dos", ...)
-                        cCilindrosTotal += parseCantidadCilindros(h.cantidad_cilindro_gas);
+                        // Suma cilindros — el helper devuelve 0 si el tipo es "gas directo" (por tubería)
+                        cCilindrosTotal += contarCilindrosDelHogar(h);
                     }
                 }
 
@@ -1629,9 +1631,15 @@
                     
                     let diagInfo = "NINGUNO";
                     if (tipo === 'cilindros') {
-                        const tipoCil = cleanText(h.tipo_cilindro_gas) || 'SIN ESPECIFICAR';
-                        const cantCil = cleanText(h.cantidad_cilindro_gas) || '1';
-                        diagInfo = `${tipoCil} (Cant: ${cantCil})`;
+                        const tipoCilRaw = (h.tipo_cilindro_gas || '').toString().toLowerCase();
+                        const esDirecto = tipoCilRaw.includes('directo') || tipoCilRaw.includes('tuber');
+                        if (esDirecto) {
+                            diagInfo = `GAS DIRECTO (sin cilindros)`;
+                        } else {
+                            const tipoCil = cleanText(h.tipo_cilindro_gas) || 'SIN ESPECIFICAR';
+                            const cantCil = cleanText(h.cantidad_cilindro_gas) || '1';
+                            diagInfo = `${tipoCil} (Cant: ${cantCil})`;
+                        }
                     } else if (tieneMed) {
                         diagInfo = med || 'TRATAMIENTO SIN ESPECIFICAR';
                     } else if (tieneEnf) {
