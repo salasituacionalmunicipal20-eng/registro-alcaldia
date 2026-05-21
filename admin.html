@@ -167,6 +167,8 @@
         .card-respaldo::before { background-color: #00ff00; }
         .card-respaldo .card-title { color: white; }
         .card-respaldo .card-desc { color: #aaa; }
+        .card-verificador { background: #fffbeb; border: 1px solid #fcd34d; }
+        .card-verificador::before { background-color: #ffd700; }
 
         .card-icon { 
             font-size: 50px; 
@@ -255,6 +257,12 @@
                 <div class="card-desc">Salud del servidor y descargas de seguridad absolutas. (Solo Carlos).</div>
             </div>
 
+            <div id="cardVerificador" class="card card-verificador hidden" onclick="location.href='verificador.html'" style="border-top: 4px solid #ffd700;">
+                <span class="card-icon">🗂️</span>
+                <div class="card-title">Verificador de Base de Datos</div>
+                <div class="card-desc">Vista tipo Excel para inspeccionar y corregir la base completa, celda por celda. (Solo Carlos).</div>
+            </div>
+
         </div>
     </div>
 
@@ -286,6 +294,7 @@
                 if (user.email === "carlos.admin@alcaldia.com") {
                     document.getElementById('cardMigracion').classList.remove('hidden');
                     document.getElementById('cardRespaldo').classList.remove('hidden');
+                    document.getElementById('cardVerificador').classList.remove('hidden');
                 } else {
                     const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
                     if (!snapshot.exists() || snapshot.val().rol !== "admin") {

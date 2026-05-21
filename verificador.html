@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificador de Base de Datos - Alcaldía</title>
+    <style>
+        :root {
+            --azul-oficial: #004a99;
+            --rojo-oficial: #E30613;
+            --verde-ok: #16a34a;
+            --naranja-warn: #d97706;
+            --gris-fondo: #f1f5f9;
+            --borde: #cbd5e1;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: var(--gris-fondo);
+            color: #1e293b;
+        }
+        .cintillo-gob {
+            background: linear-gradient(90deg, #ffd700 0%, #0033a0 50%, #cf142b 100%);
+            color: white;
+            text-align: center;
+            font-size: 11px;
+            padding: 6px 10px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .top-bar {
+            background: #0f172a;
+            color: white;
+            padding: 12px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .top-bar h1 {
+            margin: 0;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn {
+            background: var(--azul-oficial);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn:hover:not(:disabled) { background: #003366; }
+        .btn-volver { background: #555; }
+        .btn-csv { background: var(--verde-ok); }
+        .btn-refrescar { background: var(--naranja-warn); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .panel-control {
+            padding: 14px 25px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--borde);
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+        .panel-control input, .panel-control select {
+            padding: 8px 12px;
+            border: 1px solid var(--borde);
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            width: 100%;
+        }
+        .panel-control input:focus, .panel-control select:focus {
+            outline: 2px solid var(--azul-oficial);
+            outline-offset: -1px;
+        }
+
+        .info-bar {
+            padding: 8px 25px;
+            background: #fef3c7;
+            border-bottom: 1px solid #fcd34d;
+            font-size: 13px;
+            color: #78350f;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .info-bar b { color: var(--azul-oficial); font-size: 15px; }
+
+        .tabla-wrapper {
+            overflow: auto;
+            max-height: calc(100vh - 220px);
+            background: white;
+            border-top: 2px solid var(--azul-oficial);
+        }
+        table {
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 100%;
+            white-space: nowrap;
+        }
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        thead th {
+            background: #0f172a;
+            color: white;
+            padding: 10px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border-right: 1px solid #1e293b;
+            text-align: left;
+            position: sticky;
+            top: 0;
+        }
+        thead th.col-fija {
+            position: sticky;
+            left: 0;
+            z-index: 11;
+            background: #1e293b;
+            min-width: 200px;
+        }
+        tbody tr { border-bottom: 1px solid #e2e8f0; }
+        tbody tr:nth-child(even) { background: #f8fafc; }
+        tbody tr.alerta-obs { background: #fef2f2 !important; }
+        tbody tr:hover { background: #e0f2fe !important; }
+        tbody td {
+            padding: 0;
+            border-right: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+        tbody td.col-fija {
+            position: sticky;
+            left: 0;
+            background: inherit;
+            font-weight: 700;
+            padding: 6px 10px;
+            min-width: 200px;
+            border-right: 2px solid var(--azul-oficial);
+            z-index: 1;
+        }
+        tbody tr:nth-child(even) td.col-fija { background: #f8fafc; }
+        tbody tr.alerta-obs td.col-fija { background: #fef2f2; }
+        tbody tr:hover td.col-fija { background: #e0f2fe; }
+
+        .celda-input, .celda-select {
+            width: 100%;
+            min-width: 110px;
+            padding: 6px 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            font-size: 12px;
+            font-family: inherit;
+            color: #1e293b;
+        }
+        .celda-input:hover, .celda-select:hover {
+            background: #fff;
+            border-color: #cbd5e1;
+        }
+        .celda-input:focus, .celda-select:focus {
+            outline: none;
+            background: #fff;
+            border-color: var(--azul-oficial);
+            box-shadow: 0 0 0 2px rgba(0,74,153,0.2);
+        }
+        .celda-input.guardando { background: #fef3c7; border-color: var(--naranja-warn); }
+        .celda-input.guardado { background: #dcfce7; border-color: var(--verde-ok); transition: background 0.6s; }
+        .celda-input.error { background: #fee2e2; border-color: var(--rojo-oficial); }
+        .celda-readonly {
+            padding: 6px 8px;
+            color: #64748b;
+            font-style: italic;
+            font-size: 11px;
+        }
+        .celda-obs {
+            color: var(--rojo-oficial);
+            font-weight: bold;
+            padding: 6px 8px;
+            font-size: 11px;
+        }
+
+        .paginacion {
+            padding: 12px 25px;
+            background: white;
+            border-top: 1px solid var(--borde);
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            font-size: 13px;
+        }
+        .paginacion button {
+            background: white;
+            border: 1px solid var(--borde);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--azul-oficial);
+        }
+        .paginacion button:hover:not(:disabled) {
+            background: var(--azul-oficial);
+            color: white;
+        }
+        .paginacion button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagina-info { padding: 0 15px; color: #475569; font-weight: bold; }
+
+        .estado-conexion {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        .estado-conexion.ok { background: #dcfce7; color: var(--verde-ok); }
+        .estado-conexion.error { background: #fee2e2; color: var(--rojo-oficial); }
+
+        @media (max-width: 900px) {
+            .panel-control { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA · ESTADO MIRANDA · ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
+    <div class="top-bar">
+        <h1>🗂️ Verificador de Base de Datos · Edición Directa</h1>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <span class="estado-conexion ok" id="lblConexion">CONECTADO</span>
+            <button class="btn btn-refrescar" onclick="refrescarDatos()">🔄 Refrescar</button>
+            <button class="btn btn-csv" onclick="exportarCSV()">📥 Exportar CSV</button>
+            <button class="btn btn-volver" onclick="location.href='admin.html'">← Panel Admin</button>
+        </div>
+    </div>
+
+    <div class="panel-control">
+        <input type="search" id="busqueda" placeholder="🔍 Buscar por nombre, apellido o cédula...">
+        <select id="filtroComuna"><option value="">Todas las comunas</option></select>
+        <select id="filtroEstado">
+            <option value="">Todos los registros</option>
+            <option value="con_observaciones">🚩 Solo con observaciones</option>
+            <option value="jefes">👑 Solo jefes de hogar</option>
+            <option value="sin_cedula">🪪 Sin cédula</option>
+        </select>
+        <select id="paginaSize">
+            <option value="25">25 por página</option>
+            <option value="50" selected>50 por página</option>
+            <option value="100">100 por página</option>
+            <option value="200">200 por página</option>
+        </select>
+        <span style="font-size: 11px; color: #64748b; font-weight: bold; text-align: right;">⌨️ Editá cualquier celda y se guarda solo al salir</span>
+    </div>
+
+    <div class="info-bar">
+        <div>
+            Mostrando <b id="lblMostrados">0</b> de <b id="lblTotal">0</b> habitantes ·
+            <span id="lblObservaciones" style="color: var(--rojo-oficial); font-weight: bold;">0 con observaciones</span>
+        </div>
+        <div id="lblUltimoGuardado" style="color: #475569; font-size: 12px;"></div>
+    </div>
+
+    <div class="tabla-wrapper">
+        <table id="tablaHabitantes">
+            <thead><tr id="tablaCabecera"></tr></thead>
+            <tbody id="tablaCuerpo"></tbody>
+        </table>
+    </div>
+
+    <div class="paginacion" id="paginacion"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // ⛔ ACCESO RESTRINGIDO: SOLO CARLOS ADMIN
+        onAuthStateChanged(auth, (user) => {
+            if (!user || user.email !== "carlos.admin@alcaldia.com") {
+                document.body.innerHTML = "<h1 style='text-align:center; padding: 60px; color:#dc3545; font-family: sans-serif;'>⛔ ACCESO RESTRINGIDO<br><span style='font-size:14px; color:#666;'>Esta herramienta es exclusiva del Súper Administrador.</span></h1>";
+                setTimeout(() => window.location.href = 'index.html', 2500);
+            }
+        });
+
+        // ============================================================
+        // DEFINICIÓN DE COLUMNAS — orden y tipo de input por campo
+        // ============================================================
+        // tipo: 'text' (input texto), 'sino' (select si/no), 'select' (con options),
+        //       'date' (fecha), 'readonly' (no editable)
+        const COLUMNAS = [
+            { key: 'nombre',                    label: 'Nombres',        tipo: 'text', fija: true },
+            { key: 'apellido',                  label: 'Apellidos',      tipo: 'text' },
+            { key: 'cedula',                    label: 'Cédula',         tipo: 'text' },
+            { key: 'nacionalidad',              label: 'Nac.',           tipo: 'select', opciones: ['V','E'] },
+            { key: 'tiene_cedula',              label: '¿Tiene Céd?',    tipo: 'sino' },
+            { key: 'esta_cedulado',             label: '¿Cedulado?',     tipo: 'sino' },
+            { key: 'telefono',                  label: 'Teléfono',       tipo: 'text' },
+            { key: 'fecha_nacimiento',          label: 'Nacimiento',     tipo: 'date' },
+            { key: 'sexo',                      label: 'Sexo',           tipo: 'select', opciones: ['','femenino','masculino'] },
+            { key: 'parentesco',                label: 'Parentesco',     tipo: 'text' },
+            { key: 'profesion',                 label: 'Profesión',      tipo: 'text' },
+            { key: 'trabaja',                   label: '¿Trabaja?',      tipo: 'sino' },
+            { key: 'esta_escolarizado',         label: '¿Escolarizado?', tipo: 'sino' },
+            { key: 'comuna',                    label: 'Comuna',         tipo: 'text' },
+            { key: 'comunidad',                 label: 'Comunidad',      tipo: 'text' },
+            { key: 'consejo_comunal',           label: 'Consejo Comunal', tipo: 'text' },
+            { key: 'calle',                     label: 'Calle',          tipo: 'text' },
+            { key: 'numero_casa',               label: 'Nº Casa',        tipo: 'text' },
+            { key: 'ubch',                      label: 'UBCH',           tipo: 'text' },
+            { key: 'codigo_sigue_actual',       label: 'Cód. SIGUE',     tipo: 'text' },
+            { key: 'tipo_vivienda',             label: 'Tipo Vivienda',  tipo: 'text' },
+            { key: 'tenencia_vivienda',         label: 'Tenencia',       tipo: 'text' },
+            { key: 'condiciones_vivienda',      label: 'Condición',      tipo: 'text' },
+            { key: 'responsabilidad_cbi_cm',    label: 'Resp. CBI/CM',   tipo: 'text' },
+            { key: 'tiene_gas',                 label: '¿Tiene Gas?',    tipo: 'sino' },
+            { key: 'tipo_cilindro_gas',         label: 'Tipo Cilindro',  tipo: 'text' },
+            { key: 'cantidad_cilindro_gas',     label: 'Cantidad Cil.',  tipo: 'text' },
+            { key: 'padece_enfermedad',         label: '¿Enfermo?',      tipo: 'sino' },
+            { key: 'cual_enfermedad',           label: 'Enfermedad',     tipo: 'text' },
+            { key: 'toma_medicamento',          label: '¿Toma Med.?',    tipo: 'sino' },
+            { key: 'cual_medicamento',          label: 'Medicamento',    tipo: 'text' },
+            { key: 'discapacitado',             label: '¿Discap.?',      tipo: 'sino' },
+            { key: 'tipo_discapacidad',         label: 'Tipo Discap.',   tipo: 'text' },
+            { key: 'embarazada',                label: '¿Embarazada?',   tipo: 'sino' },
+            { key: 'lactancia_materna',         label: '¿Lactancia?',    tipo: 'sino' },
+            { key: 'cobra_amor_mayor',          label: 'Amor Mayor',     tipo: 'sino' },
+            { key: 'carnet_patria',             label: 'Carnet Patria',  tipo: 'sino' },
+            { key: 'mision_jose_gregorio',      label: 'Mis. JGH',       tipo: 'sino' },
+            { key: 'hogares_patria_bono',       label: 'Hogares Patria', tipo: 'sino' },
+            { key: 'donde_vota',                label: 'Dónde Vota',     tipo: 'text' },
+            { key: 'vd_vb_vo_seleccion',        label: 'VD/VB/VO',       tipo: 'select', opciones: ['','VD','VB','VO'] },
+            { key: 'vd_vb_vo_detalle',          label: 'Detalle Voto',   tipo: 'text' },
+            { key: 'observaciones_carga',       label: '🚩 Observaciones', tipo: 'text' },
+            { key: 'jefe_hogar_id',             label: 'ID Jefe (ref)',  tipo: 'readonly' },
+            { key: 'registrado_por_nombre',     label: 'Registrado por', tipo: 'readonly' },
+            { key: 'fecha_registro',            label: 'Fecha Reg.',     tipo: 'readonly' },
+            { key: 'id_firebase',               label: 'ID Firebase',    tipo: 'readonly' }
+        ];
+
+        // Estado global
+        let baseDatos = {};                 // {idFirebase: habitante}
+        let datosFiltrados = [];            // [{id, h}]
+        let registrosPorPagina = 50;
+        let paginaActual = 1;
+
+        const $ = (id) => document.getElementById(id);
+
+        // ============================================================
+        // CARGA INICIAL — onValue se mantiene escuchando cambios
+        // ============================================================
+        function suscribirseAHabitantes() {
+            onValue(ref(database, 'habitantes'), (snapshot) => {
+                baseDatos = snapshot.val() || {};
+                actualizarFiltroComunas();
+                aplicarFiltros();
+                $('lblConexion').textContent = 'CONECTADO';
+                $('lblConexion').className = 'estado-conexion ok';
+            }, (error) => {
+                $('lblConexion').textContent = 'ERROR DE CONEXIÓN';
+                $('lblConexion').className = 'estado-conexion error';
+                console.error(error);
+            });
+        }
+
+        function actualizarFiltroComunas() {
+            const sel = $('filtroComuna');
+            const valActual = sel.value;
+            const comunas = new Set();
+            for (const id in baseDatos) {
+                const c = (baseDatos[id].comuna || '').toString().toUpperCase();
+                if (c) comunas.add(c);
+            }
+            sel.innerHTML = '<option value="">Todas las comunas</option>';
+            Array.from(comunas).sort().forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                sel.appendChild(opt);
+            });
+            if (valActual && comunas.has(valActual)) sel.value = valActual;
+        }
+
+        // ============================================================
+        // FILTRADO + PAGINACIÓN
+        // ============================================================
+        function aplicarFiltros() {
+            const q = ($('busqueda').value || '').toLowerCase().trim();
+            const comunaF = $('filtroComuna').value;
+            const estadoF = $('filtroEstado').value;
+
+            datosFiltrados = [];
+            for (const id in baseDatos) {
+                const h = baseDatos[id];
+                if (comunaF && (h.comuna || '').toUpperCase() !== comunaF) continue;
+                if (estadoF === 'con_observaciones' && !((h.observaciones_carga || '').toString().trim())) continue;
+                if (estadoF === 'jefes' && (h.parentesco || '').toLowerCase() !== 'jefe de hogar') continue;
+                if (estadoF === 'sin_cedula' && (h.cedula || '').toString().trim() !== '') continue;
+                if (q) {
+                    const txt = `${h.nombre || ''} ${h.apellido || ''} ${h.cedula || ''}`.toLowerCase();
+                    if (!txt.includes(q)) continue;
+                }
+                datosFiltrados.push({ id, h });
+            }
+
+            // Ordenamos por apellido para que sea más fácil revisar
+            datosFiltrados.sort((a, b) => (a.h.apellido || '').localeCompare(b.h.apellido || ''));
+
+            paginaActual = 1;
+            renderizar();
+        }
+
+        function renderizar() {
+            const total = Object.keys(baseDatos).length;
+            const observaciones = Object.values(baseDatos).filter(h => (h.observaciones_carga || '').toString().trim()).length;
+
+            $('lblTotal').textContent = total;
+            $('lblMostrados').textContent = datosFiltrados.length;
+            $('lblObservaciones').textContent = `${observaciones} con observaciones`;
+
+            renderizarCabecera();
+            renderizarCuerpo();
+            renderizarPaginacion();
+        }
+
+        function renderizarCabecera() {
+            const tr = $('tablaCabecera');
+            if (tr.children.length === 0) {
+                COLUMNAS.forEach(col => {
+                    const th = document.createElement('th');
+                    th.textContent = col.label;
+                    if (col.fija) th.classList.add('col-fija');
+                    tr.appendChild(th);
+                });
+            }
+        }
+
+        function renderizarCuerpo() {
+            const tbody = $('tablaCuerpo');
+            tbody.innerHTML = '';
+
+            const inicio = (paginaActual - 1) * registrosPorPagina;
+            const fin = inicio + registrosPorPagina;
+            const pagina = datosFiltrados.slice(inicio, fin);
+
+            const frag = document.createDocumentFragment();
+            pagina.forEach(({ id, h }) => {
+                const tr = document.createElement('tr');
+                tr.setAttribute('data-id', id);
+                if ((h.observaciones_carga || '').toString().trim()) tr.classList.add('alerta-obs');
+
+                COLUMNAS.forEach(col => {
+                    const td = document.createElement('td');
+                    if (col.fija) td.classList.add('col-fija');
+                    td.appendChild(crearCelda(id, col, h[col.key]));
+                    tr.appendChild(td);
+                });
+                frag.appendChild(tr);
+            });
+            tbody.appendChild(frag);
+        }
+
+        function crearCelda(id, col, valor) {
+            const v = (valor === null || valor === undefined) ? '' : valor.toString();
+
+            if (col.tipo === 'readonly') {
+                const span = document.createElement('span');
+                span.className = col.key === 'observaciones_carga' ? 'celda-obs' : 'celda-readonly';
+                span.textContent = v || '—';
+                span.title = v;
+                return span;
+            }
+
+            if (col.tipo === 'sino' || col.tipo === 'select') {
+                const sel = document.createElement('select');
+                sel.className = 'celda-select';
+                const opciones = col.tipo === 'sino' ? ['', 'si', 'no'] : col.opciones;
+                opciones.forEach(o => {
+                    const opt = document.createElement('option');
+                    opt.value = o;
+                    opt.textContent = o === '' ? '—' : o;
+                    sel.appendChild(opt);
+                });
+                sel.value = v;
+                sel.dataset.original = v;
+                sel.addEventListener('change', () => guardarCelda(id, col.key, sel.value, sel));
+                return sel;
+            }
+
+            // text o date
+            const input = document.createElement('input');
+            input.type = col.tipo === 'date' ? 'date' : 'text';
+            input.className = 'celda-input';
+            input.value = v;
+            input.dataset.original = v;
+            input.addEventListener('blur', () => {
+                if (input.value !== input.dataset.original) guardarCelda(id, col.key, input.value, input);
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') input.blur();
+                if (e.key === 'Escape') { input.value = input.dataset.original; input.blur(); }
+            });
+            return input;
+        }
+
+        // ============================================================
+        // GUARDADO EN FIREBASE — debounce no necesario, ya es onBlur
+        // ============================================================
+        async function guardarCelda(id, campo, valor, elemento) {
+            elemento.classList.add('guardando');
+            elemento.classList.remove('guardado', 'error');
+            try {
+                await update(ref(database, `habitantes/${id}`), { [campo]: valor });
+                elemento.dataset.original = valor;
+                elemento.classList.remove('guardando');
+                elemento.classList.add('guardado');
+                setTimeout(() => elemento.classList.remove('guardado'), 1500);
+
+                const ahora = new Date().toLocaleTimeString('es-VE', { hour12: false });
+                $('lblUltimoGuardado').textContent = `✓ Último guardado: ${ahora} · ${campo} = "${valor.substring(0, 40)}"`;
+
+                // Limpieza automática de observaciones_carga si se completan los campos críticos
+                if (campo === 'comuna' || campo === 'comunidad' || campo === 'nombre') {
+                    const h = baseDatos[id] || {};
+                    h[campo] = valor;
+                    const obsActuales = (h.observaciones_carga || '').toString();
+                    if (obsActuales) {
+                        const nombreOk = h.nombre && !h.nombre.toString().toUpperCase().startsWith('SIN NOMBRE');
+                        const comunaOk = h.comuna && h.comuna.toString().toUpperCase() !== 'SIN ASIGNAR';
+                        const comunidadOk = h.comunidad && h.comunidad.toString().toUpperCase() !== 'SIN ASIGNAR';
+                        if (nombreOk && comunaOk && comunidadOk && !obsActuales.includes('ERROR DE PROCESAMIENTO')) {
+                            await update(ref(database, `habitantes/${id}`), { observaciones_carga: '' });
+                            $('lblUltimoGuardado').textContent += ' · 🚩 observación auto-resuelta';
+                        }
+                    }
+                }
+            } catch (err) {
+                elemento.classList.remove('guardando');
+                elemento.classList.add('error');
+                console.error('Error guardando:', err);
+                alert(`No se pudo guardar el cambio en ${campo}: ${err.message}`);
+            }
+        }
+
+        // ============================================================
+        // PAGINACIÓN
+        // ============================================================
+        function renderizarPaginacion() {
+            const cont = $('paginacion');
+            cont.innerHTML = '';
+            if (datosFiltrados.length === 0) return;
+            const totalPag = Math.ceil(datosFiltrados.length / registrosPorPagina);
+
+            const btn = (texto, accion, deshab) => {
+                const b = document.createElement('button');
+                b.textContent = texto;
+                b.disabled = deshab;
+                b.addEventListener('click', accion);
+                return b;
+            };
+
+            cont.appendChild(btn('« Primera', () => { paginaActual = 1; renderizarCuerpo(); renderizarPaginacion(); }, paginaActual === 1));
+            cont.appendChild(btn('‹ Anterior', () => { paginaActual--; renderizarCuerpo(); renderizarPaginacion(); }, paginaActual === 1));
+
+            const info = document.createElement('span');
+            info.className = 'pagina-info';
+            info.textContent = `Página ${paginaActual} de ${totalPag}`;
+            cont.appendChild(info);
+
+            cont.appendChild(btn('Siguiente ›', () => { paginaActual++; renderizarCuerpo(); renderizarPaginacion(); }, paginaActual === totalPag));
+            cont.appendChild(btn('Última »', () => { paginaActual = totalPag; renderizarCuerpo(); renderizarPaginacion(); }, paginaActual === totalPag));
+        }
+
+        // ============================================================
+        // EXPORT CSV
+        // ============================================================
+        window.exportarCSV = () => {
+            const e = (v) => {
+                if (v === null || v === undefined) return '""';
+                return '"' + v.toString().replace(/"/g, '""').replace(/[\r\n]+/g, ' | ') + '"';
+            };
+            const headers = COLUMNAS.map(c => c.label).join(',');
+            const filas = datosFiltrados.map(({ h }) => COLUMNAS.map(c => e(h[c.key])).join(',')).join('\n');
+            const csv = '﻿' + headers + '\n' + filas;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const fecha = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `BASE_HABITANTES_${fecha}_${datosFiltrados.length}registros.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        window.refrescarDatos = () => {
+            $('lblUltimoGuardado').textContent = '↻ Recargando...';
+            // onValue ya está suscrito así que esto es solo cosmético
+            aplicarFiltros();
+            setTimeout(() => { $('lblUltimoGuardado').textContent = ''; }, 1000);
+        };
+
+        // ============================================================
+        // LISTENERS
+        // ============================================================
+        $('busqueda').addEventListener('input', () => {
+            clearTimeout(window._debounce);
+            window._debounce = setTimeout(aplicarFiltros, 200);
+        });
+        $('filtroComuna').addEventListener('change', aplicarFiltros);
+        $('filtroEstado').addEventListener('change', aplicarFiltros);
+        $('paginaSize').addEventListener('change', () => {
+            registrosPorPagina = parseInt($('paginaSize').value) || 50;
+            paginaActual = 1;
+            renderizarCuerpo();
+            renderizarPaginacion();
+        });
+
+        suscribirseAHabitantes();
+    </script>
+</body>
+</html>
