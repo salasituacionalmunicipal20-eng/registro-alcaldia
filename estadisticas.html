@@ -1570,8 +1570,22 @@
                 : '';
         }
 
+        // Devuelve true si un habitante es visible para el usuario actual (RBAC por comunas).
+        // Admin y Carlos → todo. Operadores con 'TODAS' → todo. Otros → solo sus comunas asignadas.
+        function habitanteVisibleParaUsuario(h) {
+            if (esAdmin) return true;
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
+            if (misComunas.length === 0 || misComunas.includes('TODAS')) return true;
+            const comunaStr = (h.comuna || '').toUpperCase();
+            return misComunas.includes(comunaStr);
+        }
+
         // Genera la banda de alertas críticas según el estado de los datos.
         // Cada tarjeta es clickeable y abre un modal con la lista de habitantes correspondiente.
+        // Respeta el RBAC del operador: un operador asignado a la Comuna A solo ve alertas de la Comuna A.
         function actualizarBandaAlertas(cTotal, cObservaciones) {
             const banda = document.getElementById('bandaAlertas');
             if (!banda) return;
@@ -1589,9 +1603,11 @@
                 });
             }
 
+            // Cédulas duplicadas — RBAC: solo cuenta dentro de las comunas del operador
             const cedulas = new Map();
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
+                if (!habitanteVisibleParaUsuario(h)) continue;
                 const ced = (h.cedula || '').toString().trim();
                 if (!ced) continue;
                 cedulas.set(ced, (cedulas.get(ced) || 0) + 1);
@@ -1606,9 +1622,11 @@
                 });
             }
 
+            // Adultos sin cédula — RBAC
             let sinCedulaAdultos = 0;
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
+                if (!habitanteVisibleParaUsuario(h)) continue;
                 const edad = calcularEdad(h.fecha_nacimiento);
                 const sinCed = !h.cedula || (h.cedula || '').toString().trim() === '' || (h.tiene_cedula || '').toLowerCase() === 'no';
                 if (edad >= 9 && sinCed) sinCedulaAdultos++;
@@ -1622,9 +1640,11 @@
                 });
             }
 
+            // Hogares en rancho — RBAC
             const hogaresRancho = new Set();
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
+                if (!habitanteVisibleParaUsuario(h)) continue;
                 if ((h.tipo_vivienda || '').toLowerCase() === 'rancho') {
                     const dirH = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
                     hogaresRancho.add(h.jefe_hogar_id || dirH);
@@ -1639,9 +1659,11 @@
                 });
             }
 
+            // Maternal — RBAC
             let cEmbLact = 0;
             for (let id in baseDeDatosHabitantes) {
                 const h = baseDeDatosHabitantes[id];
+                if (!habitanteVisibleParaUsuario(h)) continue;
                 if ((h.embarazada || '').toLowerCase() === 'si' || (h.lactancia_materna || '').toLowerCase() === 'si') cEmbLact++;
             }
             if (cEmbLact > 0) {
@@ -1729,9 +1751,11 @@
                 };
             };
 
+            // Todos los recorridos respetan el RBAC del operador
             if (tipo === 'observaciones') {
                 for (let id in baseDeDatosHabitantes) {
                     const h = baseDeDatosHabitantes[id];
+                    if (!habitanteVisibleParaUsuario(h)) continue;
                     if ((h.observaciones_carga || '').toString().trim()) lista.push(formato(h, id));
                 }
             } else if (tipo === 'duplicadas') {
@@ -1739,6 +1763,7 @@
                 const porCedula = new Map();
                 for (let id in baseDeDatosHabitantes) {
                     const h = baseDeDatosHabitantes[id];
+                    if (!habitanteVisibleParaUsuario(h)) continue;
                     const ced = (h.cedula || '').toString().trim();
                     if (!ced) continue;
                     if (!porCedula.has(ced)) porCedula.set(ced, []);
@@ -1753,21 +1778,21 @@
                         });
                     }
                 });
-                // Ordenar por cédula para que las copias queden juntas
                 lista.sort((a, b) => (a._grupo || '').localeCompare(b._grupo || ''));
             } else if (tipo === 'sin_cedula') {
                 for (let id in baseDeDatosHabitantes) {
                     const h = baseDeDatosHabitantes[id];
+                    if (!habitanteVisibleParaUsuario(h)) continue;
                     const edad = calcularEdad(h.fecha_nacimiento);
                     const sinCed = !h.cedula || (h.cedula || '').toString().trim() === '' || (h.tiene_cedula || '').toLowerCase() === 'no';
                     if (edad >= 9 && sinCed) lista.push(formato(h, id));
                 }
                 lista.sort((a, b) => (b.edad || 0) - (a.edad || 0));
             } else if (tipo === 'rancho') {
-                // Solo jefes o el primer integrante de cada hogar tipo rancho
                 const hogaresVistos = new Set();
                 for (let id in baseDeDatosHabitantes) {
                     const h = baseDeDatosHabitantes[id];
+                    if (!habitanteVisibleParaUsuario(h)) continue;
                     if ((h.tipo_vivienda || '').toLowerCase() !== 'rancho') continue;
                     const dirH = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s/g, '');
                     const idHogar = h.jefe_hogar_id || dirH;
@@ -1778,6 +1803,7 @@
             } else if (tipo === 'maternal') {
                 for (let id in baseDeDatosHabitantes) {
                     const h = baseDeDatosHabitantes[id];
+                    if (!habitanteVisibleParaUsuario(h)) continue;
                     if ((h.embarazada || '').toLowerCase() === 'si' || (h.lactancia_materna || '').toLowerCase() === 'si') {
                         lista.push(formato(h, id));
                     }
