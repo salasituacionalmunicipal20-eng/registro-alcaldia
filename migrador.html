@@ -297,27 +297,51 @@
                     // FASE 1: SUBIDA MASIVA 1x1
                     // ==========================================
                     let subidos = 0;
+                    let conAdvertencia = 0;   // se subió pero con valores por defecto
+                    let conError = 0;          // se subió tras error de procesamiento
+                    let filasVacias = 0;       // fila totalmente vacía en el CSV (todos los campos en blanco)
                     const habitantesRef = ref(database, 'habitantes');
-                    
+
                     // Lista temporal para la Fase 2 (Solo guarda ID y Rol para no gastar RAM)
                     let mapaParaFase2 = [];
 
                     document.getElementById('txtEta').textContent = `Fase 1: Inyectando Habitantes...`;
-                    escribirLog("Iniciando FASE 1: Subiendo todos los registros a la base de datos...", "log-success");
+                    escribirLog(`Iniciando FASE 1: el CSV tiene ${totalDatos} filas. Subiendo TODAS (las problemáticas con defaults).`, "log-success");
 
                     for (let i = 0; i < totalDatos; i++) {
                         // REGLA DE ORO DE RENDIMIENTO: Cada 10 filas, dejamos que el navegador actualice la pantalla
-                        if (i % 10 === 0) await refrescarUI(); 
-                        
-                        let fila = datos[i];
-                        if (!fila['NOMBRE Y APELLIDO']) continue;
+                        if (i % 10 === 0) await refrescarUI();
 
-                        // ⛔ COMUNA Y COMUNIDAD SON OBLIGATORIAS — descartar fila si faltan
+                        let fila = datos[i];
+
+                        // Detección de fila completamente vacía (todos los campos en blanco)
+                        const hayAlgo = Object.values(fila).some(v => (v || '').toString().trim() !== '');
+                        if (!hayAlgo) {
+                            filasVacias++;
+                            escribirLog(`⏭️ Fila ${i+1} omitida: completamente vacía en el CSV.`, "log-warning");
+                            continue;
+                        }
+
+                        // Política nueva: NUNCA descartamos una fila con datos. Si faltan campos clave,
+                        // asignamos defaults y dejamos rastro en `observaciones_carga` para revisar después.
+                        const observaciones = [];
+                        const nombreRaw = (fila['NOMBRE Y APELLIDO'] || '').toString().trim();
+                        if (nombreRaw === '') {
+                            observaciones.push('SIN NOMBRE EN EL CSV');
+                            fila['NOMBRE Y APELLIDO'] = `SIN NOMBRE FILA ${i+1}`;
+                        }
                         const _comuna = (fila['COMUNA'] || '').toString().trim();
                         const _comunidad = (fila['COMUNIDAD'] || '').toString().trim();
-                        if (_comuna === '' || _comunidad === '') {
-                            escribirLog(`⚠️ Fila ${i+1} descartada (falta COMUNA o COMUNIDAD): ${fila['NOMBRE Y APELLIDO']}`, "log-warning");
-                            continue;
+                        if (_comuna === '') {
+                            observaciones.push('SIN COMUNA');
+                            fila['COMUNA'] = 'SIN ASIGNAR';
+                        }
+                        if (_comunidad === '') {
+                            observaciones.push('SIN COMUNIDAD');
+                            fila['COMUNIDAD'] = 'SIN ASIGNAR';
+                        }
+                        if (observaciones.length > 0) {
+                            escribirLog(`⚠️ Fila ${i+1} con advertencias [${observaciones.join(', ')}]: ${fila['NOMBRE Y APELLIDO']} — se sube con valores por defecto.`, "log-warning");
                         }
 
                         try {
@@ -510,12 +534,14 @@
                                 vd_vb_vo_detalle: '',
                                 registrado_por_uid: usuarioActivo.uid,
                                 registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN MASIVA)",
-                                fecha_registro: new Date().toLocaleString()
+                                fecha_registro: new Date().toLocaleString(),
+                                observaciones_carga: observaciones.length > 0 ? observaciones.join(' | ') : ''
                             };
 
                             // GUARDAMOS EN FIREBASE AL INSTANTE
                             await set(nuevoRef, habitanteTraducido);
                             subidos++;
+                            if (observaciones.length > 0) conAdvertencia++;
                             ultimaCorridaIds.push(firebaseId); // Rastreo para botón de reversa
 
                             // LO ANOTAMOS PARA LA FASE 2
@@ -537,11 +563,37 @@
                             }
 
                         } catch (err) {
-                            escribirLog(`❌ Error en fila ${i+1}: ${err.message}`, "log-error");
+                            // Política: ni siquiera un error de procesamiento debe perder una fila.
+                            // Intentamos guardar un registro mínimo con marca de error para que el admin
+                            // pueda revisarlo en consulta.html y corregir manualmente.
+                            escribirLog(`❌ Error procesando fila ${i+1}: ${err.message}. Se intenta guardar registro mínimo de respaldo.`, "log-error");
+                            try {
+                                const refError = push(habitantesRef);
+                                const idError = refError.key;
+                                await set(refError, {
+                                    id_firebase: idError,
+                                    jefe_hogar_id: "",
+                                    nombre: ((fila['NOMBRE Y APELLIDO'] || `SIN NOMBRE FILA ${i+1}`)).toString().toUpperCase(),
+                                    apellido: '',
+                                    comuna: (fila['COMUNA'] || 'SIN ASIGNAR').toString().toUpperCase(),
+                                    comunidad: (fila['COMUNIDAD'] || 'SIN ASIGNAR').toString().toUpperCase(),
+                                    cedula: (fila['CEDULA'] || '').toString().trim(),
+                                    parentesco: 'otro',
+                                    registrado_por_uid: usuarioActivo.uid,
+                                    registrado_por_nombre: "CARLOS ADMIN (MIGRACIÓN MASIVA - RESCATE)",
+                                    fecha_registro: new Date().toLocaleString(),
+                                    observaciones_carga: `ERROR DE PROCESAMIENTO: ${err.message} — Revisar manualmente.`
+                                });
+                                ultimaCorridaIds.push(idError);
+                                conError++;
+                                escribirLog(`   ↳ Fila ${i+1} guardada como respaldo mínimo. Revisar en consulta.html.`, "log-warning");
+                            } catch (err2) {
+                                escribirLog(`   ↳ Tampoco se pudo guardar el respaldo de la fila ${i+1}: ${err2.message}. Esta fila se PERDIÓ.`, "log-error");
+                            }
                         }
                     }
-                    
-                    escribirLog(`✅ FASE 1 COMPLETADA. Se subieron ${subidos} habitantes.`, "log-success");
+
+                    escribirLog(`✅ FASE 1 COMPLETADA. Resumen: ${subidos} habitantes subidos correctamente, ${conAdvertencia} con advertencias (defaults aplicados), ${conError} rescatados tras error de procesamiento, ${filasVacias} filas vacías ignoradas. Total CSV: ${totalDatos}.`, "log-success");
 
                     // ==========================================
                     // FASE 2 - BARRIDO DE VINCULACIÓN (SIN BORRAR)
@@ -587,7 +639,19 @@
                         escribirLog(`⚠️ Botón de REVERSA disponible: puede deshacer esta corrida mientras no recargue la página.`, "log-warning");
                     }
 
-                    alert(`¡Ingesta de Datos completada exitosamente!\n\n1. Se subieron ${subidos} habitantes individuales puros.\n2. Se estructuraron ${vinculados} vínculos familiares sin borrar datos.\n\nSi necesita deshacer esta corrida, use el botón rojo de REVERSA antes de cerrar o recargar la página.`);
+                    alert(
+                        `¡Ingesta de Datos completada!\n\n` +
+                        `CSV original: ${totalDatos} filas\n` +
+                        `  ✅ Subidos correctamente: ${subidos - conAdvertencia - conError}\n` +
+                        `  ⚠️ Subidos con advertencias (defaults aplicados): ${conAdvertencia}\n` +
+                        `  🆘 Rescatados tras error de procesamiento: ${conError}\n` +
+                        `  ⏭️ Filas vacías ignoradas: ${filasVacias}\n` +
+                        `  ─────────────────────────\n` +
+                        `  📦 Total en Firebase: ${subidos}\n` +
+                        `  🔗 Vínculos familiares creados: ${vinculados}\n\n` +
+                        `Los habitantes con advertencias tienen el campo "observaciones_carga" lleno. Revisalos en consulta.html para corregir manualmente.\n\n` +
+                        `Si necesitás deshacer esta corrida, usá el botón rojo de REVERSA antes de cerrar o recargar la página.`
+                    );
 
                     document.getElementById('btnSubir').disabled = false;
                     if (typeof window.finalizarOperacionLarga === 'function') window.finalizarOperacionLarga();
