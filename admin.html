@@ -171,6 +171,8 @@
         .card-verificador::before { background-color: #ffd700; }
         .card-dashboard { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; }
         .card-dashboard::before { background-color: #003366; }
+        .card-mapa { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #86efac; }
+        .card-mapa::before { background-color: #16a34a; }
 
         .card-icon { 
             font-size: 50px; 
@@ -271,6 +273,12 @@
                 <div class="card-desc">Vista institucional formal con indicadores clave por comuna para reuniones de la Alcaldesa.</div>
             </div>
 
+            <div id="cardMapa" class="card card-mapa hidden" onclick="location.href='mapa.html'" style="border-top: 4px solid #16a34a;">
+                <span class="card-icon">🗺️</span>
+                <div class="card-title">Mapa Territorial</div>
+                <div class="card-desc">Geolocalización de hogares censados sobre OpenStreetMap. Filtros por comuna, vulnerabilidad y voto.</div>
+            </div>
+
         </div>
     </div>
 
@@ -316,6 +324,7 @@
                 if (esAdmin) {
                     document.getElementById('cardVerificador').classList.remove('hidden');
                     document.getElementById('cardDashboard').classList.remove('hidden');
+                    document.getElementById('cardMapa').classList.remove('hidden');
                 }
             }
         });
