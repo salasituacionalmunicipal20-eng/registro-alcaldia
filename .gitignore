@@ -16,3 +16,17 @@ Thumbs.db
 
 # Node (por si en algún momento se agrega)
 node_modules/
+
+# Cliente de escritorio (Electron) - artefactos pesados de build
+escritorio/node_modules/
+escritorio/dist/
+escritorio/out/
+
+# Configuracion local de Claude Code
+.claude/
+
+# Datos sensibles - NO subir al repo publico
+# Contienen cedulas y datos personales de habitantes
+UNIFICADO EJE CHL ACT.csv
+alcaldia-admin-default-rtdb-export.json
+habitantes-export-*.json
