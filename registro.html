@@ -597,7 +597,7 @@
                     </div>
                     <div id="cual_enfermedad_wrapper" class="hidden">
                         <label for="cual_enfermedad">¿Cuál enfermedad?:</label>
-                        <input type="text" id="cual_enfermedad" name="cual_enfermedad">
+                        <input type="text" id="cual_enfermedad" name="cual_enfermedad" list="catalogoEnfermedades" placeholder="Seleccione o escriba (puede combinar: 'HIPERTENSION, DIABETES')">
                     </div>
 
                     <div>
@@ -829,7 +829,7 @@
                     </div>
                     <div id="m_cual_enfermedad_wrapper" class="hidden">
                         <label>¿Cuál enfermedad?:</label>
-                        <input type="text" id="m_cual_enfermedad" name="cual_enfermedad">
+                        <input type="text" id="m_cual_enfermedad" name="cual_enfermedad" list="catalogoEnfermedades" placeholder="Seleccione o escriba">
                     </div>
 
                     <div>
@@ -1489,5 +1489,30 @@
             }, CHECK_INTERVAL);
         })();
     </script>
+
+    <datalist id="catalogoEnfermedades">
+        <option value="HIPERTENSION">
+        <option value="DIABETES">
+        <option value="ASMA">
+        <option value="VIH/SIDA">
+        <option value="TUBERCULOSIS">
+        <option value="CANCER">
+        <option value="CARDIOPATIA">
+        <option value="INSUFICIENCIA RENAL">
+        <option value="EPILEPSIA">
+        <option value="ENFERMEDAD MENTAL">
+        <option value="ARTRITIS / REUMATISMO">
+        <option value="COLESTEROL ALTO">
+        <option value="ALZHEIMER">
+        <option value="PARKINSON">
+        <option value="OBESIDAD MORBIDA">
+        <option value="HEPATITIS">
+        <option value="ANEMIA CRONICA">
+        <option value="HIPOTIROIDISMO">
+        <option value="HIPERTIROIDISMO">
+        <option value="LUPUS">
+        <option value="OSTEOPOROSIS">
+        <option value="HIPERTENSION, DIABETES">
+    </datalist>
 </body>
 </html>
