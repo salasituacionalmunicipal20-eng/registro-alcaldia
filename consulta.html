@@ -1785,23 +1785,42 @@
                 });
             }
 
-            const llenarCampo = (idElemento, valor) => { 
+            const llenarCampo = (idElemento, valor) => {
                 if (document.getElementById(idElemento)) {
-                    document.getElementById(idElemento).value = valor || ''; 
+                    document.getElementById(idElemento).value = valor || '';
                 }
             };
-            
+
+            // Para selects: si el valor guardado no existe entre las opciones del catalogo,
+            // lo inyectamos como opcion fuera-de-catalogo para que se vea lo realmente almacenado
+            // (en lugar de aparecer en blanco). El usuario puede mantenerlo, corregirlo o limpiarlo.
+            const llenarSelectConFallback = (idElemento, valor) => {
+                const sel = document.getElementById(idElemento);
+                if (!sel) return;
+                const v = (valor == null) ? '' : String(valor);
+                if (v === '') { sel.value = ''; return; }
+                const existe = Array.from(sel.options).some(opt => opt.value === v);
+                if (!existe) {
+                    const opt = document.createElement('option');
+                    opt.value = v;
+                    opt.textContent = `${v} (fuera de catalogo)`;
+                    opt.dataset.fueraCatalogo = '1';
+                    sel.appendChild(opt);
+                }
+                sel.value = v;
+            };
+
             llenarCampo('e_ubch', h.ubch);
-            llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual); 
-            llenarCampo('e_comuna', h.comuna);
-            
+            llenarCampo('e_codigo_sigue_actual', h.codigo_sigue_actual);
+            llenarSelectConFallback('e_comuna', h.comuna);
+
             const eComunidad = document.getElementById('e_comunidad');
             eComunidad.innerHTML = '<option value="">Seleccione</option>';
             if (h.comuna && datosTerritoriales[h.comuna]) {
                 datosTerritoriales[h.comuna].forEach(c => eComunidad.innerHTML += `<option value="${c}">${c}</option>`);
             }
-            
-            llenarCampo('e_comunidad', h.comunidad); 
+
+            llenarSelectConFallback('e_comunidad', h.comunidad);
             llenarCampo('e_consejo_comunal', h.consejo_comunal); 
             llenarCampo('e_calle', h.calle); 
             llenarCampo('e_numero_casa', h.numero_casa); 
