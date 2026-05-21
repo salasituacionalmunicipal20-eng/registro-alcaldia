@@ -177,6 +177,8 @@
         .card-auditoria::before { background-color: #6b7280; }
         .card-compromisos { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fcd34d; }
         .card-compromisos::before { background-color: #d97706; }
+        .card-tickets { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1px solid #fca5a5; }
+        .card-tickets::before { background-color: #ef4444; }
 
         .card-icon { 
             font-size: 50px; 
@@ -257,6 +259,12 @@
                 <span class="card-icon">🎯</span>
                 <div class="card-title">Compromisos Pendientes</div>
                 <div class="card-desc">Seguimiento de promesas/pendientes registrados en bitácoras de visita. Vencidos, abiertos y cumplidos.</div>
+            </div>
+
+            <div class="card card-tickets" onclick="location.href='tickets.html'" style="border-top: 4px solid #ef4444;">
+                <span class="card-icon">🎫</span>
+                <div class="card-title">Tickets y Reclamos</div>
+                <div class="card-desc">Gestión de reclamos ciudadanos por categoría (agua, luz, salud, seguridad, etc.) con flujo abierto → gestión → resuelto.</div>
             </div>
 
             <div id="cardMigracion" class="card card-migracion hidden" onclick="location.href='migrador.html'">

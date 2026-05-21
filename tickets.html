@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tickets · Alcaldía de Cristóbal Rojas</title>
+    <style>
+        :root {
+            --azul-oficial: #003366;
+            --azul-claro: #0284c7;
+            --rojo-oficial: #E30613;
+            --verde: #16a34a;
+            --naranja: #d97706;
+            --gris: #64748b;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: "Segoe UI", sans-serif; background: #f1f5f9; color: #1e293b; }
+        .cintillo-gob {
+            background: linear-gradient(90deg, #ffd700 0%, #0033a0 50%, #cf142b 100%);
+            color: white; text-align: center; font-size: 11px; padding: 6px 10px; font-weight: bold;
+        }
+        .top-bar {
+            background: #0f172a; color: white; padding: 12px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .top-bar h1 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .btn {
+            background: var(--azul-claro); color: white; border: none;
+            padding: 8px 14px; border-radius: 6px; font-size: 12px;
+            font-weight: bold; cursor: pointer; text-transform: uppercase;
+        }
+        .btn-volver { background: var(--rojo-oficial); }
+        .btn-nuevo { background: var(--verde); }
+
+        .container { padding: 25px 30px; }
+
+        .resumen-tabs { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .tab-card {
+            flex: 1; min-width: 180px; background: white; border-radius: 10px;
+            padding: 16px; cursor: pointer; border-top: 4px solid;
+            transition: transform 0.15s, box-shadow 0.15s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .tab-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.1); }
+        .tab-card.activa { box-shadow: 0 0 0 3px var(--azul-oficial); }
+        .tab-card .icono { font-size: 22px; margin-bottom: 6px; }
+        .tab-card .numero { font-size: 28px; font-weight: 900; line-height: 1; margin: 4px 0; font-family: Georgia, serif; }
+        .tab-card .label { font-size: 11px; text-transform: uppercase; color: var(--gris); font-weight: 700; letter-spacing: 0.5px; }
+        .tab-card.abiertos { border-top-color: var(--rojo-oficial); }
+        .tab-card.abiertos .numero { color: var(--rojo-oficial); }
+        .tab-card.gestion { border-top-color: var(--naranja); }
+        .tab-card.gestion .numero { color: var(--naranja); }
+        .tab-card.resueltos { border-top-color: var(--verde); }
+        .tab-card.resueltos .numero { color: var(--verde); }
+        .tab-card.desestimados { border-top-color: var(--gris); }
+        .tab-card.desestimados .numero { color: var(--gris); }
+        .tab-card.todos { border-top-color: var(--azul-oficial); }
+        .tab-card.todos .numero { color: var(--azul-oficial); }
+
+        .filtros {
+            background: white; padding: 14px 18px; border-radius: 10px; margin-bottom: 20px;
+            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .filtros label {
+            display: block; font-size: 11px; font-weight: 700;
+            color: var(--gris); text-transform: uppercase; margin-bottom: 4px;
+        }
+        .filtros input, .filtros select {
+            width: 100%; padding: 8px 10px; border: 1px solid #cbd5e1;
+            border-radius: 6px; font-size: 13px; font-weight: 600;
+        }
+
+        .lista { display: grid; gap: 10px; }
+        .ticket-card {
+            background: white; border-left: 5px solid;
+            padding: 14px 18px; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: grid; grid-template-columns: 1fr auto; gap: 12px;
+        }
+        .ticket-card.abierto { border-left-color: var(--rojo-oficial); }
+        .ticket-card.gestion { border-left-color: var(--naranja); }
+        .ticket-card.resuelto { border-left-color: var(--verde); }
+        .ticket-card.desestimado { border-left-color: var(--gris); opacity: 0.7; }
+
+        .ticket-info .titulo {
+            font-weight: 800; font-size: 15px; color: #1e293b; margin-bottom: 6px;
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .ticket-info .descripcion { font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 10px; }
+        .ticket-info .meta {
+            font-size: 11px; color: var(--gris); display: flex; gap: 14px; flex-wrap: wrap;
+        }
+        .ticket-info .meta b { color: var(--azul-oficial); }
+
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .badge-cat { background: #dbeafe; color: var(--azul-oficial); }
+        .badge-prio.alta { background: var(--rojo-oficial); color: white; }
+        .badge-prio.media { background: var(--naranja); color: white; }
+        .badge-prio.baja { background: #cbd5e1; color: #1e293b; }
+
+        .acciones-ticket { display: flex; flex-direction: column; gap: 6px; }
+        .acciones-ticket button {
+            padding: 6px 12px; border: none; border-radius: 5px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            cursor: pointer; white-space: nowrap;
+        }
+        .btn-gestion { background: var(--naranja); color: white; }
+        .btn-resolver { background: var(--verde); color: white; }
+        .btn-desestimar { background: var(--gris); color: white; }
+        .btn-reabrir { background: var(--azul-claro); color: white; }
+        .btn-eliminar { background: none; color: var(--rojo-oficial); border: 1px solid var(--rojo-oficial) !important; }
+
+        .vacio {
+            text-align: center; padding: 50px 20px; background: white;
+            border-radius: 10px; color: var(--gris); font-style: italic;
+        }
+        .vacio .icono-gigante { font-size: 60px; opacity: 0.3; margin-bottom: 10px; }
+
+        /* Modal de creación */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100; padding: 15px;
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal-card {
+            background: white; border-radius: 12px; padding: 25px;
+            max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;
+            border-top: 6px solid var(--azul-oficial);
+        }
+        .modal-card h2 { margin: 0 0 15px 0; color: var(--azul-oficial); }
+        .modal-card .form-grupo { margin-bottom: 14px; }
+        .modal-card label {
+            display: block; font-size: 12px; font-weight: 700;
+            color: var(--azul-oficial); text-transform: uppercase; margin-bottom: 4px;
+        }
+        .modal-card input, .modal-card select, .modal-card textarea {
+            width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1;
+            border-radius: 6px; font-size: 13px; font-family: inherit; box-sizing: border-box;
+        }
+        .modal-card .botones-modal { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-card .botones-modal button {
+            padding: 10px 18px; border: none; border-radius: 6px;
+            font-weight: bold; cursor: pointer; font-size: 13px;
+        }
+        .btn-cancelar { background: #e2e8f0; color: #1e293b; }
+        .btn-confirmar { background: var(--verde); color: white; }
+    </style>
+</head>
+<body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA · ESTADO MIRANDA · ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
+    <div class="top-bar">
+        <h1>🎫 Tickets y Reclamos</h1>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-nuevo" onclick="abrirModalNuevo()">＋ Crear Ticket</button>
+            <button class="btn btn-volver" onclick="location.href='admin.html'">← Panel Admin</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <div class="resumen-tabs" id="resumenTabs">
+            <div class="tab-card abiertos activa" data-tab="abierto">
+                <div class="icono">🆕</div>
+                <div class="numero" id="conteoAbiertos">0</div>
+                <div class="label">Abiertos</div>
+            </div>
+            <div class="tab-card gestion" data-tab="gestion">
+                <div class="icono">⚙️</div>
+                <div class="numero" id="conteoGestion">0</div>
+                <div class="label">En Gestión</div>
+            </div>
+            <div class="tab-card resueltos" data-tab="resuelto">
+                <div class="icono">✅</div>
+                <div class="numero" id="conteoResueltos">0</div>
+                <div class="label">Resueltos</div>
+            </div>
+            <div class="tab-card desestimados" data-tab="desestimado">
+                <div class="icono">🚫</div>
+                <div class="numero" id="conteoDesestimados">0</div>
+                <div class="label">Desestimados</div>
+            </div>
+            <div class="tab-card todos" data-tab="todos">
+                <div class="icono">📋</div>
+                <div class="numero" id="conteoTotal">0</div>
+                <div class="label">Total</div>
+            </div>
+        </div>
+
+        <div class="filtros">
+            <div>
+                <label>Buscar:</label>
+                <input type="search" id="fBuscar" placeholder="Texto, habitante, asignado...">
+            </div>
+            <div>
+                <label>Categoría:</label>
+                <select id="fCategoria"><option value="">Todas</option></select>
+            </div>
+            <div>
+                <label>Comuna:</label>
+                <select id="fComuna"><option value="">Todas</option></select>
+            </div>
+            <div>
+                <label>Prioridad:</label>
+                <select id="fPrioridad">
+                    <option value="">Todas</option>
+                    <option value="alta">🔴 Alta</option>
+                    <option value="media">🟠 Media</option>
+                    <option value="baja">⚪ Baja</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="lista" id="lista"></div>
+
+    </div>
+
+    <!-- Modal de nuevo ticket -->
+    <div class="modal-overlay hidden" id="modalNuevo">
+        <div class="modal-card">
+            <h2 id="tituloModal">🎫 Crear Nuevo Ticket</h2>
+            <div class="form-grupo">
+                <label>Asunto / Título corto:</label>
+                <input type="text" id="ticketTitulo" placeholder="Ej. Falla de electricidad en sector La Pradera">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                <div class="form-grupo">
+                    <label>Categoría:</label>
+                    <select id="ticketCategoria">
+                        <option value="agua">💧 Agua</option>
+                        <option value="electricidad">⚡ Electricidad</option>
+                        <option value="aseo">🗑️ Aseo Urbano</option>
+                        <option value="salud">🏥 Salud</option>
+                        <option value="seguridad">🚓 Seguridad</option>
+                        <option value="vivienda">🏚️ Vivienda</option>
+                        <option value="gas">🔥 Gas Doméstico</option>
+                        <option value="documentos">📄 Documentación / Trámite</option>
+                        <option value="vial">🚧 Vialidad / Bacheo</option>
+                        <option value="alimentacion">🥫 Alimentación / CLAP</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <div class="form-grupo">
+                    <label>Prioridad:</label>
+                    <select id="ticketPrioridad">
+                        <option value="baja">⚪ Baja</option>
+                        <option value="media" selected>🟠 Media</option>
+                        <option value="alta">🔴 Alta</option>
+                    </select>
+                </div>
+                <div class="form-grupo">
+                    <label>Comuna:</label>
+                    <select id="ticketComuna"><option value="">Seleccione</option></select>
+                </div>
+            </div>
+            <div class="form-grupo">
+                <label>Habitante / Solicitante (opcional):</label>
+                <input type="search" id="ticketHabitante" placeholder="Buscar por nombre o cédula..." list="listaHabitantes">
+                <datalist id="listaHabitantes"></datalist>
+                <small style="color: #64748b; font-size: 11px;">Vinculá el ticket a un habitante específico (si aplica).</small>
+            </div>
+            <div class="form-grupo">
+                <label>Descripción del problema:</label>
+                <textarea id="ticketDescripcion" rows="4" placeholder="Detalle el reclamo, ubicación, contexto, lo que el habitante reportó..."></textarea>
+            </div>
+            <div class="form-grupo">
+                <label>Asignar a (dirección/funcionario):</label>
+                <input type="text" id="ticketAsignado" placeholder="Ej. Dirección de Servicios Públicos, Carlos Pérez">
+            </div>
+            <div class="botones-modal">
+                <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn-confirmar" onclick="guardarTicket()">💾 Crear Ticket</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child, set, push, update, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        let usuarioActual = null;
+        let esAdmin = false;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            usuarioActual = user;
+            if (user.email === 'carlos.admin@alcaldia.com') {
+                esAdmin = true;
+            } else {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    if (snap.exists() && snap.val().rol === 'admin') esAdmin = true;
+                } catch (e) {}
+            }
+            iniciar();
+        });
+
+        let tickets = [];
+        let habitantes = {};
+        let tabActiva = 'abierto';
+        let editandoId = null;
+
+        const escapeHtml = (s) => (s == null ? '' : s.toString()
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+
+        function iniciar() {
+            onValue(ref(database, 'tickets'), (snap) => {
+                const data = snap.val() || {};
+                tickets = Object.keys(data).map(k => ({ id: k, ...data[k] }));
+                renderizar();
+                popularFiltros();
+            });
+            onValue(ref(database, 'habitantes'), (snap) => {
+                habitantes = snap.val() || {};
+                popularDatalistHabitantes();
+                popularComunas();
+            });
+        }
+
+        function popularComunas() {
+            const comunas = new Set();
+            Object.values(habitantes).forEach(h => { if (h.comuna) comunas.add(h.comuna.toUpperCase()); });
+            const ordenadas = Array.from(comunas).sort();
+            const updateSel = (id, valActual) => {
+                const sel = document.getElementById(id);
+                if (!sel) return;
+                const placeholder = sel.querySelector('option[value=""]');
+                const ph = placeholder ? placeholder.outerHTML : '';
+                sel.innerHTML = ph + ordenadas.map(c => `<option value="${c}">${c}</option>`).join('');
+                if (valActual) sel.value = valActual;
+            };
+            updateSel('fComuna', document.getElementById('fComuna').value);
+            updateSel('ticketComuna', document.getElementById('ticketComuna').value);
+        }
+
+        function popularDatalistHabitantes() {
+            const dl = document.getElementById('listaHabitantes');
+            if (!dl) return;
+            dl.innerHTML = '';
+            const items = Object.values(habitantes).slice(0, 4000).map(h => {
+                const ced = h.cedula ? `${h.nacionalidad || 'V'}-${h.cedula}` : 'S/C';
+                return `<option value="${h.nombre || ''} ${h.apellido || ''} (${ced})">`;
+            }).join('');
+            dl.innerHTML = items;
+        }
+
+        function popularFiltros() {
+            const cats = new Set();
+            tickets.forEach(t => { if (t.categoria) cats.add(t.categoria); });
+            const sel = document.getElementById('fCategoria');
+            const val = sel.value;
+            sel.innerHTML = '<option value="">Todas</option>' +
+                Array.from(cats).sort().map(c => `<option value="${c}">${c}</option>`).join('');
+            if (val) sel.value = val;
+        }
+
+        function renderizar() {
+            // Conteos
+            const grupos = { abierto: [], gestion: [], resuelto: [], desestimado: [] };
+            tickets.forEach(t => {
+                const e = t.estado || 'abierto';
+                if (grupos[e]) grupos[e].push(t);
+            });
+            document.getElementById('conteoAbiertos').textContent = grupos.abierto.length;
+            document.getElementById('conteoGestion').textContent = grupos.gestion.length;
+            document.getElementById('conteoResueltos').textContent = grupos.resuelto.length;
+            document.getElementById('conteoDesestimados').textContent = grupos.desestimado.length;
+            document.getElementById('conteoTotal').textContent = tickets.length;
+
+            // Lista filtrada
+            let lista = tabActiva === 'todos' ? tickets.slice() : (grupos[tabActiva] || []);
+            const q = (document.getElementById('fBuscar').value || '').toLowerCase().trim();
+            const fCat = document.getElementById('fCategoria').value;
+            const fCom = document.getElementById('fComuna').value;
+            const fPri = document.getElementById('fPrioridad').value;
+
+            if (fCat) lista = lista.filter(t => t.categoria === fCat);
+            if (fCom) lista = lista.filter(t => (t.comuna || '').toUpperCase() === fCom);
+            if (fPri) lista = lista.filter(t => t.prioridad === fPri);
+            if (q) lista = lista.filter(t => {
+                const txt = `${t.titulo || ''} ${t.descripcion || ''} ${t.habitante_nombre || ''} ${t.asignado || ''}`.toLowerCase();
+                return txt.includes(q);
+            });
+
+            // Ordenar: alta prioridad primero, luego timestamp desc
+            const ord = { alta: 0, media: 1, baja: 2 };
+            lista.sort((a, b) => {
+                const oa = ord[a.prioridad] ?? 1;
+                const ob = ord[b.prioridad] ?? 1;
+                if (oa !== ob) return oa - ob;
+                return (b.timestamp || 0) - (a.timestamp || 0);
+            });
+
+            const cont = document.getElementById('lista');
+            if (lista.length === 0) {
+                cont.innerHTML = `<div class="vacio"><div class="icono-gigante">🎉</div>No hay tickets en esta categoría.</div>`;
+                return;
+            }
+
+            cont.innerHTML = lista.map(t => {
+                const estado = t.estado || 'abierto';
+                const prio = t.prioridad || 'media';
+                const fechaCrea = t.fecha_creacion || (t.timestamp ? new Date(t.timestamp).toLocaleString('es-VE') : '—');
+
+                let accionesHTML = '';
+                if (estado === 'abierto') {
+                    accionesHTML = `
+                        <button class="btn-gestion" onclick="window._cambiarEstado('${t.id}','gestion')">▶ Tomar Gestión</button>
+                        <button class="btn-resolver" onclick="window._cambiarEstado('${t.id}','resuelto')">✓ Resolver</button>
+                        <button class="btn-desestimar" onclick="window._cambiarEstado('${t.id}','desestimado')">✖ Desestimar</button>
+                    `;
+                } else if (estado === 'gestion') {
+                    accionesHTML = `
+                        <button class="btn-resolver" onclick="window._cambiarEstado('${t.id}','resuelto')">✓ Resolver</button>
+                        <button class="btn-reabrir" onclick="window._cambiarEstado('${t.id}','abierto')">↻ Volver a Abierto</button>
+                    `;
+                } else if (estado === 'resuelto' || estado === 'desestimado') {
+                    accionesHTML = `<button class="btn-reabrir" onclick="window._cambiarEstado('${t.id}','abierto')">↻ Reabrir</button>`;
+                }
+                if (esAdmin || t.creado_por_uid === usuarioActual.uid) {
+                    accionesHTML += `<button class="btn-eliminar" onclick="window._eliminarTicket('${t.id}')">🗑 Eliminar</button>`;
+                }
+
+                const habInfo = t.habitante_nombre
+                    ? `<span><b>Habitante:</b> ${escapeHtml(t.habitante_nombre)}</span>`
+                    : '';
+                const fechaResuelto = t.fecha_resuelto ? `<span><b>Cierre:</b> ${t.fecha_resuelto}</span>` : '';
+
+                return `
+                    <div class="ticket-card ${estado}">
+                        <div class="ticket-info">
+                            <div class="titulo">
+                                <span class="badge badge-cat">${escapeHtml(t.categoria || 'otro')}</span>
+                                <span class="badge badge-prio ${prio}">${prio}</span>
+                                <span>${escapeHtml(t.titulo || '(sin título)')}</span>
+                            </div>
+                            <div class="descripcion">${escapeHtml(t.descripcion || '')}</div>
+                            <div class="meta">
+                                <span>📅 ${fechaCrea}</span>
+                                <span>👤 <b>Creado por:</b> ${escapeHtml(t.creado_por_nombre || '')}</span>
+                                ${t.asignado ? `<span>📋 <b>Asignado a:</b> ${escapeHtml(t.asignado)}</span>` : ''}
+                                ${t.comuna ? `<span>📍 ${escapeHtml(t.comuna)}</span>` : ''}
+                                ${habInfo}
+                                ${fechaResuelto}
+                            </div>
+                        </div>
+                        <div class="acciones-ticket">${accionesHTML}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window._cambiarEstado = async (id, nuevoEstado) => {
+            const updates = { estado: nuevoEstado };
+            if (nuevoEstado === 'resuelto' || nuevoEstado === 'desestimado') {
+                updates.fecha_resuelto = new Date().toLocaleString('es-VE');
+                updates.resuelto_por_uid = usuarioActual.uid;
+                updates.resuelto_por_nombre = usuarioActual.email === 'carlos.admin@alcaldia.com' ? 'CARLOS ADMIN' : usuarioActual.email;
+            }
+            try {
+                await update(ref(database, `tickets/${id}`), updates);
+            } catch (e) { alert('Error: ' + e.message); }
+        };
+
+        window._eliminarTicket = async (id) => {
+            if (!confirm('¿Eliminar este ticket permanentemente?')) return;
+            try {
+                await remove(ref(database, `tickets/${id}`));
+            } catch (e) { alert('Error: ' + e.message); }
+        };
+
+        window.abrirModalNuevo = () => {
+            editandoId = null;
+            document.getElementById('tituloModal').textContent = '🎫 Crear Nuevo Ticket';
+            ['ticketTitulo', 'ticketDescripcion', 'ticketAsignado', 'ticketHabitante'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('ticketCategoria').selectedIndex = 0;
+            document.getElementById('ticketPrioridad').value = 'media';
+            document.getElementById('ticketComuna').value = '';
+            document.getElementById('modalNuevo').classList.remove('hidden');
+        };
+
+        window.cerrarModal = () => document.getElementById('modalNuevo').classList.add('hidden');
+
+        window.guardarTicket = async () => {
+            const titulo = document.getElementById('ticketTitulo').value.trim();
+            const descripcion = document.getElementById('ticketDescripcion').value.trim();
+            if (!titulo) { alert('Falta el título.'); return; }
+            if (!descripcion) { alert('Falta la descripción.'); return; }
+            const categoria = document.getElementById('ticketCategoria').value;
+            const prioridad = document.getElementById('ticketPrioridad').value;
+            const comuna = document.getElementById('ticketComuna').value;
+            const asignado = document.getElementById('ticketAsignado').value.trim();
+            const habTexto = document.getElementById('ticketHabitante').value.trim();
+
+            // Intentar identificar al habitante por cédula encontrada en el texto
+            let habId = '', habNombre = habTexto;
+            if (habTexto) {
+                const match = habTexto.match(/\(([VE]-?\d+|S\/C)\)$/i);
+                if (match) {
+                    const cedBuscar = match[1].replace(/^[VE]-?/i, '');
+                    for (const id in habitantes) {
+                        if ((habitantes[id].cedula || '').toString().trim() === cedBuscar) {
+                            habId = id;
+                            habNombre = `${habitantes[id].nombre || ''} ${habitantes[id].apellido || ''}`.trim();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            const u = usuarioActual;
+            const usuarioNombre = u.email === 'carlos.admin@alcaldia.com' ? 'CARLOS ADMIN' : u.email;
+
+            try {
+                const nuevoRef = push(ref(database, 'tickets'));
+                await set(nuevoRef, {
+                    titulo, descripcion, categoria, prioridad, comuna, asignado,
+                    habitante_id: habId, habitante_nombre: habNombre,
+                    estado: 'abierto',
+                    creado_por_uid: u.uid,
+                    creado_por_email: u.email,
+                    creado_por_nombre: usuarioNombre,
+                    fecha_creacion: new Date().toLocaleString('es-VE'),
+                    timestamp: Date.now()
+                });
+                cerrarModal();
+            } catch (e) {
+                alert('No se pudo crear el ticket: ' + e.message);
+            }
+        };
+
+        // Tabs
+        document.querySelectorAll('.tab-card').forEach(t => {
+            t.addEventListener('click', () => {
+                document.querySelectorAll('.tab-card').forEach(x => x.classList.remove('activa'));
+                t.classList.add('activa');
+                tabActiva = t.dataset.tab;
+                renderizar();
+            });
+        });
+
+        ['fBuscar', 'fCategoria', 'fComuna', 'fPrioridad'].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', renderizar);
+            el.addEventListener('change', renderizar);
+        });
+    </script>
+</body>
+</html>
