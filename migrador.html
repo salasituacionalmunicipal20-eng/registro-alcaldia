@@ -305,7 +305,20 @@
                     // Lista temporal para la Fase 2 (Solo guarda ID y Rol para no gastar RAM)
                     let mapaParaFase2 = [];
 
-                    document.getElementById('txtEta').textContent = `Fase 1: Inyectando Habitantes...`;
+                    // Cronómetro para calcular el tiempo estimado restante (ETA)
+                    const tiempoInicioFase1 = Date.now();
+                    const formatearDuracion = (ms) => {
+                        if (!isFinite(ms) || ms < 0) return '—';
+                        const totalSeg = Math.round(ms / 1000);
+                        const h = Math.floor(totalSeg / 3600);
+                        const m = Math.floor((totalSeg % 3600) / 60);
+                        const s = totalSeg % 60;
+                        if (h > 0) return `${h}h ${m}m ${s}s`;
+                        if (m > 0) return `${m}m ${s}s`;
+                        return `${s}s`;
+                    };
+
+                    document.getElementById('txtEta').textContent = `Fase 1 · Calculando velocidad...`;
                     escribirLog(`Iniciando FASE 1: el CSV tiene ${totalDatos} filas. Subiendo TODAS (las problemáticas con defaults).`, "log-success");
 
                     for (let i = 0; i < totalDatos; i++) {
@@ -551,15 +564,34 @@
                                 nombre: nombreParsed
                             });
 
-                            let porcentaje = (subidos / totalDatos) * 100;
+                            const procesadosTotal = i + 1; // incluye los saltados (vacíos) — refleja avance real del CSV
+                            let porcentaje = (procesadosTotal / totalDatos) * 100;
                             document.getElementById('barraProgreso').style.width = porcentaje + "%";
-                            document.getElementById('txtCompletados').textContent = `Procesados: ${subidos} / ${totalDatos}`;
-                            
-                            // Imprimir en consola en tiempo real
+                            document.getElementById('txtCompletados').textContent = `Procesados: ${procesadosTotal} / ${totalDatos}`;
+                            document.getElementById('txtPorcentaje').textContent = `${porcentaje.toFixed(1)}%`;
+
+                            // ETA: solo calculamos después de las primeras 5 filas para tener una tasa estable
+                            if (procesadosTotal >= 5) {
+                                const transcurrido = Date.now() - tiempoInicioFase1;
+                                const tasaMsPorFila = transcurrido / procesadosTotal;
+                                const restanteMs = (totalDatos - procesadosTotal) * tasaMsPorFila;
+                                document.getElementById('txtEta').textContent =
+                                    `Fase 1 · ⏱ Restan ${formatearDuracion(restanteMs)} (transcurrido ${formatearDuracion(transcurrido)})`;
+                            }
+
+                            // Detalle completo en consola: nombre, cédula, comuna, comunidad, parentesco, sexo, edad si hay fecha
+                            const cedDisplay = esCedulaValida ? `${rowNac}-${rowCedulaNum}` : 'S/C';
+                            const edadStr = fechaEstructurada ? ` · ${2026 - parseInt(fechaEstructurada.split('-')[0])}a` : '';
+                            const sexoStr = sexoParsed ? ` · ${sexoParsed.charAt(0).toUpperCase()}` : '';
+                            const detalleHabitante =
+                                `<b>${nombreParsed} ${apellidoParsed}</b> · C.I: ${cedDisplay}${edadStr}${sexoStr}` +
+                                ` · 📍 ${habitanteTraducido.comuna} / ${habitanteTraducido.comunidad}` +
+                                ` · 🏷️ ${parentescoParsed}`;
+
                             if (parentescoParsed === 'jefe de hogar') {
-                                escribirLog(`[INGRESADO] 👑 JEFE: ${nombreParsed} ${apellidoParsed}`, "log-jefe");
+                                escribirLog(`[#${procesadosTotal}] 👑 JEFE: ${detalleHabitante}`, "log-jefe");
                             } else {
-                                escribirLog(`[INGRESADO] 👤 ${nombreParsed} ${apellidoParsed} (${parentescoParsed})`, "log-info");
+                                escribirLog(`[#${procesadosTotal}] 👤 ${detalleHabitante}`, "log-info");
                             }
 
                         } catch (err) {
@@ -598,34 +630,51 @@
                     // ==========================================
                     // FASE 2 - BARRIDO DE VINCULACIÓN (SIN BORRAR)
                     // ==========================================
-                    document.getElementById('txtEta').textContent = `Fase 2: Vinculando Familias...`;
+                    document.getElementById('txtEta').textContent = `Fase 2 · Calculando velocidad...`;
                     escribirLog(`=================================`, "log-warning");
-                    escribirLog(`Iniciando Fase 2: Escaneo y asignación de Núcleos...`, "log-warning");
-                    
+                    escribirLog(`Iniciando Fase 2: Escaneo y asignación de Núcleos (${mapaParaFase2.length} registros a vincular)...`, "log-warning");
+
                     let jefeActual = null;
                     let vinculados = 0;
+                    const tiempoInicioFase2 = Date.now();
 
                     for (let j = 0; j < mapaParaFase2.length; j++) {
                         // Respirador de la Fase 2
                         if (j % 20 === 0) await refrescarUI();
 
                         let h = mapaParaFase2[j];
-                        
+
                         if (h.rol === 'jefe de hogar') {
-                            jefeActual = h.id_fb; 
-                            escribirLog(`[NÚCLEO FIJADO] Marcando territorio de: ${h.nombre}`, "log-jefe");
+                            jefeActual = h.id_fb;
+                            escribirLog(`[NÚCLEO FIJADO] Marcando territorio de: <b>${h.nombre}</b>`, "log-jefe");
                         } else {
                             if (jefeActual !== null) {
                                 // ACTUALIZAMOS ÚNICAMENTE EL CAMPO DE VINCULACIÓN EN FIREBASE
                                 await update(ref(database, `habitantes/${h.id_fb}`), { jefe_hogar_id: jefeActual });
                                 vinculados++;
-                                escribirLog(`   ↳ Familia vinculada al Jefe: ${h.nombre} (${h.rol})`, "log-family");
+                                escribirLog(`   ↳ Vinculado al Jefe: <b>${h.nombre}</b> (${h.rol})`, "log-family");
+                            }
+                        }
+
+                        // Actualizar progreso y ETA cada 20 filas para no spamear el DOM
+                        if (j % 20 === 0 || j === mapaParaFase2.length - 1) {
+                            const procesados2 = j + 1;
+                            const pct2 = (procesados2 / mapaParaFase2.length) * 100;
+                            document.getElementById('barraProgreso').style.width = pct2 + '%';
+                            document.getElementById('txtCompletados').textContent = `Fase 2: ${procesados2} / ${mapaParaFase2.length}`;
+                            document.getElementById('txtPorcentaje').textContent = `${pct2.toFixed(1)}%`;
+                            if (procesados2 >= 5) {
+                                const transcurrido2 = Date.now() - tiempoInicioFase2;
+                                const tasa2 = transcurrido2 / procesados2;
+                                const restante2 = (mapaParaFase2.length - procesados2) * tasa2;
+                                document.getElementById('txtEta').textContent =
+                                    `Fase 2 · ⏱ Restan ${formatearDuracion(restante2)} (transcurrido ${formatearDuracion(transcurrido2)})`;
                             }
                         }
                     }
 
                     document.getElementById('barraProgreso').style.width = "100%";
-                    document.getElementById('txtEta').textContent = `PROCESO 100% FINALIZADO`;
+                    document.getElementById('txtEta').textContent = `✅ PROCESO 100% FINALIZADO en ${formatearDuracion(Date.now() - tiempoInicioFase1)}`;
                     
                     escribirLog(`=================================`, "log-warning");
                     escribirLog(`✅ FASE 2 COMPLETADA. Se conectaron ${vinculados} familiares a sus Jefes de Hogar.`, "log-success");
