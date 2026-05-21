@@ -611,7 +611,7 @@
             <div class="stat-card c-12"><span class="stat-icon">🔴</span><div class="stat-number" id="statVD">0</div><div class="stat-title">Voto Duro (VD)</div><button class="btn-metric-print" onclick="imprimirMetrica('vd')">🖨 PDF</button></div>
             <div class="stat-card c-13"><span class="stat-icon">🟡</span><div class="stat-number" id="statVB">0</div><div class="stat-title">Voto Blando (VB)</div><button class="btn-metric-print" onclick="imprimirMetrica('vb')">🖨 PDF</button></div>
             <div class="stat-card c-14"><span class="stat-icon">⚪</span><div class="stat-number" id="statVO">0</div><div class="stat-title">Voto Opositor (VO)</div><button class="btn-metric-print" onclick="imprimirMetrica('vo')">🖨 PDF</button></div>
-            <div class="stat-card c-3"><span class="stat-icon">🛢️</span><div class="stat-number" id="statCilindros">0</div><div class="stat-title">Total de Cilindros</div><button class="btn-metric-print" onclick="imprimirMetrica('cilindros')">🖨 PDF</button></div>
+            <div class="stat-card c-3"><span class="stat-icon">🛢️</span><div class="stat-number" id="statCilindros">0</div><div class="stat-title">Total de Cilindros</div><button class="btn-metric-print" onclick="abrirModalCilindros()">🖨 FILTRAR PDF</button></div>
         </div>
 
         <h2>Panel de Inteligencia de Datos (BI)</h2>
@@ -695,6 +695,26 @@
             <div style="text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
                 <button type="button" style="padding: 10px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size:12px; margin-right: 8px;" onclick="cerrarModalMedicinas()">Cancelar</button>
                 <button type="button" style="padding: 10px 15px; background: var(--rojo-oficial); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size:12px; text-transform:uppercase;" onclick="procesarReporteMedicinas()">🖨 Generar Reporte PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalCilindros" class="modal-overlay hidden">
+        <div class="modal-content">
+            <span class="close-modal" onclick="cerrarModalCilindros()">✖</span>
+            <h3 style="color: var(--azul-oficial); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; text-transform: uppercase; font-size: 16px; font-weight: bold;">🛢️ Reporte de Hogares por Cilindro de Gas</h3>
+            <p style="font-size: 12px; color: #555; line-height: 1.5; margin-bottom: 20px;">Si un hogar tiene <b>varios tipos</b> de cilindros (ej. <i>10KG, 18KG, 43KG</i>) aparecerá en cada filtro que aplique. La búsqueda es inteligente: filtrar "10KG" muestra todos los hogares que tienen 10KG entre sus cilindros, aunque también tengan otros tipos.</p>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; font-size: 13px; color: #333; display: block; margin-bottom: 8px;">Seleccionar Tipo de Cilindro:</label>
+                <select id="selCilindroFiltro">
+                    <option value="TODOS">Generar Reporte Completo (Todos los Hogares con Gas)</option>
+                </select>
+            </div>
+
+            <div style="text-align: right; border-top: 1px solid #eee; padding-top: 15px;">
+                <button type="button" style="padding: 10px 15px; background: #6c757d; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size:12px; margin-right: 8px;" onclick="cerrarModalCilindros()">Cancelar</button>
+                <button type="button" style="padding: 10px 15px; background: var(--rojo-oficial); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size:12px; text-transform:uppercase;" onclick="procesarReporteCilindros()">🖨 Generar Reporte PDF</button>
             </div>
         </div>
     </div>
@@ -811,6 +831,30 @@
         window.cerrarModalNinos = () => {
             document.getElementById('modalNinos').classList.add('hidden');
         };
+
+        // Modal para Cilindros de Gas
+        window.abrirModalCilindros = () => {
+            document.getElementById('modalCilindros').classList.remove('hidden');
+        };
+        window.cerrarModalCilindros = () => {
+            document.getElementById('modalCilindros').classList.add('hidden');
+        };
+
+        // Parser inteligente: extrae tipos de cilindro de un string que puede tener
+        // múltiples valores separados por coma, " Y ", " E " o "/".
+        // Ej. "10KG, 18KG, 43KG" → ["10KG", "18KG", "43KG"]
+        // Normaliza espacios y mayúsculas. Filtra entradas vacías o negaciones.
+        function extraerTiposCilindros(tipoRaw) {
+            const limpio = cleanText(tipoRaw);
+            if (!limpio) return [];
+            const tipoLower = limpio.toLowerCase();
+            // Gas directo no es un cilindro físico — devolvemos un marcador único
+            if (tipoLower.includes('directo') || tipoLower.includes('tuber')) return ['GAS DIRECTO'];
+            const negaciones = ['NO', 'NO INDICA', 'NINGUNO', 'NINGUNA', 'N/A', 'S/C', 'S/I', '-'];
+            return limpio.split(/,| Y | E |\//)
+                .map(p => p.trim())
+                .filter(p => p && !negaciones.includes(p));
+        }
 
         function cargarFiltrosTerritoriales() {
             const fComuna = document.getElementById('fComuna');
@@ -941,8 +985,9 @@
             onValue(ref(database, 'habitantes'), (snapshot) => {
                 baseDeDatosHabitantes = snapshot.val() || {};
                 actualizarFiltrosInteligentes();
-                actualizarFiltroMedicinas(); 
-                calcularEstadisticas(); 
+                actualizarFiltroMedicinas();
+                actualizarFiltroCilindros();
+                calcularEstadisticas();
             });
         }
 
@@ -992,6 +1037,62 @@
                 selectMed.value = valorActual;
             } else {
                 selectMed.value = "TODOS";
+            }
+        }
+
+        // Recorre todos los hogares con tiene_gas=si, parsea sus cilindros (que pueden
+        // ser múltiples separados por coma) y arma el catálogo único para el filtro del modal.
+        function actualizarFiltroCilindros() {
+            const selectCil = document.getElementById('selCilindroFiltro');
+            if (!selectCil) return;
+            const valorActual = selectCil.value;
+            const tiposUnicos = new Set();
+            let tieneGasDirecto = false;
+
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
+
+            for (let id in baseDeDatosHabitantes) {
+                const h = baseDeDatosHabitantes[id];
+                const comunaStr = (h.comuna || '').toUpperCase();
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(comunaStr)) continue;
+                }
+                if ((h.tiene_gas || '').toLowerCase() !== 'si') continue;
+
+                const tipos = extraerTiposCilindros(h.tipo_cilindro_gas);
+                tipos.forEach(t => {
+                    if (t === 'GAS DIRECTO') tieneGasDirecto = true;
+                    else tiposUnicos.add(t);
+                });
+            }
+
+            selectCil.innerHTML = '<option value="TODOS">Generar Reporte Completo (Todos los Hogares con Gas)</option>';
+            // Orden inteligente: por número (10KG, 18KG, 43KG) cuando aplique
+            const ordenados = Array.from(tiposUnicos).sort((a, b) => {
+                const na = parseInt(a), nb = parseInt(b);
+                if (!isNaN(na) && !isNaN(nb)) return na - nb;
+                return a.localeCompare(b);
+            });
+            ordenados.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t;
+                opt.textContent = `🛢️ Solo hogares con cilindro ${t}`;
+                selectCil.appendChild(opt);
+            });
+            if (tieneGasDirecto) {
+                const optDir = document.createElement('option');
+                optDir.value = 'GAS DIRECTO';
+                optDir.textContent = '🔥 Solo hogares con GAS DIRECTO (sin cilindros)';
+                selectCil.appendChild(optDir);
+            }
+
+            if (valorActual && (tiposUnicos.has(valorActual) || valorActual === 'TODOS' || valorActual === 'GAS DIRECTO')) {
+                selectCil.value = valorActual;
+            } else {
+                selectCil.value = 'TODOS';
             }
         }
 
@@ -1440,6 +1541,108 @@
             
             window.cerrarModalMedicinas();
             
+            setTimeout(() => {
+                prepararPrint();
+                window.print();
+                calcularEstadisticas();
+            }, 300);
+        };
+
+        // REPORTE DE CILINDROS DE GAS — deduplica por hogar y filtra por tipo específico
+        window.procesarReporteCilindros = () => {
+            const filtroCil = document.getElementById('selCilindroFiltro').value;
+
+            const fComuna = document.getElementById('fComuna').value.toUpperCase();
+            const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
+            const fUbch = document.getElementById('fUbch').value.toUpperCase();
+            const fCalle = document.getElementById('fCalle').value.toUpperCase();
+
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
+
+            const hogaresVistos = new Set();
+            let filasReporte = '';
+            let hogaresEnReporte = 0;
+
+            for (let id in baseDeDatosHabitantes) {
+                const h = baseDeDatosHabitantes[id];
+                const comunaStr = (h.comuna || '').toUpperCase();
+                const comunidadStr = (h.comunidad || '').toUpperCase();
+
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(comunaStr)) continue;
+                }
+                if (fComuna && !comunaStr.includes(fComuna)) continue;
+                if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
+                if (fUbch && (h.ubch || '').trim().toUpperCase() !== fUbch) continue;
+                if (fCalle && (h.calle || '').trim().toUpperCase() !== fCalle) continue;
+
+                if ((h.tiene_gas || '').toLowerCase() !== 'si') continue;
+
+                // Deduplicar por hogar: usamos al jefe si existe, sino la dirección normalizada
+                const dirUnica = `${h.comuna}-${h.comunidad}-${h.calle}-${h.numero_casa}`.toLowerCase().replace(/\s+/g, '');
+                const idHogar = h.jefe_hogar_id || dirUnica;
+                if (hogaresVistos.has(idHogar)) continue;
+
+                // Filtro inteligente: extraer todos los tipos de cilindros del hogar y verificar si coincide
+                const tiposDelHogar = extraerTiposCilindros(h.tipo_cilindro_gas);
+                const esGasDirecto = tiposDelHogar.includes('GAS DIRECTO');
+
+                if (filtroCil !== 'TODOS') {
+                    if (filtroCil === 'GAS DIRECTO') {
+                        if (!esGasDirecto) continue;
+                    } else {
+                        // "Si quiero el 10KG que me muestre las personas que tienen 10KG así tengan más"
+                        if (!tiposDelHogar.includes(filtroCil)) continue;
+                    }
+                }
+
+                hogaresVistos.add(idHogar);
+                hogaresEnReporte++;
+
+                const edad = calcularEdad(h.fecha_nacimiento);
+                const nac = h.nacionalidad || 'V';
+                const cedStr = h.cedula ? `${nac}-${h.cedula}` : 'S/C';
+
+                // Detalle del cilindro
+                let detalleCilindro;
+                let cantidad;
+                if (esGasDirecto) {
+                    detalleCilindro = 'GAS DIRECTO';
+                    cantidad = '—';
+                } else {
+                    detalleCilindro = tiposDelHogar.join(', ') || 'SIN ESPECIFICAR';
+                    const cantRaw = (h.cantidad_cilindro_gas || '').toString().trim();
+                    cantidad = cantRaw || '1';
+                }
+
+                filasReporte += `
+                    <tr>
+                        <td>${h.nombre} ${h.apellido}</td>
+                        <td>${cedStr}</td>
+                        <td>${edad}</td>
+                        <td>${h.comunidad}</td>
+                        <td>${h.calle}, Casa ${h.numero_casa}</td>
+                        <td>${h.telefono || ''}</td>
+                        <td><b>${detalleCilindro}</b> · Cantidad: <b>${cantidad}</b></td>
+                    </tr>
+                `;
+            }
+
+            const nombreMetrica = filtroCil === 'TODOS'
+                ? `REPORTE COMPLETO DE HOGARES CON GAS (${hogaresEnReporte} hogares)`
+                : (filtroCil === 'GAS DIRECTO'
+                    ? `HOGARES CON GAS DIRECTO (${hogaresEnReporte} hogares)`
+                    : `HOGARES CON CILINDRO DE ${filtroCil} (${hogaresEnReporte} hogares)`);
+
+            document.getElementById('tituloReporte').textContent = nombreMetrica;
+            document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
+            document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
+
+            window.cerrarModalCilindros();
+
             setTimeout(() => {
                 prepararPrint();
                 window.print();
