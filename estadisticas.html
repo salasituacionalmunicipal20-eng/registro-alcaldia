@@ -612,7 +612,6 @@
             <div class="stat-card c-13"><span class="stat-icon">🟡</span><div class="stat-number" id="statVB">0</div><div class="stat-title">Voto Blando (VB)</div><button class="btn-metric-print" onclick="imprimirMetrica('vb')">🖨 PDF</button></div>
             <div class="stat-card c-14"><span class="stat-icon">⚪</span><div class="stat-number" id="statVO">0</div><div class="stat-title">Voto Opositor (VO)</div><button class="btn-metric-print" onclick="imprimirMetrica('vo')">🖨 PDF</button></div>
             <div class="stat-card c-3"><span class="stat-icon">🛢️</span><div class="stat-number" id="statCilindros">0</div><div class="stat-title">Total de Cilindros</div><button class="btn-metric-print" onclick="imprimirMetrica('cilindros')">🖨 PDF</button></div>
-            <div class="stat-card c-7"><span class="stat-icon">💼</span><div class="stat-number" id="statProfesion">0</div><div class="stat-title">Trabajadores con Oficio</div><button class="btn-metric-print" onclick="imprimirMetrica('profesion')">🖨 PDF</button></div>
         </div>
 
         <h2>Panel de Inteligencia de Datos (BI)</h2>
@@ -1084,7 +1083,6 @@
                 <div><strong>Escolarizados:</strong> ${t.escolarizados}</div>
                 <div><strong>Pacientes Médicos:</strong> ${t.enfermos}</div>
                 <div><strong>Total de Cilindros:</strong> ${t.cilindros || 0}</div>
-                <div><strong>Trabajadores con Oficio:</strong> ${t.trabajadoresOficio || 0} (${t.profesionesUnicas || 0} oficios únicos)</div>
                 <div><strong>Con Discapacidad:</strong> ${t.discapacidad}</div>
                 <div><strong>Carnet de la Patria:</strong> ${t.patria}</div>
                 <div><strong>Pensión Amor Mayor:</strong> ${t.amor}</div>
@@ -1200,7 +1198,6 @@
             
             let hogaresConGasUnicos = new Set();
             let cCilindrosTotal = 0;            // suma de cilindros de gas (acumulado por hogar único)
-            let profesionesMap = new Map();     // profesion → cantidad de trabajadores
             let filasReporte = '';
             
             const negacionesSalud = ['NO', 'NO INDICA', 'NINGUNA', 'NINGUNO', 'N/A', 'S/C', 'S/I', 'SANO', 'NO PADECE', 'NO TOMA', '-'];
@@ -1261,15 +1258,6 @@
                 }
 
                 const { tieneEnf, tieneMed, enf, med } = evaluarSalud(h);
-
-                // Acumulado de profesiones (solo si trabaja)
-                if ((h.trabaja || '').toLowerCase() === 'si') {
-                    const profStr = cleanText(h.profesion);
-                    if (profStr && !negacionesSalud.includes(profStr)) {
-                        profesionesMap.set(profStr, (profesionesMap.get(profStr) || 0) + 1);
-                    }
-                }
-
                 if (tieneEnf || tieneMed) cEnfermos++;
                 
                 if ((h.discapacitado || '').toUpperCase() === 'SI') cDiscapacidad++;
@@ -1308,9 +1296,6 @@
                 `;
             }
 
-            const cProfesionUnicas = profesionesMap.size;
-            const cTrabajadoresConOficio = Array.from(profesionesMap.values()).reduce((a, b) => a + b, 0);
-
             document.getElementById('statTotal').textContent = cTotal;
             document.getElementById('statJefes').textContent = cJefes;
             document.getElementById('statGas').textContent = hogaresConGasUnicos.size;
@@ -1326,7 +1311,6 @@
             document.getElementById('statVB').textContent = cVB;
             document.getElementById('statVO').textContent = cVO;
             document.getElementById('statCilindros').textContent = cCilindrosTotal;
-            document.getElementById('statProfesion').textContent = cTrabajadoresConOficio;
 
             let tituloHoja = "Listado de Habitantes: Consolidado Municipal (Reporte General)";
             if (fComuna) tituloHoja = `Reporte Demográfico: Comuna ${fComuna}`;
@@ -1340,13 +1324,45 @@
                 ninos: cNinos, trabajan: cTrabajan, escolarizados: cEscolarizados, enfermos: cEnfermos,
                 discapacidad: cDiscapacidad, patria: cPatria, amor: cAmor, vd: cVD, vb: cVB, vo: cVO,
                 masculino: cMasculino, femenino: cFemenino, hogares: cHogares, jgh: cJgh, embarazadas: cEmbarazadas,
-                cilindros: cCilindrosTotal, profesionesUnicas: cProfesionUnicas, trabajadoresOficio: cTrabajadoresConOficio
+                cilindros: cCilindrosTotal
             };
             
             actualizarGraficos(totalesContexto);
 
             document.getElementById('printMetricsSummary').innerHTML = imprimirResumenMetricas(totalesContexto);
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
+
+            // DIAGNÓSTICO: si Pacientes Médicos quedó en 0 pero hay habitantes, muestro en consola
+            // qué valores únicos existen para los campos relevantes — ayuda a detectar problemas de carga.
+            if (cEnfermos === 0 && cTotal > 0) {
+                const valoresPadece = new Map();
+                const valoresToma = new Map();
+                const ejemplosConDatos = [];
+                for (let id in baseDeDatosHabitantes) {
+                    const h = baseDeDatosHabitantes[id];
+                    const p = JSON.stringify(h.padece_enfermedad);
+                    const t = JSON.stringify(h.toma_medicamento);
+                    valoresPadece.set(p, (valoresPadece.get(p) || 0) + 1);
+                    valoresToma.set(t, (valoresToma.get(t) || 0) + 1);
+                    if (ejemplosConDatos.length < 3 && (h.cual_enfermedad || h.cual_medicamento)) {
+                        ejemplosConDatos.push({
+                            nombre: `${h.nombre || ''} ${h.apellido || ''}`.trim(),
+                            padece_enfermedad: h.padece_enfermedad,
+                            cual_enfermedad: h.cual_enfermedad,
+                            toma_medicamento: h.toma_medicamento,
+                            cual_medicamento: h.cual_medicamento
+                        });
+                    }
+                }
+                console.warn('🔍 DIAGNÓSTICO Pacientes Médicos = 0 (sobre ' + cTotal + ' habitantes):');
+                console.warn('Valores únicos en padece_enfermedad:', Object.fromEntries(valoresPadece));
+                console.warn('Valores únicos en toma_medicamento:', Object.fromEntries(valoresToma));
+                if (ejemplosConDatos.length > 0) {
+                    console.warn('Ejemplos con texto en cual_enfermedad / cual_medicamento:', ejemplosConDatos);
+                } else {
+                    console.warn('Ningún registro tiene texto en cual_enfermedad ni cual_medicamento.');
+                }
+            }
         }
 
         window.procesarReporteMedicinas = () => {
@@ -1603,11 +1619,6 @@
                         }
                         nombreMetrica = 'CILINDROS DE GAS POR HOGAR (DEDUPLICADO)';
                         break;
-                    case 'profesion':
-                        const profStr = cleanText(h.profesion);
-                        if (profStr && !negacionesSalud.includes(profStr) && (h.trabaja || '').toLowerCase() === 'si') pasaMetrica = true;
-                        nombreMetrica = 'TRABAJADORES CON OFICIO REGISTRADO';
-                        break;
                 }
 
                 if (pasaMetrica) {
@@ -1621,8 +1632,6 @@
                         const tipoCil = cleanText(h.tipo_cilindro_gas) || 'SIN ESPECIFICAR';
                         const cantCil = cleanText(h.cantidad_cilindro_gas) || '1';
                         diagInfo = `${tipoCil} (Cant: ${cantCil})`;
-                    } else if (tipo === 'profesion') {
-                        diagInfo = cleanText(h.profesion) || 'NO INDICADA';
                     } else if (tieneMed) {
                         diagInfo = med || 'TRATAMIENTO SIN ESPECIFICAR';
                     } else if (tieneEnf) {
