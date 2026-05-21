@@ -169,6 +169,135 @@
             margin-bottom: 30px;
         }
 
+        /* === ANÁLISIS AVANZADO === */
+        .analisis-avanzado {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .analisis-card {
+            background: #fff;
+            border: 1px solid var(--gris-borde);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .analisis-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 15px;
+            color: #1e293b;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .analisis-pivote { grid-column: 1 / -1; }
+        .pivote-selectores {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .pivote-selectores label {
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            gap: 4px;
+        }
+        .pivote-selectores select {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            background: white;
+            min-width: 180px;
+        }
+        #tablaPivote table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        #tablaPivote th, #tablaPivote td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 10px;
+            text-align: center;
+        }
+        #tablaPivote thead th {
+            background: var(--azul-oficial);
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+            position: sticky;
+            top: 0;
+        }
+        #tablaPivote tbody th {
+            background: #f1f5f9;
+            color: #1e293b;
+            text-align: left;
+            font-weight: 700;
+        }
+        #tablaPivote tfoot th, #tablaPivote tfoot td {
+            background: #e0e7ff;
+            font-weight: 800;
+            color: #1e1b4b;
+        }
+        #tablaPivote td[data-zero="true"] { color: #cbd5e1; }
+        #tablaPivote td[data-fuerte="true"] { background: #dbeafe; font-weight: 700; }
+
+        .ranking-row {
+            display: grid;
+            grid-template-columns: 30px 1fr 60px;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .ranking-pos {
+            font-weight: 900;
+            color: var(--azul-oficial);
+            text-align: center;
+        }
+        .ranking-pos.top1 { color: #d97706; font-size: 16px; }
+        .ranking-pos.top2 { color: #6b7280; }
+        .ranking-pos.top3 { color: #b45309; }
+        .ranking-bar-wrap {
+            background: #f1f5f9;
+            border-radius: 6px;
+            overflow: hidden;
+            height: 24px;
+            position: relative;
+        }
+        .ranking-bar {
+            background: linear-gradient(90deg, var(--azul-oficial), #38bdf8);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            color: white;
+            font-weight: 700;
+            font-size: 11px;
+            white-space: nowrap;
+            min-width: 24px;
+        }
+        .ranking-count {
+            text-align: right;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        @media (max-width: 900px) {
+            .analisis-avanzado { grid-template-columns: 1fr; }
+        }
+
         .alertas-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -331,6 +460,9 @@
             .gob-header,
             .stats-grid,
             .charts-grid,
+            .analisis-avanzado,
+            .alertas-grid,
+            #controlFiltros,
             .btn-metric-print,
             .modal-overlay,
             h2 {
@@ -691,6 +823,47 @@
                 <h3>🏥 Curva de Vulnerabilidad (Salud)</h3>
                 <div class="chart-container"><canvas id="chartVulnerabilidad"></canvas></div>
             </div>
+        </div>
+
+        <h2>Análisis Avanzado</h2>
+        <div class="analisis-avanzado">
+
+            <div class="analisis-card">
+                <h3>📊 Distribución por Edad (Histograma)</h3>
+                <div class="chart-container" style="height: 280px;"><canvas id="chartHistogramaEdad"></canvas></div>
+            </div>
+
+            <div class="analisis-card">
+                <h3>🏆 Ranking por Comuna (Top 10)</h3>
+                <div id="rankingComunas" style="max-height: 280px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="analisis-card analisis-pivote">
+                <h3>🔀 Tabla Pivote</h3>
+                <div class="pivote-selectores">
+                    <label>Filas (Eje Y): <select id="pivoteY">
+                        <option value="comuna" selected>Comuna</option>
+                        <option value="comunidad">Comunidad</option>
+                        <option value="parentesco">Parentesco</option>
+                        <option value="rango_edad">Rango de Edad</option>
+                        <option value="sexo">Sexo</option>
+                        <option value="tipo_vivienda">Tipo de Vivienda</option>
+                        <option value="nacionalidad">Nacionalidad</option>
+                    </select></label>
+                    <label>Columnas (Eje X): <select id="pivoteX">
+                        <option value="sexo" selected>Sexo</option>
+                        <option value="rango_edad">Rango de Edad</option>
+                        <option value="parentesco">Parentesco</option>
+                        <option value="tiene_gas">Tiene Gas</option>
+                        <option value="carnet_patria">Carnet Patria</option>
+                        <option value="discapacitado">Discapacidad</option>
+                        <option value="esta_cedulado">Cedulado</option>
+                        <option value="vd_vb_vo_seleccion">Estatus Electoral</option>
+                    </select></label>
+                </div>
+                <div id="tablaPivote" style="overflow-x: auto;"></div>
+            </div>
+
         </div>
 
         <div class="print-only">
@@ -1173,10 +1346,18 @@
             }
         }
 
-        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => { 
+        document.querySelectorAll('.search-grid input, .search-grid select').forEach(element => {
             if(element.id !== 'fComuna' && element.id !== 'fComunidad') {
-                element.addEventListener('input', calcularEstadisticas); 
+                element.addEventListener('input', calcularEstadisticas);
             }
+        });
+
+        // Cambios en los selects del pivote → refrescan solo la tabla pivote (sin recalcular todo)
+        ['pivoteY', 'pivoteX'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', () => {
+                actualizarTablaPivote(obtenerHabitantesFiltrados());
+            });
         });
 
         function cargarDatos() {
@@ -1558,6 +1739,223 @@
             `;
         }
 
+        // Devuelve una array de habitantes que cumplen TODOS los filtros activos del dashboard.
+        // Centraliza la lógica de filtrado para que el análisis avanzado siempre coincida con los stat cards.
+        function obtenerHabitantesFiltrados() {
+            const fComuna = document.getElementById('fComuna').value.toUpperCase();
+            const fComunidad = document.getElementById('fComunidad').value.toUpperCase();
+            const fUbch = document.getElementById('fUbch').value.toUpperCase();
+            const fCalle = document.getElementById('fCalle').value.toUpperCase();
+            const fParentesco = document.getElementById('fParentesco').value.toLowerCase();
+            const fSexo = document.getElementById('fSexo').value.toLowerCase();
+            const fVoto = document.getElementById('fVoto').value.toUpperCase();
+            const fBeneficio = document.getElementById('fBeneficio').value.toLowerCase();
+            const fCondicion = document.getElementById('fCondicion').value.toLowerCase();
+            const fNacionalidad = (document.getElementById('fNacionalidad')?.value || '').toUpperCase();
+            const fEdadMin = parseInt(document.getElementById('fEdadMin')?.value);
+            const fEdadMax = parseInt(document.getElementById('fEdadMax')?.value);
+
+            let misComunas = [];
+            if (window.perfilOperador) {
+                misComunas = window.perfilOperador.comunas_asignadas || (window.perfilOperador.comuna_asignada ? [window.perfilOperador.comuna_asignada] : []);
+            }
+
+            const resultado = [];
+            for (let id in baseDeDatosHabitantes) {
+                const h = baseDeDatosHabitantes[id];
+                const comunaStr = (h.comuna || '').toUpperCase();
+                const comunidadStr = (h.comunidad || '').toUpperCase();
+                if (!esAdmin && misComunas.length > 0 && !misComunas.includes('TODAS')) {
+                    if (!misComunas.includes(comunaStr)) continue;
+                }
+                if (fComuna && !comunaStr.includes(fComuna)) continue;
+                if (fComunidad && !comunidadStr.includes(fComunidad)) continue;
+                if (fUbch && (h.ubch || '').trim().toUpperCase() !== fUbch) continue;
+                if (fCalle && (h.calle || '').trim().toUpperCase() !== fCalle) continue;
+                if (fParentesco && (h.parentesco || '').toLowerCase() !== fParentesco) continue;
+                if (fSexo && (h.sexo || '').toLowerCase() !== fSexo) continue;
+                if (fVoto && (h.vd_vb_vo_seleccion || '').toUpperCase() !== fVoto) continue;
+                if (fBeneficio) {
+                    if (fBeneficio === 'amor_mayor' && (h.cobra_amor_mayor || '').toLowerCase() !== 'si') continue;
+                    if (fBeneficio === 'carnet_patria' && (h.carnet_patria || '').toLowerCase() !== 'si') continue;
+                    if (fBeneficio === 'mision_jose_gregorio' && (h.mision_jose_gregorio || '').toLowerCase() !== 'si') continue;
+                    if (fBeneficio === 'hogares_patria_bono' && (h.hogares_patria_bono || '').toLowerCase() !== 'si') continue;
+                }
+                if (fCondicion) {
+                    if (fCondicion === 'discapacidad' && (h.discapacitado || '').toLowerCase() !== 'si') continue;
+                    if (fCondicion === 'embarazada' && (h.embarazada || '').toLowerCase() !== 'si') continue;
+                    if (fCondicion === 'lactancia' && (h.lactancia_materna || '').toLowerCase() !== 'si') continue;
+                    if (fCondicion === 'con_observaciones' && !((h.observaciones_carga || '').toString().trim())) continue;
+                    if (fCondicion === 'enfermedad') {
+                        const ev = evaluarSalud(h);
+                        if (!ev.tieneEnf && !ev.tieneMed) continue;
+                    }
+                }
+                if (fNacionalidad && (h.nacionalidad || 'V').toUpperCase() !== fNacionalidad) continue;
+                const edad = calcularEdad(h.fecha_nacimiento);
+                if (!isNaN(fEdadMin) && edad < fEdadMin) continue;
+                if (!isNaN(fEdadMax) && edad > fEdadMax) continue;
+                resultado.push({ id, h, edad });
+            }
+            return resultado;
+        }
+
+        // === Histograma de edades (chart.js) ===
+        let chartEdadInst = null;
+        function actualizarHistogramaEdad(habitantesFiltrados) {
+            const ctxEl = document.getElementById('chartHistogramaEdad');
+            if (!ctxEl) return;
+            const bins = [
+                { label: '0-9', min: 0, max: 9, count: 0 },
+                { label: '10-19', min: 10, max: 19, count: 0 },
+                { label: '20-29', min: 20, max: 29, count: 0 },
+                { label: '30-39', min: 30, max: 39, count: 0 },
+                { label: '40-49', min: 40, max: 49, count: 0 },
+                { label: '50-59', min: 50, max: 59, count: 0 },
+                { label: '60-69', min: 60, max: 69, count: 0 },
+                { label: '70-79', min: 70, max: 79, count: 0 },
+                { label: '80+', min: 80, max: 200, count: 0 }
+            ];
+            habitantesFiltrados.forEach(({edad}) => {
+                if (edad < 0 || edad > 200) return;
+                const bin = bins.find(b => edad >= b.min && edad <= b.max);
+                if (bin) bin.count++;
+            });
+            if (chartEdadInst) chartEdadInst.destroy();
+            chartEdadInst = new Chart(ctxEl.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: bins.map(b => b.label),
+                    datasets: [{
+                        label: 'Habitantes',
+                        data: bins.map(b => b.count),
+                        backgroundColor: ['#0284c7','#0ea5e9','#38bdf8','#7dd3fc','#bae6fd','#fef3c7','#fcd34d','#f59e0b','#d97706'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, title: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        }
+
+        // === Ranking por comuna (top 10) ===
+        function actualizarRankingComunas(habitantesFiltrados) {
+            const cont = document.getElementById('rankingComunas');
+            if (!cont) return;
+            const conteo = new Map();
+            habitantesFiltrados.forEach(({h}) => {
+                const c = (h.comuna || 'SIN ASIGNAR').toString().toUpperCase();
+                conteo.set(c, (conteo.get(c) || 0) + 1);
+            });
+            const top = Array.from(conteo.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            if (top.length === 0) {
+                cont.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">Sin datos con los filtros actuales.</div>';
+                return;
+            }
+            const max = top[0][1];
+            cont.innerHTML = top.map(([comuna, cantidad], idx) => {
+                const pos = idx + 1;
+                const pct = (cantidad / max) * 100;
+                const claseTop = pos === 1 ? 'top1' : (pos === 2 ? 'top2' : (pos === 3 ? 'top3' : ''));
+                return `
+                    <div class="ranking-row">
+                        <div class="ranking-pos ${claseTop}">${pos === 1 ? '🥇' : (pos === 2 ? '🥈' : (pos === 3 ? '🥉' : '#' + pos))}</div>
+                        <div class="ranking-bar-wrap">
+                            <div class="ranking-bar" style="width: ${pct}%;" title="${comuna}: ${cantidad}">${comuna}</div>
+                        </div>
+                        <div class="ranking-count">${cantidad}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // === Tabla Pivote (cruce de 2 dimensiones) ===
+        function dimensionDe(h, edad, dim) {
+            switch(dim) {
+                case 'comuna': return (h.comuna || 'SIN ASIGNAR').toString().toUpperCase();
+                case 'comunidad': return (h.comunidad || 'SIN ASIGNAR').toString().toUpperCase();
+                case 'parentesco': return ((h.parentesco || 'otro').toString().toUpperCase());
+                case 'sexo': return ((h.sexo || 'NO INDICADO').toString().toUpperCase());
+                case 'tipo_vivienda': return ((h.tipo_vivienda || 'NO INDICADA').toString().toUpperCase());
+                case 'nacionalidad': return ((h.nacionalidad || 'V').toString().toUpperCase());
+                case 'tiene_gas': return ((h.tiene_gas || 'no').toString().toLowerCase() === 'si') ? 'CON GAS' : 'SIN GAS';
+                case 'carnet_patria': return ((h.carnet_patria || 'no').toString().toLowerCase() === 'si') ? 'CON CARNET' : 'SIN CARNET';
+                case 'discapacitado': return ((h.discapacitado || 'no').toString().toLowerCase() === 'si') ? 'CON DISCAPACIDAD' : 'SIN DISCAPACIDAD';
+                case 'esta_cedulado': return ((h.esta_cedulado || 'no').toString().toLowerCase() === 'si') ? 'CEDULADO' : 'NO CEDULADO';
+                case 'vd_vb_vo_seleccion': return ((h.vd_vb_vo_seleccion || 'SIN ESTATUS').toString().toUpperCase());
+                case 'rango_edad':
+                    if (edad < 0) return 'EDAD DESCONOCIDA';
+                    if (edad < 18) return '0-17';
+                    if (edad < 30) return '18-29';
+                    if (edad < 50) return '30-49';
+                    if (edad < 65) return '50-64';
+                    return '65+';
+                default: return 'OTRO';
+            }
+        }
+
+        function actualizarTablaPivote(habitantesFiltrados) {
+            const dimY = document.getElementById('pivoteY')?.value || 'comuna';
+            const dimX = document.getElementById('pivoteX')?.value || 'sexo';
+            const cont = document.getElementById('tablaPivote');
+            if (!cont) return;
+
+            const grid = new Map(); // dimY -> Map(dimX -> count)
+            const totalesX = new Map();
+            const totalesY = new Map();
+
+            habitantesFiltrados.forEach(({h, edad}) => {
+                const y = dimensionDe(h, edad, dimY);
+                const x = dimensionDe(h, edad, dimX);
+                if (!grid.has(y)) grid.set(y, new Map());
+                const fila = grid.get(y);
+                fila.set(x, (fila.get(x) || 0) + 1);
+                totalesX.set(x, (totalesX.get(x) || 0) + 1);
+                totalesY.set(y, (totalesY.get(y) || 0) + 1);
+            });
+
+            if (grid.size === 0) {
+                cont.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:20px;">Sin datos con los filtros actuales.</div>';
+                return;
+            }
+
+            const ejesY = Array.from(totalesY.entries()).sort((a, b) => b[1] - a[1]);
+            const ejesX = Array.from(totalesX.keys()).sort();
+            const total = habitantesFiltrados.length;
+            const promedio = total / Math.max(1, ejesY.length * ejesX.length);
+
+            let html = '<table><thead><tr><th></th>';
+            ejesX.forEach(x => { html += `<th>${x}</th>`; });
+            html += `<th style="background:#1e293b;">TOTAL</th></tr></thead><tbody>`;
+            ejesY.forEach(([y, totalY]) => {
+                html += `<tr><th>${y}</th>`;
+                ejesX.forEach(x => {
+                    const v = (grid.get(y).get(x) || 0);
+                    const zero = v === 0;
+                    const fuerte = v >= promedio * 2;
+                    html += `<td data-zero="${zero}" data-fuerte="${fuerte}">${v || ''}</td>`;
+                });
+                html += `<td style="background:#dbeafe; font-weight:800;">${totalY}</td></tr>`;
+            });
+            html += '</tbody><tfoot><tr><th>TOTAL</th>';
+            ejesX.forEach(x => { html += `<td>${totalesX.get(x)}</td>`; });
+            html += `<th>${total}</th></tr></tfoot></table>`;
+            cont.innerHTML = html;
+        }
+
+        // Refrescador centralizado del análisis avanzado.
+        // Se invoca desde calcularEstadisticas y desde cambios en los selects del pivote.
+        function actualizarAnalisisAvanzado() {
+            const filtrados = obtenerHabitantesFiltrados();
+            actualizarHistogramaEdad(filtrados);
+            actualizarRankingComunas(filtrados);
+            actualizarTablaPivote(filtrados);
+        }
+
         function actualizarGraficos(d) {
             if(chartElectoralInst) chartElectoralInst.destroy();
             if(chartDemograficoInst) chartDemograficoInst.destroy();
@@ -1827,6 +2225,7 @@
             };
             
             actualizarGraficos(totalesContexto);
+            actualizarAnalisisAvanzado();
 
             document.getElementById('printMetricsSummary').innerHTML = imprimirResumenMetricas(totalesContexto);
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;

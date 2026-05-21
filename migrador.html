@@ -288,7 +288,14 @@
                 skipEmptyLines: true,
                 delimiter: ';',
                 encoding: 'windows-1252',
-                transformHeader: h => (h || '').trim(),
+                // Normalización agresiva de headers: trim, uppercase, espacios colapsados,
+                // BOM y caracteres invisibles eliminados. Así da igual si el Excel exporta
+                // "COMUNA", "Comuna", "COMUNA " o "﻿COMUNA" — todos quedan como "COMUNA".
+                transformHeader: h => (h || '').toString()
+                    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+                    .trim()
+                    .toUpperCase()
+                    .replace(/\s+/g, ' '),
                 complete: async function(results) {
                     const datos = results.data;
                     const totalDatos = datos.length;
@@ -300,10 +307,29 @@
                     let conAdvertencia = 0;   // se subió pero con valores por defecto
                     let conError = 0;          // se subió tras error de procesamiento
                     let filasVacias = 0;       // fila totalmente vacía en el CSV (todos los campos en blanco)
+                    let conHerencia = 0;       // se completó al menos un campo heredando del jefe del hogar
                     // Detalle de cada registro con advertencias para mostrar al final
                     const listaConAdvertencia = []; // [{fila, nombre, cedula, observaciones, id_firebase}]
                     const listaConError = [];       // [{fila, nombre, cedula, mensaje, id_firebase}]
                     const habitantesRef = ref(database, 'habitantes');
+
+                    // Rastreo del último hogar válido visto en el CSV. Cuando una fila NO es jefe
+                    // y le faltan campos territoriales/vivienda, los hereda de este hogar.
+                    // Esto resuelve el caso típico donde el operador solo llena la dirección
+                    // del jefe y deja vacías las filas de los dependientes que vienen abajo.
+                    let ultimoHogarValido = null;
+
+                    // Lee un campo del CSV probando varios alias por si el header viene escrito
+                    // de forma distinta (con/sin acentos, abreviaturas, etc.).
+                    function getCampoFlexible(fila, ...alias) {
+                        for (const a of alias) {
+                            const v = fila[a];
+                            if (v !== undefined && v !== null && v.toString().trim() !== '') {
+                                return v.toString().trim();
+                            }
+                        }
+                        return '';
+                    }
 
                     // Lista temporal para la Fase 2 (Solo guarda ID y Rol para no gastar RAM)
                     let mapaParaFase2 = [];
@@ -339,8 +365,44 @@
                         }
 
                         // Política nueva: NUNCA descartamos una fila con datos. Si faltan campos clave,
-                        // asignamos defaults y dejamos rastro en `observaciones_carga` para revisar después.
+                        // primero intentamos heredar del último hogar válido (jefe que vino antes en el CSV),
+                        // y solo después aplicamos defaults con advertencia.
+
                         const observaciones = [];
+                        const camposHeredados = [];
+
+                        // Detectar si la fila actual es jefe (para decidir si puede heredar o no)
+                        const _responsabilidad = getCampoFlexible(fila, 'RESPONSABILIDAD CBI, CM', 'RESPONSABILIDAD CBI CM', 'RESPONSABILIDAD').toUpperCase();
+                        const _parentescoCSV = getCampoFlexible(fila, 'PARENTEZCO', 'PARENTESCO').toUpperCase();
+                        const esJefeEnCSV = _responsabilidad.includes('JEFE') || _parentescoCSV.includes('JEFE');
+
+                        // Campos territoriales y de vivienda que pueden heredarse
+                        const camposHeredables = [
+                            { key: 'COMUNA', label: 'comuna' },
+                            { key: 'COMUNIDAD', label: 'comunidad' },
+                            { key: 'NOMBRE DEL CONSEJO COMUNAL', label: 'consejo comunal' },
+                            { key: 'CALLE', label: 'calle' },
+                            { key: 'NUMERO DE CASA', label: 'número de casa' },
+                            { key: 'UBCH A LA QUE PERTENECE', label: 'ubch' },
+                            { key: 'CODIGO SITUR ACTUAL', label: 'código situr' },
+                            { key: 'TIPO DE VIVIENDA', label: 'tipo de vivienda' },
+                            { key: 'CONDICIONES DE VIVIENDA', label: 'tenencia de vivienda' },
+                            { key: 'CONDICIONES DE LA VIVIENDA', label: 'condiciones de vivienda' }
+                        ];
+
+                        // HERENCIA: si NO es jefe y existe un hogar previo válido, completar lo que falte
+                        if (!esJefeEnCSV && ultimoHogarValido) {
+                            camposHeredables.forEach(({key, label}) => {
+                                const valActual = (fila[key] || '').toString().trim();
+                                const valHerencia = ultimoHogarValido[key];
+                                if (valActual === '' && valHerencia) {
+                                    fila[key] = valHerencia;
+                                    camposHeredados.push(label);
+                                }
+                            });
+                        }
+
+                        // VALIDACIÓN POST-HERENCIA: si TODAVÍA faltan los campos críticos, aplicar defaults
                         const nombreRaw = (fila['NOMBRE Y APELLIDO'] || '').toString().trim();
                         if (nombreRaw === '') {
                             observaciones.push('SIN NOMBRE EN EL CSV');
@@ -355,6 +417,21 @@
                         if (_comunidad === '') {
                             observaciones.push('SIN COMUNIDAD');
                             fila['COMUNIDAD'] = 'SIN ASIGNAR';
+                        }
+
+                        // Si es jefe Y tiene comuna+comunidad reales, esta fila pasa a ser el "último hogar válido"
+                        // para futuras herencias de los dependientes que vengan debajo en el CSV.
+                        if (esJefeEnCSV && fila['COMUNA'] !== 'SIN ASIGNAR' && fila['COMUNIDAD'] !== 'SIN ASIGNAR') {
+                            ultimoHogarValido = {};
+                            camposHeredables.forEach(({key}) => {
+                                const v = (fila[key] || '').toString().trim();
+                                if (v) ultimoHogarValido[key] = v;
+                            });
+                        }
+
+                        if (camposHeredados.length > 0) {
+                            conHerencia++;
+                            escribirLog(`🔗 Fila ${i+1} <b>${(fila['NOMBRE Y APELLIDO'] || '').toString()}</b>: heredó del jefe → ${camposHeredados.join(', ')}.`, "log-family");
                         }
                         if (observaciones.length > 0) {
                             escribirLog(`⚠️ Fila ${i+1} con advertencias [${observaciones.join(', ')}]: ${fila['NOMBRE Y APELLIDO']} — se sube con valores por defecto.`, "log-warning");
@@ -644,7 +721,7 @@
                         }
                     }
 
-                    escribirLog(`✅ FASE 1 COMPLETADA. Resumen: ${subidos} habitantes subidos correctamente, ${conAdvertencia} con advertencias (defaults aplicados), ${conError} rescatados tras error de procesamiento, ${filasVacias} filas vacías ignoradas. Total CSV: ${totalDatos}.`, "log-success");
+                    escribirLog(`✅ FASE 1 COMPLETADA. Resumen: ${subidos} habitantes subidos, ${conHerencia} completados heredando del jefe del hogar, ${conAdvertencia} con advertencias (defaults aplicados), ${conError} rescatados tras error, ${filasVacias} filas vacías ignoradas. Total CSV: ${totalDatos}.`, "log-success");
 
                     // ==========================================
                     // FASE 2 - BARRIDO DE VINCULACIÓN (SIN BORRAR)
@@ -736,6 +813,7 @@
                         `¡Ingesta de Datos completada!\n\n` +
                         `CSV original: ${totalDatos} filas\n` +
                         `  ✅ Subidos correctamente: ${subidos - conAdvertencia - conError}\n` +
+                        `  🔗 Completados heredando del jefe del hogar: ${conHerencia}\n` +
                         `  ⚠️ Subidos con advertencias (defaults aplicados): ${conAdvertencia}\n` +
                         `  🆘 Rescatados tras error de procesamiento: ${conError}\n` +
                         `  ⏭️ Filas vacías ignoradas: ${filasVacias}\n` +
