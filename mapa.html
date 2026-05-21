@@ -447,8 +447,13 @@
                 if ((h.mision_jose_gregorio || '').toLowerCase() === 'si') beneficios.push('Mis. JGH');
                 if ((h.hogares_patria_bono || '').toLowerCase() === 'si') beneficios.push('Hogares Patria');
 
+                const fotoHTML = h.foto_url
+                    ? `<img src="${h.foto_url}" style="width:100%; max-width:180px; height:140px; object-fit:cover; border-radius:6px; margin-bottom:6px; display:block;">`
+                    : '';
+
                 const html = `
                     <div class="popup-habitante">
+                        ${fotoHTML}
                         <h4>${h.nombre || ''} ${h.apellido || ''}</h4>
                         <div class="dato"><b>C.I:</b> ${cedula}</div>
                         <div class="dato"><b>Parentesco:</b> ${(h.parentesco || '').toUpperCase()}</div>

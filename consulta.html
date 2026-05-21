@@ -844,6 +844,22 @@
                 </div>
 
                 <h3 class="section-title">3. Datos Personales</h3>
+                <div style="display: flex; gap: 18px; padding: 14px; background: #f8fafc; border-radius: 10px; margin-bottom: 18px; align-items: center;">
+                    <div id="e_foto_contenedor" style="width: 130px; height: 160px; background: #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px dashed #94a3b8; flex-shrink: 0;">
+                        <span id="e_foto_placeholder" style="color: #94a3b8; font-size: 50px;">👤</span>
+                        <img id="e_foto_preview" src="" style="display:none; width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                        <label style="font-size: 13px; font-weight: bold; text-transform: uppercase; color: var(--azul-oficial); margin: 0;">📷 Foto del Habitante</label>
+                        <input type="hidden" id="e_foto_url" name="foto_url" value="">
+                        <input type="file" id="e_foto_input" accept="image/*" capture="environment" style="display:none;" onchange="window.subirFoto(event)">
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" onclick="document.getElementById('e_foto_input').click()" style="background:#0284c7; color:white; border:none; padding:9px 14px; border-radius:6px; font-size:12px; font-weight:bold; cursor:pointer;">📷 Subir / Cambiar Foto</button>
+                            <button type="button" id="e_foto_borrar" onclick="window.borrarFoto()" style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; padding:9px 14px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; display:none;">🗑 Borrar</button>
+                        </div>
+                        <small style="color:#64748b; font-size:11px;">Imagen máx 2MB · Se comprime automáticamente a ~100KB JPEG.</small>
+                    </div>
+                </div>
                 <div class="form-grid">
                     <div>
                         <label>Nombres:</label>
@@ -1815,6 +1831,12 @@
             llenarCampo('e_esta_cedulado', h.esta_cedulado);
             llenarCampo('e_padece_enfermedad', h.padece_enfermedad);
             llenarCampo('e_cual_enfermedad', h.cual_enfermedad);
+
+            // Cargar foto del habitante (si existe)
+            const fotoActual = h.foto_url || '';
+            document.getElementById('e_foto_url').value = fotoActual;
+            mostrarFoto(fotoActual);
+
             llenarCampo('e_toma_medicamento', h.toma_medicamento);
             llenarCampo('e_cual_medicamento', h.cual_medicamento);
             llenarCampo('e_discapacitado', h.discapacitado); 
@@ -2001,6 +2023,76 @@
                 msg.style.color = 'var(--rojo-oficial)';
             }
         };
+
+        // === FOTO DEL HABITANTE ===
+        // Comprime imagen a JPEG max 800px ancho, calidad 0.7 → ~50-100KB.
+        // Se guarda como data URL inline en h.foto_url. Sin Firebase Storage.
+        function comprimirImagen(file, maxAncho = 800, calidad = 0.7) {
+            return new Promise((resolve, reject) => {
+                if (!file.type.startsWith('image/')) {
+                    reject(new Error('El archivo no es una imagen.'));
+                    return;
+                }
+                if (file.size > 2 * 1024 * 1024) {
+                    reject(new Error('La imagen pesa más de 2MB. Tomá una con menos calidad.'));
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const ratio = img.width / img.height;
+                        let w = img.width, h = img.height;
+                        if (w > maxAncho) { w = maxAncho; h = Math.round(maxAncho / ratio); }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', calidad));
+                    };
+                    img.onerror = () => reject(new Error('No se pudo decodificar la imagen.'));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.subirFoto = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                const dataURL = await comprimirImagen(file);
+                document.getElementById('e_foto_url').value = dataURL;
+                mostrarFoto(dataURL);
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+            event.target.value = ''; // permite re-subir el mismo archivo
+        };
+
+        window.borrarFoto = () => {
+            if (!confirm('¿Borrar la foto del habitante?')) return;
+            document.getElementById('e_foto_url').value = '';
+            mostrarFoto('');
+        };
+
+        function mostrarFoto(dataURL) {
+            const img = document.getElementById('e_foto_preview');
+            const placeholder = document.getElementById('e_foto_placeholder');
+            const btnBorrar = document.getElementById('e_foto_borrar');
+            if (dataURL) {
+                img.src = dataURL;
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+                btnBorrar.style.display = 'inline-block';
+            } else {
+                img.src = '';
+                img.style.display = 'none';
+                placeholder.style.display = 'block';
+                btnBorrar.style.display = 'none';
+            }
+        }
 
         window.marcarCompromiso = async (id, nuevoEstado) => {
             try {
