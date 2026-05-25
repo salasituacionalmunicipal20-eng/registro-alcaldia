@@ -252,7 +252,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, get, child, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, get, child, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -355,21 +355,15 @@
             btn.innerHTML = '<span class="loader-pequeno"></span> Enviando...';
 
             try {
-                // Anti-duplicado client-side: revisar si la cédula ya participó
-                const existentes = await get(child(ref(database), 'encuestas_consulta_popular'));
-                if (existentes.exists()) {
-                    const yaParticipo = Object.values(existentes.val()).some(r => r.cedula === f.cedula);
-                    if (yaParticipo) {
-                        mostrarMensaje('Ya registramos una respuesta con esta cédula. Solo puedes participar una vez.');
-                        btn.disabled = false; btn.textContent = 'Enviar mi opinión';
-                        return;
-                    }
-                }
-
-                // Insertar
-                const nuevoRef = push(ref(database, 'encuestas_consulta_popular'));
-                await set(nuevoRef, {
+                // La cedula es la KEY del registro. Las reglas de Firebase rechazan
+                // si esa key ya existe (regla: !data.exists() && newData.exists()),
+                // asi el anti-duplicado se hace server-side y sin necesidad de
+                // poder leer publicamente toda la lista de respuestas.
+                const keyLimpia = f.cedula.replace(/[^A-Z0-9]/g, '');
+                const refResp = ref(database, `encuestas_consulta_popular/${keyLimpia}`);
+                await set(refResp, {
                     ...f,
+                    cedula: keyLimpia,
                     edad: edadNum,
                     fecha_envio: new Date().toISOString(),
                     user_agent: navigator.userAgent.substring(0, 200)
@@ -380,7 +374,14 @@
                 document.getElementById('vistaGracias').classList.remove('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (e) {
-                mostrarMensaje('No se pudo enviar: ' + (e.message || 'error de red'));
+                // Si la cedula ya envio antes, Firebase devuelve PERMISSION_DENIED
+                // porque la regla !data.exists() bloquea el rewrite.
+                const msg = (e.message || '').toLowerCase();
+                if (msg.includes('permission_denied') || msg.includes('permission denied')) {
+                    mostrarMensaje('Ya registramos una respuesta con esta cédula. Solo puedes participar una vez. ¡Gracias!');
+                } else {
+                    mostrarMensaje('No se pudo enviar: ' + (e.message || 'error de red'));
+                }
                 btn.disabled = false;
                 btn.textContent = 'Enviar mi opinión';
             }
