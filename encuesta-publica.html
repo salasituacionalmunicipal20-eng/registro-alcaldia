@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Consulta Popular - Municipio Cristóbal Rojas</title>
+    <meta name="description" content="Participa en la Consulta Popular del Municipio Cristóbal Rojas. Tu opinión construye nuestra comunidad." />
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #0ea5e9 100%);
+            color: #0f172a;
+            padding: 0;
+        }
+        .contenedor { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+        .header {
+            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+            color: white; padding: 28px 24px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 18px; text-align: center;
+        }
+        .header-titulo { font-size: 14px; opacity: 0.95; margin: 0 0 4px; letter-spacing: 1.5px; font-weight: 700; text-transform: uppercase; }
+        .header h1 { margin: 0; font-size: 30px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; }
+        .header-sub { margin-top: 10px; font-size: 14px; opacity: 0.95; font-weight: 500; }
+
+        .tarjeta {
+            background: white; border-radius: 18px; padding: 22px;
+            margin-bottom: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        .tarjeta-titulo {
+            display: flex; align-items: center; gap: 10px;
+            margin: 0 0 4px; font-size: 14px; font-weight: 800;
+            color: #1d4ed8; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .tarjeta-desc { color: #475569; font-size: 13px; margin: 0 0 18px; font-weight: 500; }
+
+        .campo { margin-bottom: 14px; }
+        .campo label {
+            display: block; font-size: 12px; font-weight: 800; color: #334155;
+            margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .campo .req { color: #ef4444; }
+        .campo input, .campo select, .campo textarea {
+            width: 100%; padding: 13px 14px; border-radius: 10px;
+            border: 1.5px solid #cbd5e1; background: #f8fafc; color: #0f172a;
+            font-size: 15px; font-weight: 500; font-family: inherit; outline: none;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .campo input:focus, .campo select:focus, .campo textarea:focus {
+            border-color: #2563eb; background: white;
+        }
+        .campo textarea { resize: vertical; min-height: 90px; }
+        .fila { display: grid; gap: 12px; }
+        @media (min-width: 600px) {
+            .fila-2 { grid-template-columns: 1fr 1fr; }
+            .fila-3 { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        .pregunta-card {
+            border-radius: 16px; padding: 18px; margin-bottom: 14px;
+            color: white; box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        }
+        .pregunta-card.azul   { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
+        .pregunta-card.naranja { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+        .pregunta-card.verde  { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); }
+        .pregunta-card h3 {
+            margin: 0 0 12px; font-size: 17px; font-weight: 800;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .pregunta-card .num {
+            background: rgba(255,255,255,0.25); width: 32px; height: 32px;
+            border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 900;
+        }
+        .pregunta-card textarea {
+            width: 100%; padding: 12px; border-radius: 10px; border: none;
+            background: rgba(255,255,255,0.95); color: #0f172a;
+            font-size: 15px; font-family: inherit; outline: none;
+            min-height: 100px; resize: vertical;
+        }
+        .pregunta-card .check {
+            display: flex; align-items: center; gap: 10px; margin-top: 12px;
+            background: rgba(255,255,255,0.15); padding: 12px; border-radius: 10px;
+            cursor: pointer;
+        }
+        .pregunta-card .check input { width: 22px; height: 22px; cursor: pointer; accent-color: white; }
+        .pregunta-card .check span { font-weight: 700; font-size: 14px; }
+
+        .btn-enviar {
+            width: 100%; padding: 18px; border: none; border-radius: 14px;
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: white; font-size: 17px; font-weight: 900; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 10px 24px rgba(22,163,74,0.4);
+            transition: transform 0.1s, opacity 0.15s;
+        }
+        .btn-enviar:hover { transform: translateY(-1px); }
+        .btn-enviar:active { transform: translateY(0); }
+        .btn-enviar:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .mensaje { padding: 14px 16px; border-radius: 10px; margin-bottom: 14px; font-weight: 700; font-size: 14px; }
+        .mensaje.error { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+        .mensaje.exito { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+
+        .pantalla-gracias {
+            background: white; border-radius: 18px; padding: 40px 24px;
+            text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        .pantalla-gracias .check-grande {
+            width: 90px; height: 90px; border-radius: 50%;
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 56px; margin-bottom: 16px;
+        }
+        .pantalla-gracias h2 { margin: 0 0 8px; color: #0f172a; font-size: 26px; font-weight: 900; }
+        .pantalla-gracias p { color: #475569; font-size: 15px; margin: 0 0 24px; }
+        .pantalla-gracias button {
+            padding: 12px 28px; background: #2563eb; color: white; border: none;
+            border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 14px;
+        }
+
+        .footer {
+            text-align: center; color: rgba(255,255,255,0.85); padding: 20px 12px 8px;
+            font-size: 12px; font-weight: 500;
+        }
+        .footer strong { color: white; }
+
+        .hidden { display: none !important; }
+        .loader-pequeno { display: inline-block; width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girar 0.8s linear infinite; }
+        @keyframes girar { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+
+        <!-- HEADER -->
+        <div class="header">
+            <p class="header-titulo">Municipio Cristóbal Rojas</p>
+            <h1>Consulta Popular 🗳️</h1>
+            <div class="header-sub">Participa, opina y construyamos juntos las soluciones de nuestra comunidad</div>
+        </div>
+
+        <!-- MENSAJE GLOBAL -->
+        <div id="mensajeGlobal"></div>
+
+        <!-- VISTA FORMULARIO -->
+        <div id="vistaForm">
+
+            <!-- DATOS PERSONALES -->
+            <div class="tarjeta">
+                <h3 class="tarjeta-titulo">📋 Tus datos</h3>
+                <p class="tarjeta-desc">Necesitamos identificarte para tu cédula no se duplique en la consulta.</p>
+
+                <div class="fila fila-2">
+                    <div class="campo">
+                        <label>Nombres <span class="req">*</span></label>
+                        <input id="f_nombres" type="text" placeholder="Juan José" required maxlength="60" />
+                    </div>
+                    <div class="campo">
+                        <label>Apellidos <span class="req">*</span></label>
+                        <input id="f_apellidos" type="text" placeholder="Pérez García" required maxlength="60" />
+                    </div>
+                </div>
+
+                <div class="fila fila-2">
+                    <div class="campo">
+                        <label>Cédula de Identidad <span class="req">*</span></label>
+                        <input id="f_cedula" type="text" placeholder="V12345678" required maxlength="12" />
+                    </div>
+                    <div class="campo">
+                        <label>Edad <span class="req">*</span></label>
+                        <input id="f_edad" type="number" placeholder="30" min="15" max="120" required />
+                    </div>
+                </div>
+
+                <div class="fila fila-2">
+                    <div class="campo">
+                        <label>Sexo <span class="req">*</span></label>
+                        <select id="f_sexo" required>
+                            <option value="">Seleccione</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>Teléfono (opcional)</label>
+                        <input id="f_telefono" type="tel" placeholder="0414-1234567" maxlength="20" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- UBICACIÓN -->
+            <div class="tarjeta">
+                <h3 class="tarjeta-titulo">📍 Tu ubicación</h3>
+                <p class="tarjeta-desc">¿En qué comuna y comunidad vives?</p>
+
+                <div class="fila fila-2">
+                    <div class="campo">
+                        <label>Comuna / Circuito <span class="req">*</span></label>
+                        <select id="f_comuna" required>
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>Comunidad <span class="req">*</span></label>
+                        <select id="f_comunidad" required disabled>
+                            <option value="">Primero seleccione una comuna</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PREGUNTAS -->
+            <div class="pregunta-card azul">
+                <h3><span class="num">1</span> ¿Qué debemos mejorar?</h3>
+                <textarea id="f_q1" placeholder="Cuéntanos qué necesita mejorar en tu comunidad..." required maxlength="800"></textarea>
+            </div>
+
+            <div class="pregunta-card naranja">
+                <h3><span class="num">2</span> ¿Tienes alguna duda referente a la Consulta Popular?</h3>
+                <textarea id="f_q2" placeholder="Escribe tus dudas o preguntas (deja en blanco si no tienes ninguna)." maxlength="800"></textarea>
+            </div>
+
+            <div class="pregunta-card verde">
+                <h3><span class="num">3</span> Tu propuesta para construir soluciones</h3>
+                <textarea id="f_q3" placeholder="Propón ideas concretas para resolver problemas de tu comunidad..." required maxlength="800"></textarea>
+                <label class="check">
+                    <input id="f_quiere_participar" type="checkbox" />
+                    <span>Quiero participar activamente en mesas de trabajo</span>
+                </label>
+            </div>
+
+            <button id="btnEnviar" class="btn-enviar" type="button">
+                Enviar mi opinión
+            </button>
+        </div>
+
+        <!-- VISTA GRACIAS -->
+        <div id="vistaGracias" class="pantalla-gracias hidden">
+            <div class="check-grande">✓</div>
+            <h2>¡Gracias por participar!</h2>
+            <p>Tu opinión fue registrada con éxito y será revisada por nuestro equipo.<br>Comparte este enlace con otros vecinos para que también participen.</p>
+            <button onclick="navigator.clipboard.writeText(location.href).then(()=>alert('Enlace copiado'))">📋 Copiar enlace</button>
+        </div>
+
+        <div class="footer">
+            <strong>Alcaldesa Yuhismar Hernández</strong> · Municipio Cristóbal Rojas · COMUNA O NADA
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, get, child, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        let datosTerritoriales = {};
+
+        // Cargar comunas y comunidades desde /filtros_territoriales
+        get(child(ref(database), 'filtros_territoriales')).then((snap) => {
+            const fComuna = document.getElementById('f_comuna');
+            if (snap.exists()) {
+                datosTerritoriales = snap.val();
+                fComuna.innerHTML = '<option value="">Selecciona tu comuna</option>';
+                Object.keys(datosTerritoriales).sort().forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c; opt.textContent = c;
+                    fComuna.appendChild(opt);
+                });
+            } else {
+                fComuna.innerHTML = '<option value="">No hay comunas registradas</option>';
+            }
+        }).catch(e => {
+            document.getElementById('f_comuna').innerHTML = '<option value="">Error cargando comunas</option>';
+            console.error(e);
+        });
+
+        // Cascada comuna -> comunidad
+        document.getElementById('f_comuna').addEventListener('change', (e) => {
+            const sel = e.target.value;
+            const fComunidad = document.getElementById('f_comunidad');
+            fComunidad.innerHTML = '<option value="">Selecciona tu comunidad</option>';
+            if (sel && datosTerritoriales[sel]) {
+                fComunidad.disabled = false;
+                datosTerritoriales[sel].slice().sort().forEach(cd => {
+                    const opt = document.createElement('option');
+                    opt.value = cd; opt.textContent = cd;
+                    fComunidad.appendChild(opt);
+                });
+            } else {
+                fComunidad.disabled = true;
+                fComunidad.innerHTML = '<option value="">Primero selecciona una comuna</option>';
+            }
+        });
+
+        // Helpers
+        const mostrarMensaje = (texto, tipo = 'error') => {
+            const div = document.getElementById('mensajeGlobal');
+            div.className = `mensaje ${tipo}`;
+            div.textContent = texto;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+        const limpiarMensaje = () => {
+            const div = document.getElementById('mensajeGlobal');
+            div.className = '';
+            div.textContent = '';
+        };
+
+        // Submit
+        document.getElementById('btnEnviar').addEventListener('click', async () => {
+            limpiarMensaje();
+            const f = {
+                nombres: document.getElementById('f_nombres').value.trim(),
+                apellidos: document.getElementById('f_apellidos').value.trim(),
+                cedula: document.getElementById('f_cedula').value.trim().toUpperCase(),
+                edad: document.getElementById('f_edad').value,
+                sexo: document.getElementById('f_sexo').value,
+                telefono: document.getElementById('f_telefono').value.trim(),
+                comuna: document.getElementById('f_comuna').value,
+                comunidad: document.getElementById('f_comunidad').value,
+                pregunta_mejorar: document.getElementById('f_q1').value.trim(),
+                pregunta_dudas: document.getElementById('f_q2').value.trim(),
+                pregunta_propuesta: document.getElementById('f_q3').value.trim(),
+                quiere_participar_mesa: document.getElementById('f_quiere_participar').checked
+            };
+
+            // Validaciones cliente
+            const obligatorios = ['nombres', 'apellidos', 'cedula', 'edad', 'sexo', 'comuna', 'comunidad', 'pregunta_mejorar', 'pregunta_propuesta'];
+            for (const k of obligatorios) {
+                if (!f[k]) { mostrarMensaje('Completa todos los campos marcados con asterisco (*)'); return; }
+            }
+            if (!/^[VEJPGvejpg]?\d{4,9}$/.test(f.cedula.replace(/[^A-Z0-9]/g, ''))) {
+                mostrarMensaje('La cédula tiene un formato inválido. Ej: V12345678'); return;
+            }
+            const edadNum = parseInt(f.edad, 10);
+            if (isNaN(edadNum) || edadNum < 15 || edadNum > 120) {
+                mostrarMensaje('La edad debe estar entre 15 y 120'); return;
+            }
+
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader-pequeno"></span> Enviando...';
+
+            try {
+                // Anti-duplicado client-side: revisar si la cédula ya participó
+                const existentes = await get(child(ref(database), 'encuestas_consulta_popular'));
+                if (existentes.exists()) {
+                    const yaParticipo = Object.values(existentes.val()).some(r => r.cedula === f.cedula);
+                    if (yaParticipo) {
+                        mostrarMensaje('Ya registramos una respuesta con esta cédula. Solo puedes participar una vez.');
+                        btn.disabled = false; btn.textContent = 'Enviar mi opinión';
+                        return;
+                    }
+                }
+
+                // Insertar
+                const nuevoRef = push(ref(database, 'encuestas_consulta_popular'));
+                await set(nuevoRef, {
+                    ...f,
+                    edad: edadNum,
+                    fecha_envio: new Date().toISOString(),
+                    user_agent: navigator.userAgent.substring(0, 200)
+                });
+
+                // Mostrar gracias
+                document.getElementById('vistaForm').classList.add('hidden');
+                document.getElementById('vistaGracias').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (e) {
+                mostrarMensaje('No se pudo enviar: ' + (e.message || 'error de red'));
+                btn.disabled = false;
+                btn.textContent = 'Enviar mi opinión';
+            }
+        });
+    </script>
+</body>
+</html>

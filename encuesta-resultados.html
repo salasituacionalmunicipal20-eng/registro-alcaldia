@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resultados Consulta Popular - Alcaldía</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #0f172a; }
+        header {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: white; padding: 18px 24px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        header h1 { margin: 0; font-size: 20px; font-weight: 800; }
+        header .btn-volver { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 700; text-decoration: none; font-size: 13px; }
+
+        .contenedor { max-width: 1280px; margin: 0 auto; padding: 24px 16px; }
+        .hidden { display: none !important; }
+
+        /* CARDS */
+        .grid-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 22px; }
+        .kpi { background: white; padding: 18px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .kpi-titulo { font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-valor { font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 4px; }
+        .kpi-sub { font-size: 12px; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+        .kpi.azul { border-top: 4px solid #2563eb; }
+        .kpi.naranja { border-top: 4px solid #f97316; }
+        .kpi.verde { border-top: 4px solid #16a34a; }
+        .kpi.purple { border-top: 4px solid #7c3aed; }
+
+        /* SECCIONES */
+        .seccion { background: white; padding: 22px; border-radius: 14px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        .seccion h2 { margin: 0 0 16px; font-size: 16px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
+
+        /* BARRAS HORIZONTALES */
+        .barra-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .barra-label { width: 200px; font-size: 13px; font-weight: 600; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .barra-fondo { flex: 1; background: #f1f5f9; height: 22px; border-radius: 6px; overflow: hidden; }
+        .barra-relleno { height: 100%; background: linear-gradient(90deg, #2563eb, #0ea5e9); border-radius: 6px; display: flex; align-items: center; padding: 0 8px; color: white; font-size: 12px; font-weight: 800; }
+        .barra-relleno.naranja { background: linear-gradient(90deg, #f97316, #fb923c); }
+        .barra-relleno.verde { background: linear-gradient(90deg, #16a34a, #22c55e); }
+
+        /* FILTROS */
+        .filtros { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; margin-bottom: 16px; }
+        .filtros .campo { display: flex; flex-direction: column; gap: 4px; }
+        .filtros label { font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase; }
+        .filtros input, .filtros select {
+            padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;
+            background: #f8fafc; color: #0f172a; font-weight: 600; min-width: 160px; outline: none;
+        }
+        .btn-exportar { padding: 9px 14px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-secundario { padding: 9px 14px; background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; }
+
+        /* TABLA */
+        .tabla-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        thead tr { background: #f8fafc; }
+        th { text-align: left; padding: 11px 12px; font-size: 11px; color: #475569; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 11px 12px; font-size: 13px; border-bottom: 1px solid #f1f5f9; color: #1e293b; vertical-align: top; }
+        tr:hover td { background: #f8fafc; }
+        .truncar { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        /* QR + LINK */
+        .compartir-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 720px) { .compartir-grid { grid-template-columns: 1fr 240px; } }
+        .compartir-link { padding: 14px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; font-family: monospace; font-size: 13px; color: #1e293b; word-break: break-all; }
+        .qr-box { text-align: center; }
+        .qr-box img { width: 220px; height: 220px; border: 6px solid white; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+
+        /* LOADER */
+        .cargando { text-align: center; padding: 40px; color: #64748b; font-weight: 600; }
+
+        /* MODAL */
+        .modal-fondo {
+            position: fixed; inset: 0; background: rgba(15,23,42,0.7); z-index: 999;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-caja {
+            background: white; border-radius: 14px; padding: 24px; max-width: 720px; width: 100%;
+            max-height: 86vh; overflow-y: auto;
+        }
+        .modal-caja h2 { margin: 0 0 6px; font-size: 18px; }
+        .modal-caja .meta { color: #64748b; font-size: 13px; margin-bottom: 14px; }
+        .modal-caja .respuesta { background: #f8fafc; padding: 12px 14px; border-left: 4px solid #2563eb; margin-bottom: 12px; border-radius: 6px; }
+        .modal-caja .respuesta strong { display: block; color: #1d4ed8; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+        .modal-caja .cerrar { float: right; background: #f1f5f9; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🗳️ Resultados Consulta Popular</h1>
+        <a href="admin.html" class="btn-volver">← Volver al Panel</a>
+    </header>
+
+    <div class="contenedor">
+
+        <!-- KPIS -->
+        <div class="grid-kpis">
+            <div class="kpi azul">
+                <div class="kpi-titulo">Participantes total</div>
+                <div class="kpi-valor" id="kpiTotal">--</div>
+                <div class="kpi-sub">respuestas registradas</div>
+            </div>
+            <div class="kpi naranja">
+                <div class="kpi-titulo">Comunas activas</div>
+                <div class="kpi-valor" id="kpiComunas">--</div>
+                <div class="kpi-sub">con al menos 1 voto</div>
+            </div>
+            <div class="kpi verde">
+                <div class="kpi-titulo">Comunidades activas</div>
+                <div class="kpi-valor" id="kpiComunidades">--</div>
+                <div class="kpi-sub">distintas</div>
+            </div>
+            <div class="kpi purple">
+                <div class="kpi-titulo">Quieren participar</div>
+                <div class="kpi-valor" id="kpiMesa">--</div>
+                <div class="kpi-sub">en mesas de trabajo</div>
+            </div>
+        </div>
+
+        <!-- COMPARTIR -->
+        <div class="seccion">
+            <h2>🔗 Compartir encuesta</h2>
+            <div class="compartir-grid">
+                <div>
+                    <p style="color: #475569; font-size: 13px; margin: 0 0 10px;">Comparte este enlace por WhatsApp, redes o coloca el código QR en el flyer impreso:</p>
+                    <div class="compartir-link" id="compartirLink">cargando...</div>
+                    <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn-exportar" onclick="navigator.clipboard.writeText(document.getElementById('compartirLink').textContent).then(()=>alert('Enlace copiado'))">📋 Copiar enlace</button>
+                        <button class="btn-secundario" id="btnWhatsApp">📱 Compartir por WhatsApp</button>
+                        <button class="btn-secundario" id="btnDescargarQR">💾 Descargar QR</button>
+                    </div>
+                </div>
+                <div class="qr-box">
+                    <img id="qrImg" alt="Código QR" />
+                </div>
+            </div>
+        </div>
+
+        <!-- POR COMUNA -->
+        <div class="seccion">
+            <h2>📊 Participación por Comuna</h2>
+            <div id="graficoComunas" class="cargando">Cargando...</div>
+        </div>
+
+        <!-- POR COMUNIDAD -->
+        <div class="seccion">
+            <h2>📍 Top Comunidades</h2>
+            <div id="graficoComunidades" class="cargando">Cargando...</div>
+        </div>
+
+        <!-- LISTA -->
+        <div class="seccion">
+            <h2>📝 Respuestas individuales</h2>
+            <div class="filtros">
+                <div class="campo">
+                    <label>Buscar</label>
+                    <input id="filtroBusqueda" type="text" placeholder="nombre, cédula o texto..." />
+                </div>
+                <div class="campo">
+                    <label>Comuna</label>
+                    <select id="filtroComuna"><option value="">Todas</option></select>
+                </div>
+                <div class="campo">
+                    <label>Comunidad</label>
+                    <select id="filtroComunidad"><option value="">Todas</option></select>
+                </div>
+                <button class="btn-exportar" id="btnExportarCSV">📥 Exportar CSV</button>
+            </div>
+
+            <div class="tabla-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Nombre</th>
+                            <th>Cédula</th>
+                            <th>Edad</th>
+                            <th>Comuna</th>
+                            <th>Comunidad</th>
+                            <th>Mejorar</th>
+                            <th>Mesa</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyRespuestas">
+                        <tr><td colspan="9" style="text-align:center; padding:40px; color:#94a3b8;">Cargando respuestas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="totalFiltrado" style="text-align: right; padding: 10px 0 0; color: #64748b; font-weight: 700; font-size: 12px;"></div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DETALLE -->
+    <div id="modal" class="modal-fondo hidden">
+        <div class="modal-caja" id="modalCaja"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Gate de auth: si no esta logueado, lo manda al login
+        onAuthStateChanged(auth, (user) => {
+            if (!user) location.href = 'index.html';
+        });
+
+        // URL publica de la encuesta (gh-pages absoluta)
+        const URL_PUBLICA = location.origin + location.pathname.replace(/encuesta-resultados\.html$/, 'encuesta-publica.html');
+
+        // QR via api.qrserver.com (gratis, sin libreria)
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=10&data=${encodeURIComponent(URL_PUBLICA)}`;
+        document.getElementById('qrImg').src = qrUrl;
+        document.getElementById('compartirLink').textContent = URL_PUBLICA;
+
+        document.getElementById('btnWhatsApp').addEventListener('click', () => {
+            const texto = `🗳️ Participa en la Consulta Popular del Municipio Cristóbal Rojas:\n\n${URL_PUBLICA}\n\nTu opinión construye nuestra comunidad.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+        });
+
+        document.getElementById('btnDescargarQR').addEventListener('click', async () => {
+            try {
+                const resp = await fetch(qrUrl);
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'QR_Consulta_Popular_Cristobal_Rojas.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert('No se pudo descargar el QR: ' + e.message);
+            }
+        });
+
+        // Estado global
+        let respuestas = [];
+
+        // Carga en vivo
+        onValue(ref(database, 'encuestas_consulta_popular'), (snap) => {
+            respuestas = [];
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    respuestas.push({ id: child.key, ...child.val() });
+                });
+            }
+            respuestas.sort((a, b) => (b.fecha_envio || '').localeCompare(a.fecha_envio || ''));
+            actualizarKPIs();
+            actualizarFiltrosCascada();
+            renderGraficos();
+            renderTabla();
+        });
+
+        function actualizarKPIs() {
+            document.getElementById('kpiTotal').textContent = respuestas.length;
+            const comunas = new Set(respuestas.map(r => r.comuna).filter(Boolean));
+            const comunidades = new Set(respuestas.map(r => `${r.comuna}|${r.comunidad}`).filter(x => !x.startsWith('|')));
+            const mesa = respuestas.filter(r => r.quiere_participar_mesa).length;
+            document.getElementById('kpiComunas').textContent = comunas.size;
+            document.getElementById('kpiComunidades').textContent = comunidades.size;
+            document.getElementById('kpiMesa').textContent = mesa;
+        }
+
+        function actualizarFiltrosCascada() {
+            const filtroComuna = document.getElementById('filtroComuna');
+            const seleccionada = filtroComuna.value;
+            const comunas = Array.from(new Set(respuestas.map(r => r.comuna).filter(Boolean))).sort();
+            filtroComuna.innerHTML = '<option value="">Todas las comunas</option>' + comunas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if (seleccionada) filtroComuna.value = seleccionada;
+            actualizarCascadaComunidad();
+        }
+
+        function actualizarCascadaComunidad() {
+            const c = document.getElementById('filtroComuna').value;
+            const filtroComunidad = document.getElementById('filtroComunidad');
+            const seleccionada = filtroComunidad.value;
+            let comunidades;
+            if (c) comunidades = Array.from(new Set(respuestas.filter(r => r.comuna === c).map(r => r.comunidad).filter(Boolean))).sort();
+            else comunidades = Array.from(new Set(respuestas.map(r => r.comunidad).filter(Boolean))).sort();
+            filtroComunidad.innerHTML = '<option value="">Todas las comunidades</option>' + comunidades.map(cd => `<option value="${escapeHtml(cd)}">${escapeHtml(cd)}</option>`).join('');
+            if (seleccionada && comunidades.includes(seleccionada)) filtroComunidad.value = seleccionada;
+        }
+
+        function renderGraficos() {
+            // Por comuna
+            const porComuna = {};
+            respuestas.forEach(r => { if (r.comuna) porComuna[r.comuna] = (porComuna[r.comuna] || 0) + 1; });
+            const entriesComuna = Object.entries(porComuna).sort((a,b) => b[1]-a[1]);
+            const maxC = Math.max(1, ...entriesComuna.map(([,v])=>v));
+            const elComunas = document.getElementById('graficoComunas');
+            if (entriesComuna.length === 0) {
+                elComunas.innerHTML = '<p style="color:#94a3b8; font-weight:600;">Aún no hay respuestas.</p>';
+            } else {
+                elComunas.className = '';
+                elComunas.innerHTML = entriesComuna.map(([c, v]) => `
+                    <div class="barra-row">
+                        <div class="barra-label" title="${escapeHtml(c)}">${escapeHtml(c)}</div>
+                        <div class="barra-fondo"><div class="barra-relleno" style="width:${(v/maxC)*100}%; min-width: 40px;">${v}</div></div>
+                    </div>
+                `).join('');
+            }
+
+            // Top comunidades (top 15)
+            const porComunidad = {};
+            respuestas.forEach(r => {
+                if (r.comunidad) {
+                    const k = `${r.comunidad}|${r.comuna || ''}`;
+                    porComunidad[k] = (porComunidad[k] || 0) + 1;
+                }
+            });
+            const entriesCd = Object.entries(porComunidad).sort((a,b) => b[1]-a[1]).slice(0, 15);
+            const maxCd = Math.max(1, ...entriesCd.map(([,v])=>v));
+            const elCd = document.getElementById('graficoComunidades');
+            if (entriesCd.length === 0) {
+                elCd.innerHTML = '<p style="color:#94a3b8; font-weight:600;">Sin datos aún.</p>';
+            } else {
+                elCd.className = '';
+                elCd.innerHTML = entriesCd.map(([k, v]) => {
+                    const [cd, c] = k.split('|');
+                    return `
+                    <div class="barra-row">
+                        <div class="barra-label" title="${escapeHtml(cd)} - ${escapeHtml(c)}">${escapeHtml(cd)}</div>
+                        <div class="barra-fondo"><div class="barra-relleno naranja" style="width:${(v/maxCd)*100}%; min-width: 40px;">${v}</div></div>
+                    </div>`;
+                }).join('');
+            }
+        }
+
+        function renderTabla() {
+            const q = document.getElementById('filtroBusqueda').value.toLowerCase().trim();
+            const fc = document.getElementById('filtroComuna').value;
+            const fcd = document.getElementById('filtroComunidad').value;
+            const filtradas = respuestas.filter(r => {
+                if (fc && r.comuna !== fc) return false;
+                if (fcd && r.comunidad !== fcd) return false;
+                if (q) {
+                    const blob = `${r.nombres||''} ${r.apellidos||''} ${r.cedula||''} ${r.pregunta_mejorar||''} ${r.pregunta_dudas||''} ${r.pregunta_propuesta||''}`.toLowerCase();
+                    if (!blob.includes(q)) return false;
+                }
+                return true;
+            });
+
+            const tbody = document.getElementById('tbodyRespuestas');
+            if (filtradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Sin coincidencias</td></tr>';
+            } else {
+                tbody.innerHTML = filtradas.map(r => `
+                    <tr>
+                        <td style="white-space:nowrap; color:#64748b; font-weight:600;">${fmtFecha(r.fecha_envio)}</td>
+                        <td style="font-weight:700;">${escapeHtml(r.nombres)} ${escapeHtml(r.apellidos)}</td>
+                        <td style="color:#2563eb; font-weight:800;">${escapeHtml(r.cedula)}</td>
+                        <td style="text-align:center;">${escapeHtml(String(r.edad ?? '--'))}</td>
+                        <td style="font-weight:600;">${escapeHtml(r.comuna || '--')}</td>
+                        <td style="font-weight:600;">${escapeHtml(r.comunidad || '--')}</td>
+                        <td class="truncar" title="${escapeHtml(r.pregunta_mejorar || '')}">${escapeHtml(r.pregunta_mejorar || '--')}</td>
+                        <td style="text-align:center;">${r.quiere_participar_mesa ? '<span style="color:#16a34a; font-weight:800;">✔</span>' : ''}</td>
+                        <td><button class="btn-secundario" onclick="window._verDetalle('${r.id}')">Ver</button></td>
+                    </tr>
+                `).join('');
+            }
+            document.getElementById('totalFiltrado').textContent = `${filtradas.length} de ${respuestas.length} respuestas`;
+        }
+
+        window._verDetalle = function(id) {
+            const r = respuestas.find(x => x.id === id);
+            if (!r) return;
+            const caja = document.getElementById('modalCaja');
+            caja.innerHTML = `
+                <button class="cerrar" onclick="document.getElementById('modal').classList.add('hidden')">✕ Cerrar</button>
+                <h2>${escapeHtml(r.nombres)} ${escapeHtml(r.apellidos)}</h2>
+                <div class="meta">
+                    <strong style="color:#2563eb;">${escapeHtml(r.cedula)}</strong>
+                    · ${escapeHtml(String(r.edad))} años
+                    · ${escapeHtml(r.sexo === 'F' ? 'Femenino' : 'Masculino')}
+                    · 📞 ${escapeHtml(r.telefono || '--')}<br>
+                    📍 ${escapeHtml(r.comuna || '--')} / ${escapeHtml(r.comunidad || '--')}
+                    · Enviada: ${fmtFecha(r.fecha_envio)}
+                </div>
+                <div class="respuesta">
+                    <strong>1. ¿Qué debemos mejorar?</strong>
+                    ${escapeHtml(r.pregunta_mejorar || '(sin respuesta)').replace(/\n/g, '<br>')}
+                </div>
+                <div class="respuesta" style="border-left-color:#f97316;">
+                    <strong>2. ¿Tienes dudas sobre la Consulta Popular?</strong>
+                    ${escapeHtml(r.pregunta_dudas || '(sin dudas)').replace(/\n/g, '<br>')}
+                </div>
+                <div class="respuesta" style="border-left-color:#16a34a;">
+                    <strong>3. Tu propuesta para construir soluciones</strong>
+                    ${escapeHtml(r.pregunta_propuesta || '(sin propuesta)').replace(/\n/g, '<br>')}
+                </div>
+                ${r.quiere_participar_mesa ? '<div style="background:#dcfce7; color:#15803d; padding:10px 14px; border-radius:8px; font-weight:800;">✓ Quiere participar en mesas de trabajo</div>' : ''}
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        };
+
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') document.getElementById('modal').classList.add('hidden');
+        });
+
+        document.getElementById('filtroBusqueda').addEventListener('input', renderTabla);
+        document.getElementById('filtroComuna').addEventListener('change', () => { actualizarCascadaComunidad(); renderTabla(); });
+        document.getElementById('filtroComunidad').addEventListener('change', renderTabla);
+
+        document.getElementById('btnExportarCSV').addEventListener('click', () => {
+            const headers = ['fecha_envio','nombres','apellidos','cedula','edad','sexo','telefono','comuna','comunidad','pregunta_mejorar','pregunta_dudas','pregunta_propuesta','quiere_participar_mesa'];
+            const filas = [headers.join(',')];
+            respuestas.forEach(r => {
+                filas.push(headers.map(h => csvEscape(r[h])).join(','));
+            });
+            const blob = new Blob(['﻿' + filas.join('\n')], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Consulta_Popular_${new Date().toISOString().substring(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Helpers
+        function escapeHtml(s) {
+            if (s == null) return '';
+            return String(s).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+        }
+        function csvEscape(v) {
+            if (v == null) return '';
+            const s = String(v).replace(/"/g, '""');
+            return /[",\n;]/.test(s) ? `"${s}"` : s;
+        }
+        function fmtFecha(iso) {
+            if (!iso) return '--';
+            try {
+                const d = new Date(iso);
+                return d.toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+            } catch { return iso; }
+        }
+    </script>
+</body>
+</html>
