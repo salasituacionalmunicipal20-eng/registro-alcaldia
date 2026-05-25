@@ -126,15 +126,24 @@
             <div class="compartir-grid">
                 <div>
                     <p style="color: #475569; font-size: 13px; margin: 0 0 10px;">Comparte este enlace por WhatsApp, redes o coloca el código QR en el flyer impreso:</p>
+
+                    <!-- Enlace CORTO oficial (TinyURL) -->
+                    <label style="display:block; font-size:11px; font-weight:800; color:#16a34a; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">⭐ Enlace corto (recomendado)</label>
+                    <div class="compartir-link" id="compartirLinkCorto" style="background:#f0fdf4; border-color:#86efac; color:#15803d; font-weight:800;">https://tinyurl.com/consultacr2026</div>
+
+                    <!-- Enlace largo original -->
+                    <label style="display:block; font-size:11px; font-weight:800; color:#64748b; margin:10px 0 4px; text-transform:uppercase; letter-spacing:0.5px;">Enlace completo</label>
                     <div class="compartir-link" id="compartirLink">cargando...</div>
+
                     <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button class="btn-exportar" onclick="navigator.clipboard.writeText(document.getElementById('compartirLink').textContent).then(()=>alert('Enlace copiado'))">📋 Copiar enlace</button>
+                        <button class="btn-exportar" onclick="navigator.clipboard.writeText(document.getElementById('compartirLinkCorto').textContent).then(()=>alert('Enlace corto copiado'))">📋 Copiar enlace corto</button>
                         <button class="btn-secundario" id="btnWhatsApp">📱 Compartir por WhatsApp</button>
                         <button class="btn-secundario" id="btnDescargarQR">💾 Descargar QR</button>
                     </div>
                 </div>
                 <div class="qr-box">
                     <img id="qrImg" alt="Código QR" />
+                    <div style="margin-top:6px; font-size:11px; color:#64748b; font-weight:600;">QR del enlace corto</div>
                 </div>
             </div>
         </div>
@@ -224,22 +233,27 @@
             if (!user) location.href = 'index.html';
         });
 
-        // URL publica de la encuesta (gh-pages absoluta)
+        // URL publica completa de la encuesta (gh-pages absoluta) - para mostrar
         const URL_PUBLICA = location.origin + location.pathname.replace(/encuesta-resultados\.html$/, 'encuesta-publica.html');
+        // URL corta (TinyURL) - para QR, WhatsApp y todo lo que se comparte
+        const URL_CORTA = 'https://tinyurl.com/consultacr2026';
 
-        // QR via api.qrserver.com (gratis, sin libreria)
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=10&data=${encodeURIComponent(URL_PUBLICA)}`;
+        // QR del link CORTO: si alguien lo escanea ve la URL corta, no la larga.
+        // Las URLs cortas tambien generan QRs mas pequenos y faciles de imprimir.
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=10&data=${encodeURIComponent(URL_CORTA)}`;
         document.getElementById('qrImg').src = qrUrl;
         document.getElementById('compartirLink').textContent = URL_PUBLICA;
 
         document.getElementById('btnWhatsApp').addEventListener('click', () => {
-            const texto = `🗳️ Participa en la Consulta Popular del Municipio Cristóbal Rojas:\n\n${URL_PUBLICA}\n\nTu opinión construye nuestra comunidad.`;
+            const texto = `🗳️ Participa en la Consulta Popular del Municipio Cristóbal Rojas:\n\n${URL_CORTA}\n\nTu opinión construye nuestra comunidad.`;
             window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
         });
 
         document.getElementById('btnDescargarQR').addEventListener('click', async () => {
             try {
-                const resp = await fetch(qrUrl);
+                // Para impresion en flyers conviene un QR mas grande y nitido
+                const qrUrlAlta = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=15&data=${encodeURIComponent(URL_CORTA)}`;
+                const resp = await fetch(qrUrlAlta);
                 const blob = await resp.blob();
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
