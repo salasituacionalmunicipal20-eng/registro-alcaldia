@@ -10,59 +10,67 @@
         html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
         body {
             min-height: 100vh;
-            background: linear-gradient(135deg, #0033a1 0%, #001a5c 50%, #7c1d2e 100%);
-            color: #0f172a;
+            background: #f1f4f8;
+            color: #1e293b;
             padding: 0;
         }
-        .contenedor { max-width: 780px; margin: 0 auto; padding: 0 0 48px; }
+        .contenedor { max-width: 760px; margin: 0 auto; padding: 0 0 48px; }
 
-        /* BARRA SUPERIOR INSTITUCIONAL CON LOGOS */
+        /* BARRA SUPERIOR INSTITUCIONAL CON LOGOS - sobria */
         .barra-logos {
             background: white;
-            padding: 14px 20px;
+            padding: 12px 24px;
             display: flex; align-items: center; justify-content: space-between; gap: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             position: sticky; top: 0; z-index: 50;
-            border-bottom: 4px solid #ffcc00;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .barra-logos img { height: 50px; width: auto; object-fit: contain; }
-        .barra-logos .logo-cr { height: 56px; }
-        .barra-logos .logo-yu { height: 38px; }
+        .barra-logos img { height: 44px; width: auto; object-fit: contain; }
+        .barra-logos .logo-cr { height: 50px; }
+        .barra-logos .logo-yu { height: 32px; }
         @media (max-width: 500px) {
-            .barra-logos img { height: 38px; }
-            .barra-logos .logo-cr { height: 42px; }
-            .barra-logos .logo-yu { height: 28px; }
-            .barra-logos { padding: 10px 12px; }
+            .barra-logos img { height: 34px; }
+            .barra-logos .logo-cr { height: 38px; }
+            .barra-logos .logo-yu { height: 24px; }
+            .barra-logos { padding: 10px 14px; }
         }
 
-        .contenido-pad { padding: 22px 16px 0; }
+        .cintillo-gob {
+            background: #0a2351;
+            color: white;
+            text-align: center;
+            padding: 6px 12px;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .contenido-pad { padding: 24px 16px 0; }
 
         .header {
-            background: linear-gradient(135deg, #0033a1 0%, #001a5c 60%, #7c1d2e 100%);
-            color: white; padding: 32px 24px; border-radius: 20px;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.3);
-            margin-bottom: 18px; text-align: center;
-            border: 2px solid #ffcc00;
-            position: relative; overflow: hidden;
+            background: #0a2351;
+            color: white; padding: 36px 28px 30px; border-radius: 6px;
+            margin-bottom: 22px; text-align: left;
+            border-left: 4px solid #d4a017;
         }
-        .header::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-            background: linear-gradient(90deg, #ffcc00 0%, #ffcc00 33%, #0033a1 33%, #0033a1 66%, #e30613 66%, #e30613 100%);
-        }
-        .header-titulo { font-size: 13px; opacity: 0.95; margin: 0 0 4px; letter-spacing: 2px; font-weight: 700; text-transform: uppercase; color: #ffcc00; }
-        .header h1 { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.1; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        .header-sub { margin-top: 12px; font-size: 14px; opacity: 0.95; font-weight: 500; }
+        .header-titulo { font-size: 11px; margin: 0 0 8px; letter-spacing: 2.5px; font-weight: 600; text-transform: uppercase; color: #d4a017; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.2; }
+        .header-sub { margin-top: 10px; font-size: 14px; color: rgba(255,255,255,0.78); font-weight: 400; line-height: 1.45; }
 
         .tarjeta {
-            background: white; border-radius: 18px; padding: 22px;
-            margin-bottom: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            background: white; border-radius: 6px; padding: 22px;
+            margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
         }
         .tarjeta-titulo {
             display: flex; align-items: center; gap: 10px;
-            margin: 0 0 4px; font-size: 14px; font-weight: 800;
-            color: #1d4ed8; text-transform: uppercase; letter-spacing: 0.5px;
+            margin: 0 0 4px; font-size: 12px; font-weight: 700;
+            color: #0a2351; text-transform: uppercase; letter-spacing: 1px;
+            padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 16px;
         }
-        .tarjeta-desc { color: #475569; font-size: 13px; margin: 0 0 18px; font-weight: 500; }
+        .tarjeta-desc { color: #64748b; font-size: 13px; margin: 0 0 16px; font-weight: 400; }
 
         .campo { margin-bottom: 14px; }
         .campo label {
@@ -71,13 +79,13 @@
         }
         .campo .req { color: #ef4444; }
         .campo input, .campo select, .campo textarea {
-            width: 100%; padding: 13px 14px; border-radius: 10px;
-            border: 1.5px solid #cbd5e1; background: #f8fafc; color: #0f172a;
-            font-size: 15px; font-weight: 500; font-family: inherit; outline: none;
+            width: 100%; padding: 11px 13px; border-radius: 4px;
+            border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a;
+            font-size: 14.5px; font-weight: 400; font-family: inherit; outline: none;
             transition: border-color 0.15s, background 0.15s;
         }
         .campo input:focus, .campo select:focus, .campo textarea:focus {
-            border-color: #2563eb; background: white;
+            border-color: #0a2351; background: white;
         }
         .campo textarea { resize: vertical; min-height: 90px; }
         .fila { display: grid; gap: 12px; }
@@ -86,84 +94,94 @@
             .fila-3 { grid-template-columns: 1fr 1fr 1fr; }
         }
 
+        /* Las preguntas usan la misma tarjeta blanca institucional que los datos
+           personales — sin colores festivos. La diferenciacion se hace con un
+           numero discreto y tipografia clara. */
         .pregunta-card {
-            border-radius: 16px; padding: 18px; margin-bottom: 14px;
-            color: white; box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-            border-left: 5px solid #ffcc00;
+            background: white;
+            border-radius: 6px;
+            padding: 22px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid #0a2351;
         }
-        .pregunta-card.azul    { background: linear-gradient(135deg, #003f9b 0%, #0033a1 100%); }
-        .pregunta-card.naranja { background: linear-gradient(135deg, #c41a26 0%, #7c1d2e 100%); border-left-color: #ffcc00; }
-        .pregunta-card.verde   { background: linear-gradient(135deg, #15803d 0%, #052e16 100%); }
         .pregunta-card h3 {
-            margin: 0 0 12px; font-size: 17px; font-weight: 800;
+            margin: 0 0 14px; font-size: 14px; font-weight: 700;
             display: flex; align-items: center; gap: 10px;
+            color: #0a2351; line-height: 1.35;
+            padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;
         }
         .pregunta-card .num {
-            background: rgba(255,255,255,0.25); width: 32px; height: 32px;
+            background: #0a2351; color: white;
+            width: 26px; height: 26px; flex-shrink: 0;
             border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-            font-size: 14px; font-weight: 900;
+            font-size: 12px; font-weight: 700;
         }
         .pregunta-card textarea {
-            width: 100%; padding: 12px; border-radius: 10px; border: none;
-            background: rgba(255,255,255,0.95); color: #0f172a;
-            font-size: 15px; font-family: inherit; outline: none;
-            min-height: 100px; resize: vertical;
+            width: 100%; padding: 12px 14px; border-radius: 4px;
+            border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a;
+            font-size: 14.5px; font-family: inherit; outline: none;
+            min-height: 90px; resize: vertical;
+            transition: border-color 0.15s, background 0.15s;
         }
+        .pregunta-card textarea:focus { border-color: #0a2351; background: white; }
         .pregunta-card .check {
-            display: flex; align-items: center; gap: 10px; margin-top: 12px;
-            background: rgba(255,255,255,0.15); padding: 12px; border-radius: 10px;
-            cursor: pointer;
+            display: flex; align-items: center; gap: 10px; margin-top: 14px;
+            padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 4px;
+            background: #f8fafc; cursor: pointer;
         }
-        .pregunta-card .check input { width: 22px; height: 22px; cursor: pointer; accent-color: white; }
-        .pregunta-card .check span { font-weight: 700; font-size: 14px; }
+        .pregunta-card .check input { width: 18px; height: 18px; cursor: pointer; accent-color: #0a2351; }
+        .pregunta-card .check span { font-weight: 500; font-size: 13.5px; color: #334155; }
 
         .btn-enviar {
-            width: 100%; padding: 18px; border: none; border-radius: 14px;
-            background: linear-gradient(135deg, #e30613 0%, #b00510 100%);
-            color: white; font-size: 17px; font-weight: 900; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 1px;
-            box-shadow: 0 10px 24px rgba(227,6,19,0.4);
-            transition: transform 0.1s, opacity 0.15s;
-            border-bottom: 4px solid #ffcc00;
+            width: 100%; padding: 16px; border: none; border-radius: 4px;
+            background: #0a2351;
+            color: white; font-size: 15px; font-weight: 700; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            transition: background 0.15s;
+            margin-top: 8px;
         }
+        .btn-enviar:hover { background: #14306d; }
         .btn-enviar:hover { transform: translateY(-1px); }
         .btn-enviar:active { transform: translateY(0); }
         .btn-enviar:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-        .mensaje { padding: 14px 16px; border-radius: 10px; margin-bottom: 14px; font-weight: 700; font-size: 14px; }
-        .mensaje.error { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
-        .mensaje.exito { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .mensaje { padding: 12px 14px; border-radius: 4px; margin-bottom: 14px; font-weight: 600; font-size: 13.5px; }
+        .mensaje.error { background: #fef2f2; color: #991b1b; border-left: 3px solid #dc2626; }
+        .mensaje.exito { background: #f0fdf4; color: #166534; border-left: 3px solid #16a34a; }
 
         .pantalla-gracias {
-            background: white; border-radius: 18px; padding: 40px 24px;
-            text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            background: white; border-radius: 6px; padding: 44px 28px;
+            text-align: center; border: 1px solid #e2e8f0; border-top: 4px solid #0a2351;
         }
         .pantalla-gracias .check-grande {
-            width: 90px; height: 90px; border-radius: 50%;
-            background: linear-gradient(135deg, #16a34a, #15803d);
+            width: 72px; height: 72px; border-radius: 50%;
+            background: #0a2351;
             color: white; display: inline-flex; align-items: center; justify-content: center;
-            font-size: 56px; margin-bottom: 16px;
+            font-size: 36px; margin-bottom: 18px; font-weight: 300;
         }
-        .pantalla-gracias h2 { margin: 0 0 8px; color: #0f172a; font-size: 26px; font-weight: 900; }
-        .pantalla-gracias p { color: #475569; font-size: 15px; margin: 0 0 24px; }
+        .pantalla-gracias h2 { margin: 0 0 10px; color: #0a2351; font-size: 22px; font-weight: 700; }
+        .pantalla-gracias p { color: #475569; font-size: 14px; margin: 0 0 22px; line-height: 1.5; }
         .pantalla-gracias button {
-            padding: 12px 28px; background: #2563eb; color: white; border: none;
-            border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 14px;
+            padding: 11px 24px; background: #0a2351; color: white; border: none;
+            border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13.5px;
+            text-transform: uppercase; letter-spacing: 0.8px;
         }
 
         .footer {
-            text-align: center; color: rgba(255,255,255,0.85); padding: 20px 12px 8px;
-            font-size: 12px; font-weight: 500;
+            text-align: center; color: #64748b; padding: 14px 12px 8px;
+            font-size: 11.5px; font-weight: 500;
         }
-        .footer strong { color: #ffcc00; }
+        .footer strong { color: #0a2351; font-weight: 700; }
         .footer-logos {
             display: flex; justify-content: center; align-items: center; gap: 16px;
-            margin: 16px 0 10px; background: rgba(255,255,255,0.95);
-            padding: 12px 16px; border-radius: 12px; border-top: 3px solid #ffcc00;
+            margin: 22px 0 6px;
+            padding: 14px 16px; border-top: 1px solid #e2e8f0;
         }
-        .footer-logos img { height: 38px; width: auto; object-fit: contain; }
-        .footer-logos .logo-cr { height: 44px; }
-        .footer-logos .logo-yu { height: 30px; }
+        .footer-logos img { height: 32px; width: auto; object-fit: contain; opacity: 0.85; }
+        .footer-logos .logo-cr { height: 36px; }
+        .footer-logos .logo-yu { height: 24px; }
 
         .hidden { display: none !important; }
         .loader-pequeno { display: inline-block; width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girar 0.8s linear infinite; }
@@ -171,6 +189,9 @@
     </style>
 </head>
 <body>
+    <!-- CINTILLO INSTITUCIONAL -->
+    <div class="cintillo-gob">República Bolivariana de Venezuela · Estado Miranda · Alcaldía de Cristóbal Rojas</div>
+
     <!-- BARRA INSTITUCIONAL CON LOGOS -->
     <div class="barra-logos">
         <img src="logos/cristobal-rojas.png" alt="Alcaldía Cristóbal Rojas" class="logo-cr" />
@@ -183,9 +204,9 @@
 
         <!-- HEADER -->
         <div class="header">
-            <p class="header-titulo">Municipio Cristóbal Rojas</p>
-            <h1>Consulta Popular 🗳️</h1>
-            <div class="header-sub">Participa, opina y construyamos juntos las soluciones de nuestra comunidad</div>
+            <p class="header-titulo">Municipio Cristóbal Rojas — Despacho de la Alcaldesa</p>
+            <h1>Consulta Popular Ciudadana</h1>
+            <div class="header-sub">Su participación es fundamental para identificar las necesidades de la comunidad y orientar las decisiones del despacho.</div>
         </div>
 
         <!-- MENSAJE GLOBAL -->
@@ -196,8 +217,8 @@
 
             <!-- DATOS PERSONALES -->
             <div class="tarjeta">
-                <h3 class="tarjeta-titulo">📋 Tus datos</h3>
-                <p class="tarjeta-desc">Necesitamos identificarte para tu cédula no se duplique en la consulta.</p>
+                <h3 class="tarjeta-titulo">Datos personales</h3>
+                <p class="tarjeta-desc">Sus datos son confidenciales y se utilizan únicamente para evitar respuestas duplicadas.</p>
 
                 <div class="fila fila-2">
                     <div class="campo">
@@ -239,8 +260,8 @@
 
             <!-- UBICACIÓN -->
             <div class="tarjeta">
-                <h3 class="tarjeta-titulo">📍 Tu ubicación</h3>
-                <p class="tarjeta-desc">¿En qué comuna y comunidad vives?</p>
+                <h3 class="tarjeta-titulo">Ubicación territorial</h3>
+                <p class="tarjeta-desc">Indique la comuna y comunidad donde reside.</p>
 
                 <div class="fila fila-2">
                     <div class="campo">
@@ -259,36 +280,36 @@
             </div>
 
             <!-- PREGUNTAS -->
-            <div class="pregunta-card azul">
-                <h3><span class="num">1</span> ¿Qué debemos mejorar?</h3>
-                <textarea id="f_q1" placeholder="Cuéntanos qué necesita mejorar en tu comunidad..." required maxlength="800"></textarea>
+            <div class="pregunta-card">
+                <h3><span class="num">1</span> ¿Qué considera que debemos mejorar en su comunidad?</h3>
+                <textarea id="f_q1" placeholder="Describa las necesidades o áreas que requieren atención prioritaria." required maxlength="800"></textarea>
             </div>
 
-            <div class="pregunta-card naranja">
-                <h3><span class="num">2</span> ¿Tienes alguna duda referente a la Consulta Popular?</h3>
-                <textarea id="f_q2" placeholder="Escribe tus dudas o preguntas (deja en blanco si no tienes ninguna)." maxlength="800"></textarea>
+            <div class="pregunta-card">
+                <h3><span class="num">2</span> ¿Tiene alguna duda referente a la Consulta Popular?</h3>
+                <textarea id="f_q2" placeholder="Escriba sus dudas o preguntas (puede dejar en blanco si no tiene ninguna)." maxlength="800"></textarea>
             </div>
 
-            <div class="pregunta-card verde">
-                <h3><span class="num">3</span> Tu propuesta para construir soluciones</h3>
-                <textarea id="f_q3" placeholder="Propón ideas concretas para resolver problemas de tu comunidad..." required maxlength="800"></textarea>
+            <div class="pregunta-card">
+                <h3><span class="num">3</span> Su propuesta para construir soluciones</h3>
+                <textarea id="f_q3" placeholder="Proponga ideas concretas para resolver problemas de su comunidad." required maxlength="800"></textarea>
                 <label class="check">
                     <input id="f_quiere_participar" type="checkbox" />
-                    <span>Quiero participar activamente en mesas de trabajo</span>
+                    <span>Deseo participar activamente en mesas de trabajo</span>
                 </label>
             </div>
 
             <button id="btnEnviar" class="btn-enviar" type="button">
-                Enviar mi opinión
+                Enviar respuesta
             </button>
         </div>
 
         <!-- VISTA GRACIAS -->
         <div id="vistaGracias" class="pantalla-gracias hidden">
             <div class="check-grande">✓</div>
-            <h2>¡Gracias por participar!</h2>
-            <p>Tu opinión fue registrada con éxito y será revisada por nuestro equipo.<br>Comparte este enlace con otros vecinos para que también participen.</p>
-            <button onclick="navigator.clipboard.writeText(location.href).then(()=>alert('Enlace copiado'))">📋 Copiar enlace</button>
+            <h2>Su respuesta ha sido registrada</h2>
+            <p>Gracias por participar en la Consulta Popular del Municipio Cristóbal Rojas. Su opinión será revisada por el equipo de la Alcaldía.<br><br>Puede compartir el enlace con otros vecinos para que también participen.</p>
+            <button onclick="navigator.clipboard.writeText(location.href).then(()=>alert('Enlace copiado'))">Copiar enlace</button>
         </div>
 
         <div class="footer-logos">
@@ -297,7 +318,7 @@
             <img src="logos/psuv.png" alt="" />
         </div>
         <div class="footer">
-            <strong>Alcaldesa Yuhismar Hernández</strong> · Municipio Cristóbal Rojas · COMUNA O NADA
+            Despacho de la <strong>Alcaldesa Yuhismar Hernández</strong> · Municipio Cristóbal Rojas
         </div>
       </div>
     </div>
