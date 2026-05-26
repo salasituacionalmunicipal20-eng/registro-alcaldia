@@ -277,9 +277,17 @@
                         <input id="f_cedula" type="text" placeholder="V12345678" required maxlength="12" />
                     </div>
                     <div class="campo">
-                        <label>Edad <span class="req">*</span></label>
-                        <input id="f_edad" type="number" placeholder="30" min="15" max="120" required />
+                        <label>Fecha de nacimiento <span class="req">*</span></label>
+                        <input id="f_fecha_nacimiento" type="date" required max="2010-12-31" min="1900-01-01" />
                     </div>
+                </div>
+
+                <div class="fila fila-2">
+                    <div class="campo">
+                        <label>Edad (se calcula automáticamente)</label>
+                        <input id="f_edad" type="text" placeholder="Selecciona tu fecha de nacimiento" readonly style="background:#eef2ff; color:#1e1b4b; font-weight:700;" />
+                    </div>
+                    <div class="campo"></div>
                 </div>
 
                 <div class="fila fila-2">
@@ -527,15 +535,48 @@
         // Helper: text input que puede estar vacio
         const v = (id) => (document.getElementById(id)?.value || '').trim();
 
+        // Calcula edad a partir de "YYYY-MM-DD" (zona local, suficiente para esto)
+        const edadDesdeFecha = (iso) => {
+            if (!iso) return null;
+            const nac = new Date(iso + 'T00:00:00');
+            if (isNaN(nac.getTime())) return null;
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - nac.getFullYear();
+            const m = hoy.getMonth() - nac.getMonth();
+            if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+            return edad;
+        };
+
+        // Listener: actualiza la casilla de edad automaticamente
+        document.getElementById('f_fecha_nacimiento').addEventListener('change', (e) => {
+            const edad = edadDesdeFecha(e.target.value);
+            const inputEdad = document.getElementById('f_edad');
+            if (edad == null) {
+                inputEdad.value = '';
+            } else if (edad < 15) {
+                inputEdad.value = `${edad} años (mínimo 15)`;
+                inputEdad.style.color = '#dc2626';
+            } else if (edad > 120) {
+                inputEdad.value = `${edad} años (fecha inválida)`;
+                inputEdad.style.color = '#dc2626';
+            } else {
+                inputEdad.value = `${edad} años`;
+                inputEdad.style.color = '#1e1b4b';
+            }
+        });
+
         // Submit
         document.getElementById('btnEnviar').addEventListener('click', async () => {
             limpiarMensaje();
+            const fechaNac = v('f_fecha_nacimiento');
+            const edadCalc = edadDesdeFecha(fechaNac);
+
             const f = {
                 // Datos personales + ubicacion
                 nombres: v('f_nombres'),
                 apellidos: v('f_apellidos'),
                 cedula: v('f_cedula').toUpperCase(),
-                edad: v('f_edad'),
+                fecha_nacimiento: fechaNac,
                 sexo: v('f_sexo'),
                 telefono: v('f_telefono'),
                 comuna: v('f_comuna'),
@@ -566,7 +607,7 @@
             };
 
             // Validaciones cliente
-            const obligatorios = ['nombres', 'apellidos', 'cedula', 'edad', 'sexo', 'comuna', 'comunidad'];
+            const obligatorios = ['nombres', 'apellidos', 'cedula', 'fecha_nacimiento', 'sexo', 'comuna', 'comunidad'];
             for (const k of obligatorios) {
                 if (!f[k]) { mostrarMensaje('Completa todos los campos personales marcados con asterisco (*)'); return; }
             }
@@ -576,10 +617,10 @@
             if (!/^[VEJPGvejpg]?\d{4,9}$/.test(f.cedula.replace(/[^A-Z0-9]/g, ''))) {
                 mostrarMensaje('La cédula tiene un formato inválido. Ej: V12345678'); return;
             }
-            const edadNum = parseInt(f.edad, 10);
-            if (isNaN(edadNum) || edadNum < 15 || edadNum > 120) {
-                mostrarMensaje('La edad debe estar entre 15 y 120'); return;
+            if (edadCalc == null || edadCalc < 15 || edadCalc > 120) {
+                mostrarMensaje('La fecha de nacimiento no es válida (la edad debe estar entre 15 y 120 años).'); return;
             }
+            const edadNum = edadCalc;
 
             const btn = document.getElementById('btnEnviar');
             btn.disabled = true;

@@ -456,6 +456,7 @@
                 <div class="meta">
                     <strong style="color:#2563eb;">${escapeHtml(r.cedula)}</strong>
                     · ${escapeHtml(String(r.edad ?? '--'))} años
+                    ${r.fecha_nacimiento ? `<span style="color:#94a3b8;">(nacido ${escapeHtml(String(r.fecha_nacimiento).substring(0,10))})</span>` : ''}
                     · ${escapeHtml(r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '--')}
                     · 📞 ${escapeHtml(r.telefono || '--')}<br>
                     📍 ${escapeHtml(r.comuna || '--')} / ${escapeHtml(r.comunidad || '--')}
@@ -491,7 +492,7 @@
 
         document.getElementById('btnExportarCSV').addEventListener('click', () => {
             const headers = [
-                'fecha_envio','nombres','apellidos','cedula','edad','sexo','telefono','comuna','comunidad',
+                'fecha_envio','nombres','apellidos','cedula','fecha_nacimiento','edad','sexo','telefono','comuna','comunidad',
                 'p1_que_pasa_12julio','p2_proyecto_ganador','p3_opinion_consulta',
                 'p4_t1','p4_t2','p4_t3','p4_t4','p4_t5','p4_t6','p4_t7',
                 'p5_nivel_informacion','p6_propuesta_1','p6_propuesta_2','p6_propuesta_3',
