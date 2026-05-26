@@ -605,16 +605,25 @@
                 document.getElementById('vistaGracias').classList.remove('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } catch (e) {
-                // Si la cedula ya envio antes, Firebase devuelve PERMISSION_DENIED
-                // porque la regla !data.exists() bloquea el rewrite.
+                // PERMISSION_DENIED puede significar dos cosas:
+                //   1) La cedula ya envio antes (regla !data.exists() bloquea rewrite)
+                //   2) Las reglas del backend rechazaron algun campo nuevo no validado
+                // No podemos distinguirlas desde el cliente sin hacer una lectura
+                // (que tambien requiere permiso). Damos un mensaje que cubre ambas.
                 const msg = (e.message || '').toLowerCase();
                 if (msg.includes('permission_denied') || msg.includes('permission denied')) {
-                    mostrarMensaje('Ya registramos una respuesta con esta cédula. Solo puedes participar una vez. ¡Gracias!');
+                    mostrarMensaje(
+                        'No se pudo guardar tu respuesta. Esto suele significar que ' +
+                        'ya enviaste antes con esta cédula (solo se permite una vez), ' +
+                        'o que el sistema esta en mantenimiento. Si crees que es un ' +
+                        'error, contacta al administrador.'
+                    );
                 } else {
-                    mostrarMensaje('No se pudo enviar: ' + (e.message || 'error de red'));
+                    mostrarMensaje('No se pudo enviar: ' + (e.message || 'error de red. Verifica tu conexion.'));
                 }
+                console.error('[Encuesta] Error al guardar:', e);
                 btn.disabled = false;
-                btn.textContent = 'Enviar mi opinión';
+                btn.textContent = 'Enviar respuesta';
             }
         });
     </script>
