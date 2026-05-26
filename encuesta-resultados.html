@@ -114,9 +114,9 @@
                 <div class="kpi-sub">distintas</div>
             </div>
             <div class="kpi purple">
-                <div class="kpi-titulo">Quieren participar</div>
+                <div class="kpi-titulo">Participaran 12-Jul</div>
                 <div class="kpi-valor" id="kpiMesa">--</div>
-                <div class="kpi-sub">en mesas de trabajo</div>
+                <div class="kpi-sub">marcaron Si en la pregunta 7</div>
             </div>
         </div>
 
@@ -288,10 +288,12 @@
             document.getElementById('kpiTotal').textContent = respuestas.length;
             const comunas = new Set(respuestas.map(r => r.comuna).filter(Boolean));
             const comunidades = new Set(respuestas.map(r => `${r.comuna}|${r.comunidad}`).filter(x => !x.startsWith('|')));
-            const mesa = respuestas.filter(r => r.quiere_participar_mesa).length;
+            // El KPI "Quieren participar" ahora cuenta los que dijeron SI en la pregunta 7
+            // (participara en la consulta del 12 de julio).
+            const participaran = respuestas.filter(r => r.p7_participa === 'si' || r.quiere_participar_mesa).length;
             document.getElementById('kpiComunas').textContent = comunas.size;
             document.getElementById('kpiComunidades').textContent = comunidades.size;
-            document.getElementById('kpiMesa').textContent = mesa;
+            document.getElementById('kpiMesa').textContent = participaran;
         }
 
         function actualizarFiltrosCascada() {
@@ -377,7 +379,10 @@
             if (filtradas.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Sin coincidencias</td></tr>';
             } else {
-                tbody.innerHTML = filtradas.map(r => `
+                tbody.innerHTML = filtradas.map(r => {
+                    const p1Map = { a: 'Celebración de la Comuna', b: 'Consulta Popular y Comunal', c: 'Elección de vocería' };
+                    const opinion = r.p3_opinion_consulta || r.pregunta_mejorar || '';  // soporte mixto legacy
+                    return `
                     <tr>
                         <td style="white-space:nowrap; color:#64748b; font-weight:600;">${fmtFecha(r.fecha_envio)}</td>
                         <td style="font-weight:700;">${escapeHtml(r.nombres)} ${escapeHtml(r.apellidos)}</td>
@@ -385,11 +390,11 @@
                         <td style="text-align:center;">${escapeHtml(String(r.edad ?? '--'))}</td>
                         <td style="font-weight:600;">${escapeHtml(r.comuna || '--')}</td>
                         <td style="font-weight:600;">${escapeHtml(r.comunidad || '--')}</td>
-                        <td class="truncar" title="${escapeHtml(r.pregunta_mejorar || '')}">${escapeHtml(r.pregunta_mejorar || '--')}</td>
-                        <td style="text-align:center;">${r.quiere_participar_mesa ? '<span style="color:#16a34a; font-weight:800;">✔</span>' : ''}</td>
+                        <td class="truncar" title="${escapeHtml(opinion)}">${escapeHtml(opinion || '--')}</td>
+                        <td style="text-align:center;">${r.p7_participa === 'si' ? '<span style="color:#16a34a; font-weight:800;">✔ SI</span>' : r.p7_participa === 'no' ? '<span style="color:#dc2626; font-weight:800;">NO</span>' : ''}</td>
                         <td><button class="btn-secundario" onclick="window._verDetalle('${r.id}')">Ver</button></td>
-                    </tr>
-                `).join('');
+                    </tr>`;
+                }).join('');
             }
             document.getElementById('totalFiltrado').textContent = `${filtradas.length} de ${respuestas.length} respuestas`;
         }
@@ -397,31 +402,76 @@
         window._verDetalle = function(id) {
             const r = respuestas.find(x => x.id === id);
             if (!r) return;
+
+            // Helper para imprimir bloque de respuesta
+            const bloque = (num, titulo, valor, color = '#2563eb') => {
+                if (!valor && valor !== 0) return '';
+                const txt = escapeHtml(String(valor)).replace(/\n/g, '<br>');
+                return `<div class="respuesta" style="border-left-color:${color}">
+                    <strong>${num}. ${escapeHtml(titulo)}</strong>${txt}
+                </div>`;
+            };
+
+            // Mapas legibles para opciones cerradas
+            const p1Texto = { a: 'Celebración de la Comuna', b: 'Consulta Popular y Comunal', c: 'Elección de vocería' }[r.p1_que_pasa_12julio] || '';
+            const p5Texto = { a: 'Conozco muy poco sobre el tema', b: 'Desconozco sobre el tema', c: 'No me interesa nada ese tema' }[r.p5_nivel_informacion] || '';
+
+            // Las 7 Transformaciones (solo las que tienen valor)
+            const trans = [1,2,3,4,5,6,7]
+                .map(i => ({ n: i, val: r[`p4_t${i}`] }))
+                .filter(x => x.val);
+            const transHtml = trans.length
+                ? `<div class="respuesta" style="border-left-color:#d4a017">
+                    <strong>4. Las 7 Transformaciones (que el ciudadano conoce)</strong>
+                    <ul style="margin:6px 0 0 0; padding-left:20px; line-height:1.6;">
+                        ${trans.map(x => `<li><strong>T${x.n}:</strong> ${escapeHtml(x.val)}</li>`).join('')}
+                    </ul>
+                </div>`
+                : '';
+
+            // Las 3 propuestas (solo las que tienen valor)
+            const props = [r.p6_propuesta_1, r.p6_propuesta_2, r.p6_propuesta_3].filter(Boolean);
+            const propsHtml = props.length
+                ? `<div class="respuesta" style="border-left-color:#16a34a">
+                    <strong>6. Propuestas de proyecto para mesa de trabajo</strong>
+                    <ol style="margin:6px 0 0 0; padding-left:22px; line-height:1.6;">
+                        ${props.map(p => `<li>${escapeHtml(p)}</li>`).join('')}
+                    </ol>
+                </div>`
+                : '';
+
+            // Participación
+            const partHtml = r.p7_participa
+                ? `<div class="respuesta" style="border-left-color:${r.p7_participa === 'si' ? '#16a34a' : '#dc2626'}">
+                    <strong>7. ¿Participará el 12 de Julio?</strong>
+                    <div style="font-weight:700; color:${r.p7_participa === 'si' ? '#16a34a' : '#dc2626'}; margin-bottom:6px;">${r.p7_participa === 'si' ? '✔ SI' : '✖ NO'}</div>
+                    ${r.p7_porque ? `<div style="color:#475569;"><em>Motivo:</em> ${escapeHtml(r.p7_porque).replace(/\n/g, '<br>')}</div>` : ''}
+                </div>`
+                : '';
+
             const caja = document.getElementById('modalCaja');
             caja.innerHTML = `
                 <button class="cerrar" onclick="document.getElementById('modal').classList.add('hidden')">✕ Cerrar</button>
                 <h2>${escapeHtml(r.nombres)} ${escapeHtml(r.apellidos)}</h2>
                 <div class="meta">
                     <strong style="color:#2563eb;">${escapeHtml(r.cedula)}</strong>
-                    · ${escapeHtml(String(r.edad))} años
-                    · ${escapeHtml(r.sexo === 'F' ? 'Femenino' : 'Masculino')}
+                    · ${escapeHtml(String(r.edad ?? '--'))} años
+                    · ${escapeHtml(r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '--')}
                     · 📞 ${escapeHtml(r.telefono || '--')}<br>
                     📍 ${escapeHtml(r.comuna || '--')} / ${escapeHtml(r.comunidad || '--')}
                     · Enviada: ${fmtFecha(r.fecha_envio)}
                 </div>
-                <div class="respuesta">
-                    <strong>1. ¿Qué debemos mejorar?</strong>
-                    ${escapeHtml(r.pregunta_mejorar || '(sin respuesta)').replace(/\n/g, '<br>')}
-                </div>
-                <div class="respuesta" style="border-left-color:#f97316;">
-                    <strong>2. ¿Tienes dudas sobre la Consulta Popular?</strong>
-                    ${escapeHtml(r.pregunta_dudas || '(sin dudas)').replace(/\n/g, '<br>')}
-                </div>
-                <div class="respuesta" style="border-left-color:#16a34a;">
-                    <strong>3. Tu propuesta para construir soluciones</strong>
-                    ${escapeHtml(r.pregunta_propuesta || '(sin propuesta)').replace(/\n/g, '<br>')}
-                </div>
-                ${r.quiere_participar_mesa ? '<div style="background:#dcfce7; color:#15803d; padding:10px 14px; border-radius:8px; font-weight:800;">✓ Quiere participar en mesas de trabajo</div>' : ''}
+
+                ${bloque('1', '¿Qué va a pasar este 12 de Julio?', p1Texto, '#2563eb')}
+                ${bloque('2', '¿Sabe cuál fue el proyecto ganador del 8 de Marzo?', r.p2_proyecto_ganador, '#0ea5e9')}
+                ${bloque('3', '¿Qué opina sobre la consulta popular de su comuna?', r.p3_opinion_consulta, '#0a2351')}
+                ${transHtml}
+                ${bloque('5', '¿Qué tan informado se encuentra sobre los temas?', p5Texto, '#7c3aed')}
+                ${propsHtml}
+                ${partHtml}
+                ${bloque('8', '¿Qué se debe mejorar en los procesos de la consulta popular?', r.p8_mejorar_procesos, '#f59e0b')}
+                ${bloque('9', '¿Cree que la consulta popular ha dado respuestas a su comunidad?', r.p9_dio_respuestas, '#06b6d4')}
+                ${bloque('10', '¿Ha participado en la asamblea de ciudadanos para aprobar los proyectos?', r.p10_participo_asamblea, '#10b981')}
             `;
             document.getElementById('modal').classList.remove('hidden');
         };
@@ -435,7 +485,13 @@
         document.getElementById('filtroComunidad').addEventListener('change', renderTabla);
 
         document.getElementById('btnExportarCSV').addEventListener('click', () => {
-            const headers = ['fecha_envio','nombres','apellidos','cedula','edad','sexo','telefono','comuna','comunidad','pregunta_mejorar','pregunta_dudas','pregunta_propuesta','quiere_participar_mesa'];
+            const headers = [
+                'fecha_envio','nombres','apellidos','cedula','edad','sexo','telefono','comuna','comunidad',
+                'p1_que_pasa_12julio','p2_proyecto_ganador','p3_opinion_consulta',
+                'p4_t1','p4_t2','p4_t3','p4_t4','p4_t5','p4_t6','p4_t7',
+                'p5_nivel_informacion','p6_propuesta_1','p6_propuesta_2','p6_propuesta_3',
+                'p7_participa','p7_porque','p8_mejorar_procesos','p9_dio_respuestas','p10_participo_asamblea'
+            ];
             const filas = [headers.join(',')];
             respuestas.forEach(r => {
                 filas.push(headers.map(h => csvEscape(r[h])).join(','));

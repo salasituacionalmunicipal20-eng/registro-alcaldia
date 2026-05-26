@@ -108,7 +108,7 @@
         }
         .pregunta-card h3 {
             margin: 0 0 14px; font-size: 14px; font-weight: 700;
-            display: flex; align-items: center; gap: 10px;
+            display: flex; align-items: flex-start; gap: 10px;
             color: #0a2351; line-height: 1.35;
             padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;
         }
@@ -117,22 +117,62 @@
             width: 26px; height: 26px; flex-shrink: 0;
             border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
             font-size: 12px; font-weight: 700;
+            margin-top: 1px;
         }
-        .pregunta-card textarea {
+        .pregunta-card textarea, .pregunta-card input[type="text"] {
             width: 100%; padding: 12px 14px; border-radius: 4px;
             border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a;
             font-size: 14.5px; font-family: inherit; outline: none;
-            min-height: 90px; resize: vertical;
+            transition: border-color 0.15s, background 0.15s;
+            box-sizing: border-box;
+        }
+        .pregunta-card textarea { min-height: 90px; resize: vertical; }
+        .pregunta-card textarea:focus,
+        .pregunta-card input[type="text"]:focus { border-color: #0a2351; background: white; }
+
+        /* Radios horizontales (Si/No) o apilados (a/b/c) */
+        .opcion-radio {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 4px;
+            background: #f8fafc; cursor: pointer; margin-bottom: 6px;
             transition: border-color 0.15s, background 0.15s;
         }
-        .pregunta-card textarea:focus { border-color: #0a2351; background: white; }
-        .pregunta-card .check {
-            display: flex; align-items: center; gap: 10px; margin-top: 14px;
-            padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 4px;
-            background: #f8fafc; cursor: pointer;
+        .opcion-radio:hover { background: #f1f5f9; }
+        .opcion-radio input[type="radio"] {
+            width: 18px; height: 18px; cursor: pointer; accent-color: #0a2351; margin: 0;
         }
-        .pregunta-card .check input { width: 18px; height: 18px; cursor: pointer; accent-color: #0a2351; }
-        .pregunta-card .check span { font-weight: 500; font-size: 13.5px; color: #334155; }
+        .opcion-radio span { font-weight: 500; font-size: 13.5px; color: #334155; }
+        .opciones-inline { display: flex; gap: 10px; margin-bottom: 12px; }
+        .opcion-radio.inline { flex: 1; justify-content: center; margin-bottom: 0; }
+
+        /* 7 Transformaciones - lista vertical compacta */
+        .fila-trans { display: flex; flex-direction: column; gap: 8px; }
+        .trans-item {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .trans-item label {
+            font-size: 13px; font-weight: 700; color: #0a2351;
+            min-width: 36px; text-align: right;
+        }
+        .trans-item input { flex: 1; }
+
+        /* Propuestas numeradas */
+        .propuestas-stack { display: flex; flex-direction: column; gap: 8px; }
+        .propuesta-row {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .propuesta-row .num-mini {
+            background: #d4a017; color: white;
+            width: 24px; height: 24px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; flex-shrink: 0;
+        }
+        .propuesta-row input { flex: 1; }
+
+        .campo-extra-label {
+            display: block; font-size: 12px; font-weight: 700;
+            color: #475569; margin: 4px 0 6px;
+        }
 
         .btn-enviar {
             width: 100%; padding: 16px; border: none; border-radius: 4px;
@@ -279,24 +319,87 @@
                 </div>
             </div>
 
-            <!-- PREGUNTAS -->
+            <!-- ===== PREGUNTAS — CONSULTA POPULAR 12 DE JULIO ===== -->
+
+            <!-- 1 -->
             <div class="pregunta-card">
-                <h3><span class="num">1</span> ¿Qué considera que debemos mejorar en su comunidad?</h3>
-                <textarea id="f_q1" placeholder="Describa las necesidades o áreas que requieren atención prioritaria." required maxlength="800"></textarea>
+                <h3><span class="num">1</span> ¿Qué va a pasar este 12 de Julio?</h3>
+                <label class="opcion-radio"><input type="radio" name="p1" value="a" /> <span>Celebración de la Comuna</span></label>
+                <label class="opcion-radio"><input type="radio" name="p1" value="b" /> <span>Consulta Popular y Comunal</span></label>
+                <label class="opcion-radio"><input type="radio" name="p1" value="c" /> <span>Elección de vocería</span></label>
             </div>
 
+            <!-- 2 -->
             <div class="pregunta-card">
-                <h3><span class="num">2</span> ¿Tiene alguna duda referente a la Consulta Popular?</h3>
-                <textarea id="f_q2" placeholder="Escriba sus dudas o preguntas (puede dejar en blanco si no tiene ninguna)." maxlength="800"></textarea>
+                <h3><span class="num">2</span> ¿Sabe cuál fue el proyecto ganador de la consulta del 8 de Marzo?</h3>
+                <textarea id="f_p2" placeholder="Si lo recuerda, indique cuál fue. Puede dejar en blanco si no lo sabe." maxlength="600"></textarea>
             </div>
 
+            <!-- 3 -->
             <div class="pregunta-card">
-                <h3><span class="num">3</span> Su propuesta para construir soluciones</h3>
-                <textarea id="f_q3" placeholder="Proponga ideas concretas para resolver problemas de su comunidad." required maxlength="800"></textarea>
-                <label class="check">
-                    <input id="f_quiere_participar" type="checkbox" />
-                    <span>Deseo participar activamente en mesas de trabajo</span>
-                </label>
+                <h3><span class="num">3</span> ¿Qué opina sobre la consulta popular de su comuna?</h3>
+                <textarea id="f_p3" placeholder="Comparta su opinión sobre el proceso de consulta popular." maxlength="800"></textarea>
+            </div>
+
+            <!-- 4 - 7 Transformaciones -->
+            <div class="pregunta-card">
+                <h3><span class="num">4</span> ¿Conoce las 7 Transformaciones? Indique cada una</h3>
+                <div class="fila-trans">
+                    <div class="trans-item"><label>T 1:</label><input type="text" id="f_p4_t1" maxlength="200" placeholder="¿Cuál es la primera transformación?" /></div>
+                    <div class="trans-item"><label>T 2:</label><input type="text" id="f_p4_t2" maxlength="200" placeholder="¿Cuál es la segunda?" /></div>
+                    <div class="trans-item"><label>T 3:</label><input type="text" id="f_p4_t3" maxlength="200" placeholder="¿Cuál es la tercera?" /></div>
+                    <div class="trans-item"><label>T 4:</label><input type="text" id="f_p4_t4" maxlength="200" placeholder="¿Cuál es la cuarta?" /></div>
+                    <div class="trans-item"><label>T 5:</label><input type="text" id="f_p4_t5" maxlength="200" placeholder="¿Cuál es la quinta?" /></div>
+                    <div class="trans-item"><label>T 6:</label><input type="text" id="f_p4_t6" maxlength="200" placeholder="¿Cuál es la sexta?" /></div>
+                    <div class="trans-item"><label>T 7:</label><input type="text" id="f_p4_t7" maxlength="200" placeholder="¿Cuál es la séptima?" /></div>
+                </div>
+            </div>
+
+            <!-- 5 -->
+            <div class="pregunta-card">
+                <h3><span class="num">5</span> ¿Qué tan informado se encuentra sobre los temas que se votarán en la próxima consulta popular por un proyecto a financiar para su comuna?</h3>
+                <label class="opcion-radio"><input type="radio" name="p5" value="a" /> <span>Conozco muy poco sobre el tema</span></label>
+                <label class="opcion-radio"><input type="radio" name="p5" value="b" /> <span>Desconozco sobre el tema</span></label>
+                <label class="opcion-radio"><input type="radio" name="p5" value="c" /> <span>No me interesa nada ese tema</span></label>
+            </div>
+
+            <!-- 6 -->
+            <div class="pregunta-card">
+                <h3><span class="num">6</span> Nombre máximo tres propuestas de proyectos para llevar a mesa de trabajo (postulaciones enmarcadas en las 7 Transformaciones) para la consulta del 12 de Julio</h3>
+                <div class="propuestas-stack">
+                    <div class="propuesta-row"><span class="num-mini">1</span><input type="text" id="f_p6_a" maxlength="300" placeholder="Primera propuesta" /></div>
+                    <div class="propuesta-row"><span class="num-mini">2</span><input type="text" id="f_p6_b" maxlength="300" placeholder="Segunda propuesta" /></div>
+                    <div class="propuesta-row"><span class="num-mini">3</span><input type="text" id="f_p6_c" maxlength="300" placeholder="Tercera propuesta" /></div>
+                </div>
+            </div>
+
+            <!-- 7 -->
+            <div class="pregunta-card">
+                <h3><span class="num">7</span> ¿Participará este 12 de Julio en la consulta popular y comunal en su comuna?</h3>
+                <div class="opciones-inline">
+                    <label class="opcion-radio inline"><input type="radio" name="p7" value="si" /> <span>Sí</span></label>
+                    <label class="opcion-radio inline"><input type="radio" name="p7" value="no" /> <span>No</span></label>
+                </div>
+                <label class="campo-extra-label">¿Por qué?</label>
+                <textarea id="f_p7_porque" placeholder="Explique brevemente su respuesta." maxlength="600"></textarea>
+            </div>
+
+            <!-- 8 -->
+            <div class="pregunta-card">
+                <h3><span class="num">8</span> ¿Qué considera que se debe mejorar en los procesos de la consulta popular y comunal?</h3>
+                <textarea id="f_p8" placeholder="Indique los aspectos del proceso que ameritan mejora." maxlength="800"></textarea>
+            </div>
+
+            <!-- 9 -->
+            <div class="pregunta-card">
+                <h3><span class="num">9</span> ¿Cree que la consulta popular y comunal ha dado respuestas a su comunidad?</h3>
+                <textarea id="f_p9" placeholder="Comparta su valoración con ejemplos si los conoce." maxlength="800"></textarea>
+            </div>
+
+            <!-- 10 -->
+            <div class="pregunta-card">
+                <h3><span class="num">10</span> ¿Ha participado en la asamblea de ciudadanos y ciudadanas para aprobar los 7 proyectos de su comunidad para la consulta popular y comunal?</h3>
+                <textarea id="f_p10" placeholder="Indique si participó, cuándo y en qué tipo de asamblea." maxlength="800"></textarea>
             </div>
 
             <button id="btnEnviar" class="btn-enviar" type="button">
@@ -392,28 +495,53 @@
             div.textContent = '';
         };
 
+        // Helper: valor seleccionado de un grupo de radios
+        const radioValue = (name) => {
+            const sel = document.querySelector(`input[name="${name}"]:checked`);
+            return sel ? sel.value : '';
+        };
+        // Helper: text input que puede estar vacio
+        const v = (id) => (document.getElementById(id)?.value || '').trim();
+
         // Submit
         document.getElementById('btnEnviar').addEventListener('click', async () => {
             limpiarMensaje();
             const f = {
-                nombres: document.getElementById('f_nombres').value.trim(),
-                apellidos: document.getElementById('f_apellidos').value.trim(),
-                cedula: document.getElementById('f_cedula').value.trim().toUpperCase(),
-                edad: document.getElementById('f_edad').value,
-                sexo: document.getElementById('f_sexo').value,
-                telefono: document.getElementById('f_telefono').value.trim(),
-                comuna: document.getElementById('f_comuna').value,
-                comunidad: document.getElementById('f_comunidad').value,
-                pregunta_mejorar: document.getElementById('f_q1').value.trim(),
-                pregunta_dudas: document.getElementById('f_q2').value.trim(),
-                pregunta_propuesta: document.getElementById('f_q3').value.trim(),
-                quiere_participar_mesa: document.getElementById('f_quiere_participar').checked
+                // Datos personales + ubicacion
+                nombres: v('f_nombres'),
+                apellidos: v('f_apellidos'),
+                cedula: v('f_cedula').toUpperCase(),
+                edad: v('f_edad'),
+                sexo: v('f_sexo'),
+                telefono: v('f_telefono'),
+                comuna: v('f_comuna'),
+                comunidad: v('f_comunidad'),
+
+                // Preguntas - Consulta 12 de Julio
+                p1_que_pasa_12julio:  radioValue('p1'),
+                p2_proyecto_ganador:  v('f_p2'),
+                p3_opinion_consulta:  v('f_p3'),
+                p4_t1: v('f_p4_t1'), p4_t2: v('f_p4_t2'), p4_t3: v('f_p4_t3'),
+                p4_t4: v('f_p4_t4'), p4_t5: v('f_p4_t5'), p4_t6: v('f_p4_t6'),
+                p4_t7: v('f_p4_t7'),
+                p5_nivel_informacion: radioValue('p5'),
+                p6_propuesta_1: v('f_p6_a'),
+                p6_propuesta_2: v('f_p6_b'),
+                p6_propuesta_3: v('f_p6_c'),
+                p7_participa:   radioValue('p7'),
+                p7_porque:      v('f_p7_porque'),
+                p8_mejorar_procesos:   v('f_p8'),
+                p9_dio_respuestas:     v('f_p9'),
+                p10_participo_asamblea: v('f_p10')
             };
 
             // Validaciones cliente
-            const obligatorios = ['nombres', 'apellidos', 'cedula', 'edad', 'sexo', 'comuna', 'comunidad', 'pregunta_mejorar', 'pregunta_propuesta'];
+            const obligatorios = ['nombres', 'apellidos', 'cedula', 'edad', 'sexo', 'comuna', 'comunidad'];
             for (const k of obligatorios) {
-                if (!f[k]) { mostrarMensaje('Completa todos los campos marcados con asterisco (*)'); return; }
+                if (!f[k]) { mostrarMensaje('Completa todos los campos personales marcados con asterisco (*)'); return; }
+            }
+            if (!f.p1_que_pasa_12julio || !f.p5_nivel_informacion || !f.p7_participa) {
+                mostrarMensaje('Por favor responde las preguntas 1, 5 y 7 (de seleccion).'); return;
             }
             if (!/^[VEJPGvejpg]?\d{4,9}$/.test(f.cedula.replace(/[^A-Z0-9]/g, ''))) {
                 mostrarMensaje('La cédula tiene un formato inválido. Ej: V12345678'); return;
