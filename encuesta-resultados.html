@@ -472,6 +472,11 @@
                 ${bloque('8', '¿Qué se debe mejorar en los procesos de la consulta popular?', r.p8_mejorar_procesos, '#f59e0b')}
                 ${bloque('9', '¿Cree que la consulta popular ha dado respuestas a su comunidad?', r.p9_dio_respuestas, '#06b6d4')}
                 ${bloque('10', '¿Ha participado en la asamblea de ciudadanos para aprobar los proyectos?', r.p10_participo_asamblea, '#10b981')}
+
+                ${bloque('11', '¿Qué considera que debemos mejorar en su comunidad?', r.pregunta_mejorar, '#0a2351')}
+                ${bloque('12', '¿Tiene alguna duda referente a la Consulta Popular?', r.pregunta_dudas, '#0284c7')}
+                ${bloque('13', 'Su propuesta para construir soluciones', r.pregunta_propuesta, '#16a34a')}
+                ${r.quiere_participar_mesa ? '<div style="background:#dcfce7; color:#15803d; padding:10px 14px; border-radius:8px; font-weight:800; margin-top:8px;">✓ Desea participar activamente en mesas de trabajo</div>' : ''}
             `;
             document.getElementById('modal').classList.remove('hidden');
         };
@@ -490,7 +495,8 @@
                 'p1_que_pasa_12julio','p2_proyecto_ganador','p3_opinion_consulta',
                 'p4_t1','p4_t2','p4_t3','p4_t4','p4_t5','p4_t6','p4_t7',
                 'p5_nivel_informacion','p6_propuesta_1','p6_propuesta_2','p6_propuesta_3',
-                'p7_participa','p7_porque','p8_mejorar_procesos','p9_dio_respuestas','p10_participo_asamblea'
+                'p7_participa','p7_porque','p8_mejorar_procesos','p9_dio_respuestas','p10_participo_asamblea',
+                'pregunta_mejorar','pregunta_dudas','pregunta_propuesta','quiere_participar_mesa'
             ];
             const filas = [headers.join(',')];
             respuestas.forEach(r => {

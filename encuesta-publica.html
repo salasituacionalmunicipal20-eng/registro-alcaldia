@@ -402,6 +402,30 @@
                 <textarea id="f_p10" placeholder="Indique si participó, cuándo y en qué tipo de asamblea." maxlength="800"></textarea>
             </div>
 
+            <!-- ===== PREGUNTAS GENERALES (del flyer original) ===== -->
+
+            <!-- 11 (original 1) -->
+            <div class="pregunta-card">
+                <h3><span class="num">11</span> ¿Qué considera que debemos mejorar en su comunidad?</h3>
+                <textarea id="f_q1" placeholder="Describa las necesidades o áreas que requieren atención prioritaria." maxlength="800"></textarea>
+            </div>
+
+            <!-- 12 (original 2) -->
+            <div class="pregunta-card">
+                <h3><span class="num">12</span> ¿Tiene alguna duda referente a la Consulta Popular?</h3>
+                <textarea id="f_q2" placeholder="Escriba sus dudas o preguntas (puede dejar en blanco si no tiene ninguna)." maxlength="800"></textarea>
+            </div>
+
+            <!-- 13 (original 3) -->
+            <div class="pregunta-card">
+                <h3><span class="num">13</span> Su propuesta para construir soluciones</h3>
+                <textarea id="f_q3" placeholder="Proponga ideas concretas para resolver problemas de su comunidad." maxlength="800"></textarea>
+                <label class="opcion-radio" style="margin-top: 12px;">
+                    <input id="f_quiere_participar" type="checkbox" style="width:18px; height:18px; accent-color:#0a2351;" />
+                    <span>Deseo participar activamente en mesas de trabajo</span>
+                </label>
+            </div>
+
             <button id="btnEnviar" class="btn-enviar" type="button">
                 Enviar respuesta
             </button>
@@ -532,7 +556,13 @@
                 p7_porque:      v('f_p7_porque'),
                 p8_mejorar_procesos:   v('f_p8'),
                 p9_dio_respuestas:     v('f_p9'),
-                p10_participo_asamblea: v('f_p10')
+                p10_participo_asamblea: v('f_p10'),
+
+                // Preguntas generales (del flyer original)
+                pregunta_mejorar:    v('f_q1'),
+                pregunta_dudas:      v('f_q2'),
+                pregunta_propuesta:  v('f_q3'),
+                quiere_participar_mesa: document.getElementById('f_quiere_participar')?.checked || false
             };
 
             // Validaciones cliente
