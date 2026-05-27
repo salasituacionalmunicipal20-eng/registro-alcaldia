@@ -41,6 +41,18 @@
         .barra-relleno { height: 100%; background: linear-gradient(90deg, #2563eb, #0ea5e9); border-radius: 6px; display: flex; align-items: center; padding: 0 8px; color: white; font-size: 12px; font-weight: 800; }
         .barra-relleno.naranja { background: linear-gradient(90deg, #f97316, #fb923c); }
         .barra-relleno.verde { background: linear-gradient(90deg, #16a34a, #22c55e); }
+        .barra-relleno.rojo { background: linear-gradient(90deg, #dc2626, #ef4444); }
+        .barra-relleno.morado { background: linear-gradient(90deg, #7c3aed, #a855f7); }
+
+        /* Bloques de resultados en vivo (P5 / P7 / Mesa) */
+        .vivo-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+        @media (min-width: 900px) { .vivo-grid { grid-template-columns: 1fr 1fr; } }
+        .vivo-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+        .vivo-card h3 { margin: 0 0 4px; font-size: 13.5px; color: #0f172a; font-weight: 800; }
+        .vivo-card .sub { color: #64748b; font-size: 11.5px; font-weight: 600; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+        .vivo-card .barra-label { width: 220px; }
+        .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #16a34a; margin-right: 6px; box-shadow: 0 0 0 0 rgba(22,163,74,0.6); animation: pulso 1.6s infinite; }
+        @keyframes pulso { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,0.6); } 70% { box-shadow: 0 0 0 8px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
 
         /* FILTROS */
         .filtros { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; margin-bottom: 16px; }
@@ -158,6 +170,36 @@
         <div class="seccion">
             <h2>📍 Top Comunidades</h2>
             <div id="graficoComunidades" class="cargando">Cargando...</div>
+        </div>
+
+        <!-- ===== RESULTADOS EN VIVO - PREGUNTAS CLAVE ===== -->
+        <div class="seccion">
+            <h2><span class="pulse-dot"></span> Resultados en vivo · preguntas clave</h2>
+            <p style="color:#64748b; font-size:13px; margin:-6px 0 16px;">Estos contadores se actualizan automáticamente cada vez que alguien envía una respuesta.</p>
+            <div class="vivo-grid">
+
+                <!-- P5 - Nivel de informacion -->
+                <div class="vivo-card">
+                    <h3>Pregunta 5 · Nivel de información sobre la consulta</h3>
+                    <div class="sub" id="p5_total">0 respuestas</div>
+                    <div id="p5_barras"></div>
+                </div>
+
+                <!-- P7 - Participara -->
+                <div class="vivo-card">
+                    <h3>Pregunta 7 · ¿Participará el 12 de Julio?</h3>
+                    <div class="sub" id="p7_total">0 respuestas</div>
+                    <div id="p7_barras"></div>
+                </div>
+
+                <!-- Mesa de trabajo -->
+                <div class="vivo-card" style="grid-column: 1 / -1;">
+                    <h3>Casilla · "Deseo participar activamente en mesas de trabajo"</h3>
+                    <div class="sub" id="mesa_total">0 respuestas</div>
+                    <div id="mesa_barras"></div>
+                </div>
+
+            </div>
         </div>
 
         <!-- LISTA -->
@@ -281,6 +323,7 @@
             actualizarKPIs();
             actualizarFiltrosCascada();
             renderGraficos();
+            renderResultadosVivo();
             renderTabla();
         });
 
@@ -359,6 +402,73 @@
                     </div>`;
                 }).join('');
             }
+        }
+
+        // Render de los contadores en vivo (P5, P7 y casilla de mesa).
+        // Se llama desde el callback de onValue, por eso es "tiempo real": cada
+        // respuesta nueva en Firebase reactiva re-renderiza estos bloques.
+        function renderResultadosVivo() {
+            // ----- P5: nivel de informacion (radio a/b/c) -----
+            const p5Opts = [
+                { val: 'a', label: 'Conozco muy poco sobre el tema', color: '' },
+                { val: 'b', label: 'Desconozco sobre el tema', color: 'naranja' },
+                { val: 'c', label: 'No me interesa nada ese tema', color: 'rojo' }
+            ];
+            const p5Conteo = { a: 0, b: 0, c: 0 };
+            let p5Total = 0;
+            respuestas.forEach(r => {
+                if (r.p5_nivel_informacion && p5Conteo.hasOwnProperty(r.p5_nivel_informacion)) {
+                    p5Conteo[r.p5_nivel_informacion]++;
+                    p5Total++;
+                }
+            });
+            document.getElementById('p5_total').textContent = `${p5Total} respuesta${p5Total === 1 ? '' : 's'}`;
+            const p5Max = Math.max(1, ...Object.values(p5Conteo));
+            document.getElementById('p5_barras').innerHTML = p5Opts.map(o => {
+                const n = p5Conteo[o.val];
+                const pct = p5Total ? Math.round((n / p5Total) * 100) : 0;
+                return `
+                <div class="barra-row">
+                    <div class="barra-label" title="${escapeHtml(o.label)}">${escapeHtml(o.label)}</div>
+                    <div class="barra-fondo"><div class="barra-relleno ${o.color}" style="width:${(n/p5Max)*100}%; min-width: 48px;">${n} · ${pct}%</div></div>
+                </div>`;
+            }).join('');
+
+            // ----- P7: participara el 12 de Julio (si/no) -----
+            const p7Si = respuestas.filter(r => r.p7_participa === 'si').length;
+            const p7No = respuestas.filter(r => r.p7_participa === 'no').length;
+            const p7Total = p7Si + p7No;
+            document.getElementById('p7_total').textContent = `${p7Total} respuesta${p7Total === 1 ? '' : 's'}`;
+            const p7Max = Math.max(1, p7Si, p7No);
+            document.getElementById('p7_barras').innerHTML = [
+                { label: '✔ SI participaré', n: p7Si, color: 'verde' },
+                { label: '✖ NO participaré', n: p7No, color: 'rojo' }
+            ].map(o => {
+                const pct = p7Total ? Math.round((o.n / p7Total) * 100) : 0;
+                return `
+                <div class="barra-row">
+                    <div class="barra-label" title="${escapeHtml(o.label)}">${escapeHtml(o.label)}</div>
+                    <div class="barra-fondo"><div class="barra-relleno ${o.color}" style="width:${(o.n/p7Max)*100}%; min-width: 48px;">${o.n} · ${pct}%</div></div>
+                </div>`;
+            }).join('');
+
+            // ----- Casilla "Deseo participar activamente en mesas de trabajo" -----
+            const mesaSi = respuestas.filter(r => r.quiere_participar_mesa === true).length;
+            const mesaNo = respuestas.length - mesaSi;
+            const mesaTotal = respuestas.length;
+            document.getElementById('mesa_total').textContent = `${mesaSi} de ${mesaTotal} personas marcaron la casilla`;
+            const mesaMax = Math.max(1, mesaSi, mesaNo);
+            document.getElementById('mesa_barras').innerHTML = [
+                { label: '✔ Sí quiere participar', n: mesaSi, color: 'morado' },
+                { label: 'No marcó la casilla', n: mesaNo, color: '' }
+            ].map(o => {
+                const pct = mesaTotal ? Math.round((o.n / mesaTotal) * 100) : 0;
+                return `
+                <div class="barra-row">
+                    <div class="barra-label" title="${escapeHtml(o.label)}">${escapeHtml(o.label)}</div>
+                    <div class="barra-fondo"><div class="barra-relleno ${o.color}" style="width:${(o.n/mesaMax)*100}%; min-width: 48px;">${o.n} · ${pct}%</div></div>
+                </div>`;
+            }).join('');
         }
 
         function renderTabla() {
