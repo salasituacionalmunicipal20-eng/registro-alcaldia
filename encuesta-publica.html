@@ -226,6 +226,51 @@
         .hidden { display: none !important; }
         .loader-pequeno { display: inline-block; width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: girar 0.8s linear infinite; }
         @keyframes girar { to { transform: rotate(360deg); } }
+
+        /* ====== AJUSTES MOBILE (telefonos < 500px) ======
+           - Reduce paddings excesivos
+           - font-size 16px en inputs/selects evita auto-zoom en iOS Safari
+           - letter-spacing reducido para evitar overflow horizontal
+           - barra-logos se compacta con menos gap */
+        @media (max-width: 500px) {
+            .cintillo-gob { font-size: 9.5px; letter-spacing: 0.5px; padding: 6px 8px; }
+            .contenido-pad { padding: 16px 12px 0; }
+            .contenedor { padding: 0 0 32px; }
+
+            .barra-logos { gap: 6px; }
+
+            .header { padding: 22px 18px 20px; }
+            .header h1 { font-size: 21px; }
+            .header-titulo { font-size: 10px; letter-spacing: 1.2px; }
+            .header-sub { font-size: 13px; }
+
+            .tarjeta, .pregunta-card { padding: 16px 14px; }
+            .tarjeta-titulo { font-size: 11px; letter-spacing: 0.5px; }
+
+            .pregunta-card h3 { font-size: 13.5px; gap: 8px; }
+            .pregunta-card .num { width: 24px; height: 24px; font-size: 11.5px; }
+
+            /* iOS Safari hace zoom al hacer focus si el input es <16px */
+            .campo input, .campo select, .campo textarea,
+            .pregunta-card input[type="text"], .pregunta-card textarea {
+                font-size: 16px;
+            }
+            .opcion-radio span { font-size: 14px; }
+
+            .trans-item label { min-width: 32px; font-size: 12px; }
+            .btn-enviar { padding: 14px; font-size: 14.5px; letter-spacing: 0.6px; }
+
+            .footer-logos { gap: 12px; margin: 16px 0 6px; padding: 12px 10px; }
+        }
+
+        /* Pantallas muy chicas (< 360px - iPhone SE viejo, etc.) */
+        @media (max-width: 360px) {
+            .cintillo-gob { font-size: 8.5px; letter-spacing: 0; }
+            .barra-logos img { height: 30px; }
+            .barra-logos .logo-cr { height: 34px; }
+            .header h1 { font-size: 19px; }
+            .tarjeta, .pregunta-card { padding: 14px 12px; }
+        }
     </style>
 </head>
 <body>
@@ -282,12 +327,9 @@
                     </div>
                 </div>
 
-                <div class="fila fila-2">
-                    <div class="campo">
-                        <label>Edad (se calcula automáticamente)</label>
-                        <input id="f_edad" type="text" placeholder="Selecciona tu fecha de nacimiento" readonly style="background:#eef2ff; color:#1e1b4b; font-weight:700;" />
-                    </div>
-                    <div class="campo"></div>
+                <div class="campo">
+                    <label>Edad (se calcula automáticamente)</label>
+                    <input id="f_edad" type="text" placeholder="Selecciona tu fecha de nacimiento" readonly style="background:#eef2ff; color:#1e1b4b; font-weight:700;" />
                 </div>
 
                 <div class="fila fila-2">
