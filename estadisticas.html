@@ -941,7 +941,7 @@
                         <th style="width: 15%;">Comunidad</th>
                         <th style="width: 17%;">Dirección</th>
                         <th style="width: 10%;">Teléfono</th>
-                        <th style="width: 20%;">Diagnóstico / Tratamiento</th>
+                        <th style="width: 20%;" id="thReporteDinamico">Diagnóstico / Tratamiento</th>
                     </tr>
                 </thead>
                 <tbody id="tablaReporteCuerpo"></tbody>
@@ -1344,7 +1344,7 @@
                                 <th style="width: 15%;">Comunidad</th>
                                 <th style="width: 17%;">Dirección</th>
                                 <th style="width: 10%;">Teléfono</th>
-                                <th style="width: 20%;">Diagnóstico / Tratamiento</th>
+                                <th style="width: 20%;" id="thReporteDinamico">Diagnóstico / Tratamiento</th>
                             </tr>
                         </thead>
                         <tbody id="tablaReporteCuerpo"></tbody>
@@ -2834,12 +2834,23 @@
             document.getElementById('infoFiltrosReporte').innerHTML = obtenerTextoFiltros();
             document.getElementById('tablaReporteCuerpo').innerHTML = filasReporte;
 
+            // Renombra el header de la columna 7 a "Tipo de Cilindro / Cantidad"
+            // para este reporte (el default es "Diagnóstico / Tratamiento" que
+            // sirve a salud pero no a gas). Restauramos al default despues de
+            // imprimir para no afectar al proximo reporte que abra el usuario.
+            const thReporte = document.getElementById('thReporteDinamico');
+            if (thReporte) thReporte.textContent = 'Tipo de Cilindro / Cantidad';
+
             window.cerrarModalCilindros();
 
             setTimeout(() => {
                 prepararPrint();
                 window.print();
                 calcularEstadisticas();
+                setTimeout(() => {
+                    const th = document.getElementById('thReporteDinamico');
+                    if (th) th.textContent = 'Diagnóstico / Tratamiento';
+                }, 500);
             }, 300);
         };
 
