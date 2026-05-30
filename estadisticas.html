@@ -279,14 +279,31 @@
         .ranking-bar {
             background: linear-gradient(90deg, var(--azul-oficial), #38bdf8);
             height: 100%;
+            min-width: 6px;
+            border-radius: 6px 0 0 6px;
+        }
+        .ranking-label {
+            position: absolute;
+            top: 0;
+            left: 10px;
+            right: 10px;
+            height: 100%;
             display: flex;
             align-items: center;
-            padding-left: 10px;
-            color: white;
-            font-weight: 700;
+            color: #0f172a;
+            font-weight: 800;
             font-size: 11px;
             white-space: nowrap;
-            min-width: 24px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow:
+                 0 0  3px rgba(255,255,255,0.95),
+                 0 0  6px rgba(255,255,255,0.85),
+                 1px 1px 0 rgba(255,255,255,0.9),
+                -1px 1px 0 rgba(255,255,255,0.9),
+                 1px -1px 0 rgba(255,255,255,0.9),
+                -1px -1px 0 rgba(255,255,255,0.9);
+            pointer-events: none;
         }
         .ranking-count {
             text-align: right;
@@ -2244,8 +2261,9 @@
                 return `
                     <div class="ranking-row">
                         <div class="ranking-pos ${claseTop}">${pos === 1 ? '🥇' : (pos === 2 ? '🥈' : (pos === 3 ? '🥉' : '#' + pos))}</div>
-                        <div class="ranking-bar-wrap">
-                            <div class="ranking-bar" style="width: ${pct}%;" title="${comuna}: ${cantidad}">${comuna}</div>
+                        <div class="ranking-bar-wrap" title="${comuna}: ${cantidad}">
+                            <div class="ranking-bar" style="width: ${pct}%;"></div>
+                            <div class="ranking-label">${comuna}</div>
                         </div>
                         <div class="ranking-count">${cantidad}</div>
                     </div>

@@ -115,6 +115,85 @@
             background-color: #b00510;
         }
 
+        /* Panel naranja de rescate por fecha — para corridas viejas que NO
+           quedaron registradas en localStorage (porque se subieron con la
+           versión anterior del migrador). */
+        #panelRescate {
+            display: none;
+            background: #fff7ed;
+            border: 2px solid #fb923c;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            text-align: left;
+        }
+        #panelRescate h4 {
+            margin: 0 0 8px 0;
+            color: #9a3412;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        #panelRescate p {
+            margin: 4px 0 10px 0;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.4;
+        }
+        #panelRescate .rescate-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        #panelRescate input[type="date"] {
+            padding: 8px 10px;
+            border: 1px solid #fdba74;
+            border-radius: 5px;
+            font-size: 13px;
+            background: white;
+        }
+        #panelRescate button {
+            background-color: #ea580c;
+            color: white;
+            border: none;
+            padding: 9px 16px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        #panelRescate button:hover:not(:disabled) {
+            background-color: #c2410c;
+        }
+        #panelRescate button.confirmar {
+            background-color: #dc2626;
+        }
+        #panelRescate button.confirmar:hover:not(:disabled) {
+            background-color: #991b1b;
+        }
+        #panelRescate button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #toggleRescate {
+            background: none;
+            color: #ea580c;
+            border: 1px dashed #fb923c;
+            padding: 8px 14px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-top: 10px;
+            width: 100%;
+        }
+        #toggleRescate:hover {
+            background: #fff7ed;
+        }
+
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
@@ -207,6 +286,23 @@
         <button id="btnSubir" onclick="procesarCSV()" disabled>Verificando Credenciales...</button>
         <button id="btnReversa" onclick="procesarReversa()">🔄 REVERSAR ÚLTIMA CORRIDA</button>
 
+        <button id="toggleRescate" onclick="togglePanelRescate()">🚑 ¿Quieres reversar una carga vieja por fecha? (rescate retroactivo)</button>
+        <div id="panelRescate">
+            <h4>🚑 Reversa retroactiva por fecha</h4>
+            <p>
+                Borra todos los habitantes que tengan firma de migración masiva
+                (<code>CARLOS ADMIN (MIGRACIÓN MASIVA)</code>) y que fueron registrados en la fecha
+                que elijas. Útil para deshacer cargas viejas que no quedaron registradas en el
+                botón rojo de arriba. ⚠️ Esta acción NO se puede deshacer.
+            </p>
+            <div class="rescate-row">
+                <input type="date" id="fechaRescate">
+                <button onclick="previewRescate()">🔍 Buscar coincidencias</button>
+                <button class="confirmar" id="btnEjecutarRescate" onclick="ejecutarRescate()" disabled>🗑 Borrar los encontrados</button>
+            </div>
+            <div id="previewRescate" style="margin-top: 10px; font-size: 12px; color: #444;"></div>
+        </div>
+
         <div class="progress-bar" id="barraWrapper">
             <div class="progress-fill" id="barraProgreso"></div>
         </div>
@@ -239,6 +335,52 @@
         let database, auth, usuarioActivo = null;
         let ultimaCorridaIds = []; // IDs subidos en la sesión actual (para reversa en memoria)
 
+        // ==========================================
+        // PERSISTENCIA DE LA ÚLTIMA CORRIDA EN localStorage
+        // Antes la reversa solo funcionaba mientras la pestaña siguiera abierta.
+        // Ahora guardamos los IDs (+ metadata) para poder revertir incluso después
+        // de cerrar el navegador. Solo se borra cuando el usuario ejecuta la reversa
+        // o decide manualmente descartarla.
+        // ==========================================
+        const STORAGE_KEY = 'migrador_ultima_corrida_v1';
+
+        function guardarCorridaEnStorage(ids, modo, totalCSV) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    ids: ids,
+                    modo: modo,
+                    totalCSV: totalCSV,
+                    fecha: new Date().toLocaleString('es-VE'),
+                    fechaISO: new Date().toISOString()
+                }));
+            } catch (e) {
+                console.error('No se pudo guardar la corrida en localStorage:', e);
+            }
+        }
+
+        function leerCorridaDeStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return null;
+                const obj = JSON.parse(raw);
+                if (!obj || !Array.isArray(obj.ids) || obj.ids.length === 0) return null;
+                return obj;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function borrarCorridaDeStorage() {
+            try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        }
+
+        function mostrarBotonReversaConCorrida(corrida) {
+            const btnRev = document.getElementById('btnReversa');
+            btnRev.textContent = `🔄 REVERSAR CORRIDA DEL ${corrida.fecha} (${corrida.ids.length} habitantes)`;
+            btnRev.style.display = 'block';
+            btnRev.disabled = false;
+        }
+
         function escribirLog(mensaje, tipo = "log-info") {
             const consola = document.getElementById('consolaLog');
             if(!consola) return;
@@ -264,6 +406,20 @@
                     btn.disabled = false;
                     btn.textContent = "INICIAR MIGRACIÓN MASIVA 🚀";
                     escribirLog(`PERMISOS VALIDADOS. Autenticado como Súper Administrador.`, "log-success");
+
+                    // Si quedó una corrida pendiente de reversar (de una sesión anterior),
+                    // restaurar los IDs en memoria y mostrar el botón rojo.
+                    const corridaPendiente = leerCorridaDeStorage();
+                    if (corridaPendiente) {
+                        ultimaCorridaIds = corridaPendiente.ids.slice();
+                        mostrarBotonReversaConCorrida(corridaPendiente);
+                        escribirLog(
+                            `⚠️ Hay una corrida PENDIENTE DE REVERSAR del ${corridaPendiente.fecha} ` +
+                            `(${corridaPendiente.ids.length} habitantes, modo ${corridaPendiente.modo}). ` +
+                            `Use el botón rojo si quiere deshacerla; si todo está bien, ignore.`,
+                            "log-warning"
+                        );
+                    }
                 } else {
                     usuarioActivo = null;
                     document.getElementById('btnSubir').disabled = true;
@@ -854,13 +1010,13 @@
                         escribirLog(`🎉 No hubo advertencias ni errores. Carga 100% limpia.`, "log-success");
                     }
 
-                    // Habilitar botón de reversa (solo válido en esta sesión del navegador)
+                    // Habilitar botón de reversa y PERSISTIR la corrida en localStorage
+                    // para poder revertir incluso después de cerrar el navegador.
                     if (ultimaCorridaIds.length > 0) {
-                        const btnRev = document.getElementById('btnReversa');
-                        btnRev.textContent = `🔄 REVERSAR ÚLTIMA CORRIDA (${ultimaCorridaIds.length} habitantes)`;
-                        btnRev.style.display = 'block';
-                        btnRev.disabled = false;
-                        escribirLog(`⚠️ Botón de REVERSA disponible: puede deshacer esta corrida mientras no recargue la página.`, "log-warning");
+                        guardarCorridaEnStorage(ultimaCorridaIds, modoCarga, totalDatos);
+                        const corridaGuardada = leerCorridaDeStorage();
+                        mostrarBotonReversaConCorrida(corridaGuardada);
+                        escribirLog(`⚠️ Botón de REVERSA disponible y PERSISTIDO: aunque cierres la pestaña, podrás revertir esta corrida cuando vuelvas a entrar al migrador.`, "log-warning");
                     }
 
                     alert(
@@ -943,14 +1099,335 @@
             escribirLog(`✅ REVERSA COMPLETADA. Borrados: ${borrados}. Errores: ${errores}.`, "log-success");
             document.getElementById('txtEta').textContent = 'REVERSA FINALIZADA';
 
-            // Limpiamos el rastro para que no se pueda volver a ejecutar sobre IDs ya borrados
+            // Limpiamos el rastro (memoria + localStorage) para que no se pueda
+            // volver a ejecutar sobre IDs ya borrados.
             ultimaCorridaIds = [];
+            borrarCorridaDeStorage();
             btnRev.style.display = 'none';
             btnRev.disabled = true;
             document.getElementById('btnSubir').disabled = false;
             if (typeof window.finalizarOperacionLarga === 'function') window.finalizarOperacionLarga();
 
             alert(`Reversa completada.\nBorrados: ${borrados}\nErrores: ${errores}`);
+        };
+
+        // ==========================================
+        // RESCATE RETROACTIVO POR FECHA
+        // ==========================================
+        // Permite borrar habitantes subidos por migración masiva en una fecha
+        // específica, incluso si fueron cargados con la versión anterior del
+        // migrador (cuando la corrida no se persistía en localStorage). El
+        // filtro es: registrado_por_nombre incluye "MIGRACI" (cubre tanto
+        // "MIGRACIÓN" como "MIGRACION") + fecha_registro empieza con la fecha
+        // elegida en cualquiera de los formatos comunes que produce
+        // new Date().toLocaleString() según el locale del navegador.
+        // ==========================================
+        let idsParaRescate = [];
+
+        window.togglePanelRescate = function() {
+            const panel = document.getElementById('panelRescate');
+            const abierto = panel.style.display === 'block';
+            panel.style.display = abierto ? 'none' : 'block';
+            if (!abierto) {
+                const input = document.getElementById('fechaRescate');
+                if (!input.value) {
+                    const hoy = new Date();
+                    const yyyy = hoy.getFullYear();
+                    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+                    const dd = String(hoy.getDate()).padStart(2, '0');
+                    input.value = `${yyyy}-${mm}-${dd}`;
+                }
+            }
+        };
+
+        // ¿La fecha_registro de un habitante corresponde a la fecha ISO elegida?
+        //
+        // El problema: new Date().toLocaleString() (línea 682) se llama sin
+        // locale, así que el formato exacto depende del navegador y la región
+        // del PC donde se hizo la carga. Posibles outputs reales en Windows:
+        //   - "30/5/2026 14:51:23"
+        //   - "30/05/2026, 2:51:23 p. m."
+        //   - "viernes, 30 de mayo de 2026 14:51:23"
+        //   - "30.5.2026, 14:51"
+        //   - "5/30/2026, 2:51:23 PM"   (US english como fallback)
+        //
+        // Solución: extraer TODOS los triplets numéricos del string usando
+        // una regex tolerante a separador (/, -, .), y validar día+mes+año
+        // contra el target en cualquier orden (DMY o MDY o YMD). Usamos
+        // lookbehind/lookahead negativos para evitar falsos positivos como
+        // "30/5/20269" matcheando "30/5/2026".
+        //
+        // Como respaldo, también buscamos el patrón en español largo:
+        // "30 de mayo de 2026" / "30 mayo 2026".
+        function fechaCoincide(fechaRegStr, fechaInputISO) {
+            if (!fechaRegStr || !fechaInputISO) return false;
+            const partes = fechaInputISO.split('-');
+            if (partes.length !== 3) return false;
+            const targetYear  = parseInt(partes[0], 10);
+            const targetMonth = parseInt(partes[1], 10);
+            const targetDay   = parseInt(partes[2], 10);
+            const txt = fechaRegStr.toString();
+
+            // 1) Match numérico: d/m/yyyy, m/d/yyyy, yyyy/m/d, con separador
+            //    /, -, o . — y con o sin ceros de relleno. Lookarounds
+            //    aseguran que no haya dígitos pegados a los lados.
+            const reNum = /(?<!\d)(\d{1,4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})(?!\d)/g;
+            let m;
+            while ((m = reNum.exec(txt)) !== null) {
+                const a = parseInt(m[1], 10);
+                const b = parseInt(m[2], 10);
+                const c = parseInt(m[3], 10);
+                // Caso año al final (DMY o MDY)
+                if (c === targetYear) {
+                    if (a === targetDay && b === targetMonth) return true;  // DMY
+                    if (a === targetMonth && b === targetDay) return true;  // MDY
+                }
+                // Caso año al inicio (YMD o YDM)
+                if (a === targetYear) {
+                    if (b === targetMonth && c === targetDay) return true;  // YMD
+                    if (b === targetDay && c === targetMonth) return true;  // YDM
+                }
+            }
+
+            // 2) Match en español largo: "30 de mayo de 2026" / "30 mayo 2026"
+            const mesesEs = ['enero','febrero','marzo','abril','mayo','junio',
+                             'julio','agosto','septiembre','setiembre','octubre',
+                             'noviembre','diciembre'];
+            const nombreMes = mesesEs[targetMonth - 1];
+            const nombreMesAlt = targetMonth === 9 ? 'setiembre' : null;
+            const txtLow = txt.toLowerCase();
+            const candidatos = [nombreMes];
+            if (nombreMesAlt) candidatos.push(nombreMesAlt);
+            for (const mesNombre of candidatos) {
+                if (!mesNombre) continue;
+                // Uso [^0-9] en vez de [^\d] para evitar cualquier ambigüedad
+                // de escape dentro de new RegExp() con template literals.
+                const reEs = new RegExp(
+                    `(?:^|[^0-9])${targetDay}[^0-9]{1,5}${mesNombre}[^0-9]{1,5}${targetYear}(?:$|[^0-9])`,
+                    'i'
+                );
+                if (reEs.test(txtLow)) return true;
+            }
+            return false;
+        }
+
+        // Escapa HTML para no inyectar nada raro que venga de Firebase en la
+        // tabla de preview. Defensivo: aunque la data viene de cargas
+        // controladas por el admin, no perdemos nada por ser cuidadosos.
+        function escHtml(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Guard de concurrencia: evita que el usuario dispare múltiples
+        // previewRescate o ejecutarRescate en paralelo (que sobreescribirían
+        // idsParaRescate con resultados inconsistentes).
+        let rescateEnCurso = false;
+
+        window.previewRescate = async function() {
+            if (!usuarioActivo || usuarioActivo.email !== "carlos.admin@alcaldia.com") {
+                alert("Acceso denegado.");
+                return;
+            }
+            if (rescateEnCurso) {
+                alert("Ya hay una operación de rescate en curso. Espera a que termine.");
+                return;
+            }
+            const fechaInput = document.getElementById('fechaRescate').value;
+            if (!fechaInput) {
+                alert("Elige una fecha primero.");
+                return;
+            }
+            const preview = document.getElementById('previewRescate');
+            const btnEjecutar = document.getElementById('btnEjecutarRescate');
+            rescateEnCurso = true;
+            preview.innerHTML = '<span style="color:#666;">⏳ Leyendo Firebase y filtrando...</span>';
+            btnEjecutar.disabled = true;
+            idsParaRescate = [];
+
+            try {
+                const snap = await get(child(ref(database), 'habitantes'));
+                if (!snap.exists()) {
+                    preview.innerHTML = '<span style="color:#dc2626;">No hay habitantes en la base.</span>';
+                    return;
+                }
+                const data = snap.val();
+                const coincidencias = [];
+                let revisados = 0;
+                let sinFirmaMasiva = 0;
+                let conFirmaSinFecha = 0;
+
+                for (const id in data) {
+                    revisados++;
+                    const h = data[id];
+                    const firma = (h.registrado_por_nombre || '').toString().toUpperCase();
+                    // Filtra solo los de migración masiva. "MIGRACI" matchea
+                    // tanto "MIGRACIÓN MASIVA" como "MIGRACION MASIVA" (con/sin
+                    // tilde) y "MIGRACIÓN MASIVA - RESCATE".
+                    if (!firma.includes('MIGRACI')) { sinFirmaMasiva++; continue; }
+                    const fechaReg = (h.fecha_registro || '').toString().trim();
+                    if (!fechaReg) { conFirmaSinFecha++; continue; }
+                    if (!fechaCoincide(fechaReg, fechaInput)) continue;
+                    coincidencias.push({
+                        id,
+                        nombre: `${h.nombre || ''} ${h.apellido || ''}`.trim() || '(sin nombre)',
+                        cedula: h.cedula ? `${h.nacionalidad || 'V'}-${h.cedula}` : 'S/C',
+                        comuna: h.comuna || '—',
+                        fecha_registro: fechaReg
+                    });
+                }
+
+                idsParaRescate = coincidencias.map(c => c.id);
+
+                if (coincidencias.length === 0) {
+                    preview.innerHTML =
+                        `<span style="color:#dc2626;">❌ No se encontraron habitantes con firma de migración masiva en la fecha <b>${escHtml(fechaInput)}</b>.</span>` +
+                        `<br><span style="color:#666; font-size:11px;">Revisados: ${revisados} habitantes totales · Con firma de migración masiva: ${revisados - sinFirmaMasiva} · Sin fecha registrada: ${conFirmaSinFecha} · Coincidentes con esa fecha: 0.</span>` +
+                        `<br><span style="color:#666; font-size:11px;">El matcher acepta formatos numéricos (30/5/2026, 30-05-2026, 2026/5/30, 30.5.2026, etc.) y español largo ("30 de mayo de 2026"). Si tu fecha_registro tiene un formato distinto, dime y lo agrego.</span>`;
+                    btnEjecutar.disabled = true;
+                    return;
+                }
+
+                const muestra = coincidencias.slice(0, 10);
+                let html = `<div style="color:#16a34a; font-weight:bold; margin-bottom:6px;">✅ Se encontraron <b>${coincidencias.length}</b> habitantes coincidentes.</div>`;
+                html += `<div style="background:white; border:1px solid #fdba74; border-radius:4px; padding:8px; max-height:180px; overflow-y:auto; font-size:11px;">`;
+                muestra.forEach((c, i) => {
+                    html += `<div style="padding:3px 0; border-bottom:1px dashed #eee;">`;
+                    html += `<b>${i+1}.</b> ${escHtml(c.nombre)} · C.I: ${escHtml(c.cedula)} · 📍 ${escHtml(c.comuna)} · 🕒 ${escHtml(c.fecha_registro)}`;
+                    html += `</div>`;
+                });
+                if (coincidencias.length > 10) {
+                    html += `<div style="padding:6px 0 0 0; color:#666; font-style:italic;">... y ${coincidencias.length - 10} más (solo se muestran los primeros 10 a modo de muestra; se borrarán los ${coincidencias.length}).</div>`;
+                }
+                html += `</div>`;
+                html += `<div style="color:#9a3412; margin-top:6px; font-size:11px;">⚠️ Si vas a borrar, revisa la muestra: TODOS los ${coincidencias.length} coincidentes serán eliminados. La acción no se puede deshacer.</div>`;
+                preview.innerHTML = html;
+                btnEjecutar.disabled = false;
+                escribirLog(`🔍 Rescate por fecha (${escHtml(fechaInput)}): ${coincidencias.length} habitantes con firma de migración masiva encontrados.`, "log-warning");
+            } catch (err) {
+                preview.innerHTML = `<span style="color:#dc2626;">❌ Error leyendo Firebase: ${escHtml(err.message)}</span><br><span style="color:#666; font-size:11px;">Vuelve a darle a "Buscar coincidencias" para reintentar.</span>`;
+                btnEjecutar.disabled = true;
+            } finally {
+                rescateEnCurso = false;
+            }
+        };
+
+        window.ejecutarRescate = async function() {
+            if (!usuarioActivo || usuarioActivo.email !== "carlos.admin@alcaldia.com") {
+                alert("Acceso denegado.");
+                return;
+            }
+            if (rescateEnCurso) {
+                alert("Ya hay una operación de rescate en curso. Espera a que termine.");
+                return;
+            }
+            if (idsParaRescate.length === 0) {
+                alert("Primero haz clic en 'Buscar coincidencias' para ver qué se va a borrar.");
+                return;
+            }
+            const total = idsParaRescate.length;
+            const fecha = document.getElementById('fechaRescate').value;
+            const ok1 = confirm(`🚑 RESCATE RETROACTIVO\n\nSe borrarán PERMANENTEMENTE ${total} habitantes con firma de migración masiva registrados en la fecha ${fecha}.\n\n¿Seguro?`);
+            if (!ok1) return;
+            const ok2 = confirm(`Confirmación final:\n\nSe eliminarán ${total} registros de /habitantes en Firebase.\nEsta acción NO se puede deshacer.\n\n¿Proceder?`);
+            if (!ok2) return;
+
+            const btnEjecutar = document.getElementById('btnEjecutarRescate');
+            const preview = document.getElementById('previewRescate');
+            rescateEnCurso = true;
+            btnEjecutar.disabled = true;
+            document.getElementById('btnSubir').disabled = true;
+            document.getElementById('btnReversa').disabled = true;
+            document.getElementById('barraWrapper').style.display = 'block';
+            document.getElementById('statsPanel').style.display = 'flex';
+            document.getElementById('barraProgreso').style.width = '0%';
+            document.getElementById('txtEta').textContent = 'Rescate: Borrando por fecha...';
+            document.getElementById('txtCompletados').textContent = `Borrados: 0 / ${total}`;
+            if (typeof window.iniciarOperacionLarga === 'function') window.iniciarOperacionLarga();
+
+            escribirLog(`=================================`, "log-warning");
+            escribirLog(`🚑 INICIANDO RESCATE RETROACTIVO: ${total} habitantes (fecha ${escHtml(fecha)})...`, "log-warning");
+
+            let borrados = 0, errores = 0;
+            // Copia local de los IDs para no perder el rastro si alguien
+            // modifica idsParaRescate durante el borrado.
+            const idsTrabajados = idsParaRescate.slice();
+
+            try {
+                for (let i = 0; i < idsTrabajados.length; i++) {
+                    if (i % 10 === 0) await refrescarUI();
+                    const id = idsTrabajados[i];
+                    try {
+                        await remove(ref(database, `habitantes/${id}`));
+                        borrados++;
+                        escribirLog(`[RESCATADO] habitantes/${escHtml(id)}`, "log-success");
+                    } catch (err) {
+                        errores++;
+                        escribirLog(`❌ Error borrando ${escHtml(id)}: ${escHtml(err.message)}`, "log-error");
+                    }
+                    const pct = ((i + 1) / total) * 100;
+                    document.getElementById('barraProgreso').style.width = pct + '%';
+                    document.getElementById('txtCompletados').textContent = `Borrados: ${borrados} / ${total}`;
+                    document.getElementById('txtPorcentaje').textContent = Math.round(pct) + '%';
+                }
+
+                escribirLog(`=================================`, "log-warning");
+                escribirLog(`✅ RESCATE COMPLETADO. Borrados: ${borrados}. Errores: ${errores}.`, "log-success");
+                document.getElementById('txtEta').textContent = 'RESCATE FINALIZADO';
+
+                // Si la corrida persistida en localStorage incluye IDs que
+                // acabamos de borrar, los quitamos para que el botón rojo no
+                // apunte a IDs muertos.
+                const corridaGuardada = leerCorridaDeStorage();
+                if (corridaGuardada) {
+                    const setBorrados = new Set(idsTrabajados);
+                    const restantes = corridaGuardada.ids.filter(id => !setBorrados.has(id));
+                    if (restantes.length === 0) {
+                        borrarCorridaDeStorage();
+                        ultimaCorridaIds = [];
+                        const btnRev = document.getElementById('btnReversa');
+                        btnRev.style.display = 'none';
+                        escribirLog(`ℹ️ La corrida pendiente en localStorage ya fue borrada completa por el rescate. Botón de reversa retirado.`, "log-warning");
+                    } else if (restantes.length !== corridaGuardada.ids.length) {
+                        corridaGuardada.ids = restantes;
+                        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(corridaGuardada)); } catch(e) {}
+                        ultimaCorridaIds = restantes.slice();
+                        mostrarBotonReversaConCorrida(corridaGuardada);
+                        escribirLog(`ℹ️ La corrida pendiente quedó con ${restantes.length} IDs restantes tras el rescate.`, "log-warning");
+                    }
+                }
+
+                idsParaRescate = [];
+                preview.innerHTML = `<span style="color:#16a34a;">✅ Rescate finalizado. Borrados: ${borrados} · Errores: ${errores}.</span>`;
+                alert(`Rescate retroactivo finalizado.\nFecha filtrada: ${fecha}\nBorrados: ${borrados}\nErrores: ${errores}`);
+            } catch (errLoop) {
+                // Si el loop entero explota (no por error de un remove individual
+                // sino algo del sistema), reportamos en consola y preview para
+                // que el admin sepa cuántos alcanzó a borrar antes de fallar.
+                escribirLog(`❌❌ FALLO TOTAL del rescate después de ${borrados} borrados: ${escHtml(errLoop.message)}`, "log-error");
+                preview.innerHTML = `<span style="color:#dc2626;">❌ El rescate falló a mitad. Borrados: ${borrados} / ${total}. Error: ${escHtml(errLoop.message)}. Vuelve a darle a "Buscar coincidencias" para recalcular qué falta.</span>`;
+                alert(`Rescate INTERRUMPIDO por error del sistema.\nAlcanzó a borrar: ${borrados}\nFaltaron: ${total - borrados}\nDetalle en la consola del migrador.`);
+            } finally {
+                // Pase lo que pase, restauramos los botones para que el admin
+                // pueda seguir trabajando.
+                rescateEnCurso = false;
+                document.getElementById('btnSubir').disabled = false;
+                // btnReversa se re-habilita solo si todavía quedan IDs huérfanos
+                // (cargas mezcladas que no se borraron completas).
+                const btnRev = document.getElementById('btnReversa');
+                if (ultimaCorridaIds.length > 0) {
+                    btnRev.disabled = false;
+                    btnRev.style.display = 'block';
+                } else {
+                    btnRev.disabled = true;
+                    btnRev.style.display = 'none';
+                }
+                if (typeof window.finalizarOperacionLarga === 'function') window.finalizarOperacionLarga();
+            }
         };
 
         // ==========================================
