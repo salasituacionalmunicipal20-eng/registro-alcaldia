@@ -304,9 +304,11 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
-        // Cargar comunas/comunidades
+        // Cargar comunas/comunidades desde /filtros_territoriales
+        // (mismo path que usan todos los otros formularios del proyecto;
+        // .read: true en las reglas, asi no exige autenticacion).
         let datosTerritoriales = {};
-        get(child(ref(database), 'datos_territoriales')).then((snap) => {
+        get(child(ref(database), 'filtros_territoriales')).then((snap) => {
             const fComuna = document.getElementById('f_comuna');
             if (snap.exists()) {
                 datosTerritoriales = snap.val();
