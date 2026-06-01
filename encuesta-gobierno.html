@@ -95,6 +95,22 @@
             font-size: 12px; font-weight: 700;
             margin-top: 1px;
         }
+        .pregunta-aclaracion {
+            display: block;
+            margin-top: 8px;
+            padding: 8px 10px;
+            background: #f8fafc;
+            border-left: 3px solid #d4a017;
+            border-radius: 3px;
+            font-size: 12.5px;
+            font-weight: 400;
+            color: #475569;
+            line-height: 1.5;
+        }
+        .pregunta-aclaracion strong {
+            color: #0a2351;
+            font-weight: 700;
+        }
         .pregunta-card textarea {
             width: 100%; padding: 12px 14px; border-radius: 4px;
             border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a;
@@ -171,15 +187,12 @@
     </style>
 </head>
 <body>
-    <!-- CINTILLO INSTITUCIONAL -->
-    <div class="cintillo-gob">República Bolivariana de Venezuela · Estado Miranda · Alcaldía de Cristóbal Rojas</div>
-
     <div class="contenedor">
-      <div class="contenido-pad">
+      <div class="contenido-pad" style="padding-top: 24px;">
 
         <!-- HEADER -->
         <div class="header">
-            <h1>Municipio Cristóbal Rojas</h1>
+            <h1>Comunas</h1>
         </div>
 
         <!-- MENSAJE GLOBAL -->
@@ -267,8 +280,14 @@
 
             <!-- 2 -->
             <div class="pregunta-card">
-                <h3><span class="num">2</span> ¿Qué aspira la gente como legitimar esa propuesta?</h3>
-                <textarea id="f_q2" placeholder="Indique de qué manera la comunidad legitimaría esa propuesta." maxlength="1500"></textarea>
+                <h3>
+                    <span class="num">2</span>
+                    <span>
+                        ¿Qué aspira la gente como legitimar esa propuesta?
+                        <span class="pregunta-aclaracion"><strong>Legitimar</strong> es lograr que la comunidad reconozca y respalde la propuesta como válida — por ejemplo, mediante consulta popular, asamblea, voto o consenso.</span>
+                    </span>
+                </h3>
+                <textarea id="f_q2" placeholder="Indique de qué manera la comunidad respaldaría esa propuesta." maxlength="1500"></textarea>
             </div>
 
             <button id="btnEnviar" class="btn-enviar" type="button">
