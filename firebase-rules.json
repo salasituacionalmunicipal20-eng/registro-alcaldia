@@ -31,13 +31,13 @@
       ".write": "auth.token.email === 'carlos.admin@alcaldia.com'"
     },
     "encuestas_consulta_popular": {
-      ".read": "auth != null",
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
       "$cedula": {
-        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com'",
+        ".write": "((!data.exists() && newData.exists()) && $cedula.matches(/^[VEJPG]?[0-9]{4,9}$/)) || auth.token.email === 'carlos.admin@alcaldia.com'",
         ".validate": "newData.hasChildren(['nombres', 'apellidos', 'cedula', 'fecha_nacimiento', 'comuna', 'comunidad'])",
         "nombres":                { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
         "apellidos":              { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
-        "cedula":                 { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20" },
+        "cedula":                 { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length > 0 && newData.val().length <= 20" },
         "fecha_nacimiento":       { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
         "edad":                   { ".validate": "newData.isNumber() && newData.val() >= 15 && newData.val() <= 120" },
         "sexo":                   { ".validate": "newData.isString() && (newData.val() === 'M' || newData.val() === 'F')" },
@@ -67,19 +67,19 @@
         "pregunta_dudas":         { ".validate": "newData.isString() && newData.val().length <= 1000" },
         "pregunta_propuesta":     { ".validate": "newData.isString() && newData.val().length <= 1000" },
         "quiere_participar_mesa": { ".validate": "newData.isBoolean()" },
-        "fecha_envio":            { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "fecha_envio":            { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/) && newData.val().length <= 50" },
         "user_agent":             { ".validate": "newData.isString() && newData.val().length <= 500" },
         "$other":                 { ".validate": false }
       }
     },
     "encuestas_reorganizacion_gobierno": {
-      ".read": "auth != null",
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
       "$cedula": {
-        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com'",
+        ".write": "((!data.exists() && newData.exists()) && $cedula.matches(/^[VEJPG]?[0-9]{4,9}$/)) || auth.token.email === 'carlos.admin@alcaldia.com'",
         ".validate": "newData.hasChildren(['nombres', 'apellidos', 'cedula', 'fecha_nacimiento', 'comuna', 'comunidad', 'pregunta_1_reorganizar_gobierno', 'pregunta_2_legitimar_propuesta'])",
         "nombres":                          { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
         "apellidos":                        { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
-        "cedula":                           { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20" },
+        "cedula":                           { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length > 0 && newData.val().length <= 20" },
         "fecha_nacimiento":                 { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
         "edad":                             { ".validate": "newData.isNumber() && newData.val() >= 15 && newData.val() <= 120" },
         "sexo":                             { ".validate": "newData.isString() && (newData.val() === 'M' || newData.val() === 'F')" },
@@ -88,7 +88,7 @@
         "comunidad":                        { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
         "pregunta_1_reorganizar_gobierno":  { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1500" },
         "pregunta_2_legitimar_propuesta":   { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1500" },
-        "fecha_envio":                      { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "fecha_envio":                      { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/) && newData.val().length <= 50" },
         "user_agent":                       { ".validate": "newData.isString() && newData.val().length <= 500" },
         "$other":                           { ".validate": false }
       }
