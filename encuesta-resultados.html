@@ -254,7 +254,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -270,9 +270,29 @@
         const auth = getAuth(app);
         const database = getDatabase(app);
 
-        // Gate de auth: si no esta logueado, lo manda al login
-        onAuthStateChanged(auth, (user) => {
-            if (!user) location.href = 'index.html';
+        // Gate de auth + rol admin: las rules de Firebase bloquean la lectura
+        // de encuestas para operadores no-admin, asi que si dejamos cargar la
+        // pagina a un operador regular veria la UI vacia/rota sin entender por
+        // que. Aqui validamos explicitamente y lo redirigimos:
+        //   - Sin sesion -> a index.html (login)
+        //   - Sesion sin rol admin (y no es Carlos super-admin) -> a admin.html
+        //   - Admin valido -> sigue
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuperAdmin = user.email === 'carlos.admin@alcaldia.com';
+            if (esSuperAdmin) return;
+            try {
+                const snap = await get(child(ref(database), `operadores/${user.uid}/rol`));
+                const rol = snap.exists() ? snap.val() : null;
+                if (rol !== 'admin') {
+                    alert('Acceso restringido: solo administradores pueden ver los resultados de la encuesta.');
+                    location.href = 'admin.html';
+                }
+            } catch (e) {
+                console.error('No se pudo verificar el rol del usuario:', e);
+                alert('No se pudo validar permisos. Vuelve a iniciar sesion.');
+                location.href = 'index.html';
+            }
         });
 
         // URL publica completa de la encuesta (gh-pages absoluta) - para mostrar
