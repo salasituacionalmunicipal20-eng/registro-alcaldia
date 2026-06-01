@@ -178,9 +178,11 @@
             <p style="color:#64748b; font-size:13px; margin:-6px 0 16px;">Estos contadores se actualizan automáticamente cada vez que alguien envía una respuesta.</p>
             <div class="vivo-grid">
 
-                <!-- P5 - Nivel de informacion -->
-                <div class="vivo-card">
-                    <h3>Pregunta 5 · Nivel de información sobre la consulta</h3>
+                <!-- P5 - Nivel de informacion (pregunta retirada de la encuesta
+                     publica, se mantiene aqui para visualizar la data historica
+                     que se recolecto antes de quitarla del formulario). -->
+                <div class="vivo-card" style="opacity: 0.92;">
+                    <h3>Pregunta 5 · Nivel de información sobre la consulta <span style="color:#94a3b8; font-weight:600; font-size:11px;">(pregunta retirada — solo data histórica)</span></h3>
                     <div class="sub" id="p5_total">0 respuestas</div>
                     <div id="p5_barras"></div>
                 </div>
@@ -242,6 +244,120 @@
                 </table>
             </div>
             <div id="totalFiltrado" style="text-align: right; padding: 10px 0 0; color: #64748b; font-weight: 700; font-size: 12px;"></div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- DIVISOR + SEGUNDA ENCUESTA: Reorganizacion del Gobierno      -->
+        <!-- Se separa visualmente para no mezclarse con la primera.      -->
+        <!-- Tema dorado/naranja en vez de azul, sus propios KPIs,        -->
+        <!-- onValue separado, modal detalle propio, exportacion CSV      -->
+        <!-- propia, link corto propio (tinyurl.com/gobiernocr2026).      -->
+        <!-- ============================================================ -->
+
+        <div style="margin: 56px 0 28px; text-align: center;">
+            <div style="height: 3px; background: linear-gradient(90deg, transparent, #d4a017, transparent); margin-bottom: 22px;"></div>
+            <div style="display: inline-block; background: #fef3c7; padding: 8px 18px; border-radius: 20px; border: 1px solid #fde68a;">
+                <span style="font-size: 11px; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 1.2px;">Segunda encuesta</span>
+            </div>
+            <h2 style="font-size: 26px; font-weight: 900; color: #78350f; margin: 14px 0 4px; letter-spacing: -0.3px;">
+                📋 Encuesta: Reorganización del Gobierno
+            </h2>
+            <p style="color: #92400e; font-size: 13px; margin: 0; font-weight: 600;">2 preguntas abiertas · COMUNA O NADA</p>
+        </div>
+
+        <!-- KPIS GOBIERNO -->
+        <div class="grid-kpis">
+            <div class="kpi" style="border-top: 4px solid #d4a017;">
+                <div class="kpi-titulo">Respuestas total</div>
+                <div class="kpi-valor" id="gob_kpiTotal">--</div>
+                <div class="kpi-sub">en encuesta de gobierno</div>
+            </div>
+            <div class="kpi" style="border-top: 4px solid #b45309;">
+                <div class="kpi-titulo">Comunas activas</div>
+                <div class="kpi-valor" id="gob_kpiComunas">--</div>
+                <div class="kpi-sub">con al menos 1 respuesta</div>
+            </div>
+            <div class="kpi" style="border-top: 4px solid #ca8a04;">
+                <div class="kpi-titulo">Comunidades</div>
+                <div class="kpi-valor" id="gob_kpiComunidades">--</div>
+                <div class="kpi-sub">distintas</div>
+            </div>
+            <div class="kpi" style="border-top: 4px solid #9a3412;">
+                <div class="kpi-titulo">Última respuesta</div>
+                <div class="kpi-valor" id="gob_kpiUltima" style="font-size: 18px; padding-top: 6px;">--</div>
+                <div class="kpi-sub">timestamp más reciente</div>
+            </div>
+        </div>
+
+        <!-- COMPARTIR GOBIERNO -->
+        <div class="seccion" style="border-top: 4px solid #d4a017;">
+            <h2>🔗 Compartir encuesta de gobierno</h2>
+            <div class="compartir-grid">
+                <div>
+                    <p style="color: #475569; font-size: 13px; margin: 0 0 10px;">Comparte este enlace por WhatsApp, redes o coloca el código QR en el flyer impreso:</p>
+                    <label style="display:block; font-size:11px; font-weight:800; color:#b45309; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">⭐ Enlace corto (recomendado)</label>
+                    <div class="compartir-link" id="gob_compartirLinkCorto" style="background:#fffbeb; border-color:#fde68a; color:#92400e; font-weight:800;">https://tinyurl.com/gobiernocr2026</div>
+                    <label style="display:block; font-size:11px; font-weight:800; color:#64748b; margin:10px 0 4px; text-transform:uppercase; letter-spacing:0.5px;">Enlace completo</label>
+                    <div class="compartir-link" id="gob_compartirLink">cargando...</div>
+                    <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn-exportar" style="background:#d4a017;" onclick="navigator.clipboard.writeText(document.getElementById('gob_compartirLinkCorto').textContent).then(()=>alert('Enlace corto copiado'))">📋 Copiar enlace corto</button>
+                        <button class="btn-secundario" id="gob_btnWhatsApp">📱 Compartir por WhatsApp</button>
+                        <button class="btn-secundario" id="gob_btnDescargarQR">💾 Descargar QR</button>
+                    </div>
+                </div>
+                <div class="qr-box">
+                    <img id="gob_qrImg" alt="Código QR encuesta gobierno" />
+                    <div style="margin-top:6px; font-size:11px; color:#64748b; font-weight:600;">QR del enlace corto</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- POR COMUNA - GOBIERNO -->
+        <div class="seccion">
+            <h2>📊 Participación por Comuna (Gobierno)</h2>
+            <div id="gob_graficoComunas" class="cargando">Cargando...</div>
+        </div>
+
+        <!-- LISTA - GOBIERNO -->
+        <div class="seccion">
+            <h2>📝 Respuestas individuales (Gobierno)</h2>
+            <div class="filtros">
+                <div class="campo">
+                    <label>Buscar</label>
+                    <input id="gob_filtroBusqueda" type="text" placeholder="nombre, cédula o texto..." />
+                </div>
+                <div class="campo">
+                    <label>Comuna</label>
+                    <select id="gob_filtroComuna"><option value="">Todas</option></select>
+                </div>
+                <div class="campo">
+                    <label>Comunidad</label>
+                    <select id="gob_filtroComunidad"><option value="">Todas</option></select>
+                </div>
+                <button class="btn-exportar" id="gob_btnExportarCSV" style="background:#d4a017;">📥 Exportar CSV</button>
+            </div>
+
+            <div class="tabla-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Nombre</th>
+                            <th>Cédula</th>
+                            <th>Edad</th>
+                            <th>Comuna</th>
+                            <th>Comunidad</th>
+                            <th>P1 · Reorganizar</th>
+                            <th>P2 · Legitimar</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="gob_tbodyRespuestas">
+                        <tr><td colspan="9" style="text-align:center; padding:40px; color:#94a3b8;">Cargando respuestas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="gob_totalFiltrado" style="text-align: right; padding: 10px 0 0; color: #64748b; font-weight: 700; font-size: 12px;"></div>
         </div>
 
     </div>
@@ -641,6 +757,192 @@
             a.click();
             URL.revokeObjectURL(url);
         });
+
+
+        // ============================================================
+        // SEGUNDA ENCUESTA: Reorganizacion del Gobierno
+        // Estado, listener en vivo, renders, modal, CSV y handlers de
+        // compartir — todo aislado con prefijo `gob_*` para no chocar con
+        // la primera encuesta.
+        // ============================================================
+        let respuestasGob = [];
+
+        const GOB_URL_PUBLICA = location.origin + location.pathname.replace(/encuesta-resultados\.html$/, 'encuesta-gobierno.html');
+        const GOB_URL_CORTA = 'https://tinyurl.com/gobiernocr2026';
+        document.getElementById('gob_compartirLink').textContent = GOB_URL_PUBLICA;
+        document.getElementById('gob_qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=10&data=${encodeURIComponent(GOB_URL_CORTA)}`;
+
+        document.getElementById('gob_btnWhatsApp').addEventListener('click', () => {
+            const texto = `📋 Participa en la encuesta de Reorganización del Gobierno · Municipio Cristóbal Rojas:\n\n${GOB_URL_CORTA}\n\nSon 2 preguntas, no toma más de 3 minutos.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+        });
+
+        document.getElementById('gob_btnDescargarQR').addEventListener('click', async () => {
+            try {
+                const qrUrlAlta = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=15&data=${encodeURIComponent(GOB_URL_CORTA)}`;
+                const resp = await fetch(qrUrlAlta);
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'QR_Encuesta_Gobierno_Cristobal_Rojas.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert('No se pudo descargar el QR: ' + e.message);
+            }
+        });
+
+        // Listener live de encuestas_reorganizacion_gobierno
+        onValue(ref(database, 'encuestas_reorganizacion_gobierno'), (snap) => {
+            respuestasGob = [];
+            if (snap.exists()) {
+                snap.forEach(child => {
+                    respuestasGob.push({ id: child.key, ...child.val() });
+                });
+            }
+            respuestasGob.sort((a, b) => (b.fecha_envio || '').localeCompare(a.fecha_envio || ''));
+            renderGobKPIs();
+            renderGobFiltrosCascada();
+            renderGobGraficoComunas();
+            renderGobTabla();
+        });
+
+        function renderGobKPIs() {
+            document.getElementById('gob_kpiTotal').textContent = respuestasGob.length;
+            const comunas = new Set(respuestasGob.map(r => r.comuna).filter(Boolean));
+            const comunidades = new Set(respuestasGob.map(r => `${r.comuna}|${r.comunidad}`).filter(x => !x.startsWith('|')));
+            document.getElementById('gob_kpiComunas').textContent = comunas.size;
+            document.getElementById('gob_kpiComunidades').textContent = comunidades.size;
+            const ult = respuestasGob[0]?.fecha_envio;
+            document.getElementById('gob_kpiUltima').textContent = ult ? fmtFecha(ult) : '--';
+        }
+
+        function renderGobFiltrosCascada() {
+            const filtroComuna = document.getElementById('gob_filtroComuna');
+            const seleccionada = filtroComuna.value;
+            const comunas = Array.from(new Set(respuestasGob.map(r => r.comuna).filter(Boolean))).sort();
+            filtroComuna.innerHTML = '<option value="">Todas las comunas</option>' + comunas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if (seleccionada) filtroComuna.value = seleccionada;
+            renderGobCascadaComunidad();
+        }
+
+        function renderGobCascadaComunidad() {
+            const c = document.getElementById('gob_filtroComuna').value;
+            const filtroComunidad = document.getElementById('gob_filtroComunidad');
+            const seleccionada = filtroComunidad.value;
+            let comunidades;
+            if (c) comunidades = Array.from(new Set(respuestasGob.filter(r => r.comuna === c).map(r => r.comunidad).filter(Boolean))).sort();
+            else comunidades = Array.from(new Set(respuestasGob.map(r => r.comunidad).filter(Boolean))).sort();
+            filtroComunidad.innerHTML = '<option value="">Todas las comunidades</option>' + comunidades.map(cd => `<option value="${escapeHtml(cd)}">${escapeHtml(cd)}</option>`).join('');
+            if (seleccionada && comunidades.includes(seleccionada)) filtroComunidad.value = seleccionada;
+        }
+
+        function renderGobGraficoComunas() {
+            const porComuna = {};
+            respuestasGob.forEach(r => { if (r.comuna) porComuna[r.comuna] = (porComuna[r.comuna] || 0) + 1; });
+            const entries = Object.entries(porComuna).sort((a,b) => b[1]-a[1]);
+            const max = Math.max(1, ...entries.map(([,v])=>v));
+            const el = document.getElementById('gob_graficoComunas');
+            if (entries.length === 0) {
+                el.innerHTML = '<p style="color:#94a3b8; font-weight:600;">Aún no hay respuestas.</p>';
+            } else {
+                el.className = '';
+                el.innerHTML = entries.map(([c, v]) => `
+                    <div class="barra-row">
+                        <div class="barra-label" title="${escapeHtml(c)}">${escapeHtml(c)}</div>
+                        <div class="barra-fondo"><div class="barra-relleno naranja" style="width:${(v/max)*100}%; min-width: 40px;">${v}</div></div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderGobTabla() {
+            const q = document.getElementById('gob_filtroBusqueda').value.toLowerCase().trim();
+            const fc = document.getElementById('gob_filtroComuna').value;
+            const fcd = document.getElementById('gob_filtroComunidad').value;
+            const filtradas = respuestasGob.filter(r => {
+                if (fc && r.comuna !== fc) return false;
+                if (fcd && r.comunidad !== fcd) return false;
+                if (q) {
+                    const blob = `${r.nombres||''} ${r.apellidos||''} ${r.cedula||''} ${r.pregunta_1_reorganizar_gobierno||''} ${r.pregunta_2_legitimar_propuesta||''}`.toLowerCase();
+                    if (!blob.includes(q)) return false;
+                }
+                return true;
+            });
+
+            const tbody = document.getElementById('gob_tbodyRespuestas');
+            if (filtradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Sin coincidencias</td></tr>';
+            } else {
+                tbody.innerHTML = filtradas.map(r => `
+                    <tr>
+                        <td style="white-space:nowrap; color:#64748b; font-weight:600;">${fmtFecha(r.fecha_envio)}</td>
+                        <td style="font-weight:700;">${escapeHtml(r.nombres)} ${escapeHtml(r.apellidos)}</td>
+                        <td style="color:#b45309; font-weight:800;">${escapeHtml(r.cedula)}</td>
+                        <td style="text-align:center;">${escapeHtml(String(r.edad ?? '--'))}</td>
+                        <td style="font-weight:600;">${escapeHtml(r.comuna || '--')}</td>
+                        <td style="font-weight:600;">${escapeHtml(r.comunidad || '--')}</td>
+                        <td class="truncar" title="${escapeHtml(r.pregunta_1_reorganizar_gobierno || '')}">${escapeHtml(r.pregunta_1_reorganizar_gobierno || '--')}</td>
+                        <td class="truncar" title="${escapeHtml(r.pregunta_2_legitimar_propuesta || '')}">${escapeHtml(r.pregunta_2_legitimar_propuesta || '--')}</td>
+                        <td><button class="btn-secundario" onclick="window._verDetalleGob('${r.id}')">Ver</button></td>
+                    </tr>
+                `).join('');
+            }
+            document.getElementById('gob_totalFiltrado').textContent = `${filtradas.length} de ${respuestasGob.length} respuestas`;
+        }
+
+        window._verDetalleGob = function(id) {
+            const r = respuestasGob.find(x => x.id === id);
+            if (!r) return;
+            const txt1 = escapeHtml(r.pregunta_1_reorganizar_gobierno || '').replace(/\n/g, '<br>');
+            const txt2 = escapeHtml(r.pregunta_2_legitimar_propuesta || '').replace(/\n/g, '<br>');
+            const caja = document.getElementById('modalCaja');
+            caja.innerHTML = `
+                <button class="cerrar" onclick="document.getElementById('modal').classList.add('hidden')">✕ Cerrar</button>
+                <h2>${escapeHtml(r.nombres)} ${escapeHtml(r.apellidos)}</h2>
+                <div class="meta">
+                    <strong style="color:#b45309;">${escapeHtml(r.cedula)}</strong>
+                    · ${escapeHtml(String(r.edad ?? '--'))} años
+                    ${r.fecha_nacimiento ? `<span style="color:#94a3b8;">(nacido ${escapeHtml(String(r.fecha_nacimiento).substring(0,10))})</span>` : ''}
+                    · ${escapeHtml(r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '--')}
+                    · 📞 ${escapeHtml(r.telefono || '--')}<br>
+                    📍 ${escapeHtml(r.comuna || '--')} / ${escapeHtml(r.comunidad || '--')}
+                    · Enviada: ${fmtFecha(r.fecha_envio)}
+                </div>
+                <div class="respuesta" style="border-left-color:#d4a017">
+                    <strong>1. Sobre la tarea de presentar una propuesta para reorganizar el gobierno. ¿Qué creen que debemos hacer?</strong>
+                    ${txt1 || '<em style="color:#94a3b8;">Sin respuesta</em>'}
+                </div>
+                <div class="respuesta" style="border-left-color:#b45309">
+                    <strong>2. ¿Qué aspira la gente como legitimar esa propuesta?</strong>
+                    ${txt2 || '<em style="color:#94a3b8;">Sin respuesta</em>'}
+                </div>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        };
+
+        document.getElementById('gob_filtroBusqueda').addEventListener('input', renderGobTabla);
+        document.getElementById('gob_filtroComuna').addEventListener('change', () => { renderGobCascadaComunidad(); renderGobTabla(); });
+        document.getElementById('gob_filtroComunidad').addEventListener('change', renderGobTabla);
+
+        document.getElementById('gob_btnExportarCSV').addEventListener('click', () => {
+            const headers = [
+                'fecha_envio','nombres','apellidos','cedula','fecha_nacimiento','edad','sexo','telefono','comuna','comunidad',
+                'pregunta_1_reorganizar_gobierno','pregunta_2_legitimar_propuesta'
+            ];
+            const filas = [headers.join(',')];
+            respuestasGob.forEach(r => {
+                filas.push(headers.map(h => csvEscape(r[h])).join(','));
+            });
+            const blob = new Blob(['﻿' + filas.join('\n')], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Encuesta_Gobierno_${new Date().toISOString().substring(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
 
         // Helpers
         function escapeHtml(s) {
