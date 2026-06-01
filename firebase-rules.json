@@ -1,0 +1,97 @@
+{
+  "rules": {
+    "habitantes": {
+      ".read": "auth != null",
+      "$habitanteId": {
+        ".write": "auth != null && (newData.exists() || auth.token.email === 'carlos.admin@alcaldia.com')"
+      }
+    },
+    "operadores": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || $uid === auth.uid"
+      }
+    },
+    "filtros_territoriales": {
+      ".read": true,
+      ".write": "auth.token.email === 'carlos.admin@alcaldia.com'"
+    },
+    "historial_sesiones": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com'",
+      ".write": "auth != null"
+    },
+    "presencia": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com'",
+      "$uid": {
+        ".write": "auth != null && $uid === auth.uid"
+      }
+    },
+    "config": {
+      ".read": "auth != null",
+      ".write": "auth.token.email === 'carlos.admin@alcaldia.com'"
+    },
+    "encuestas_consulta_popular": {
+      ".read": "auth != null",
+      "$cedula": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com'",
+        ".validate": "newData.hasChildren(['nombres', 'apellidos', 'cedula', 'fecha_nacimiento', 'comuna', 'comunidad'])",
+        "nombres":                { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
+        "apellidos":              { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
+        "cedula":                 { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20" },
+        "fecha_nacimiento":       { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
+        "edad":                   { ".validate": "newData.isNumber() && newData.val() >= 15 && newData.val() <= 120" },
+        "sexo":                   { ".validate": "newData.isString() && (newData.val() === 'M' || newData.val() === 'F')" },
+        "telefono":               { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "comuna":                 { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "comunidad":              { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "p1_que_pasa_12julio":    { ".validate": "newData.isString() && newData.val().length <= 5" },
+        "p2_proyecto_ganador":    { ".validate": "newData.isString() && newData.val().length <= 800" },
+        "p3_opinion_consulta":    { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "p4_t1":                  { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "p4_t2":                  { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "p4_t3":                  { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "p4_t4":                  { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "p4_t5":                  { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "p4_t6":                  { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "p4_t7":                  { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "p5_nivel_informacion":   { ".validate": "newData.isString() && newData.val().length <= 5" },
+        "p6_propuesta_1":         { ".validate": "newData.isString() && newData.val().length <= 400" },
+        "p6_propuesta_2":         { ".validate": "newData.isString() && newData.val().length <= 400" },
+        "p6_propuesta_3":         { ".validate": "newData.isString() && newData.val().length <= 400" },
+        "p7_participa":           { ".validate": "newData.isString() && newData.val().length <= 5" },
+        "p7_porque":              { ".validate": "newData.isString() && newData.val().length <= 800" },
+        "p8_mejorar_procesos":    { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "p9_dio_respuestas":      { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "p10_participo_asamblea": { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "pregunta_mejorar":       { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "pregunta_dudas":         { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "pregunta_propuesta":     { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "quiere_participar_mesa": { ".validate": "newData.isBoolean()" },
+        "fecha_envio":            { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "user_agent":             { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "$other":                 { ".validate": false }
+      }
+    },
+    "encuestas_reorganizacion_gobierno": {
+      ".read": "auth != null",
+      "$cedula": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com'",
+        ".validate": "newData.hasChildren(['nombres', 'apellidos', 'cedula', 'fecha_nacimiento', 'comuna', 'comunidad', 'pregunta_1_reorganizar_gobierno', 'pregunta_2_legitimar_propuesta'])",
+        "nombres":                          { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
+        "apellidos":                        { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
+        "cedula":                           { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20" },
+        "fecha_nacimiento":                 { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
+        "edad":                             { ".validate": "newData.isNumber() && newData.val() >= 15 && newData.val() <= 120" },
+        "sexo":                             { ".validate": "newData.isString() && (newData.val() === 'M' || newData.val() === 'F')" },
+        "telefono":                         { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "comuna":                           { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "comunidad":                        { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "pregunta_1_reorganizar_gobierno":  { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1500" },
+        "pregunta_2_legitimar_propuesta":   { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1500" },
+        "fecha_envio":                      { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "user_agent":                       { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "$other":                           { ".validate": false }
+      }
+    }
+  }
+}
