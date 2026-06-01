@@ -35,28 +35,35 @@
             .barra-logos { padding: 10px 14px; }
         }
 
-        .cintillo-gob {
-            background: #0a2351;
-            color: white;
-            text-align: center;
-            padding: 6px 12px;
-            font-size: 10.5px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-        }
-
         .contenido-pad { padding: 24px 16px 0; }
 
+        /* Header minimalista: solo el banner Comuna centrado (mismo que
+           encuesta-gobierno.html). Sin fondo azul ni h1 — el logo ya tiene
+           el nombre. Linea dorada delgada debajo como acento de marca. */
         .header {
-            background: #0a2351;
-            color: white; padding: 36px 28px 30px; border-radius: 6px;
-            margin-bottom: 22px; text-align: left;
-            border-left: 4px solid #d4a017;
+            text-align: center;
+            padding: 28px 16px 24px;
+            margin-bottom: 18px;
+            position: relative;
         }
-        .header-titulo { font-size: 11px; margin: 0 0 8px; letter-spacing: 2.5px; font-weight: 600; text-transform: uppercase; color: #d4a017; }
-        .header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.2; }
-        .header-sub { margin-top: 10px; font-size: 14px; color: rgba(255,255,255,0.78); font-weight: 400; line-height: 1.45; }
+        .header-banner {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 340px;
+            height: auto;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .header::after {
+            content: '';
+            display: block;
+            width: 64px;
+            height: 3px;
+            background: #d4a017;
+            margin: 18px auto 0;
+            border-radius: 2px;
+        }
 
         .tarjeta {
             background: white; border-radius: 6px; padding: 22px;
@@ -233,16 +240,12 @@
            - letter-spacing reducido para evitar overflow horizontal
            - barra-logos se compacta con menos gap */
         @media (max-width: 500px) {
-            .cintillo-gob { font-size: 9.5px; letter-spacing: 0.5px; padding: 6px 8px; }
             .contenido-pad { padding: 16px 12px 0; }
             .contenedor { padding: 0 0 32px; }
 
-            .barra-logos { gap: 6px; }
-
-            .header { padding: 22px 18px 20px; }
-            .header h1 { font-size: 21px; }
-            .header-titulo { font-size: 10px; letter-spacing: 1.2px; }
-            .header-sub { font-size: 13px; }
+            .header { padding: 22px 14px 18px; margin-bottom: 14px; }
+            .header-banner { max-width: 280px; }
+            .header::after { width: 52px; margin-top: 14px; }
 
             .tarjeta, .pregunta-card { padding: 16px 14px; }
             .tarjeta-titulo { font-size: 11px; letter-spacing: 0.5px; }
@@ -259,30 +262,22 @@
 
             .trans-item label { min-width: 32px; font-size: 12px; }
             .btn-enviar { padding: 14px; font-size: 14.5px; letter-spacing: 0.6px; }
-
-            .footer-logos { gap: 12px; margin: 16px 0 6px; padding: 12px 10px; }
         }
 
         /* Pantallas muy chicas (< 360px - iPhone SE viejo, etc.) */
         @media (max-width: 360px) {
-            .cintillo-gob { font-size: 8.5px; letter-spacing: 0; }
-            .barra-logos img { height: 30px; }
-            .barra-logos .logo-cr { height: 34px; }
-            .header h1 { font-size: 19px; }
+            .header-banner { max-width: 240px; }
             .tarjeta, .pregunta-card { padding: 14px 12px; }
         }
     </style>
 </head>
 <body>
-    <!-- CINTILLO INSTITUCIONAL -->
-    <div class="cintillo-gob">República Bolivariana de Venezuela · Estado Miranda · Alcaldía de Cristóbal Rojas</div>
-
     <div class="contenedor">
       <div class="contenido-pad">
 
-        <!-- HEADER -->
+        <!-- HEADER: solo el banner de Comuna (ya contiene el nombre) -->
         <div class="header">
-            <h1>Consulta del Poder Popular 2026</h1>
+            <img src="logos/comuna-largo.png" alt="Comuna" class="header-banner">
         </div>
 
         <!-- MENSAJE GLOBAL -->
