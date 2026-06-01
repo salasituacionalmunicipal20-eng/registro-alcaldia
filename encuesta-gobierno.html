@@ -31,14 +31,30 @@
 
         .header {
             background: #0a2351;
-            color: white; padding: 36px 28px 30px; border-radius: 6px;
+            color: white; padding: 32px 28px 28px; border-radius: 6px;
             margin-bottom: 22px; text-align: center;
             border-left: 4px solid #d4a017;
+        }
+        .header-row {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+        .header-logo {
+            height: 64px;
+            width: auto;
+            object-fit: contain;
+            flex-shrink: 0;
         }
         .header h1 {
             margin: 0; font-size: 28px; font-weight: 800;
             letter-spacing: 4px; line-height: 1.2;
             text-transform: uppercase;
+        }
+        @media (max-width: 420px) {
+            .header-row { gap: 12px; }
+            .header-logo { height: 48px; }
         }
 
         .tarjeta {
@@ -196,7 +212,10 @@
 
         <!-- HEADER -->
         <div class="header">
-            <h1>COMUNAS</h1>
+            <div class="header-row">
+                <img src="logos/comuna.png" alt="" class="header-logo">
+                <h1>COMUNAS</h1>
+            </div>
         </div>
 
         <!-- MENSAJE GLOBAL -->
