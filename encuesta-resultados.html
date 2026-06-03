@@ -44,6 +44,21 @@
         .barra-relleno.rojo { background: linear-gradient(90deg, #dc2626, #ef4444); }
         .barra-relleno.morado { background: linear-gradient(90deg, #7c3aed, #a855f7); }
 
+        /* Valor numerico fuera de la barra: para casos como "0 · 0%" en
+           bloques chicos (P5, P7, mesa). Antes el texto vivia DENTRO de la
+           barra y cuando el valor era 0 con 0% se partia en dos lineas
+           porque la barra era muy angosta. Ahora siempre se lee a la
+           derecha, en oscuro, sin importar el ancho de la barra. */
+        .barra-valor {
+            min-width: 64px;
+            text-align: right;
+            font-size: 12px;
+            font-weight: 800;
+            color: #0f172a;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
         /* Grilla compacta para listas largas (comunas y comunidades cuando hay
            muchas). Varias barras por fila horizontal, mas chicas, todas
            visibles sin scroll infinito. auto-fill se adapta al ancho. */
@@ -582,7 +597,8 @@
                 return `
                 <div class="barra-row">
                     <div class="barra-label" title="${escapeHtml(o.label)}">${escapeHtml(o.label)}</div>
-                    <div class="barra-fondo"><div class="barra-relleno ${o.color}" style="width:${(n/p5Max)*100}%; min-width: 48px;">${n} · ${pct}%</div></div>
+                    <div class="barra-fondo"><div class="barra-relleno ${o.color}" style="width:${(n/p5Max)*100}%;"></div></div>
+                    <div class="barra-valor">${n} · ${pct}%</div>
                 </div>`;
             }).join('');
 
@@ -600,7 +616,8 @@
                 return `
                 <div class="barra-row">
                     <div class="barra-label" title="${escapeHtml(o.label)}">${escapeHtml(o.label)}</div>
-                    <div class="barra-fondo"><div class="barra-relleno ${o.color}" style="width:${(o.n/p7Max)*100}%; min-width: 48px;">${o.n} · ${pct}%</div></div>
+                    <div class="barra-fondo"><div class="barra-relleno ${o.color}" style="width:${(o.n/p7Max)*100}%;"></div></div>
+                    <div class="barra-valor">${o.n} · ${pct}%</div>
                 </div>`;
             }).join('');
 
@@ -618,7 +635,8 @@
                 return `
                 <div class="barra-row">
                     <div class="barra-label" title="${escapeHtml(o.label)}">${escapeHtml(o.label)}</div>
-                    <div class="barra-fondo"><div class="barra-relleno ${o.color}" style="width:${(o.n/mesaMax)*100}%; min-width: 48px;">${o.n} · ${pct}%</div></div>
+                    <div class="barra-fondo"><div class="barra-relleno ${o.color}" style="width:${(o.n/mesaMax)*100}%;"></div></div>
+                    <div class="barra-valor">${o.n} · ${pct}%</div>
                 </div>`;
             }).join('');
         }
