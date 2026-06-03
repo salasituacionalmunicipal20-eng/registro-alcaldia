@@ -77,6 +77,88 @@
             white-space: nowrap;
         }
 
+        /* ====== Selector de encuestas + vistas separadas ======
+           Antes la pagina mostraba todas las encuestas apiladas verticalmente.
+           Ahora cada encuesta es una vista separada que se elige desde el
+           selector inicial, asi la pagina no crece sin limite cuando se
+           agreguen mas encuestas. */
+        .vista-encuesta { display: none; }
+        .vista-encuesta.activo { display: block; }
+
+        .selector-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            margin-top: 22px;
+        }
+        .selector-card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            display: flex;
+            flex-direction: column;
+        }
+        .selector-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+        }
+        .selector-card .ico { font-size: 38px; line-height: 1; margin-bottom: 10px; display: block; }
+        .selector-card h3 { margin: 0 0 6px; font-size: 18px; color: #0f172a; font-weight: 900; }
+        .selector-card .sub { color: #64748b; font-size: 13px; margin: 0 0 14px; line-height: 1.4; flex: 1; }
+        .selector-card .conteo {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #f1f5f9;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 14px;
+            align-self: flex-start;
+        }
+        .selector-card .btn-abrir {
+            display: block;
+            width: 100%;
+            padding: 11px;
+            text-align: center;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 13px;
+            transition: background 0.15s;
+        }
+        .selector-card.popular { border-top: 4px solid #2563eb; }
+        .selector-card.gobierno { border-top: 4px solid #d4a017; }
+        .selector-card.gobierno .btn-abrir { background: #d4a017; }
+        .selector-card.gobierno .btn-abrir:hover { background: #b45309; }
+        .selector-card.popular .btn-abrir:hover { background: #1d4ed8; }
+
+        .btn-volver-selector {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: white;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 14px;
+        }
+        .btn-volver-selector:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
         /* Grilla compacta para listas largas (comunas y comunidades cuando hay
            muchas). Varias barras por fila horizontal, mas chicas, todas
            visibles sin scroll infinito. auto-fill se adapta al ancho. */
@@ -153,6 +235,43 @@
     </header>
 
     <div class="contenedor">
+
+        <!-- ============================================================ -->
+        <!-- SELECTOR DE ENCUESTAS                                        -->
+        <!-- Primera vista al entrar. Cada encuesta es una pestana       -->
+        <!-- separada para que la pagina no crezca con cada nueva        -->
+        <!-- encuesta que se agregue.                                    -->
+        <!-- ============================================================ -->
+        <div id="vista-selector" class="vista-encuesta activo">
+            <div style="text-align: center; padding: 14px 0 8px;">
+                <h2 style="margin: 0; font-size: 22px; color: #0f172a; font-weight: 900;">Resultados de Encuestas</h2>
+                <p style="margin: 6px 0 0; color: #64748b; font-size: 13.5px; font-weight: 600;">Selecciona cuál encuesta quieres visualizar.</p>
+            </div>
+
+            <div class="selector-grid">
+                <div class="selector-card popular" onclick="window._mostrarVista('consulta_popular')">
+                    <span class="ico">🗳️</span>
+                    <h3>Consulta Popular</h3>
+                    <p class="sub">Consulta del 12 de Julio · 11 preguntas (¿Participará?, 7 transformaciones, propuestas, mejoras al proceso, etc.).</p>
+                    <div class="conteo" id="sel_conteo_popular">— respuestas</div>
+                    <button class="btn-abrir" onclick="event.stopPropagation(); window._mostrarVista('consulta_popular')">Ver resultados →</button>
+                </div>
+                <div class="selector-card gobierno" onclick="window._mostrarVista('gobierno')">
+                    <span class="ico">📋</span>
+                    <h3>Reorganización del Gobierno</h3>
+                    <p class="sub">COMUNA O NADA · 2 preguntas abiertas sobre la propuesta de reorganización y su legitimación.</p>
+                    <div class="conteo" id="sel_conteo_gobierno">— respuestas</div>
+                    <button class="btn-abrir" onclick="event.stopPropagation(); window._mostrarVista('gobierno')">Ver resultados →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- VISTA 1: Consulta Popular                                    -->
+        <!-- ============================================================ -->
+        <div id="vista-consulta_popular" class="vista-encuesta">
+            <button class="btn-volver-selector" onclick="window._mostrarVista('selector')">← Volver al selector de encuestas</button>
+            <h2 style="margin: 0 0 18px; color: #0f172a; font-size: 22px; font-weight: 900;">🗳️ Consulta Popular</h2>
 
         <!-- KPIS -->
         <div class="grid-kpis">
@@ -292,24 +411,21 @@
             <div id="totalFiltrado" style="text-align: right; padding: 10px 0 0; color: #64748b; font-weight: 700; font-size: 12px;"></div>
         </div>
 
-        <!-- ============================================================ -->
-        <!-- DIVISOR + SEGUNDA ENCUESTA: Reorganizacion del Gobierno      -->
-        <!-- Se separa visualmente para no mezclarse con la primera.      -->
-        <!-- Tema dorado/naranja en vez de azul, sus propios KPIs,        -->
-        <!-- onValue separado, modal detalle propio, exportacion CSV      -->
-        <!-- propia, link corto propio (tinyurl.com/gobiernocr2026).      -->
-        <!-- ============================================================ -->
+        </div><!-- /vista-consulta_popular -->
 
-        <div style="margin: 56px 0 28px; text-align: center;">
-            <div style="height: 3px; background: linear-gradient(90deg, transparent, #d4a017, transparent); margin-bottom: 22px;"></div>
-            <div style="display: inline-block; background: #fef3c7; padding: 8px 18px; border-radius: 20px; border: 1px solid #fde68a;">
+        <!-- ============================================================ -->
+        <!-- VISTA 2: Reorganizacion del Gobierno                         -->
+        <!-- Tema dorado/naranja, sus propios KPIs, onValue separado,    -->
+        <!-- modal detalle propio, exportacion CSV propia, link corto    -->
+        <!-- propio (tinyurl.com/gobiernocr2026).                        -->
+        <!-- ============================================================ -->
+        <div id="vista-gobierno" class="vista-encuesta">
+            <button class="btn-volver-selector" onclick="window._mostrarVista('selector')">← Volver al selector de encuestas</button>
+            <div style="margin: 0 0 20px; padding: 14px 18px; background: #fef3c7; border-left: 4px solid #d4a017; border-radius: 8px;">
                 <span style="font-size: 11px; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 1.2px;">Segunda encuesta</span>
+                <h2 style="font-size: 22px; font-weight: 900; color: #78350f; margin: 6px 0 0; letter-spacing: -0.3px;">📋 Reorganización del Gobierno</h2>
+                <p style="color: #92400e; font-size: 13px; margin: 4px 0 0; font-weight: 600;">2 preguntas abiertas · COMUNA O NADA</p>
             </div>
-            <h2 style="font-size: 26px; font-weight: 900; color: #78350f; margin: 14px 0 4px; letter-spacing: -0.3px;">
-                📋 Encuesta: Reorganización del Gobierno
-            </h2>
-            <p style="color: #92400e; font-size: 13px; margin: 0; font-weight: 600;">2 preguntas abiertas · COMUNA O NADA</p>
-        </div>
 
         <!-- KPIS GOBIERNO -->
         <div class="grid-kpis">
@@ -406,6 +522,8 @@
             <div id="gob_totalFiltrado" style="text-align: right; padding: 10px 0 0; color: #64748b; font-weight: 700; font-size: 12px;"></div>
         </div>
 
+        </div><!-- /vista-gobierno -->
+
     </div>
 
     <!-- MODAL DETALLE -->
@@ -493,6 +611,20 @@
         // Estado global
         let respuestas = [];
 
+        // ====== Navegacion entre vistas (selector / consulta_popular / gobierno) ======
+        // Toggle simple por clase 'activo' sobre los wrappers .vista-encuesta.
+        // Si en el futuro se agregan mas encuestas, basta con agregar al
+        // array y agregar el wrapper en el HTML.
+        const VISTAS = ['selector', 'consulta_popular', 'gobierno'];
+        window._mostrarVista = function(nombre) {
+            if (!VISTAS.includes(nombre)) nombre = 'selector';
+            VISTAS.forEach(v => {
+                const el = document.getElementById(`vista-${v}`);
+                if (el) el.classList.toggle('activo', v === nombre);
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
         // ====== Paginacion de las tablas de respuestas individuales ======
         // 25 filas por pagina en ambas encuestas. Cuando cambian los filtros
         // (busqueda, comuna, comunidad), se resetea a pagina 1.
@@ -557,6 +689,9 @@
             document.getElementById('kpiComunas').textContent = comunas.size;
             document.getElementById('kpiComunidades').textContent = comunidades.size;
             document.getElementById('kpiMesa').textContent = participaran;
+            // Sincroniza el contador del selector
+            const sel = document.getElementById('sel_conteo_popular');
+            if (sel) sel.textContent = `${respuestas.length} respuesta${respuestas.length === 1 ? '' : 's'}`;
         }
 
         function actualizarFiltrosCascada() {
@@ -916,6 +1051,9 @@
             document.getElementById('gob_kpiComunidades').textContent = comunidades.size;
             const ult = respuestasGob[0]?.fecha_envio;
             document.getElementById('gob_kpiUltima').textContent = ult ? fmtFecha(ult) : '--';
+            // Sincroniza el contador del selector
+            const sel = document.getElementById('sel_conteo_gobierno');
+            if (sel) sel.textContent = `${respuestasGob.length} respuesta${respuestasGob.length === 1 ? '' : 's'}`;
         }
 
         function renderGobFiltrosCascada() {
