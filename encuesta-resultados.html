@@ -59,6 +59,24 @@
             white-space: nowrap;
         }
 
+        /* Paginacion de las tablas de respuestas individuales (25 por pagina). */
+        .paginacion {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; padding: 12px 0 0; flex-wrap: wrap;
+        }
+        .paginacion-info { color: #64748b; font-weight: 700; font-size: 12px; }
+        .paginacion-btns { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .paginacion-btn {
+            padding: 7px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 6px;
+            cursor: pointer; font-weight: 700; font-size: 12px; color: #334155;
+        }
+        .paginacion-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+        .paginacion-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .paginacion-pagina {
+            padding: 0 10px; font-weight: 800; font-size: 13px; color: #0f172a;
+            white-space: nowrap;
+        }
+
         /* Grilla compacta para listas largas (comunas y comunidades cuando hay
            muchas). Varias barras por fila horizontal, mas chicas, todas
            visibles sin scroll infinito. auto-fill se adapta al ancho. */
@@ -475,6 +493,44 @@
         // Estado global
         let respuestas = [];
 
+        // ====== Paginacion de las tablas de respuestas individuales ======
+        // 25 filas por pagina en ambas encuestas. Cuando cambian los filtros
+        // (busqueda, comuna, comunidad), se resetea a pagina 1.
+        const PAGINA_TAM = 25;
+        let paginaActual = 1;       // primera encuesta (consulta_popular)
+        let gob_paginaActual = 1;   // segunda encuesta (gobierno)
+
+        // Helper compartido: pinta la barra de paginacion en el container dado
+        // y enlaza los botones a setPaginaFn(numero) que re-renderiza la tabla.
+        function renderPaginacion(containerId, totalFiltradas, totalGlobal, pgActual, setPaginaFn) {
+            const totalPg = Math.max(1, Math.ceil(totalFiltradas / PAGINA_TAM));
+            const pg = Math.min(Math.max(1, pgActual), totalPg);
+            const desde = totalFiltradas === 0 ? 0 : (pg - 1) * PAGINA_TAM + 1;
+            const hasta = Math.min(pg * PAGINA_TAM, totalFiltradas);
+            const c = document.getElementById(containerId);
+            c.innerHTML = `
+                <div class="paginacion">
+                    <div class="paginacion-info">
+                        Mostrando <b>${desde}–${hasta}</b> de <b>${totalFiltradas}</b> respuesta${totalFiltradas === 1 ? '' : 's'}
+                        ${totalFiltradas !== totalGlobal ? `<span style="opacity:0.65; font-weight:600;"> (filtradas de ${totalGlobal} totales)</span>` : ''}
+                    </div>
+                    <div class="paginacion-btns">
+                        <button class="paginacion-btn" ${pg === 1 ? 'disabled' : ''} data-pg="1" title="Primera">«</button>
+                        <button class="paginacion-btn" ${pg === 1 ? 'disabled' : ''} data-pg="${pg - 1}">‹ Anterior</button>
+                        <span class="paginacion-pagina">Página ${pg} de ${totalPg}</span>
+                        <button class="paginacion-btn" ${pg === totalPg ? 'disabled' : ''} data-pg="${pg + 1}">Siguiente ›</button>
+                        <button class="paginacion-btn" ${pg === totalPg ? 'disabled' : ''} data-pg="${totalPg}" title="Última">»</button>
+                    </div>
+                </div>`;
+            c.querySelectorAll('button[data-pg]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setPaginaFn(parseInt(btn.dataset.pg, 10));
+                    // scroll suave a la parte de arriba de la tabla
+                    btn.closest('.seccion')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+        }
+
         // Carga en vivo
         onValue(ref(database, 'encuestas_consulta_popular'), (snap) => {
             respuestas = [];
@@ -655,11 +711,17 @@
                 return true;
             });
 
+            // Paginacion: clamp + slice de 25 filas
+            const totalPg = Math.max(1, Math.ceil(filtradas.length / PAGINA_TAM));
+            paginaActual = Math.min(Math.max(1, paginaActual), totalPg);
+            const inicio = (paginaActual - 1) * PAGINA_TAM;
+            const filtradasPagina = filtradas.slice(inicio, inicio + PAGINA_TAM);
+
             const tbody = document.getElementById('tbodyRespuestas');
             if (filtradas.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Sin coincidencias</td></tr>';
             } else {
-                tbody.innerHTML = filtradas.map(r => {
+                tbody.innerHTML = filtradasPagina.map(r => {
                     const p1Map = { a: 'Celebración de la Comuna', b: 'Consulta Popular y Comunal', c: 'Elección de vocería' };
                     const opinion = r.p3_opinion_consulta || r.pregunta_mejorar || '';  // soporte mixto legacy
                     return `
@@ -676,7 +738,10 @@
                     </tr>`;
                 }).join('');
             }
-            document.getElementById('totalFiltrado').textContent = `${filtradas.length} de ${respuestas.length} respuestas`;
+            renderPaginacion('totalFiltrado', filtradas.length, respuestas.length, paginaActual, (nuevaPg) => {
+                paginaActual = nuevaPg;
+                renderTabla();
+            });
         }
 
         window._verDetalle = function(id) {
@@ -766,9 +831,11 @@
             if (e.target.id === 'modal') document.getElementById('modal').classList.add('hidden');
         });
 
-        document.getElementById('filtroBusqueda').addEventListener('input', renderTabla);
-        document.getElementById('filtroComuna').addEventListener('change', () => { actualizarCascadaComunidad(); renderTabla(); });
-        document.getElementById('filtroComunidad').addEventListener('change', renderTabla);
+        // Al cambiar cualquier filtro, regresar a pagina 1 para no quedar
+        // mostrando una pagina vacia si los resultados son menos que antes.
+        document.getElementById('filtroBusqueda').addEventListener('input', () => { paginaActual = 1; renderTabla(); });
+        document.getElementById('filtroComuna').addEventListener('change', () => { paginaActual = 1; actualizarCascadaComunidad(); renderTabla(); });
+        document.getElementById('filtroComunidad').addEventListener('change', () => { paginaActual = 1; renderTabla(); });
 
         document.getElementById('btnExportarCSV').addEventListener('click', () => {
             const headers = [
@@ -904,11 +971,17 @@
                 return true;
             });
 
+            // Paginacion: 25 por pagina
+            const totalPg = Math.max(1, Math.ceil(filtradas.length / PAGINA_TAM));
+            gob_paginaActual = Math.min(Math.max(1, gob_paginaActual), totalPg);
+            const inicio = (gob_paginaActual - 1) * PAGINA_TAM;
+            const filtradasPagina = filtradas.slice(inicio, inicio + PAGINA_TAM);
+
             const tbody = document.getElementById('gob_tbodyRespuestas');
             if (filtradas.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Sin coincidencias</td></tr>';
             } else {
-                tbody.innerHTML = filtradas.map(r => `
+                tbody.innerHTML = filtradasPagina.map(r => `
                     <tr>
                         <td style="white-space:nowrap; color:#64748b; font-weight:600;">${fmtFecha(r.fecha_envio)}</td>
                         <td style="font-weight:700;">${escapeHtml(r.nombres)} ${escapeHtml(r.apellidos)}</td>
@@ -922,7 +995,10 @@
                     </tr>
                 `).join('');
             }
-            document.getElementById('gob_totalFiltrado').textContent = `${filtradas.length} de ${respuestasGob.length} respuestas`;
+            renderPaginacion('gob_totalFiltrado', filtradas.length, respuestasGob.length, gob_paginaActual, (nuevaPg) => {
+                gob_paginaActual = nuevaPg;
+                renderGobTabla();
+            });
         }
 
         window._verDetalleGob = function(id) {
@@ -955,9 +1031,9 @@
             document.getElementById('modal').classList.remove('hidden');
         };
 
-        document.getElementById('gob_filtroBusqueda').addEventListener('input', renderGobTabla);
-        document.getElementById('gob_filtroComuna').addEventListener('change', () => { renderGobCascadaComunidad(); renderGobTabla(); });
-        document.getElementById('gob_filtroComunidad').addEventListener('change', renderGobTabla);
+        document.getElementById('gob_filtroBusqueda').addEventListener('input', () => { gob_paginaActual = 1; renderGobTabla(); });
+        document.getElementById('gob_filtroComuna').addEventListener('change', () => { gob_paginaActual = 1; renderGobCascadaComunidad(); renderGobTabla(); });
+        document.getElementById('gob_filtroComunidad').addEventListener('change', () => { gob_paginaActual = 1; renderGobTabla(); });
 
         document.getElementById('gob_btnExportarCSV').addEventListener('click', () => {
             const headers = [
