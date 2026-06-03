@@ -216,23 +216,23 @@
 
                 <div class="fila fila-2">
                     <div class="campo">
-                        <label>Nombres <span class="req">*</span></label>
-                        <input id="f_nombres" type="text" placeholder="Juan José" required maxlength="60" />
+                        <label>Nombres</label>
+                        <input id="f_nombres" type="text" placeholder="Juan José (opcional)" maxlength="60" />
                     </div>
                     <div class="campo">
-                        <label>Apellidos <span class="req">*</span></label>
-                        <input id="f_apellidos" type="text" placeholder="Pérez García" required maxlength="60" />
+                        <label>Apellidos</label>
+                        <input id="f_apellidos" type="text" placeholder="Pérez García (opcional)" maxlength="60" />
                     </div>
                 </div>
 
                 <div class="fila fila-2">
                     <div class="campo">
-                        <label>Cédula de Identidad <span class="req">*</span></label>
-                        <input id="f_cedula" type="text" placeholder="V12345678" required maxlength="12" />
+                        <label>Cédula de Identidad</label>
+                        <input id="f_cedula" type="text" placeholder="V12345678 (opcional)" maxlength="12" />
                     </div>
                     <div class="campo">
-                        <label>Fecha de nacimiento <span class="req">*</span></label>
-                        <input id="f_fecha_nacimiento" type="date" required max="2010-12-31" min="1900-01-01" />
+                        <label>Fecha de nacimiento</label>
+                        <input id="f_fecha_nacimiento" type="date" max="2010-12-31" min="1900-01-01" />
                     </div>
                 </div>
 
@@ -243,8 +243,8 @@
 
                 <div class="fila fila-2">
                     <div class="campo">
-                        <label>Sexo <span class="req">*</span></label>
-                        <select id="f_sexo" required>
+                        <label>Sexo</label>
+                        <select id="f_sexo">
                             <option value="">Seleccione</option>
                             <option value="M">Masculino</option>
                             <option value="F">Femenino</option>
@@ -264,14 +264,14 @@
 
                 <div class="fila fila-2">
                     <div class="campo">
-                        <label>Comuna / Circuito <span class="req">*</span></label>
-                        <select id="f_comuna" required>
+                        <label>Comuna / Circuito</label>
+                        <select id="f_comuna">
                             <option value="">Cargando...</option>
                         </select>
                     </div>
                     <div class="campo">
-                        <label>Comunidad <span class="req">*</span></label>
-                        <select id="f_comunidad" required disabled>
+                        <label>Comunidad</label>
+                        <select id="f_comunidad" disabled>
                             <option value="">Primero seleccione una comuna</option>
                         </select>
                     </div>
@@ -430,18 +430,18 @@
                 pregunta_2_legitimar_propuesta: v('f_q2')
             };
 
-            const obligatorios = ['nombres', 'apellidos', 'cedula', 'fecha_nacimiento', 'sexo', 'comuna', 'comunidad'];
-            for (const k of obligatorios) {
-                if (!f[k]) { mostrarMensaje('Completa todos los campos personales marcados con asterisco (*)'); return; }
+            // SIN CAMPOS OBLIGATORIOS. Solo validamos formatos SI se proporcionan.
+            const cedulaLimpia = (f.cedula || '').replace(/[^A-Z0-9]/g, '');
+            const cedulaValida = cedulaLimpia && /^[VEJPGvejpg]?\d{4,9}$/i.test(cedulaLimpia);
+            if (f.cedula && !cedulaValida) {
+                mostrarMensaje('La cédula que escribiste tiene formato inválido. Bórrala o corrígela (ej: V12345678).'); return;
             }
-            if (!f.pregunta_1_reorganizar_gobierno || !f.pregunta_2_legitimar_propuesta) {
-                mostrarMensaje('Por favor responde las dos preguntas.'); return;
+            // Al menos UNA de las dos preguntas debe tener algo (sino el envio no tiene sentido)
+            if (!f.pregunta_1_reorganizar_gobierno && !f.pregunta_2_legitimar_propuesta) {
+                mostrarMensaje('Por favor responde al menos una de las dos preguntas.'); return;
             }
-            if (!/^[VEJPGvejpg]?\d{4,9}$/.test(f.cedula.replace(/[^A-Z0-9]/g, ''))) {
-                mostrarMensaje('La cédula tiene un formato inválido. Ej: V12345678'); return;
-            }
-            if (edadCalc == null || edadCalc < 15 || edadCalc > 120) {
-                mostrarMensaje('La fecha de nacimiento no es válida (la edad debe estar entre 15 y 120 años).'); return;
+            if (edadCalc != null && (edadCalc < 15 || edadCalc > 120)) {
+                mostrarMensaje('La fecha de nacimiento no es válida (edad debe estar entre 15 y 120 años). Bórrala o corrígela.'); return;
             }
             const edadNum = edadCalc;
 
@@ -450,18 +450,27 @@
             btn.innerHTML = '<span class="loader-pequeno"></span> Enviando...';
 
             try {
-                // Mismo patron de anti-duplicado por cedula que la otra encuesta:
-                // la cedula es la KEY del registro, y las reglas de Firebase deben
-                // rechazar reescrituras (!data.exists()).
-                const keyLimpia = f.cedula.replace(/[^A-Z0-9]/g, '');
-                const refResp = ref(database, `encuestas_reorganizacion_gobierno/${keyLimpia}`);
-                await set(refResp, {
-                    ...f,
-                    cedula: keyLimpia,
-                    edad: edadNum,
-                    fecha_envio: new Date().toISOString(),
-                    user_agent: navigator.userAgent.substring(0, 200)
+                // Si dio cedula valida -> esa es la key (con anti-duplicado).
+                // Si no -> key anonima 'anon_<timestamp>_<random>'.
+                const keyFirebase = cedulaValida
+                    ? cedulaLimpia.toUpperCase()
+                    : 'anon_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+
+                const payload = { ...f };
+                Object.keys(payload).forEach(k => {
+                    if (payload[k] === '' || payload[k] === null || payload[k] === undefined) {
+                        delete payload[k];
+                    }
                 });
+                if (cedulaValida) payload.cedula = cedulaLimpia.toUpperCase();
+                else delete payload.cedula;
+                if (edadNum != null) payload.edad = edadNum;
+                payload.fecha_envio = new Date().toISOString();
+                payload.user_agent = navigator.userAgent.substring(0, 200);
+                if (!cedulaValida) payload.es_anonimo = true;
+
+                const refResp = ref(database, `encuestas_reorganizacion_gobierno/${keyFirebase}`);
+                await set(refResp, payload);
 
                 document.getElementById('vistaForm').classList.add('hidden');
                 document.getElementById('vistaGracias').classList.remove('hidden');
