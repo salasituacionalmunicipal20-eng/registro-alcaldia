@@ -431,14 +431,12 @@
             };
 
             // SIN CAMPOS OBLIGATORIOS. Solo validamos formatos SI se proporcionan.
+            // Ni siquiera las preguntas son obligatorias — el usuario puede mandar
+            // todo vacio si quiere (la respuesta queda registrada como anonima).
             const cedulaLimpia = (f.cedula || '').replace(/[^A-Z0-9]/g, '');
             const cedulaValida = cedulaLimpia && /^[VEJPGvejpg]?\d{4,9}$/i.test(cedulaLimpia);
             if (f.cedula && !cedulaValida) {
                 mostrarMensaje('La cédula que escribiste tiene formato inválido. Bórrala o corrígela (ej: V12345678).'); return;
-            }
-            // Al menos UNA de las dos preguntas debe tener algo (sino el envio no tiene sentido)
-            if (!f.pregunta_1_reorganizar_gobierno && !f.pregunta_2_legitimar_propuesta) {
-                mostrarMensaje('Por favor responde al menos una de las dos preguntas.'); return;
             }
             if (edadCalc != null && (edadCalc < 15 || edadCalc > 120)) {
                 mostrarMensaje('La fecha de nacimiento no es válida (edad debe estar entre 15 y 120 años). Bórrala o corrígela.'); return;
