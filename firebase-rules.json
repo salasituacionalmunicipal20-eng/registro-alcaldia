@@ -30,8 +30,14 @@
       ".read": "auth != null",
       ".write": "auth.token.email === 'carlos.admin@alcaldia.com'"
     },
+    "tickets": {
+      ".read": "auth != null",
+      "$ticketId": {
+        ".write": "auth != null"
+      }
+    },
     "encuestas_consulta_popular": {
-      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      ".read": "auth != null",
       "$cedula": {
         ".write": "((!data.exists() && newData.exists()) && ($cedula.matches(/^[VEJPG]?[0-9]{4,9}$/) || $cedula.matches(/^anon_[0-9]+_[a-z0-9]+$/))) || auth.token.email === 'carlos.admin@alcaldia.com'",
         "nombres":                { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -67,13 +73,13 @@
         "pregunta_dudas":         { ".validate": "newData.isString() && newData.val().length <= 1000" },
         "pregunta_propuesta":     { ".validate": "newData.isString() && newData.val().length <= 1000" },
         "quiere_participar_mesa": { ".validate": "newData.isBoolean()" },
-        "fecha_envio":            { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/) && newData.val().length <= 50" },
+        "fecha_envio":            { ".validate": "newData.isString() && newData.val().length <= 50" },
         "user_agent":             { ".validate": "newData.isString() && newData.val().length <= 500" },
         "$other":                 { ".validate": false }
       }
     },
     "encuestas_reorganizacion_gobierno": {
-      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      ".read": "auth != null",
       "$cedula": {
         ".write": "((!data.exists() && newData.exists()) && ($cedula.matches(/^[VEJPG]?[0-9]{4,9}$/) || $cedula.matches(/^anon_[0-9]+_[a-z0-9]+$/))) || auth.token.email === 'carlos.admin@alcaldia.com'",
         "nombres":                          { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -88,7 +94,7 @@
         "es_anonimo":                       { ".validate": "newData.isBoolean()" },
         "pregunta_1_reorganizar_gobierno":  { ".validate": "newData.isString() && newData.val().length <= 1500" },
         "pregunta_2_legitimar_propuesta":   { ".validate": "newData.isString() && newData.val().length <= 1500" },
-        "fecha_envio":                      { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/) && newData.val().length <= 50" },
+        "fecha_envio":                      { ".validate": "newData.isString() && newData.val().length <= 50" },
         "user_agent":                       { ".validate": "newData.isString() && newData.val().length <= 500" },
         "$other":                           { ".validate": false }
       }

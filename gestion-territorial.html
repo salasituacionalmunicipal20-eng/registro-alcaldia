@@ -1034,13 +1034,29 @@
             if (hayCascade) {
                 btn.textContent = '🔍 Analizando impacto...';
                 try {
-                    const [snapH, snapT, snapEp, snapEg, snapO] = await Promise.all([
+                    // Usamos allSettled para que si un nodo no tiene reglas de
+                    // lectura (ej. /tickets sin regla -> Permission denied), no
+                    // aborte el pre-flight completo. Simplemente omitimos esa
+                    // rama del cascade y avisamos al final.
+                    const settled = await Promise.allSettled([
                         get(ref(database, 'habitantes')),
                         get(ref(database, 'tickets')),
                         get(ref(database, 'encuestas_consulta_popular')),
                         get(ref(database, 'encuestas_reorganizacion_gobierno')),
                         get(ref(database, 'operadores'))
                     ]);
+                    const nombresRama = ['habitantes', 'tickets', 'encuestas_consulta_popular', 'encuestas_reorganizacion_gobierno', 'operadores'];
+                    const ramasFallidas = [];
+                    const snap = (i) => {
+                        if (settled[i].status === 'fulfilled') return settled[i].value;
+                        ramasFallidas.push(nombresRama[i] + ': ' + (settled[i].reason?.message || settled[i].reason));
+                        return null;
+                    };
+                    const snapH = snap(0), snapT = snap(1), snapEp = snap(2), snapEg = snap(3), snapO = snap(4);
+                    // Si TODAS fallaron, abortar (probable problema de sesion/auth)
+                    if (ramasFallidas.length === 5) {
+                        throw new Error('No se pudo leer ningun nodo. Detalle:\n' + ramasFallidas.join('\n'));
+                    }
 
                     // Indices case-insensitive
                     const renameMap = {};
@@ -1057,7 +1073,7 @@
                         operadores: 0
                     };
 
-                    if (snapH.exists()) {
+                    if (snapH && snapH.exists()) {
                         const datos = snapH.val();
                         for (const id in datos) {
                             const vComuna = norm(datos[id]?.comuna);
@@ -1072,7 +1088,7 @@
                             }
                         }
                     }
-                    if (snapT.exists()) {
+                    if (snapT && snapT.exists()) {
                         const datos = snapT.val();
                         for (const id in datos) {
                             const v = norm(datos[id]?.comuna);
@@ -1080,10 +1096,9 @@
                                 cascade[`tickets/${id}/comuna`] = renameMap[v];
                                 conteo.tickets++;
                             }
-                            // tickets solo tiene campo comuna, no comunidad (verificado)
                         }
                     }
-                    if (snapEp.exists()) {
+                    if (snapEp && snapEp.exists()) {
                         const datos = snapEp.val();
                         for (const id in datos) {
                             const v = norm(datos[id]?.comuna);
@@ -1098,7 +1113,7 @@
                             }
                         }
                     }
-                    if (snapEg.exists()) {
+                    if (snapEg && snapEg.exists()) {
                         const datos = snapEg.val();
                         for (const id in datos) {
                             const v = norm(datos[id]?.comuna);
@@ -1114,7 +1129,7 @@
                         }
                     }
                     // Operadores solo afectados por renames de COMUNA
-                    if (snapO.exists() && hayRenamesComuna) {
+                    if (snapO && snapO.exists() && hayRenamesComuna) {
                         const datos = snapO.val();
                         for (const uid in datos) {
                             const op = datos[uid] || {};
@@ -1151,14 +1166,19 @@
                     const totalHab = conteo.habitantes_comuna + conteo.habitantes_comunidad;
                     const totalEnc = conteo.encConsulta_comuna + conteo.encConsulta_comunidad +
                                      conteo.encGobierno_comuna + conteo.encGobierno_comunidad;
+                    let avisoRamas = '';
+                    if (ramasFallidas.length > 0) {
+                        avisoRamas = `\n⚠️  Ramas no leidas (sin reglas o sin permiso):\n  - ${ramasFallidas.join('\n  - ')}\n   Esas ramas NO se actualizaran en este cascade.\n`;
+                    }
                     const conteoMsg = detalle +
                         `Una sola escritura atomica modificara:\n` +
                         `  • ${totalHab} habitantes (${conteo.habitantes_comuna} por comuna + ${conteo.habitantes_comunidad} por comunidad)\n` +
                         `  • ${conteo.tickets} tickets\n` +
                         `  • ${totalEnc} encuestas\n` +
                         `  • ${conteo.operadores} operadores\n` +
-                        `  • registro filtros_territoriales\n\n` +
-                        `¿Continuar?`;
+                        `  • registro filtros_territoriales\n` +
+                        avisoRamas +
+                        `\n¿Continuar?`;
 
                     if (!confirm(conteoMsg)) {
                         btn.disabled = false;
