@@ -620,7 +620,7 @@
                 <div>
                     <p style="color: #475569; font-size: 13px; margin: 0 0 10px;">Comparte este enlace por WhatsApp, redes o coloca el código QR en el flyer impreso:</p>
                     <label style="display:block; font-size:11px; font-weight:800; color:#5b21b6; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">⭐ Enlace corto (recomendado)</label>
-                    <div class="compartir-link" id="perc_compartirLinkCorto" style="background:#f5f3ff; border-color:#c4b5fd; color:#4c1d95; font-weight:800;">https://tinyurl.com/percepcioncr2026</div>
+                    <div class="compartir-link" id="perc_compartirLinkCorto" style="background:#f5f3ff; border-color:#c4b5fd; color:#4c1d95; font-weight:800;">https://tinyurl.com/percepcionrojas</div>
                     <label style="display:block; font-size:11px; font-weight:800; color:#64748b; margin:10px 0 4px; text-transform:uppercase; letter-spacing:0.5px;">Enlace completo</label>
                     <div class="compartir-link" id="perc_compartirLink">cargando...</div>
                     <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
@@ -1550,7 +1550,7 @@
         const tradP5 = v => PERC_DIC.p5[v] || (v ? v : '—');
 
         const PERC_URL_PUBLICA = location.origin + location.pathname.replace(/encuesta-resultados\.html$/, 'encuesta-percepcion-gestion.html');
-        const PERC_URL_CORTA = 'https://tinyurl.com/percepcioncr2026';
+        const PERC_URL_CORTA = 'https://tinyurl.com/percepcionrojas';
         document.getElementById('perc_compartirLink').textContent = PERC_URL_PUBLICA;
         document.getElementById('perc_qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=10&data=${encodeURIComponent(PERC_URL_CORTA)}`;
 
