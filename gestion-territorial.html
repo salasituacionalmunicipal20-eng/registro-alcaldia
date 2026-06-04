@@ -419,7 +419,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -443,6 +443,11 @@
             original: {},          // snapshot original desde Firebase (no se toca)
             actual: {},            // version editable: {comuna: [comunidad, ...]}
             comunaActivaId: null,  // nombre de la comuna seleccionada
+            // Map explicito de renames pendientes: { nombreOriginalEnFirebase: nombreNuevo }.
+            // Necesario porque calcularCambios no puede distinguir un rename de un
+            // delete+create solo mirando keys. El cascade a habitantes/tickets/encuestas/
+            // operadores LEE este map para saber que valores reescribir.
+            renames: {},
         };
 
         // Gate de auth: solo Carlos super-admin tiene acceso. Si entra
@@ -471,6 +476,7 @@
                 }
                 estado.original = JSON.parse(JSON.stringify(normalizado));
                 estado.actual = JSON.parse(JSON.stringify(normalizado));
+                estado.renames = {};
                 document.getElementById('estadoCarga').classList.add('oculto');
                 renderComunas();
                 renderComunidades();
@@ -652,6 +658,30 @@
             if (estado.actual[nuevo] !== undefined) {
                 alert(`Ya existe una comuna llamada "${nuevo}". Usa otro nombre.`); return;
             }
+
+            // Chain-collapsing: si "viejo" ya era el destino de un rename previo
+            // (caso A->B y ahora B->C), el origen real en Firebase es el nombre
+            // original "A". Borramos la entrada anterior y la reemplazamos por
+            // A->C, asi el cascade reescribe los datos una sola vez.
+            let origen = viejo;
+            for (const k in estado.renames) {
+                if (estado.renames[k] === viejo) {
+                    origen = k;
+                    delete estado.renames[k];
+                    break;
+                }
+            }
+
+            // Solo registramos el rename si el origen existia realmente en
+            // Firebase. Si era una creacion local (estado.original[origen] indefinido),
+            // no hay nada que renombrar en cascade -- es solo un cambio local del
+            // payload de filtros_territoriales.
+            if (origen !== nuevo && estado.original[origen] !== undefined) {
+                estado.renames[origen] = nuevo;
+            }
+            // Caso especial: renombrar de vuelta al original cancela el rename
+            // (ya quedo cancelado al borrar la entrada anterior arriba).
+
             estado.actual[nuevo] = estado.actual[viejo].slice();
             delete estado.actual[viejo];
             estado.comunaActivaId = nuevo;
@@ -669,6 +699,15 @@
                 : `¿Eliminar la comuna vacía "${nombre}"?`;
             if (!confirm(msg)) return;
             delete estado.actual[nombre];
+            // Si era destino de un rename pendiente, eliminamos esa entrada del map:
+            // el efecto final es que el origen real se trata como un delete normal
+            // (que cascade NO ejecuta - solo desaparece del registro de filtros).
+            for (const k in estado.renames) {
+                if (estado.renames[k] === nombre) {
+                    delete estado.renames[k];
+                    break;
+                }
+            }
             estado.comunaActivaId = null;
             renderComunas();
             renderComunidades();
@@ -707,22 +746,41 @@
             const todasOriginales = new Set(Object.keys(estado.original));
             const todasActuales = new Set(Object.keys(estado.actual));
 
-            // Comunas creadas
+            // Renames pendientes (los emitimos primero para que aparezcan
+            // arriba en el resumen). Tambien armamos sets para excluir esos
+            // nombres de las clasificaciones "nueva"/"eliminada".
+            const oldsRenamed = new Set(Object.keys(estado.renames));
+            const newsRenamed = new Set(Object.values(estado.renames));
+            for (const [viejo, nuevo] of Object.entries(estado.renames)) {
+                cambios.push({ tipo: 'renombrada', comuna: viejo,
+                    detalle: `Renombrada: "${viejo}" → "${nuevo}" (se actualizara cascade en habitantes/tickets/encuestas/operadores)` });
+            }
+
+            // Comunas creadas (excluyendo destinos de rename: esos NO son
+            // "nuevas", son el mismo registro con otro nombre)
             for (const c of todasActuales) {
-                if (!todasOriginales.has(c)) {
+                if (!todasOriginales.has(c) && !newsRenamed.has(c)) {
                     cambios.push({ tipo: 'nueva', comuna: c, detalle: `Comuna nueva: "${c}" con ${estado.actual[c].length} comunidades` });
                 }
             }
-            // Comunas eliminadas
+            // Comunas eliminadas (excluyendo origenes de rename: ya emitidos arriba)
             for (const c of todasOriginales) {
-                if (!todasActuales.has(c)) {
+                if (!todasActuales.has(c) && !oldsRenamed.has(c)) {
                     cambios.push({ tipo: 'eliminada', comuna: c, detalle: `Comuna eliminada: "${c}" (tenía ${estado.original[c].length} comunidades)` });
                 }
             }
-            // Comunas modificadas (cambio en lista de comunidades)
+            // Comunas modificadas (cambio en lista de comunidades). Si la
+            // comuna actual es destino de un rename, comparamos contra el
+            // original real (el nombre viejo en estado.original).
             for (const c of todasActuales) {
-                if (todasOriginales.has(c)) {
-                    const setO = new Set(estado.original[c]);
+                let originalNombre = c;
+                if (newsRenamed.has(c)) {
+                    for (const [v, n] of Object.entries(estado.renames)) {
+                        if (n === c) { originalNombre = v; break; }
+                    }
+                }
+                if (todasOriginales.has(originalNombre)) {
+                    const setO = new Set(estado.original[originalNombre]);
                     const setA = new Set(estado.actual[c]);
                     const agregadas = [...setA].filter(x => !setO.has(x));
                     const quitadas = [...setO].filter(x => !setA.has(x));
@@ -790,25 +848,165 @@
 
             const btn = document.getElementById('btnGuardar');
             btn.disabled = true;
+
+            const renames = estado.renames;
+            const hayRenames = Object.keys(renames).length > 0;
+            const norm = s => String(s == null ? '' : s).trim().toUpperCase();
+
+            // Si hay renames, hacemos pre-flight: leemos los 5 arboles de
+            // Firebase que persisten el NOMBRE de comuna como valor y armamos
+            // el cascade completo. Todos los writes (cascade + filtros) se
+            // mandan en UNA sola update() multi-path para que sea atomico:
+            // si una parte falla, ninguna escritura queda aplicada.
+            let cascade = null;
+            let conteo = null;
+            if (hayRenames) {
+                btn.textContent = '🔍 Analizando impacto...';
+                try {
+                    const [snapH, snapT, snapEp, snapEg, snapO] = await Promise.all([
+                        get(ref(database, 'habitantes')),
+                        get(ref(database, 'tickets')),
+                        get(ref(database, 'encuestas_consulta_popular')),
+                        get(ref(database, 'encuestas_reorganizacion_gobierno')),
+                        get(ref(database, 'operadores'))
+                    ]);
+
+                    // Indice case-insensitive: {NOMBRE_VIEJO_NORMALIZADO: nombreNuevo}.
+                    // Toleramos casing/espacios sucios en los datos historicos.
+                    const renameMap = {};
+                    for (const [v, n] of Object.entries(renames)) renameMap[norm(v)] = n;
+
+                    cascade = {};
+                    conteo = { habitantes: 0, tickets: 0, encConsulta: 0, encGobierno: 0, operadores: 0 };
+
+                    if (snapH.exists()) {
+                        const datos = snapH.val();
+                        for (const id in datos) {
+                            const v = norm(datos[id]?.comuna);
+                            if (v && renameMap[v] !== undefined) {
+                                cascade[`habitantes/${id}/comuna`] = renameMap[v];
+                                conteo.habitantes++;
+                            }
+                        }
+                    }
+                    if (snapT.exists()) {
+                        const datos = snapT.val();
+                        for (const id in datos) {
+                            const v = norm(datos[id]?.comuna);
+                            if (v && renameMap[v] !== undefined) {
+                                cascade[`tickets/${id}/comuna`] = renameMap[v];
+                                conteo.tickets++;
+                            }
+                        }
+                    }
+                    if (snapEp.exists()) {
+                        const datos = snapEp.val();
+                        for (const id in datos) {
+                            const v = norm(datos[id]?.comuna);
+                            if (v && renameMap[v] !== undefined) {
+                                cascade[`encuestas_consulta_popular/${id}/comuna`] = renameMap[v];
+                                conteo.encConsulta++;
+                            }
+                        }
+                    }
+                    if (snapEg.exists()) {
+                        const datos = snapEg.val();
+                        for (const id in datos) {
+                            const v = norm(datos[id]?.comuna);
+                            if (v && renameMap[v] !== undefined) {
+                                cascade[`encuestas_reorganizacion_gobierno/${id}/comuna`] = renameMap[v];
+                                conteo.encGobierno++;
+                            }
+                        }
+                    }
+                    if (snapO.exists()) {
+                        const datos = snapO.val();
+                        for (const uid in datos) {
+                            const op = datos[uid] || {};
+                            let huboCambio = false;
+                            // comunas_asignadas (array, formato actual)
+                            if (Array.isArray(op.comunas_asignadas)) {
+                                const nueva = op.comunas_asignadas.map(c => {
+                                    const v = norm(c);
+                                    if (renameMap[v] !== undefined) { huboCambio = true; return renameMap[v]; }
+                                    return c;
+                                });
+                                if (huboCambio) cascade[`operadores/${uid}/comunas_asignadas`] = nueva;
+                            }
+                            // comuna_asignada (string, legacy - leido como fallback en CLAUDE.md)
+                            if (op.comuna_asignada) {
+                                const v = norm(op.comuna_asignada);
+                                if (renameMap[v] !== undefined) {
+                                    cascade[`operadores/${uid}/comuna_asignada`] = renameMap[v];
+                                    huboCambio = true;
+                                }
+                            }
+                            if (huboCambio) conteo.operadores++;
+                        }
+                    }
+
+                    const detalleRen = Object.entries(renames)
+                        .map(([v, n]) => `  • "${v}" → "${n}"`).join('\n');
+                    const conteoMsg =
+                        `RENAMES PENDIENTES:\n${detalleRen}\n\n` +
+                        `Esta operacion se aplicara como UNA SOLA escritura atomica que afecta:\n` +
+                        `  • ${conteo.habitantes} habitantes\n` +
+                        `  • ${conteo.tickets} tickets\n` +
+                        `  • ${conteo.encConsulta} encuestas de Consulta Popular\n` +
+                        `  • ${conteo.encGobierno} encuestas de Reorganizacion del Gobierno\n` +
+                        `  • ${conteo.operadores} operadores (campo comunas_asignadas / comuna_asignada)\n` +
+                        `  • registro filtros_territoriales\n\n` +
+                        `¿Continuar?`;
+
+                    if (!confirm(conteoMsg)) {
+                        btn.disabled = false;
+                        btn.textContent = `💾 Guardar ${cambios.length} cambio${cambios.length === 1 ? '' : 's'}`;
+                        return;
+                    }
+                } catch (e) {
+                    alert('❌ Error en el pre-flight (no se modifico nada): ' + e.message);
+                    btn.disabled = false;
+                    btn.textContent = '💾 Reintentar';
+                    return;
+                }
+            }
+
             btn.textContent = '⏳ Guardando...';
             try {
-                // Construye payload final: solo comunas con al menos 1 comunidad
-                // (las que quedaron vacias podrian indicar borrado accidental,
-                // pero respetamos lo que decidio el admin). Si quieres limpiar
-                // las vacias automaticamente, descomentar el filter.
                 const payload = {};
                 for (const c in estado.actual) {
                     payload[c] = estado.actual[c].slice().sort((a, b) => a.localeCompare(b, 'es'));
                 }
-                await set(ref(database, 'filtros_territoriales'), payload);
-                // Reset: el original ahora es lo que se guardó
+
+                if (hayRenames) {
+                    // Multi-path update atomico: filtros + cascade en una sola
+                    // operacion. Firebase garantiza all-or-nothing por update() call.
+                    const updates = Object.assign({ 'filtros_territoriales': payload }, cascade);
+                    await update(ref(database), updates);
+                } else {
+                    await set(ref(database, 'filtros_territoriales'), payload);
+                }
+
                 estado.original = JSON.parse(JSON.stringify(payload));
+                estado.renames = {};
                 actualizarEstadoCambios();
                 renderComunas();
                 renderComunidades();
-                alert(`✅ Guardado correctamente. ${cambios.length} cambios aplicados.`);
+
+                let msg = `✅ Guardado. ${cambios.length} cambios aplicados.`;
+                if (conteo) {
+                    msg += `\n\nCascade aplicado a:\n`
+                        + `  • ${conteo.habitantes} habitantes\n`
+                        + `  • ${conteo.tickets} tickets\n`
+                        + `  • ${conteo.encConsulta + conteo.encGobierno} encuestas\n`
+                        + `  • ${conteo.operadores} operadores\n\n`
+                        + `⚠️  El espejo de Supabase (respaldo.html) sigue con los nombres viejos.\n`
+                        + `   Ejecuta la sincronizacion ahi para alinearlo.`;
+                }
+                alert(msg);
             } catch (e) {
-                alert('❌ Error al guardar: ' + e.message);
+                alert('❌ Error al guardar: ' + e.message
+                    + (hayRenames ? '\n\nNADA se aplico (la actualizacion atomica fallo).' : ''));
                 btn.disabled = false;
                 btn.textContent = '💾 Reintentar';
             }
