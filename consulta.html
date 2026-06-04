@@ -2625,12 +2625,22 @@
                     const actual = (h[f.key] || '').toString();
                     const propuesto = (ctx.propuesta[f.key] || '').toString();
                     const igual = actual.trim().toUpperCase() === propuesto.trim().toUpperCase();
-                    html += `<div class="cne-fila ${!igual && propuesto ? 'cne-cambio' : ''}">
-                        <div class="cne-label">${_cneEscape(f.label)}</div>
-                        <div class="cne-cols">
-                            <div><div class="cne-actual-label">ACTUAL</div><div class="cne-igual-val">${_cneEscape(actual || '—')}</div></div>
-                            <div><div class="cne-nuevo-label">CNE</div><div class="${igual ? 'cne-igual-val' : 'cne-nuevo-val'}">${_cneEscape(propuesto || '—')} ${igual ? '✓' : ''}</div></div>
-                        </div>
+                    const aplicable = !!propuesto && !igual;
+                    // Por default: marcado si hay un cambio real para aplicar; desmarcado si ya coincide o no hay propuesta
+                    const checkedAttr = aplicable ? 'checked' : '';
+                    const disabledAttr = aplicable ? '' : 'disabled';
+                    html += `<div class="cne-fila ${aplicable ? 'cne-cambio' : ''}">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:${aplicable ? 'pointer' : 'default'};">
+                            <input type="checkbox" data-cne-key="${_cneEscape(f.key)}" ${checkedAttr} ${disabledAttr}
+                                   style="width:18px; height:18px; accent-color:#0e7490; flex-shrink:0; ${aplicable ? '' : 'opacity:0.4;'}" />
+                            <div style="flex:1;">
+                                <div class="cne-label">${_cneEscape(f.label)}</div>
+                                <div class="cne-cols">
+                                    <div><div class="cne-actual-label">ACTUAL</div><div class="cne-igual-val">${_cneEscape(actual || '—')}</div></div>
+                                    <div><div class="cne-nuevo-label">CNE</div><div class="${igual ? 'cne-igual-val' : 'cne-nuevo-val'}">${_cneEscape(propuesto || '—')} ${igual ? '✓' : ''}</div></div>
+                                </div>
+                            </div>
+                        </label>
                     </div>`;
                 }
                 if (ctx.datos.cne) {
@@ -2659,15 +2669,20 @@
             if (!_cneCtx || !_cneCtx.propuesta) return;
             const h = baseDeDatosHabitantes[_cneCtx.idHab];
             if (!h) return;
+            // Leer del DOM cuales checkboxes estan marcados — el usuario puede
+            // desmarcar campos que NO quiere actualizar aunque haya diferencia.
+            const seleccion = {}
+            document.querySelectorAll('#modalCNECaja input[type="checkbox"][data-cne-key]').forEach(cb => {
+                seleccion[cb.dataset.cneKey] = cb.checked;
+            });
             const patch = {};
             const p = _cneCtx.propuesta;
-            if (p.nombre && p.nombre !== (h.nombre || '')) patch.nombre = p.nombre;
-            if (p.apellido && p.apellido !== (h.apellido || '')) patch.apellido = p.apellido;
-            if (p.fecha_nacimiento && p.fecha_nacimiento !== (h.fecha_nacimiento || '')) patch.fecha_nacimiento = p.fecha_nacimiento;
-            if (p.donde_vota && p.donde_vota !== (h.donde_vota || '')) patch.donde_vota = p.donde_vota;
+            if (seleccion.nombre && p.nombre && p.nombre !== (h.nombre || '')) patch.nombre = p.nombre;
+            if (seleccion.apellido && p.apellido && p.apellido !== (h.apellido || '')) patch.apellido = p.apellido;
+            if (seleccion.fecha_nacimiento && p.fecha_nacimiento && p.fecha_nacimiento !== (h.fecha_nacimiento || '')) patch.fecha_nacimiento = p.fecha_nacimiento;
+            if (seleccion.donde_vota && p.donde_vota && p.donde_vota !== (h.donde_vota || '')) patch.donde_vota = p.donde_vota;
             if (Object.keys(patch).length === 0) {
-                _cneCtx.error = 'No hay cambios para guardar — los datos ya coinciden.';
-                _cneRender();
+                alert('No hay cambios marcados para guardar. Marca al menos una casilla con diferencia.');
                 return;
             }
             // Auditoria del cambio

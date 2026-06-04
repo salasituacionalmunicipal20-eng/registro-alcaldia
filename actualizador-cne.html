@@ -157,6 +157,34 @@
 
         <div id="alertContainer"></div>
 
+        <!-- CONFIG: que campos actualizar -->
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:12px; padding:16px 20px; margin-bottom:18px;">
+            <div style="font-size:13px; color:#38bdf8; text-transform:uppercase; letter-spacing:1px; font-weight:800; margin-bottom:10px;">
+                ⚙️ ¿Qué campos actualizar?
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:14px;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#e2e8f0;">
+                    <input type="checkbox" id="cfg_nombre" checked style="width:18px; height:18px; accent-color:#38bdf8;" />
+                    Nombre
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#e2e8f0;">
+                    <input type="checkbox" id="cfg_apellido" checked style="width:18px; height:18px; accent-color:#38bdf8;" />
+                    Apellido
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#e2e8f0;">
+                    <input type="checkbox" id="cfg_fecha_nacimiento" checked style="width:18px; height:18px; accent-color:#38bdf8;" />
+                    Fecha de nacimiento
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:#e2e8f0;">
+                    <input type="checkbox" id="cfg_donde_vota" checked style="width:18px; height:18px; accent-color:#38bdf8;" />
+                    Centro de votación
+                </label>
+            </div>
+            <div style="margin-top:10px; font-size:11.5px; color:#94a3b8; font-weight:600;">
+                Los campos desmarcados se leen del CNE pero <strong>NO se escriben</strong> en Firebase. Cambios persisten entre sesiones.
+            </div>
+        </div>
+
         <!-- KPIs -->
         <div class="kpis">
             <div class="kpi azul">
@@ -289,6 +317,49 @@
             return cn.length >= 4 && cn.length <= 10;
         }
 
+        // ── Config de campos a actualizar (persistida en localStorage)
+        const CFG_KEYS = ['nombre', 'apellido', 'fecha_nacimiento', 'donde_vota'];
+
+        function leerConfig() {
+            const cfg = {};
+            for (const k of CFG_KEYS) {
+                const el = document.getElementById('cfg_' + k);
+                cfg[k] = el ? el.checked : true;
+            }
+            return cfg;
+        }
+
+        function guardarConfigLocal() {
+            try {
+                localStorage.setItem('cne_batch_config', JSON.stringify(leerConfig()));
+            } catch {}
+        }
+
+        function cargarConfigLocal() {
+            try {
+                const raw = localStorage.getItem('cne_batch_config');
+                if (!raw) return;
+                const cfg = JSON.parse(raw);
+                for (const k of CFG_KEYS) {
+                    const el = document.getElementById('cfg_' + k);
+                    if (el && typeof cfg[k] === 'boolean') el.checked = cfg[k];
+                }
+            } catch {}
+        }
+
+        // Aplicar config inmediatamente y persistir al cambiar
+        cargarConfigLocal();
+        for (const k of CFG_KEYS) {
+            const el = document.getElementById('cfg_' + k);
+            if (el) el.addEventListener('change', () => {
+                guardarConfigLocal();
+                // Recalcular la cola por si el cambio afecta qué habitantes
+                // entran como "pendientes" (ej. si destildaste donde_vota, ya no
+                // necesita reprocesar los que les falta).
+                actualizarCola();
+            });
+        }
+
         function yaConsultado(h) {
             // Marca anti-reproceso. Si lo consultaste hace menos de 30 dias, salta.
             if (!h.cne_actualizado_at) return false;
@@ -297,11 +368,13 @@
             const dias = (Date.now() - t) / 86400000;
             if (dias >= 30) return false;
             // EXCEPCION: si fue consultado exitosamente (ENCONTRADO) pero le falta
-            // donde_vota (Centro de Votación), reprocesar. La respuesta viene del
-            // cache del Edge Function (TTL 30d) asi que NO consume cuota nueva.
-            // Esto cubre los habitantes que se procesaron antes de agregar
-            // donde_vota a la logica del batch.
-            if (h.cne_resultado === 'ENCONTRADO' && !h.donde_vota) return false;
+            // donde_vota Y el usuario tiene marcado actualizar donde_vota, reprocesar.
+            // La respuesta viene del cache del Edge Function (TTL 30d) asi que NO
+            // consume cuota nueva. Si el usuario destildo donde_vota, NO entrar al
+            // reproceso (sino seria loop: lo procesa, no escribe donde_vota, vuelve
+            // a faltar, vuelve a procesar...).
+            const cfg = leerConfig();
+            if (cfg.donde_vota && h.cne_resultado === 'ENCONTRADO' && !h.donde_vota) return false;
             return true;
         }
 
@@ -408,25 +481,28 @@
                     const nuevaFecha = d.fecha_nac || '';
                     const nuevoCV = (d.cne && d.cne.centro_electoral) ? d.cne.centro_electoral : '';
 
+                    // Leer config: solo escribimos los campos que el usuario marco
+                    const cfg = leerConfig();
+
                     const patch = {
                         cne_actualizado_at: new Date().toISOString(),
                         cne_resultado: 'ENCONTRADO',
                         cne_actualizado_por: 'batch_automatico',
                     };
                     const cambios = [];
-                    if (nuevoNombre && nuevoNombre !== (h.nombre || '')) {
+                    if (cfg.nombre && nuevoNombre && nuevoNombre !== (h.nombre || '')) {
                         patch.nombre = nuevoNombre;
                         cambios.push(`nombre: "${h.nombre || ''}" → "${nuevoNombre}"`);
                     }
-                    if (nuevoApellido && nuevoApellido !== (h.apellido || '')) {
+                    if (cfg.apellido && nuevoApellido && nuevoApellido !== (h.apellido || '')) {
                         patch.apellido = nuevoApellido;
                         cambios.push(`apellido: "${h.apellido || ''}" → "${nuevoApellido}"`);
                     }
-                    if (nuevaFecha && nuevaFecha !== (h.fecha_nacimiento || '')) {
+                    if (cfg.fecha_nacimiento && nuevaFecha && nuevaFecha !== (h.fecha_nacimiento || '')) {
                         patch.fecha_nacimiento = nuevaFecha;
                         cambios.push(`fecha_nac: "${h.fecha_nacimiento || ''}" → "${nuevaFecha}"`);
                     }
-                    if (nuevoCV && nuevoCV !== (h.donde_vota || '')) {
+                    if (cfg.donde_vota && nuevoCV && nuevoCV !== (h.donde_vota || '')) {
                         patch.donde_vota = nuevoCV;
                         cambios.push(`donde_vota: "${h.donde_vota || ''}" → "${nuevoCV}"`);
                     }
