@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Resultados Consulta Popular - Alcaldía</title>
+    <!-- jsPDF para exportar respuestas individuales como reporte imprimible -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #0f172a; }
@@ -385,7 +387,8 @@
                     <label>Comunidad</label>
                     <select id="filtroComunidad"><option value="">Todas</option></select>
                 </div>
-                <button class="btn-exportar" id="btnExportarCSV">📥 Exportar CSV</button>
+                <button class="btn-exportar" id="btnExportarPDF" title="Reporte imprimible (una ficha por respuesta)">📄 Exportar PDF</button>
+                <button class="btn-exportar" id="btnExportarCSV" style="background:#0ea5e9;" title="Para abrir en Excel/Sheets">📊 CSV</button>
             </div>
 
             <div class="tabla-wrap">
@@ -496,7 +499,8 @@
                     <label>Comunidad</label>
                     <select id="gob_filtroComunidad"><option value="">Todas</option></select>
                 </div>
-                <button class="btn-exportar" id="gob_btnExportarCSV" style="background:#d4a017;">📥 Exportar CSV</button>
+                <button class="btn-exportar" id="gob_btnExportarPDF" style="background:#b45309;" title="Reporte imprimible (una ficha por respuesta)">📄 Exportar PDF</button>
+                <button class="btn-exportar" id="gob_btnExportarCSV" style="background:#d4a017;" title="Para abrir en Excel/Sheets">📊 CSV</button>
             </div>
 
             <div class="tabla-wrap">
@@ -994,6 +998,154 @@
             URL.revokeObjectURL(url);
         });
 
+        // ── PDF: helper generico que arma un reporte "ficha por respuesta",
+        // mucho mas legible que aplastar 30+ columnas en una tabla. Recibe:
+        //   titulo: string, datos: array de objetos, preguntas: array de
+        //   {campo, label} para iterar.
+        function generarPDFEncuesta(titulo, color, datos, preguntas, filename) {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La libreria de PDF no cargo. Revisa tu conexion a internet y recarga la pagina.');
+                return;
+            }
+            if (datos.length === 0) {
+                alert('No hay respuestas que exportar con los filtros actuales.');
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const margenX = 15, anchoUtil = 180;
+            let y = 15;
+
+            // Encabezado del reporte (solo primera pagina)
+            doc.setFillColor(color[0], color[1], color[2]);
+            doc.rect(0, 0, 216, 10, 'F');
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.text(titulo, margenX, y + 5);
+            y += 12;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            const fechaExp = new Date().toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            doc.text(`Exportado: ${fechaExp}   ·   Total respuestas: ${datos.length}`, margenX, y);
+            y += 8;
+
+            const wrapText = (txt, maxAncho, fontSize) => {
+                doc.setFontSize(fontSize);
+                return doc.splitTextToSize(String(txt || '').trim() || '—', maxAncho);
+            };
+            const checkPag = (alturaNecesaria) => {
+                if (y + alturaNecesaria > 270) { doc.addPage(); y = 15; }
+            };
+
+            datos.forEach((r, idx) => {
+                checkPag(40);
+
+                // Separador / numero de ficha
+                doc.setDrawColor(color[0], color[1], color[2]);
+                doc.setLineWidth(0.5);
+                doc.line(margenX, y, margenX + anchoUtil, y);
+                y += 5;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.setTextColor(color[0], color[1], color[2]);
+                doc.text(`Respuesta #${idx + 1}`, margenX, y);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.text(fmtFecha(r.fecha_envio), margenX + anchoUtil, y, { align: 'right' });
+                y += 5;
+
+                // Datos personales
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                const nombre = `${r.nombres || ''} ${r.apellidos || ''}`.trim() || (r.es_anonimo ? '🔒 ANONIMO' : '—');
+                doc.text(nombre, margenX, y);
+                y += 4;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                const datosLinea1 = [
+                    r.cedula ? `C.I.: ${r.cedula}` : 'C.I.: —',
+                    r.edad ? `Edad: ${r.edad}` : 'Edad: —',
+                    r.sexo ? `Sexo: ${r.sexo}` : '',
+                    r.telefono ? `Tel: ${r.telefono}` : ''
+                ].filter(Boolean).join('   |   ');
+                doc.text(datosLinea1, margenX, y);
+                y += 4;
+                const ubic = [
+                    r.comuna ? `Comuna: ${r.comuna}` : '',
+                    r.comunidad ? `Comunidad: ${r.comunidad}` : ''
+                ].filter(Boolean).join('   |   ');
+                if (ubic) { doc.text(ubic, margenX, y); y += 4; }
+                y += 2;
+
+                // Preguntas y respuestas
+                preguntas.forEach(p => {
+                    const valor = r[p.campo];
+                    if (valor == null || valor === '' || valor === false) return;
+                    const respTxt = (typeof valor === 'boolean') ? (valor ? 'Sí' : 'No') : valor;
+                    const linesQ = wrapText(p.label, anchoUtil, 9);
+                    const linesR = wrapText(respTxt, anchoUtil, 9);
+                    const alturaBlock = (linesQ.length + linesR.length) * 4 + 2;
+                    checkPag(alturaBlock);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.setTextColor(60, 60, 60);
+                    doc.text(linesQ, margenX, y);
+                    y += linesQ.length * 4;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(linesR, margenX + 3, y);
+                    y += linesR.length * 4 + 2;
+                });
+                y += 4;
+            });
+
+            // Pie de pagina con numero de pagina
+            const totalPag = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPag; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Pagina ${i} de ${totalPag}`, 108, 275, { align: 'center' });
+            }
+
+            doc.save(filename);
+        }
+
+        document.getElementById('btnExportarPDF').addEventListener('click', () => {
+            const preguntas = [
+                { campo: 'p1_que_pasa_12julio',    label: '1. ¿Qué cree que pasará el 12 de Julio?' },
+                { campo: 'p2_proyecto_ganador',    label: '2. Proyecto que considera ganador' },
+                { campo: 'p3_opinion_consulta',    label: '3. Opinión sobre la consulta popular' },
+                { campo: 'p4_t1',                  label: '4.1. Tema priorizado' },
+                { campo: 'p4_t2',                  label: '4.2. Tema priorizado' },
+                { campo: 'p4_t3',                  label: '4.3. Tema priorizado' },
+                { campo: 'p4_t4',                  label: '4.4. Tema priorizado' },
+                { campo: 'p4_t5',                  label: '4.5. Tema priorizado' },
+                { campo: 'p4_t6',                  label: '4.6. Tema priorizado' },
+                { campo: 'p4_t7',                  label: '4.7. Tema priorizado' },
+                { campo: 'p5_nivel_informacion',   label: '5. Nivel de información' },
+                { campo: 'p6_propuesta_1',         label: '6.1. Propuesta' },
+                { campo: 'p6_propuesta_2',         label: '6.2. Propuesta' },
+                { campo: 'p6_propuesta_3',         label: '6.3. Propuesta' },
+                { campo: 'p7_participa',           label: '7. ¿Participa?' },
+                { campo: 'p7_porque',              label: '7. ¿Por qué?' },
+                { campo: 'p8_mejorar_procesos',    label: '8. Cómo mejorar los procesos' },
+                { campo: 'p9_dio_respuestas',      label: '9. ¿La consulta dio respuestas?' },
+                { campo: 'p10_participo_asamblea', label: '10. ¿Participó en la asamblea?' },
+                { campo: 'pregunta_mejorar',       label: '¿Qué mejorar?' },
+                { campo: 'pregunta_dudas',         label: 'Dudas' },
+                { campo: 'pregunta_propuesta',     label: 'Propuesta adicional' },
+                { campo: 'quiere_participar_mesa', label: '✓ Desea participar en mesas de trabajo' }
+            ];
+            const filename = `Consulta_Popular_${new Date().toISOString().substring(0,10)}.pdf`;
+            generarPDFEncuesta('Consulta Popular — Respuestas individuales',
+                [29, 78, 216], respuestas, preguntas, filename);
+        });
+
 
         // ============================================================
         // SEGUNDA ENCUESTA: Reorganizacion del Gobierno
@@ -1189,6 +1341,16 @@
             a.download = `Encuesta_Gobierno_${new Date().toISOString().substring(0,10)}.csv`;
             a.click();
             URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('gob_btnExportarPDF').addEventListener('click', () => {
+            const preguntas = [
+                { campo: 'pregunta_1_reorganizar_gobierno', label: '1. ¿Cómo reorganizaría el gobierno?' },
+                { campo: 'pregunta_2_legitimar_propuesta',  label: '2. ¿Cómo legitimaría la propuesta?' }
+            ];
+            const filename = `Encuesta_Gobierno_${new Date().toISOString().substring(0,10)}.pdf`;
+            generarPDFEncuesta('Reorganización del Gobierno — Respuestas individuales',
+                [180, 83, 9], respuestasGob, preguntas, filename);
         });
 
 
