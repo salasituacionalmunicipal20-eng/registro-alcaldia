@@ -1,43 +1,80 @@
 // cne-autocompletar.js
 //
-// Se incluye en cada encuesta publica (encuesta-publica, encuesta-gobierno,
-// encuesta-percepcion-gestion). Al hacer blur del input #f_cedula con
-// formato valido, consulta la Edge Function `consultar-cedula` de Supabase
-// y rellena automaticamente nombres, apellidos y fecha de nacimiento.
+// Auto-completar nombres / apellidos / fecha de nacimiento al hacer blur del
+// campo de cédula. Soporta multiples formularios del proyecto:
+//
+//   1. ENCUESTAS publicas (encuesta-publica, encuesta-gobierno,
+//      encuesta-percepcion-gestion): IDs con prefijo "f_" y plural
+//      (f_cedula, f_nombres, f_apellidos, f_fecha_nacimiento).
+//
+//   2. REGISTRO de habitante / jefe de hogar (registro.html, formulario
+//      principal): IDs en singular sin prefijo (cedula, nombre, apellido,
+//      fecha_nacimiento).
+//
+//   3. REGISTRO de dependiente (registro.html, modal): IDs en singular
+//      con prefijo "m_" (m_cedula, m_nombre, m_apellido, m_fecha_nacimiento).
+//
+// El listener blur convive con cualquier listener input/change existente
+// (en registro.html hay un input listener en cedula que actualiza el radar
+// de presencia — este script NO lo pisa).
 //
 // Filosofia:
-//   • Falla SILENCIOSA: si el CNE no encuentra la cedula o el servicio
-//     esta caido, no molesta al ciudadano. Sigue llenando a mano normal.
-//   • NO sobrescribe: si los campos de nombres/apellidos ya tienen algo
+//   - Falla SILENCIOSA: si el CNE no encuentra la cedula o el servicio
+//     esta caido, no molesta. El operador llena a mano.
+//   - NO sobrescribe: si los campos de nombre/apellido ya tienen algo
 //     tipeado, no los toca (respeta la edicion manual).
-//   • Indicador visual sutil: fondo amarillo mientras consulta, verde
-//     breve al exito, vuelta al normal.
-//   • Sin botones, cero fricion — la consulta se dispara automaticamente
-//     al pasar al siguiente campo.
+//   - Indicador visual sutil: fondo amarillo mientras consulta, verde
+//     breve al exito.
+//   - Despues de llenar fecha_nacimiento, dispara event "change" para que
+//     handlers existentes (ej. calculo de edad en registro.html) corran.
 
 (function () {
     const SUPABASE_URL = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co'
     const ENDPOINT = SUPABASE_URL + '/functions/v1/consultar-cedula'
 
-    function activar() {
-        const cedula = document.getElementById('f_cedula')
-        if (!cedula) return
+    // Mapeos: para cada input de cedula posible, los IDs de los campos
+    // relacionados que vamos a llenar. Si el HTML no tiene alguno, no pasa nada.
+    const MAPEOS = [
+        // Encuestas publicas (prefijo f_, plural)
+        { cedula: 'f_cedula', nombre: 'f_nombres', apellido: 'f_apellidos', fecha: 'f_fecha_nacimiento', nacionalidad: null },
+        // Registro habitante (formulario principal, jefe de hogar)
+        { cedula: 'cedula', nombre: 'nombre', apellido: 'apellido', fecha: 'fecha_nacimiento', nacionalidad: 'nacionalidad' },
+        // Registro dependiente (modal, prefijo m_)
+        { cedula: 'm_cedula', nombre: 'm_nombre', apellido: 'm_apellido', fecha: 'm_fecha_nacimiento', nacionalidad: 'm_nacionalidad' }
+    ]
 
-        cedula.addEventListener('blur', async () => {
-            const raw = (cedula.value || '').trim()
+    function nacionalidadDe(raw, mapeo) {
+        // 1) Si hay un <select id="nacionalidad"> y tiene valor, usarlo.
+        if (mapeo.nacionalidad) {
+            const sel = document.getElementById(mapeo.nacionalidad)
+            const v = sel && (sel.value || '').toUpperCase()
+            if (v === 'E' || v === 'V') return v
+        }
+        // 2) Si la cedula viene prefijada con E (ej "E12345"), usar E.
+        if (/^[Ee]/.test(raw)) return 'E'
+        // 3) Default V.
+        return 'V'
+    }
+
+    function listenerBlur(mapeo) {
+        return async function () {
+            const cedulaEl = this
+            const raw = (cedulaEl.value || '').trim()
             const num = raw.replace(/\D/g, '')
-            if (num.length < 4 || num.length > 10) return // no parece cedula valida
+            if (num.length < 4 || num.length > 10) return
 
-            const nombres = document.getElementById('f_nombres')
-            const apellidos = document.getElementById('f_apellidos')
-            // Respetar lo que el ciudadano haya tipeado manualmente
-            if ((nombres && nombres.value.trim()) || (apellidos && apellidos.value.trim())) return
+            const nombreEl = mapeo.nombre ? document.getElementById(mapeo.nombre) : null
+            const apellidoEl = mapeo.apellido ? document.getElementById(mapeo.apellido) : null
+            const fechaEl = mapeo.fecha ? document.getElementById(mapeo.fecha) : null
 
-            const nacionalidad = /^[Ee]/.test(raw) ? 'E' : 'V'
-            const placeholderOriginal = cedula.placeholder
-            const bgOriginal = cedula.style.background
-            cedula.style.background = '#fef3c7'
-            cedula.placeholder = 'Consultando CNE...'
+            // Respetar lo que el operador haya tipeado manualmente
+            if ((nombreEl && nombreEl.value.trim()) || (apellidoEl && apellidoEl.value.trim())) return
+
+            const nacionalidad = nacionalidadDe(raw, mapeo)
+            const placeholderOriginal = cedulaEl.placeholder
+            const bgOriginal = cedulaEl.style.background
+            cedulaEl.style.background = '#fef3c7'
+            cedulaEl.placeholder = 'Consultando CNE...'
 
             try {
                 const resp = await fetch(ENDPOINT, {
@@ -59,31 +96,43 @@
                 const d = json && json.data
                 if (!d) return
 
-                if (nombres && !nombres.value.trim()) {
-                    nombres.value = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim()
+                if (nombreEl && !nombreEl.value.trim()) {
+                    nombreEl.value = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim()
                 }
-                if (apellidos && !apellidos.value.trim()) {
-                    apellidos.value = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim()
+                if (apellidoEl && !apellidoEl.value.trim()) {
+                    apellidoEl.value = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim()
                 }
-                const fecha = document.getElementById('f_fecha_nacimiento')
-                if (fecha && d.fecha_nac && !fecha.value) {
-                    fecha.value = d.fecha_nac
-                    // Trigger change para que el handler de edad recalcule
-                    fecha.dispatchEvent(new Event('change'))
+                if (fechaEl && d.fecha_nac && !fechaEl.value) {
+                    fechaEl.value = d.fecha_nac
+                    // Disparar change para que handlers existentes recalculen
+                    // (ej. en registro.html el handler change de fecha_nacimiento
+                    // calcula la edad y muestra/oculta secciones electorales).
+                    fechaEl.dispatchEvent(new Event('change', { bubbles: true }))
                 }
-                // Flash verde de confirmacion
-                cedula.style.background = '#dcfce7'
-                setTimeout(() => { cedula.style.background = bgOriginal }, 1500)
+                // Flash verde breve de confirmacion
+                cedulaEl.style.background = '#dcfce7'
+                setTimeout(() => { cedulaEl.style.background = bgOriginal }, 1500)
             } catch (err) {
                 console.warn('[CNE] consulta fallida:', err)
             } finally {
-                cedula.placeholder = placeholderOriginal
-                // Si terminamos con bg amarillo (sin exito), restaurar
-                if (cedula.style.background === 'rgb(254, 243, 199)') {
-                    cedula.style.background = bgOriginal
+                cedulaEl.placeholder = placeholderOriginal
+                // Si terminamos sin exito, restaurar fondo
+                if (cedulaEl.style.background === 'rgb(254, 243, 199)') {
+                    cedulaEl.style.background = bgOriginal
                 }
             }
-        })
+        }
+    }
+
+    function activar() {
+        for (const mapeo of MAPEOS) {
+            const cedulaEl = document.getElementById(mapeo.cedula)
+            if (!cedulaEl) continue
+            // Marca para no doble-registrar si activar() se llama dos veces
+            if (cedulaEl.dataset.cneAutocompletar === '1') continue
+            cedulaEl.dataset.cneAutocompletar = '1'
+            cedulaEl.addEventListener('blur', listenerBlur(mapeo))
+        }
     }
 
     if (document.readyState === 'loading') {

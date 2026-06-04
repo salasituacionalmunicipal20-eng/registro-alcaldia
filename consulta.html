@@ -2680,6 +2680,11 @@
                 // Actualizar cache local para que la tabla refleje el cambio sin recargar
                 Object.assign(baseDeDatosHabitantes[_cneCtx.idHab], patch);
                 renderizarTabla();
+                // Bajar el flag ANTES de cerrar para que el guard de cerrarModalCNE no
+                // bloquee el cierre. Bug: antes el guard "if (guardando) return" del
+                // cerrar dejaba el modal pegado en "Guardando..." aunque el UPDATE
+                // ya hubiera ocurrido. Fix: bajar flag y luego cerrar.
+                _cneCtx.guardando = false;
                 window.cerrarModalCNE();
             } catch (e) {
                 _cneCtx.guardando = false;
