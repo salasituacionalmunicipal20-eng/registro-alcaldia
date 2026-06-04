@@ -220,6 +220,20 @@
             text-decoration: line-through;
             background: #fee2e2;
         }
+        .comuna-item .acciones-com {
+            display: flex; gap: 4px; flex-shrink: 0;
+        }
+        .comuna-item .btn-icon {
+            background: none;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+        }
+        .comuna-item .btn-icon:hover { background: #f1f5f9; }
+        .comuna-item .btn-icon.danger:hover { background: #fee2e2; border-color: #fca5a5; }
 
         /* Lista de comunidades (lado derecho) */
         .comunidades-toolbar {
@@ -388,10 +402,6 @@
                     <input type="text" id="inputNuevaComuna" class="input-text" placeholder="Nombre de comuna nueva" style="flex:1; min-width:150px;" />
                     <button class="btn-mini success" onclick="crearComuna()">+ Crear</button>
                 </div>
-                <div class="panel-actions">
-                    <button id="btnRenombrar" class="btn-mini secundario" onclick="renombrarComunaActiva()" disabled>✏️ Renombrar</button>
-                    <button id="btnEliminar" class="btn-mini danger" onclick="eliminarComunaActiva()" disabled>🗑 Eliminar comuna</button>
-                </div>
             </div>
 
             <!-- ─── COMUNIDADES (derecha) ─────────────────────────── -->
@@ -521,30 +531,52 @@
                 return;
             }
 
+            // Set de nombres NUEVOS que vinieron de un rename de comuna pendiente
+            const destinosRenameComuna = new Set(Object.values(estado.renames));
+
             cont.innerHTML = nombres.map(nombre => {
                 const cantidad = estado.actual[nombre].length;
                 const esActiva = nombre === estado.comunaActivaId;
-                const esNueva = !estado.original[nombre];
-                const seModifico = !esNueva && JSON.stringify(estado.original[nombre]?.slice().sort()) !== JSON.stringify(estado.actual[nombre].slice().sort());
+                const esDestinoRename = destinosRenameComuna.has(nombre);
+                // Si es destino de rename, NO la consideramos "nueva" (en estado.original
+                // no esta porque cambio de nombre, pero conceptualmente es la misma).
+                const esNueva = !estado.original[nombre] && !esDestinoRename;
+                let seModifico = false;
+                if (!esNueva) {
+                    // Para comparar contenido, si es destino de rename usamos el array
+                    // original del nombre viejo
+                    let nombreOriginal = nombre;
+                    if (esDestinoRename) {
+                        for (const [v, n] of Object.entries(estado.renames)) {
+                            if (n === nombre) { nombreOriginal = v; break; }
+                        }
+                    }
+                    seModifico = JSON.stringify(estado.original[nombreOriginal]?.slice().sort())
+                              !== JSON.stringify(estado.actual[nombre].slice().sort());
+                }
                 const klass = ['comuna-item'];
                 if (esActiva) klass.push('activa');
                 if (esNueva) klass.push('nueva');
+                else if (esDestinoRename) klass.push('modificada');
                 else if (seModifico) klass.push('modificada');
 
                 let etiqueta = `${cantidad} com.`;
                 if (esNueva) etiqueta = '+ Nueva';
+                else if (esDestinoRename) etiqueta = '✏️ Renombrada';
                 else if (seModifico) etiqueta = '~ Editada';
 
                 return `
                     <div class="${klass.join(' ')}" onclick="seleccionarComuna('${escId(nombre)}')">
                         <div class="nombre">${escHtml(nombre)}</div>
                         <span class="pill">${etiqueta}</span>
+                        <div class="acciones-com">
+                            <button class="btn-icon" title="Renombrar esta comuna (cascade a habitantes/encuestas/operadores)"
+                                    onclick="event.stopPropagation(); renombrarComuna('${escId(nombre)}')">✏️</button>
+                            <button class="btn-icon danger" title="Eliminar esta comuna"
+                                    onclick="event.stopPropagation(); eliminarComuna('${escId(nombre)}')">🗑</button>
+                        </div>
                     </div>`;
             }).join('');
-
-            // Habilita botones de renombrar/eliminar segun haya activa
-            document.getElementById('btnRenombrar').disabled = !estado.comunaActivaId;
-            document.getElementById('btnEliminar').disabled = !estado.comunaActivaId;
         };
 
         window.seleccionarComuna = function(idEscapado) {
@@ -688,8 +720,11 @@
             actualizarEstadoCambios();
         };
 
-        window.renombrarComunaActiva = function() {
-            const viejo = estado.comunaActivaId;
+        // Renombra una comuna especifica (por nombre). Usado por el boton ✏️
+        // inline en cada comuna de la columna izquierda. Si se pasa sin
+        // argumento, usa la comuna activa (compat con llamados viejos).
+        window.renombrarComuna = function(nombreEscapado) {
+            const viejo = nombreEscapado ? decodeURIComponent(nombreEscapado) : estado.comunaActivaId;
             if (!viejo) return;
             const nuevo = (prompt(`Nuevo nombre para "${viejo}":`, viejo) || '').trim().toUpperCase();
             if (!nuevo || nuevo === viejo) return;
@@ -722,16 +757,19 @@
 
             estado.actual[nuevo] = estado.actual[viejo].slice();
             delete estado.actual[viejo];
-            estado.comunaActivaId = nuevo;
+            // Solo cambiar la comuna activa si era justamente la que renombramos
+            if (estado.comunaActivaId === viejo) estado.comunaActivaId = nuevo;
             renderComunas();
             renderComunidades();
             actualizarEstadoCambios();
         };
 
-        window.eliminarComunaActiva = function() {
-            const nombre = estado.comunaActivaId;
+        // Elimina una comuna especifica (por nombre). Usado por el boton 🗑
+        // inline. Si se pasa sin argumento, usa la comuna activa.
+        window.eliminarComuna = function(nombreEscapado) {
+            const nombre = nombreEscapado ? decodeURIComponent(nombreEscapado) : estado.comunaActivaId;
             if (!nombre) return;
-            const cantidad = estado.actual[nombre].length;
+            const cantidad = (estado.actual[nombre] || []).length;
             const msg = cantidad > 0
                 ? `¿Eliminar la comuna "${nombre}"?\n\nSus ${cantidad} comunidades quedarán huérfanas (puedes reasignarlas a otra comuna).`
                 : `¿Eliminar la comuna vacía "${nombre}"?`;
@@ -746,7 +784,8 @@
                     break;
                 }
             }
-            estado.comunaActivaId = null;
+            // Solo limpiar la activa si era justo esta
+            if (estado.comunaActivaId === nombre) estado.comunaActivaId = null;
             renderComunas();
             renderComunidades();
             actualizarEstadoCambios();
