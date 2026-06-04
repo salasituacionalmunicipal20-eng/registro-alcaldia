@@ -300,6 +300,12 @@
                 <div class="card-desc">Salud del servidor y descargas de seguridad absolutas. (Solo Carlos).</div>
             </div>
 
+            <div id="cardGestionTerritorial" class="card hidden" onclick="location.href='gestion-territorial.html'" style="border-top: 4px solid #d4a017;">
+                <span class="card-icon">🗺️</span>
+                <div class="card-title">Gestión Territorial</div>
+                <div class="card-desc">Editar manualmente comunas y asignación de comunidades. Crear, renombrar, mover. (Solo Carlos).</div>
+            </div>
+
             <div id="cardVerificador" class="card card-verificador hidden" onclick="location.href='verificador.html'" style="border-top: 4px solid #ffd700;">
                 <span class="card-icon">🗂️</span>
                 <div class="card-title">Verificador de Base de Datos</div>
@@ -357,6 +363,7 @@
                 if (user.email === "carlos.admin@alcaldia.com") {
                     document.getElementById('cardMigracion').classList.remove('hidden');
                     document.getElementById('cardRespaldo').classList.remove('hidden');
+                    document.getElementById('cardGestionTerritorial').classList.remove('hidden');
                     esAdmin = true;
                 } else {
                     const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
