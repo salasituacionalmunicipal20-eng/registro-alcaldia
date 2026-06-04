@@ -98,6 +98,42 @@
         "user_agent":                       { ".validate": "newData.isString() && newData.val().length <= 500" },
         "$other":                           { ".validate": false }
       }
+    },
+    "encuestas_percepcion_gestion": {
+      ".read": "auth != null",
+      "$cedula": {
+        ".write": "((!data.exists() && newData.exists()) && ($cedula.matches(/^[VEJPG]?[0-9]{4,9}$/) || $cedula.matches(/^anon_[0-9]+_[a-z0-9]+$/))) || auth.token.email === 'carlos.admin@alcaldia.com'",
+        "nombres":                       { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "apellidos":                     { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "cedula":                        { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
+        "fecha_nacimiento":              { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
+        "edad":                          { ".validate": "newData.isNumber() && newData.val() >= 15 && newData.val() <= 120" },
+        "sexo":                          { ".validate": "newData.isString() && (newData.val() === 'M' || newData.val() === 'F')" },
+        "telefono":                      { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "comuna":                        { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "comunidad":                     { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "es_anonimo":                    { ".validate": "newData.isBoolean()" },
+        "p1a_gestion_presidente":        { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "p1b_gestion_gobernador":        { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "p1c_gestion_alcaldesa":         { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "p2_municipio_avance":           { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "p3a_confianza_presidente":      { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "p3b_confianza_gobernador":      { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "p3c_confianza_alcaldesa":       { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "p4a_problema_presidente":       { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "p4b_problema_gobernador":       { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "p4c_problema_alcaldesa":        { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "p4a_problema_presidente_otros": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "p4b_problema_gobernador_otros": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "p4c_problema_alcaldesa_otros":  { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "p5_mejoras_comunidad":          { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "p6a_sugerencia_presidente":     { ".validate": "newData.isString() && newData.val().length <= 1500" },
+        "p6b_sugerencia_gobernador":     { ".validate": "newData.isString() && newData.val().length <= 1500" },
+        "p6c_sugerencia_alcaldesa":      { ".validate": "newData.isString() && newData.val().length <= 1500" },
+        "fecha_envio":                   { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "user_agent":                    { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "$other":                        { ".validate": false }
+      }
     }
   }
 }

@@ -141,6 +141,9 @@
         .selector-card.gobierno .btn-abrir { background: #d4a017; }
         .selector-card.gobierno .btn-abrir:hover { background: #b45309; }
         .selector-card.popular .btn-abrir:hover { background: #1d4ed8; }
+        .selector-card.percepcion { border-top: 4px solid #6c3aed; }
+        .selector-card.percepcion .btn-abrir { background: #6c3aed; }
+        .selector-card.percepcion .btn-abrir:hover { background: #5b21b6; }
 
         .btn-volver-selector {
             display: inline-flex;
@@ -214,6 +217,40 @@
         /* LOADER */
         .cargando { text-align: center; padding: 40px; color: #64748b; font-weight: 600; }
 
+        /* Resumen percepcion: cuadricula de bloques (uno por sub-pregunta) */
+        .perc-resumen-wrap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+        }
+        .perc-bloque-resumen {
+            background: #fafafa;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .perc-bloque-resumen h4 {
+            margin: 0 0 10px;
+            font-size: 13px;
+            color: #4c1d95;
+            font-weight: 800;
+            border-bottom: 1px solid #ede9fe;
+            padding-bottom: 6px;
+        }
+        .perc-bloque-resumen .barra-row { margin-bottom: 6px; }
+        .perc-bloque-resumen .barra-label {
+            width: 130px; font-size: 11.5px;
+        }
+        .perc-bloque-resumen .barra-fondo { height: 14px; }
+        .perc-bloque-resumen .barra-valor { font-size: 11px; min-width: 70px; }
+
+        .btn-link {
+            background: none; border: none; cursor: pointer;
+            color: #2563eb; font-weight: 700; font-size: 12.5px;
+            padding: 0; text-decoration: none;
+        }
+        .btn-link:hover { text-decoration: underline; }
+
         /* MODAL */
         .modal-fondo {
             position: fixed; inset: 0; background: rgba(15,23,42,0.7); z-index: 999;
@@ -264,6 +301,13 @@
                     <p class="sub">COMUNA O NADA · 2 preguntas abiertas sobre la propuesta de reorganización y su legitimación.</p>
                     <div class="conteo" id="sel_conteo_gobierno">— respuestas</div>
                     <button class="btn-abrir" onclick="event.stopPropagation(); window._mostrarVista('gobierno')">Ver resultados →</button>
+                </div>
+                <div class="selector-card percepcion" onclick="window._mostrarVista('percepcion')">
+                    <span class="ico">📊</span>
+                    <h3>Percepción Ciudadana</h3>
+                    <p class="sub">Gestión pública · 6 preguntas (calificación, confianza, problemas y sugerencias por nivel de gobierno).</p>
+                    <div class="conteo" id="sel_conteo_percepcion">— respuestas</div>
+                    <button class="btn-abrir" onclick="event.stopPropagation(); window._mostrarVista('percepcion')">Ver resultados →</button>
                 </div>
             </div>
         </div>
@@ -528,6 +572,124 @@
 
         </div><!-- /vista-gobierno -->
 
+        <!-- ============================================================ -->
+        <!-- VISTA 3: Percepción Ciudadana y Gestión Pública              -->
+        <!-- ============================================================ -->
+        <div id="vista-percepcion" class="vista-encuesta">
+            <button class="btn-volver-selector" onclick="window._mostrarVista('selector')">← Volver al selector de encuestas</button>
+            <div style="margin: 0 0 20px; padding: 14px 18px; background: #f5f3ff; border-left: 4px solid #6c3aed; border-radius: 8px;">
+                <span style="font-size: 11px; font-weight: 800; color: #5b21b6; text-transform: uppercase; letter-spacing: 1.2px;">Tercera encuesta</span>
+                <h2 style="font-size: 22px; font-weight: 900; color: #4c1d95; margin: 6px 0 0; letter-spacing: -0.3px;">📊 Percepción Ciudadana y Gestión Pública</h2>
+                <p style="color: #5b21b6; font-size: 13px; margin: 4px 0 0; font-weight: 600;">6 preguntas · calificación, confianza, problemas y sugerencias por nivel de gobierno</p>
+            </div>
+
+        <!-- KPIS PERCEPCION -->
+        <div class="grid-kpis">
+            <div class="kpi" style="border-top: 4px solid #6c3aed;">
+                <div class="kpi-titulo">Respuestas total</div>
+                <div class="kpi-valor" id="perc_kpiTotal">--</div>
+                <div class="kpi-sub">en encuesta de percepción</div>
+            </div>
+            <div class="kpi" style="border-top: 4px solid #5b21b6;">
+                <div class="kpi-titulo">Comunas activas</div>
+                <div class="kpi-valor" id="perc_kpiComunas">--</div>
+                <div class="kpi-sub">con al menos 1 respuesta</div>
+            </div>
+            <div class="kpi" style="border-top: 4px solid #7c3aed;">
+                <div class="kpi-titulo">Comunidades</div>
+                <div class="kpi-valor" id="perc_kpiComunidades">--</div>
+                <div class="kpi-sub">distintas</div>
+            </div>
+            <div class="kpi" style="border-top: 4px solid #4c1d95;">
+                <div class="kpi-titulo">Última respuesta</div>
+                <div class="kpi-valor" id="perc_kpiUltima" style="font-size: 18px; padding-top: 6px;">--</div>
+                <div class="kpi-sub">timestamp más reciente</div>
+            </div>
+        </div>
+
+        <!-- RESUMEN DE PERCEPCIÓN (gráficos por pregunta) -->
+        <div class="seccion">
+            <h2>📈 Distribución de respuestas (todas las preguntas cerradas)</h2>
+            <div id="perc_resumenPreguntas" class="cargando">Cargando...</div>
+        </div>
+
+        <!-- COMPARTIR PERCEPCION -->
+        <div class="seccion" style="border-top: 4px solid #6c3aed;">
+            <h2>🔗 Compartir encuesta de percepción</h2>
+            <div class="compartir-grid">
+                <div>
+                    <p style="color: #475569; font-size: 13px; margin: 0 0 10px;">Comparte este enlace por WhatsApp, redes o coloca el código QR en el flyer impreso:</p>
+                    <label style="display:block; font-size:11px; font-weight:800; color:#5b21b6; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">⭐ Enlace corto (recomendado)</label>
+                    <div class="compartir-link" id="perc_compartirLinkCorto" style="background:#f5f3ff; border-color:#c4b5fd; color:#4c1d95; font-weight:800;">https://tinyurl.com/percepcioncr2026</div>
+                    <label style="display:block; font-size:11px; font-weight:800; color:#64748b; margin:10px 0 4px; text-transform:uppercase; letter-spacing:0.5px;">Enlace completo</label>
+                    <div class="compartir-link" id="perc_compartirLink">cargando...</div>
+                    <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="btn-exportar" style="background:#6c3aed;" onclick="navigator.clipboard.writeText(document.getElementById('perc_compartirLinkCorto').textContent).then(()=>alert('Enlace corto copiado'))">📋 Copiar enlace corto</button>
+                        <button class="btn-secundario" id="perc_btnWhatsApp">📱 Compartir por WhatsApp</button>
+                        <button class="btn-secundario" id="perc_btnDescargarQR">💾 Descargar QR</button>
+                    </div>
+                </div>
+                <div class="qr-box">
+                    <img id="perc_qrImg" alt="Código QR encuesta percepción" />
+                    <div style="margin-top:6px; font-size:11px; color:#64748b; font-weight:600;">QR del enlace corto</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- POR COMUNA - PERCEPCION -->
+        <div class="seccion">
+            <h2>📊 Participación por Comuna (Percepción)</h2>
+            <div id="perc_graficoComunas" class="cargando">Cargando...</div>
+        </div>
+
+        <!-- LISTA - PERCEPCION -->
+        <div class="seccion">
+            <h2>📝 Respuestas individuales (Percepción)</h2>
+            <div class="filtros">
+                <div class="campo">
+                    <label>Buscar</label>
+                    <input id="perc_filtroBusqueda" type="text" placeholder="nombre, cédula o texto de sugerencia..." />
+                </div>
+                <div class="campo">
+                    <label>Comuna</label>
+                    <select id="perc_filtroComuna"><option value="">Todas</option></select>
+                </div>
+                <div class="campo">
+                    <label>Comunidad</label>
+                    <select id="perc_filtroComunidad"><option value="">Todas</option></select>
+                </div>
+                <button class="btn-exportar" id="perc_btnExportarPDF" style="background:#5b21b6;" title="Reporte imprimible (una ficha por respuesta)">📄 Exportar PDF</button>
+                <button class="btn-exportar" id="perc_btnExportarCSV" style="background:#6c3aed;" title="Para abrir en Excel/Sheets">📊 CSV</button>
+            </div>
+
+            <div class="tabla-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Nombre</th>
+                            <th>Cédula</th>
+                            <th>Edad</th>
+                            <th>Comuna</th>
+                            <th>Comunidad</th>
+                            <th>P1 (Pres/Gob/Alc)</th>
+                            <th>P2 Avance</th>
+                            <th>P3 Confianza</th>
+                            <th>P4 Problemas</th>
+                            <th>P5 Mejoras</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="perc_tbodyRespuestas">
+                        <tr><td colspan="12" style="text-align:center; padding:40px; color:#94a3b8;">Cargando respuestas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="perc_totalFiltrado" style="text-align: right; padding: 10px 0 0; color: #64748b; font-weight: 700; font-size: 12px;"></div>
+        </div>
+
+        </div><!-- /vista-percepcion -->
+
     </div>
 
     <!-- MODAL DETALLE -->
@@ -619,7 +781,7 @@
         // Toggle simple por clase 'activo' sobre los wrappers .vista-encuesta.
         // Si en el futuro se agregan mas encuestas, basta con agregar al
         // array y agregar el wrapper en el HTML.
-        const VISTAS = ['selector', 'consulta_popular', 'gobierno'];
+        const VISTAS = ['selector', 'consulta_popular', 'gobierno', 'percepcion'];
         window._mostrarVista = function(nombre) {
             if (!VISTAS.includes(nombre)) nombre = 'selector';
             VISTAS.forEach(v => {
@@ -1351,6 +1513,381 @@
             const filename = `Encuesta_Gobierno_${new Date().toISOString().substring(0,10)}.pdf`;
             generarPDFEncuesta('Reorganización del Gobierno — Respuestas individuales',
                 [180, 83, 9], respuestasGob, preguntas, filename);
+        });
+
+
+        // ============================================================
+        // TERCERA ENCUESTA: Percepción Ciudadana y Gestión Pública
+        // Toda la logica con prefijo `perc_*`. Usa diccionarios para
+        // traducir los codigos cortos que vienen del form a texto legible
+        // en tablas / modal / PDF / CSV.
+        // ============================================================
+        let respuestasPerc = [];
+        let perc_paginaActual = 1;
+
+        // Diccionarios CODIGO -> TEXTO (traducen el payload corto del form)
+        const PERC_DIC = {
+            p1: { exc:'Excelente', mb:'Muy buena', b:'Buena', reg:'Regular', mala:'Mala' },
+            p2: { avanza:'Avanzando', estanca:'Estancado', retro:'En retroceso' },
+            p3: { mucha:'Mucha confianza', poca:'Poca confianza', ninguna:'Ninguna confianza' },
+            p4: {
+                serv_pub:        'Fallas en servicios públicos (agua, electricidad, gas, aseo)',
+                economia:        'Situación económica y desempleo',
+                inseguridad:     'Inseguridad ciudadana',
+                articulacion:    'Falta de articulación con la comunidad y otros niveles',
+                corrupcion:      'Corrupción y falta de transparencia',
+                apoyo_local:     'Falta de apoyo a proyectos locales y al municipio',
+                vias_transporte: 'Deterioro de vías regionales y transporte público',
+                calles_basura:   'Mal estado de calles, aceras y recolección de basura',
+                otros:           'Otros'
+            },
+            p5: { si_sig:'Sí, mejoras significativas', si_pocas:'Sí, pero muy pocas', no_igual:'No, todo sigue igual', no_peor:'No, ha empeorado' }
+        };
+        const tradP1 = v => PERC_DIC.p1[v] || (v ? v : '—');
+        const tradP2 = v => PERC_DIC.p2[v] || (v ? v : '—');
+        const tradP3 = v => PERC_DIC.p3[v] || (v ? v : '—');
+        const tradP4 = v => PERC_DIC.p4[v] || (v ? v : '—');
+        const tradP5 = v => PERC_DIC.p5[v] || (v ? v : '—');
+
+        const PERC_URL_PUBLICA = location.origin + location.pathname.replace(/encuesta-resultados\.html$/, 'encuesta-percepcion-gestion.html');
+        const PERC_URL_CORTA = 'https://tinyurl.com/percepcioncr2026';
+        document.getElementById('perc_compartirLink').textContent = PERC_URL_PUBLICA;
+        document.getElementById('perc_qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=440x440&margin=10&data=${encodeURIComponent(PERC_URL_CORTA)}`;
+
+        document.getElementById('perc_btnWhatsApp').addEventListener('click', () => {
+            const texto = `📊 Participa en la encuesta de Percepción Ciudadana · Municipio Cristóbal Rojas:\n\n${PERC_URL_CORTA}\n\nSon 6 preguntas sobre la gestión pública. Toma 4-5 minutos.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+        });
+
+        document.getElementById('perc_btnDescargarQR').addEventListener('click', async () => {
+            try {
+                const qrUrlAlta = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&margin=15&data=${encodeURIComponent(PERC_URL_CORTA)}`;
+                const resp = await fetch(qrUrlAlta);
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `QR_encuesta_percepcion_cr2026.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                alert('No se pudo descargar el QR: ' + e.message);
+            }
+        });
+
+        // ── Listener en vivo
+        onValue(ref(database, 'encuestas_percepcion_gestion'), (snap) => {
+            respuestasPerc = [];
+            snap.forEach(child => {
+                const v = child.val() || {};
+                respuestasPerc.push({ _id: child.key, ...v });
+            });
+            respuestasPerc.sort((a, b) => (b.fecha_envio || '').localeCompare(a.fecha_envio || ''));
+            renderPercKPIs();
+            renderPercFiltrosCascada();
+            renderPercGraficoComunas();
+            renderPercResumenPreguntas();
+            renderPercTabla();
+            const sel = document.getElementById('sel_conteo_percepcion');
+            if (sel) sel.textContent = `${respuestasPerc.length} ${respuestasPerc.length === 1 ? 'respuesta' : 'respuestas'}`;
+        }, (e) => {
+            console.error('[Percepcion] Error listener:', e);
+            document.getElementById('perc_tbodyRespuestas').innerHTML =
+                `<tr><td colspan="12" style="text-align:center; padding:30px; color:#dc2626;">Error: ${escapeHtml(e.message)}</td></tr>`;
+        });
+
+        function renderPercKPIs() {
+            document.getElementById('perc_kpiTotal').textContent = respuestasPerc.length;
+            const comunas = new Set(respuestasPerc.map(r => r.comuna).filter(Boolean));
+            const comunidades = new Set(respuestasPerc.map(r => r.comunidad).filter(Boolean));
+            document.getElementById('perc_kpiComunas').textContent = comunas.size;
+            document.getElementById('perc_kpiComunidades').textContent = comunidades.size;
+            const ult = respuestasPerc[0]?.fecha_envio;
+            document.getElementById('perc_kpiUltima').textContent = ult ? fmtFecha(ult) : '--';
+        }
+
+        function renderPercFiltrosCascada() {
+            const filtroC = document.getElementById('perc_filtroComuna');
+            const comunaActual = filtroC.value;
+            const comunas = [...new Set(respuestasPerc.map(r => r.comuna).filter(Boolean))].sort();
+            filtroC.innerHTML = '<option value="">Todas las comunas</option>' +
+                comunas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if (comunas.includes(comunaActual)) filtroC.value = comunaActual;
+            renderPercCascadaComunidad();
+        }
+
+        function renderPercCascadaComunidad() {
+            const comunaSel = document.getElementById('perc_filtroComuna').value;
+            const filtroCd = document.getElementById('perc_filtroComunidad');
+            const cdActual = filtroCd.value;
+            let pool = respuestasPerc;
+            if (comunaSel) pool = pool.filter(r => r.comuna === comunaSel);
+            const comunidades = [...new Set(pool.map(r => r.comunidad).filter(Boolean))].sort();
+            filtroCd.innerHTML = '<option value="">Todas las comunidades</option>' +
+                comunidades.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if (comunidades.includes(cdActual)) filtroCd.value = cdActual;
+        }
+
+        function renderPercGraficoComunas() {
+            const cont = document.getElementById('perc_graficoComunas');
+            const conteo = {};
+            respuestasPerc.forEach(r => { if (r.comuna) conteo[r.comuna] = (conteo[r.comuna] || 0) + 1; });
+            const items = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+            if (items.length === 0) { cont.innerHTML = '<div class="cargando">Sin datos aún.</div>'; return; }
+            const max = items[0][1];
+            cont.innerHTML = items.map(([c, n]) => {
+                const pct = max ? (n / max * 100) : 0;
+                return `<div class="barra-row">
+                    <div class="barra-label">${escapeHtml(c)}</div>
+                    <div class="barra-fondo"><div class="barra-relleno morado" style="width:${pct}%;"></div></div>
+                    <div class="barra-valor">${n}</div>
+                </div>`;
+            }).join('');
+        }
+
+        // Resumen de preguntas cerradas: muestra histograma de % por opcion
+        // para cada pregunta (P1a/b/c, P2, P3a/b/c, P4a/b/c, P5).
+        function renderPercResumenPreguntas() {
+            const cont = document.getElementById('perc_resumenPreguntas');
+            if (respuestasPerc.length === 0) { cont.innerHTML = '<div class="cargando">Sin respuestas aún.</div>'; return; }
+
+            const bloques = [
+                { titulo: '1A. Gestión del Presidente',   campo: 'p1a_gestion_presidente',  dic: PERC_DIC.p1, color: '#6c3aed' },
+                { titulo: '1B. Gestión del Gobernador',   campo: 'p1b_gestion_gobernador',  dic: PERC_DIC.p1, color: '#6c3aed' },
+                { titulo: '1C. Gestión de la Alcaldesa',  campo: 'p1c_gestion_alcaldesa',   dic: PERC_DIC.p1, color: '#6c3aed' },
+                { titulo: '2. Avance del municipio',      campo: 'p2_municipio_avance',     dic: PERC_DIC.p2, color: '#5b21b6' },
+                { titulo: '3A. Confianza en el Presidente',  campo: 'p3a_confianza_presidente', dic: PERC_DIC.p3, color: '#7c3aed' },
+                { titulo: '3B. Confianza en el Gobernador',  campo: 'p3b_confianza_gobernador', dic: PERC_DIC.p3, color: '#7c3aed' },
+                { titulo: '3C. Confianza en la Alcaldesa',   campo: 'p3c_confianza_alcaldesa',  dic: PERC_DIC.p3, color: '#7c3aed' },
+                { titulo: '4A. Principal problema (Presidente)', campo: 'p4a_problema_presidente', dic: PERC_DIC.p4, color: '#4c1d95' },
+                { titulo: '4B. Principal problema (Gobernador)', campo: 'p4b_problema_gobernador', dic: PERC_DIC.p4, color: '#4c1d95' },
+                { titulo: '4C. Principal problema (Alcaldesa)',  campo: 'p4c_problema_alcaldesa',  dic: PERC_DIC.p4, color: '#4c1d95' },
+                { titulo: '5. Mejoras en la comunidad',   campo: 'p5_mejoras_comunidad',    dic: PERC_DIC.p5, color: '#6c3aed' }
+            ];
+
+            const html = bloques.map(b => {
+                const conteo = {};
+                let total = 0;
+                respuestasPerc.forEach(r => {
+                    const v = r[b.campo];
+                    if (v) { conteo[v] = (conteo[v] || 0) + 1; total++; }
+                });
+                if (total === 0) {
+                    return `<div class="perc-bloque-resumen">
+                        <h4>${escapeHtml(b.titulo)}</h4>
+                        <div style="color:#94a3b8; font-size:12px; font-style:italic;">Sin respuestas aún.</div>
+                    </div>`;
+                }
+                const filas = Object.entries(conteo).sort((a, b) => b[1] - a[1]).map(([k, n]) => {
+                    const pct = (n / total * 100).toFixed(1);
+                    const label = b.dic[k] || k;
+                    return `<div class="barra-row">
+                        <div class="barra-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+                        <div class="barra-fondo"><div class="barra-relleno" style="width:${pct}%; background:${b.color};"></div></div>
+                        <div class="barra-valor">${n} · ${pct}%</div>
+                    </div>`;
+                }).join('');
+                return `<div class="perc-bloque-resumen">
+                    <h4>${escapeHtml(b.titulo)} <span style="color:#94a3b8; font-weight:600; font-size:11px;">(${total} respuestas)</span></h4>
+                    ${filas}
+                </div>`;
+            }).join('');
+            cont.innerHTML = `<div class="perc-resumen-wrap">${html}</div>`;
+        }
+
+        function renderPercTabla() {
+            const tbody = document.getElementById('perc_tbodyRespuestas');
+            const busqueda = (document.getElementById('perc_filtroBusqueda').value || '').toLowerCase().trim();
+            const fComuna = document.getElementById('perc_filtroComuna').value;
+            const fComunidad = document.getElementById('perc_filtroComunidad').value;
+
+            const filtradas = respuestasPerc.filter(r => {
+                if (fComuna && r.comuna !== fComuna) return false;
+                if (fComunidad && r.comunidad !== fComunidad) return false;
+                if (busqueda) {
+                    const blob = [r.nombres, r.apellidos, r.cedula,
+                                  r.p6a_sugerencia_presidente, r.p6b_sugerencia_gobernador, r.p6c_sugerencia_alcaldesa,
+                                  r.p4a_problema_presidente_otros, r.p4b_problema_gobernador_otros, r.p4c_problema_alcaldesa_otros
+                                 ].filter(Boolean).join(' ').toLowerCase();
+                    if (!blob.includes(busqueda)) return false;
+                }
+                return true;
+            });
+
+            if (filtradas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:40px; color:#94a3b8;">Sin coincidencias.</td></tr>';
+                document.getElementById('perc_totalFiltrado').textContent = `0 de ${respuestasPerc.length}`;
+                return;
+            }
+
+            const inicio = (perc_paginaActual - 1) * PAGINA_TAM;
+            const slice = filtradas.slice(inicio, inicio + PAGINA_TAM);
+            tbody.innerHTML = slice.map(r => `
+                <tr>
+                    <td>${fmtFecha(r.fecha_envio)}</td>
+                    <td>${escapeHtml(`${r.nombres || ''} ${r.apellidos || ''}`.trim() || (r.es_anonimo ? '🔒 Anónimo' : '—'))}</td>
+                    <td>${r.es_anonimo ? '<span style="color:#6c3aed; font-weight:700;">Anónimo</span>' : escapeHtml(r.cedula || '—')}</td>
+                    <td>${r.edad || '--'}</td>
+                    <td>${escapeHtml(r.comuna || '—')}</td>
+                    <td>${escapeHtml(r.comunidad || '—')}</td>
+                    <td style="font-size:11.5px;">${escapeHtml(tradP1(r.p1a_gestion_presidente).substring(0,4))} / ${escapeHtml(tradP1(r.p1b_gestion_gobernador).substring(0,4))} / ${escapeHtml(tradP1(r.p1c_gestion_alcaldesa).substring(0,4))}</td>
+                    <td style="font-size:11.5px;">${escapeHtml(tradP2(r.p2_municipio_avance))}</td>
+                    <td style="font-size:11.5px;">${escapeHtml(tradP3(r.p3a_confianza_presidente).substring(0,5))} / ${escapeHtml(tradP3(r.p3b_confianza_gobernador).substring(0,5))} / ${escapeHtml(tradP3(r.p3c_confianza_alcaldesa).substring(0,5))}</td>
+                    <td style="font-size:11px;" title="${escapeHtml(tradP4(r.p4a_problema_presidente) + ' / ' + tradP4(r.p4b_problema_gobernador) + ' / ' + tradP4(r.p4c_problema_alcaldesa))}">
+                        ${[r.p4a_problema_presidente, r.p4b_problema_gobernador, r.p4c_problema_alcaldesa].filter(Boolean).length || '—'} ${[r.p4a_problema_presidente, r.p4b_problema_gobernador, r.p4c_problema_alcaldesa].filter(Boolean).length > 0 ? 'votos' : ''}
+                    </td>
+                    <td style="font-size:11.5px;">${escapeHtml(tradP5(r.p5_mejoras_comunidad))}</td>
+                    <td><button class="btn-link" onclick="_verDetallePerc('${r._id}')">Ver →</button></td>
+                </tr>`).join('');
+
+            document.getElementById('perc_totalFiltrado').textContent =
+                `Mostrando ${slice.length} de ${filtradas.length} (total ${respuestasPerc.length})`;
+            renderPaginacion('perc_totalFiltrado', filtradas.length, respuestasPerc.length, perc_paginaActual,
+                newPg => { perc_paginaActual = newPg; renderPercTabla(); });
+        }
+
+        window._verDetallePerc = function(id) {
+            const r = respuestasPerc.find(x => x._id === id);
+            if (!r) return;
+            const modalBody = document.getElementById('modalCaja');
+            const seccion = (titulo, html) => `<div style="margin-bottom:18px;"><h3 style="font-size:13px; color:#4c1d95; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 8px;">${titulo}</h3>${html}</div>`;
+            const dato = (k, v) => v ? `<div style="font-size:13px; margin:2px 0;"><strong>${escapeHtml(k)}:</strong> ${escapeHtml(v)}</div>` : '';
+            const pregResp = (preg, resp) => resp ? `<div style="background:#f5f3ff; border-left:3px solid #6c3aed; padding:8px 10px; margin:6px 0; border-radius:4px;">
+                <div style="font-size:11.5px; color:#6b7280; font-weight:600; margin-bottom:2px;">${escapeHtml(preg)}</div>
+                <div style="font-size:13.5px; color:#0f172a; font-weight:600;">${escapeHtml(resp)}</div>
+            </div>` : '';
+
+            const otrosTxt = (code, txt) => code === 'otros' && txt ? ` — "${txt}"` : '';
+
+            modalBody.innerHTML = `
+                <h2 style="color:#4c1d95; margin:0 0 4px;">${escapeHtml(`${r.nombres || ''} ${r.apellidos || ''}`.trim() || (r.es_anonimo ? '🔒 Anónimo' : '—'))}</h2>
+                <div style="color:#64748b; font-size:12px; margin-bottom:14px;">${fmtFecha(r.fecha_envio)}${r.es_anonimo ? ' · respuesta anónima' : ''}</div>
+
+                ${seccion('Datos personales', `
+                    ${dato('Cédula', r.cedula)}
+                    ${dato('Edad', r.edad)}
+                    ${dato('Sexo', r.sexo === 'M' ? 'Masculino' : r.sexo === 'F' ? 'Femenino' : '')}
+                    ${dato('Teléfono', r.telefono)}
+                    ${dato('Comuna', r.comuna)}
+                    ${dato('Comunidad', r.comunidad)}
+                `)}
+
+                ${seccion('1. Calificación de gestión', `
+                    ${pregResp('1A. Presidente', tradP1(r.p1a_gestion_presidente))}
+                    ${pregResp('1B. Gobernador', tradP1(r.p1b_gestion_gobernador))}
+                    ${pregResp('1C. Alcaldesa', tradP1(r.p1c_gestion_alcaldesa))}
+                `)}
+
+                ${seccion('2. Municipio', pregResp('Avance', tradP2(r.p2_municipio_avance)))}
+
+                ${seccion('3. Confianza en cada nivel', `
+                    ${pregResp('3A. Presidente', tradP3(r.p3a_confianza_presidente))}
+                    ${pregResp('3B. Gobernador', tradP3(r.p3b_confianza_gobernador))}
+                    ${pregResp('3C. Alcaldesa', tradP3(r.p3c_confianza_alcaldesa))}
+                `)}
+
+                ${seccion('4. Principal problema por nivel', `
+                    ${pregResp('4A. Presidente', tradP4(r.p4a_problema_presidente) + otrosTxt(r.p4a_problema_presidente, r.p4a_problema_presidente_otros))}
+                    ${pregResp('4B. Gobernador', tradP4(r.p4b_problema_gobernador) + otrosTxt(r.p4b_problema_gobernador, r.p4b_problema_gobernador_otros))}
+                    ${pregResp('4C. Alcaldesa', tradP4(r.p4c_problema_alcaldesa) + otrosTxt(r.p4c_problema_alcaldesa, r.p4c_problema_alcaldesa_otros))}
+                `)}
+
+                ${seccion('5. Mejoras observadas', pregResp('Mejoras en la comunidad', tradP5(r.p5_mejoras_comunidad)))}
+
+                ${seccion('6. Sugerencias por nivel', `
+                    ${pregResp('6A. Presidente', r.p6a_sugerencia_presidente)}
+                    ${pregResp('6B. Gobernador', r.p6b_sugerencia_gobernador)}
+                    ${pregResp('6C. Alcaldesa', r.p6c_sugerencia_alcaldesa)}
+                `)}
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        };
+
+        document.getElementById('perc_filtroBusqueda').addEventListener('input', () => { perc_paginaActual = 1; renderPercTabla(); });
+        document.getElementById('perc_filtroComuna').addEventListener('change', () => { perc_paginaActual = 1; renderPercCascadaComunidad(); renderPercTabla(); });
+        document.getElementById('perc_filtroComunidad').addEventListener('change', () => { perc_paginaActual = 1; renderPercTabla(); });
+
+        document.getElementById('perc_btnExportarCSV').addEventListener('click', () => {
+            // Exportamos los codigos cortos del payload + columnas decodificadas en español
+            // para que el CSV sea util tanto para analisis como para lectura humana.
+            const headers = [
+                'fecha_envio','nombres','apellidos','cedula','fecha_nacimiento','edad','sexo','telefono','comuna','comunidad','es_anonimo',
+                'p1a_gestion_presidente','p1a_texto',
+                'p1b_gestion_gobernador','p1b_texto',
+                'p1c_gestion_alcaldesa','p1c_texto',
+                'p2_municipio_avance','p2_texto',
+                'p3a_confianza_presidente','p3a_texto',
+                'p3b_confianza_gobernador','p3b_texto',
+                'p3c_confianza_alcaldesa','p3c_texto',
+                'p4a_problema_presidente','p4a_texto','p4a_problema_presidente_otros',
+                'p4b_problema_gobernador','p4b_texto','p4b_problema_gobernador_otros',
+                'p4c_problema_alcaldesa','p4c_texto','p4c_problema_alcaldesa_otros',
+                'p5_mejoras_comunidad','p5_texto',
+                'p6a_sugerencia_presidente','p6b_sugerencia_gobernador','p6c_sugerencia_alcaldesa'
+            ];
+            const filas = [headers.join(',')];
+            respuestasPerc.forEach(r => {
+                const fila = {
+                    ...r,
+                    p1a_texto: tradP1(r.p1a_gestion_presidente),
+                    p1b_texto: tradP1(r.p1b_gestion_gobernador),
+                    p1c_texto: tradP1(r.p1c_gestion_alcaldesa),
+                    p2_texto:  tradP2(r.p2_municipio_avance),
+                    p3a_texto: tradP3(r.p3a_confianza_presidente),
+                    p3b_texto: tradP3(r.p3b_confianza_gobernador),
+                    p3c_texto: tradP3(r.p3c_confianza_alcaldesa),
+                    p4a_texto: tradP4(r.p4a_problema_presidente),
+                    p4b_texto: tradP4(r.p4b_problema_gobernador),
+                    p4c_texto: tradP4(r.p4c_problema_alcaldesa),
+                    p5_texto:  tradP5(r.p5_mejoras_comunidad)
+                };
+                filas.push(headers.map(h => csvEscape(fila[h])).join(','));
+            });
+            const blob = new Blob(['﻿' + filas.join('\n')], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Encuesta_Percepcion_${new Date().toISOString().substring(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('perc_btnExportarPDF').addEventListener('click', () => {
+            // Para el PDF construimos un array de respuestas con campos
+            // YA DECODIFICADOS para que generarPDFEncuesta los muestre legibles.
+            const decoded = respuestasPerc.map(r => ({
+                ...r,
+                _p1a: tradP1(r.p1a_gestion_presidente),
+                _p1b: tradP1(r.p1b_gestion_gobernador),
+                _p1c: tradP1(r.p1c_gestion_alcaldesa),
+                _p2:  tradP2(r.p2_municipio_avance),
+                _p3a: tradP3(r.p3a_confianza_presidente),
+                _p3b: tradP3(r.p3b_confianza_gobernador),
+                _p3c: tradP3(r.p3c_confianza_alcaldesa),
+                _p4a: tradP4(r.p4a_problema_presidente) + (r.p4a_problema_presidente === 'otros' && r.p4a_problema_presidente_otros ? ` — "${r.p4a_problema_presidente_otros}"` : ''),
+                _p4b: tradP4(r.p4b_problema_gobernador) + (r.p4b_problema_gobernador === 'otros' && r.p4b_problema_gobernador_otros ? ` — "${r.p4b_problema_gobernador_otros}"` : ''),
+                _p4c: tradP4(r.p4c_problema_alcaldesa)  + (r.p4c_problema_alcaldesa  === 'otros' && r.p4c_problema_alcaldesa_otros  ? ` — "${r.p4c_problema_alcaldesa_otros}"`  : ''),
+                _p5:  tradP5(r.p5_mejoras_comunidad)
+            }));
+            const preguntas = [
+                { campo: '_p1a', label: '1A. Gestión del Presidente' },
+                { campo: '_p1b', label: '1B. Gestión del Gobernador' },
+                { campo: '_p1c', label: '1C. Gestión de la Alcaldesa' },
+                { campo: '_p2',  label: '2. ¿Municipio está avanzando, estancado o en retroceso?' },
+                { campo: '_p3a', label: '3A. Confianza en el Presidente' },
+                { campo: '_p3b', label: '3B. Confianza en el Gobernador' },
+                { campo: '_p3c', label: '3C. Confianza en la Alcaldesa' },
+                { campo: '_p4a', label: '4A. Principal problema (Presidente)' },
+                { campo: '_p4b', label: '4B. Principal problema (Gobernador)' },
+                { campo: '_p4c', label: '4C. Principal problema (Alcaldesa)' },
+                { campo: '_p5',  label: '5. ¿Ha notado mejoras en su comunidad?' },
+                { campo: 'p6a_sugerencia_presidente', label: '6A. Sugerencia para el Presidente' },
+                { campo: 'p6b_sugerencia_gobernador', label: '6B. Sugerencia para el Gobernador' },
+                { campo: 'p6c_sugerencia_alcaldesa',  label: '6C. Sugerencia para la Alcaldesa' }
+            ];
+            const filename = `Encuesta_Percepcion_${new Date().toISOString().substring(0,10)}.pdf`;
+            generarPDFEncuesta('Percepción Ciudadana y Gestión Pública — Respuestas individuales',
+                [108, 58, 237], decoded, preguntas, filename);
         });
 
 
