@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Actualizador CNE — Sala Situacional</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+        .top-bar {
+            background: #1e293b;
+            padding: 14px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid #334155;
+            flex-wrap: wrap; gap: 12px;
+        }
+        .top-bar h1 {
+            margin: 0; font-size: 18px; color: #38bdf8;
+            display: inline-flex; align-items: center; gap: 10px;
+        }
+        .top-bar .badge {
+            background: #fbbf24; color: #422006;
+            padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn-back {
+            background: transparent; color: #94a3b8;
+            border: 1px solid #475569; border-radius: 8px;
+            padding: 8px 14px; cursor: pointer; font-size: 13px;
+        }
+        .btn-back:hover { background: #334155; color: #e2e8f0; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+        .info-banner {
+            background: rgba(56, 189, 248, 0.1);
+            border-left: 4px solid #38bdf8;
+            padding: 14px 18px; border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13.5px; line-height: 1.6; color: #cbd5e1;
+        }
+        .info-banner strong { color: #38bdf8; }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .kpi {
+            background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+            padding: 16px 18px;
+        }
+        .kpi-titulo { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .kpi-valor { font-size: 28px; font-weight: 900; color: #f8fafc; margin-top: 4px; }
+        .kpi-sub { font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 600; }
+        .kpi.azul .kpi-valor { color: #38bdf8; }
+        .kpi.verde .kpi-valor { color: #4ade80; }
+        .kpi.naranja .kpi-valor { color: #fb923c; }
+        .kpi.rojo .kpi-valor { color: #f87171; }
+
+        .progreso-card {
+            background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+            padding: 20px; margin-bottom: 22px;
+        }
+        .progreso-bar-wrap {
+            background: #0f172a; border-radius: 8px;
+            height: 24px; overflow: hidden; margin: 10px 0;
+            border: 1px solid #334155;
+        }
+        .progreso-bar {
+            background: linear-gradient(90deg, #0e7490, #38bdf8);
+            height: 100%; transition: width 0.4s ease;
+            display: flex; align-items: center; justify-content: flex-end;
+            padding-right: 10px; font-size: 11px; font-weight: 800; color: white;
+        }
+        .progreso-stats {
+            display: flex; justify-content: space-between;
+            font-size: 13px; color: #cbd5e1; font-weight: 600;
+            flex-wrap: wrap; gap: 12px;
+        }
+
+        .controles { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+        .btn {
+            padding: 12px 22px; border: none; border-radius: 8px;
+            font-weight: 800; font-size: 13.5px; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.15s;
+        }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-start { background: #10b981; color: white; }
+        .btn-start:hover:not(:disabled) { background: #059669; }
+        .btn-pause { background: #f59e0b; color: white; }
+        .btn-pause:hover:not(:disabled) { background: #d97706; }
+        .btn-reset { background: #475569; color: white; }
+        .btn-reset:hover:not(:disabled) { background: #64748b; }
+
+        .log-card {
+            background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+            padding: 20px; margin-bottom: 22px;
+        }
+        .log-card h2 {
+            margin: 0 0 12px; font-size: 14px; color: #38bdf8;
+            text-transform: uppercase; letter-spacing: 1px; font-weight: 800;
+        }
+        .log-container {
+            background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+            padding: 12px; max-height: 360px; overflow-y: auto;
+            font-family: 'Courier New', monospace; font-size: 12px;
+            color: #cbd5e1; line-height: 1.6;
+        }
+        .log-line { margin-bottom: 4px; }
+        .log-line.ok { color: #4ade80; }
+        .log-line.no-encontrado { color: #94a3b8; }
+        .log-line.diff { color: #fbbf24; }
+        .log-line.error { color: #f87171; }
+        .log-line .ts { color: #64748b; font-size: 10px; margin-right: 8px; }
+
+        .cargando-fullscreen {
+            position: fixed; inset: 0;
+            background: #0f172a;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; color: #38bdf8; font-weight: 700;
+            z-index: 1000;
+        }
+        .cargando-fullscreen.hidden { display: none; }
+
+        .alert-box {
+            background: rgba(248, 113, 113, 0.1);
+            border-left: 4px solid #f87171;
+            padding: 14px 18px; border-radius: 8px;
+            margin-bottom: 16px; color: #fecaca; font-weight: 600; font-size: 13px;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 14px; }
+            .kpis { grid-template-columns: 1fr 1fr; }
+            .controles { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <h1>🔄 Actualizador CNE <span class="badge">Super Admin</span></h1>
+        <button class="btn-back" onclick="window.location.href='admin.html'">← Volver al panel</button>
+    </div>
+
+    <div class="container">
+        <div class="info-banner">
+            <strong>Cómo funciona:</strong> recorre todos los habitantes con cédula válida que aún no han sido consultados contra el CNE. Hace
+            <strong>1 consulta cada 24 segundos</strong> (= 150/hora, dentro del límite seguro de tu cuota de cedula.com.ve). Solo actualiza <strong>nombre</strong>, <strong>apellido</strong> y <strong>fecha de nacimiento</strong> cuando hay diferencia real. Marca cada habitante con <code>cne_actualizado_at</code> para no reprocesar.
+            <br><br>
+            ⚠️ <strong>Mantén esta pestaña abierta.</strong> Si la cierras el batch se pausa; al volver a abrir continúa donde quedó.
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- KPIs -->
+        <div class="kpis">
+            <div class="kpi azul">
+                <div class="kpi-titulo">Habitantes totales</div>
+                <div class="kpi-valor" id="kpiTotal">--</div>
+                <div class="kpi-sub">en la base</div>
+            </div>
+            <div class="kpi naranja">
+                <div class="kpi-titulo">Pendientes</div>
+                <div class="kpi-valor" id="kpiPendientes">--</div>
+                <div class="kpi-sub">por consultar</div>
+            </div>
+            <div class="kpi verde">
+                <div class="kpi-titulo">Procesados</div>
+                <div class="kpi-valor" id="kpiProcesados">0</div>
+                <div class="kpi-sub">en esta sesión</div>
+            </div>
+            <div class="kpi rojo">
+                <div class="kpi-titulo">No encontrados</div>
+                <div class="kpi-valor" id="kpiNoEnc">0</div>
+                <div class="kpi-sub">cédula sin match en CNE</div>
+            </div>
+        </div>
+
+        <!-- Progreso -->
+        <div class="progreso-card">
+            <div class="progreso-stats">
+                <span><strong id="progresoPct">0%</strong> completado</span>
+                <span id="progresoEta">—</span>
+            </div>
+            <div class="progreso-bar-wrap">
+                <div class="progreso-bar" id="progresoBar" style="width: 0%;"></div>
+            </div>
+            <div class="progreso-stats">
+                <span id="progresoActual">Listo para empezar</span>
+                <span id="progresoVelocidad">150 consultas/hora</span>
+            </div>
+
+            <div class="controles">
+                <button class="btn btn-start" id="btnStart" onclick="window.iniciarBatch()" disabled>▶ Iniciar batch</button>
+                <button class="btn btn-pause" id="btnPause" onclick="window.pausarBatch()" disabled>⏸ Pausar</button>
+                <button class="btn btn-reset" id="btnReset" onclick="window.resetSesion()">↺ Reiniciar contador de sesión</button>
+            </div>
+        </div>
+
+        <!-- Log -->
+        <div class="log-card">
+            <h2>📋 Registro en vivo</h2>
+            <div class="log-container" id="logContainer">
+                <div class="log-line"><span class="ts">--:--:--</span>Esperando datos...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cargandoInicial" class="cargando-fullscreen">⏳ Cargando habitantes...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // ── Endpoint del proxy CNE (Edge Function en Supabase, JWT off)
+        const CNE_ENDPOINT = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co/functions/v1/consultar-cedula';
+
+        // ── Throttle: 1 consulta cada N ms. 24000 = 150/hora exacto.
+        // Si quieres ir mas rapido (250/hora) cambialo a 14400. Cuidado con la cuota.
+        const INTERVALO_MS = 24000;
+
+        // ── Estado del batch
+        const estado = {
+            todosLosHabitantes: [],   // array de {id, h} con TODOS los habitantes
+            cola: [],                  // ids pendientes por procesar
+            procesadosSesion: 0,
+            noEncontradosSesion: 0,
+            cambiosSesion: 0,
+            corriendo: false,
+            timer: null,
+            ultimaActualizacion: null,
+        };
+
+        // ── Auth gate: solo carlos.admin@alcaldia.com
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            if (user.email !== 'carlos.admin@alcaldia.com') {
+                alert('Esta herramienta es exclusiva del Super-Administrador.');
+                window.location.href = 'admin.html';
+                return;
+            }
+            await cargarHabitantes();
+        });
+
+        async function cargarHabitantes() {
+            try {
+                log('Cargando habitantes desde Firebase...', 'ok');
+                const snap = await get(ref(database, 'habitantes'));
+                const data = snap.exists() ? snap.val() : {};
+                estado.todosLosHabitantes = [];
+                for (const id in data) {
+                    estado.todosLosHabitantes.push({ id, h: data[id] || {} });
+                }
+                actualizarCola();
+                document.getElementById('cargandoInicial').classList.add('hidden');
+                document.getElementById('btnStart').disabled = estado.cola.length === 0;
+                log(`✓ ${estado.todosLosHabitantes.length} habitantes cargados. ${estado.cola.length} pendientes por consultar al CNE.`, 'ok');
+            } catch (e) {
+                log('✗ Error cargando habitantes: ' + e.message, 'error');
+                document.getElementById('cargandoInicial').innerHTML = '❌ Error: ' + e.message;
+            }
+        }
+
+        function tieneCedulaValida(h) {
+            const cn = String(h.cedula || '').replace(/\D/g, '');
+            return cn.length >= 4 && cn.length <= 10;
+        }
+
+        function yaConsultado(h) {
+            // Marca anti-reproceso. Si lo consultaste hace menos de 30 dias, salta.
+            if (!h.cne_actualizado_at) return false;
+            const t = new Date(h.cne_actualizado_at).getTime();
+            if (isNaN(t)) return false;
+            const dias = (Date.now() - t) / 86400000;
+            return dias < 30;
+        }
+
+        function actualizarCola() {
+            estado.cola = estado.todosLosHabitantes
+                .filter(({ h }) => tieneCedulaValida(h) && !yaConsultado(h))
+                .map(({ id }) => id);
+            renderKPIs();
+            renderProgreso();
+        }
+
+        function renderKPIs() {
+            const total = estado.todosLosHabitantes.length;
+            const pendientes = estado.cola.length;
+            document.getElementById('kpiTotal').textContent = total.toLocaleString('es-VE');
+            document.getElementById('kpiPendientes').textContent = pendientes.toLocaleString('es-VE');
+            document.getElementById('kpiProcesados').textContent = estado.procesadosSesion;
+            document.getElementById('kpiNoEnc').textContent = estado.noEncontradosSesion;
+        }
+
+        function renderProgreso() {
+            const total = estado.todosLosHabitantes.filter(({ h }) => tieneCedulaValida(h)).length;
+            const consultados = total - estado.cola.length;
+            const pct = total > 0 ? (consultados / total * 100) : 0;
+            document.getElementById('progresoPct').textContent = pct.toFixed(1) + '%';
+            const bar = document.getElementById('progresoBar');
+            bar.style.width = pct + '%';
+            bar.textContent = pct >= 8 ? `${consultados.toLocaleString('es-VE')}/${total.toLocaleString('es-VE')}` : '';
+
+            if (estado.cola.length > 0) {
+                const horas = (estado.cola.length * INTERVALO_MS) / 3600000;
+                let eta;
+                if (horas < 1) eta = `~${Math.ceil(horas * 60)} minutos restantes`;
+                else if (horas < 48) eta = `~${horas.toFixed(1)} horas restantes`;
+                else eta = `~${(horas / 24).toFixed(1)} días restantes`;
+                document.getElementById('progresoEta').textContent = eta;
+            } else {
+                document.getElementById('progresoEta').textContent = '✅ Todos consultados';
+            }
+        }
+
+        function log(msg, tipo = '') {
+            const cont = document.getElementById('logContainer');
+            const ts = new Date().toLocaleTimeString('es-VE', { hour12: false });
+            const linea = document.createElement('div');
+            linea.className = `log-line ${tipo}`;
+            linea.innerHTML = `<span class="ts">${ts}</span>${msg}`;
+            cont.appendChild(linea);
+            // Mantener max 200 lineas
+            while (cont.children.length > 200) cont.removeChild(cont.firstChild);
+            cont.scrollTop = cont.scrollHeight;
+        }
+
+        async function procesarSiguiente() {
+            if (!estado.corriendo) return;
+            if (estado.cola.length === 0) {
+                log('🎉 ¡Cola vacía! Batch terminado.', 'ok');
+                pausarBatch(true);
+                return;
+            }
+            const idHab = estado.cola.shift();
+            const reg = estado.todosLosHabitantes.find(x => x.id === idHab);
+            if (!reg) return;
+            const h = reg.h;
+            const cedulaNum = String(h.cedula || '').replace(/\D/g, '');
+            const nacionalidad = (h.nacionalidad === 'E') ? 'E' : 'V';
+            const labelCed = `${nacionalidad}-${cedulaNum}`;
+            document.getElementById('progresoActual').textContent = `Consultando ${labelCed} (${h.nombre || ''} ${h.apellido || ''})...`;
+
+            try {
+                const resp = await fetch(CNE_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cedula: cedulaNum, nacionalidad })
+                });
+                const json = await resp.json();
+
+                if (json && json.error) {
+                    if (json.error_str === 'RECORD_NOT_FOUND') {
+                        // Marcar como consultado igual para no reintentar
+                        await update(ref(database, `habitantes/${idHab}`), {
+                            cne_actualizado_at: new Date().toISOString(),
+                            cne_resultado: 'NO_ENCONTRADO',
+                        });
+                        Object.assign(reg.h, { cne_actualizado_at: new Date().toISOString(), cne_resultado: 'NO_ENCONTRADO' });
+                        estado.noEncontradosSesion++;
+                        log(`⊘ ${labelCed} — no encontrado en CNE`, 'no-encontrado');
+                    } else if (json.error_str === 'ALL_QUOTAS_EXHAUSTED') {
+                        log(`🛑 ${labelCed} — TODAS las cuentas del API están agotadas. Pausando.`, 'error');
+                        // Volver a meter el id en la cola y pausar
+                        estado.cola.unshift(idHab);
+                        pausarBatch(true);
+                        mostrarAlerta('Las 2 cuentas del API agotaron su cuota horaria. Se pausó el batch. Espera ~1 hora y reanuda.');
+                        return;
+                    } else {
+                        log(`✗ ${labelCed} — error: ${json.error_str || 'desconocido'}`, 'error');
+                        // NO marcamos como consultado en errores temporales; vuelve a la cola al final
+                        estado.cola.push(idHab);
+                    }
+                } else if (json && json.data) {
+                    const d = json.data;
+                    const nuevoNombre = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
+                    const nuevoApellido = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
+                    const nuevaFecha = d.fecha_nac || '';
+
+                    const patch = {
+                        cne_actualizado_at: new Date().toISOString(),
+                        cne_resultado: 'ENCONTRADO',
+                        cne_actualizado_por: 'batch_automatico',
+                    };
+                    const cambios = [];
+                    if (nuevoNombre && nuevoNombre !== (h.nombre || '')) {
+                        patch.nombre = nuevoNombre;
+                        cambios.push(`nombre: "${h.nombre || ''}" → "${nuevoNombre}"`);
+                    }
+                    if (nuevoApellido && nuevoApellido !== (h.apellido || '')) {
+                        patch.apellido = nuevoApellido;
+                        cambios.push(`apellido: "${h.apellido || ''}" → "${nuevoApellido}"`);
+                    }
+                    if (nuevaFecha && nuevaFecha !== (h.fecha_nacimiento || '')) {
+                        patch.fecha_nacimiento = nuevaFecha;
+                        cambios.push(`fecha_nac: "${h.fecha_nacimiento || ''}" → "${nuevaFecha}"`);
+                    }
+                    await update(ref(database, `habitantes/${idHab}`), patch);
+                    Object.assign(reg.h, patch);
+                    if (cambios.length > 0) {
+                        estado.cambiosSesion++;
+                        log(`✏ ${labelCed} — ${cambios.length} cambio(s): ${cambios.join(' | ')}`, 'diff');
+                    } else {
+                        log(`✓ ${labelCed} — sin cambios (datos coinciden)`, 'ok');
+                    }
+                } else {
+                    log(`? ${labelCed} — respuesta inesperada`, 'error');
+                    estado.cola.push(idHab);
+                }
+            } catch (e) {
+                log(`✗ ${labelCed} — error de red: ${e.message}`, 'error');
+                estado.cola.push(idHab);
+            }
+
+            estado.procesadosSesion++;
+            renderKPIs();
+            renderProgreso();
+            guardarEstadoLocal();
+        }
+
+        window.iniciarBatch = function() {
+            if (estado.corriendo) return;
+            if (estado.cola.length === 0) {
+                log('No hay habitantes pendientes.', 'ok');
+                return;
+            }
+            estado.corriendo = true;
+            document.getElementById('btnStart').disabled = true;
+            document.getElementById('btnPause').disabled = false;
+            log(`▶ Batch iniciado. Procesando 1 cédula cada ${INTERVALO_MS/1000}s (=${Math.round(3600/(INTERVALO_MS/1000))}/hora).`, 'ok');
+            // Procesar uno inmediato y luego cada INTERVALO_MS
+            procesarSiguiente();
+            estado.timer = setInterval(procesarSiguiente, INTERVALO_MS);
+        };
+
+        window.pausarBatch = function(silencioso = false) {
+            if (!estado.corriendo) return;
+            estado.corriendo = false;
+            if (estado.timer) { clearInterval(estado.timer); estado.timer = null; }
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnPause').disabled = true;
+            document.getElementById('progresoActual').textContent = 'Pausado';
+            if (!silencioso) log('⏸ Batch pausado.', 'ok');
+        };
+
+        window.resetSesion = function() {
+            if (estado.corriendo) {
+                if (!confirm('El batch está corriendo. ¿Pausarlo y resetear el contador de sesión?')) return;
+                pausarBatch(true);
+            }
+            estado.procesadosSesion = 0;
+            estado.noEncontradosSesion = 0;
+            estado.cambiosSesion = 0;
+            renderKPIs();
+            log('↺ Contador de sesión reseteado (la marca cne_actualizado_at de cada habitante NO se borra).', 'ok');
+        };
+
+        function guardarEstadoLocal() {
+            try {
+                localStorage.setItem('cne_batch_stats', JSON.stringify({
+                    procesadosSesion: estado.procesadosSesion,
+                    noEncontradosSesion: estado.noEncontradosSesion,
+                    cambiosSesion: estado.cambiosSesion,
+                    lastSave: Date.now(),
+                }));
+            } catch {}
+        }
+
+        function cargarEstadoLocal() {
+            try {
+                const raw = localStorage.getItem('cne_batch_stats');
+                if (!raw) return;
+                const s = JSON.parse(raw);
+                if (s && (Date.now() - s.lastSave) < 24 * 3600 * 1000) {
+                    estado.procesadosSesion = s.procesadosSesion || 0;
+                    estado.noEncontradosSesion = s.noEncontradosSesion || 0;
+                    estado.cambiosSesion = s.cambiosSesion || 0;
+                }
+            } catch {}
+        }
+        cargarEstadoLocal();
+
+        function mostrarAlerta(msg) {
+            document.getElementById('alertContainer').innerHTML = `<div class="alert-box">⚠ ${msg}</div>`;
+        }
+
+        // Aviso al cerrar si esta corriendo
+        window.addEventListener('beforeunload', (e) => {
+            if (estado.corriendo) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>

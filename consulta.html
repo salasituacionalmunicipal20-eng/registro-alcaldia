@@ -268,7 +268,121 @@
         }
 
         .btn-edit:hover { background: #218838; }
-        
+
+        .btn-cne {
+            background: #0e7490;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+        .btn-cne:hover { background: #155e75; }
+        .btn-cne:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Modal CNE — preview de actualizacion desde el padron electoral */
+        .modal-cne-fondo {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            z-index: 2000;
+            display: none;
+            align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .modal-cne-fondo.visible { display: flex; }
+        .modal-cne-caja {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            max-width: 560px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+        .modal-cne-caja h3 {
+            margin: 0 0 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #0e7490;
+            font-size: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .modal-cne-caja .cne-fila {
+            margin-bottom: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: #f1f5f9;
+        }
+        .modal-cne-caja .cne-fila.cne-cambio {
+            background: #fefce8;
+            border-color: #facc15;
+        }
+        .modal-cne-caja .cne-label {
+            font-size: 11px; font-weight: 800; color: #64748b;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .modal-cne-caja .cne-cols {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            font-size: 13px;
+        }
+        .modal-cne-caja .cne-actual-label {
+            font-size: 10px; color: #94a3b8; font-weight: 700;
+        }
+        .modal-cne-caja .cne-nuevo-label {
+            font-size: 10px; color: #0e7490; font-weight: 700;
+        }
+        .modal-cne-caja .cne-nuevo-val {
+            font-weight: 800; color: #92400e;
+        }
+        .modal-cne-caja .cne-igual-val {
+            color: #475569; font-weight: 600;
+        }
+        .modal-cne-caja .cne-extras {
+            margin-top: 8px; padding: 10px;
+            background: #f8fafc; border-radius: 6px;
+            font-size: 12px; line-height: 1.7; color: #64748b;
+        }
+        .modal-cne-caja .cne-acciones {
+            display: flex; gap: 8px; margin-top: 16px;
+        }
+        .modal-cne-caja .cne-btn {
+            flex: 1; padding: 12px;
+            border: none; border-radius: 8px;
+            font-weight: 800; font-size: 13px;
+            cursor: pointer;
+        }
+        .modal-cne-caja .cne-btn-cancel {
+            background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
+            flex: 1;
+        }
+        .modal-cne-caja .cne-btn-guardar {
+            background: #0e7490; color: white;
+            flex: 2;
+        }
+        .modal-cne-caja .cne-btn-guardar:disabled { opacity: 0.5; cursor: not-allowed; }
+        .modal-cne-caja .cne-error {
+            padding: 12px; border-radius: 8px;
+            background: #fef2f2; border-left: 4px solid #dc2626;
+            color: #991b1b; font-size: 13px; font-weight: 600;
+            margin-bottom: 14px;
+        }
+        .modal-cne-caja .cne-loading {
+            text-align: center; padding: 40px 20px;
+            color: #0e7490; font-weight: 700;
+        }
+        @keyframes cne-spin { to { transform: rotate(360deg); } }
+        .cne-spinner {
+            display: inline-block; width: 32px; height: 32px;
+            border: 3px solid #cbd5e1; border-top-color: #0e7490;
+            border-radius: 50%;
+            animation: cne-spin 1s linear infinite;
+        }
+
         .hidden { display: none !important; }
 
         .edit-panel { 
@@ -1599,6 +1713,7 @@
                     ${esAdmin ? `<td style="color:#E30613; font-weight:bold;">${h.registrado_por_nombre || 'Desconocido'}</td>` : ""}
                     <td class="no-print">
                         <button class="btn-edit" onclick="window.editarRegistro('${id}')">Detalle</button>
+                        ${h.cedula ? `<button class="btn-cne" onclick="window.abrirModalCNE('${id}')" title="Consultar CNE y previsualizar correcciones">🆔 CNE</button>` : ""}
                         ${esAdmin ? `<button class="btn-delete" onclick="window.eliminarRegistro('${id}')">Borrar</button>` : ""}
                     </td>
                 `;
@@ -2390,6 +2505,188 @@
                 }
             }, CHECK_INTERVAL);
         })();
+
+        // ═══════════════════════════════════════════════════════════════
+        // CONSULTA CNE — modal de actualizacion individual desde el padron
+        //
+        // Llama a la Edge Function `consultar-cedula` (Supabase) que proxiya
+        // api.cedula.com.ve con pool de credenciales + cache. La function
+        // tiene JWT desactivado para que este modulo pueda llamarla con un
+        // fetch publico sin token.
+        //
+        // Solo llena/sobreescribe los campos nombre, apellido y
+        // fecha_nacimiento del habitante. El usuario revisa una tabla
+        // ACTUAL vs CNE y decide si guardar.
+        // ═══════════════════════════════════════════════════════════════
+        const CNE_ENDPOINT = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co/functions/v1/consultar-cedula';
+
+        function _cneEscape(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function _cneEstado(idHab) {
+            // estado local del modal por habitante
+            return { idHab, cargando: false, error: '', datos: null, propuesta: null, guardando: false };
+        }
+        let _cneCtx = null;  // estado actual del modal abierto
+
+        window.abrirModalCNE = async function(id) {
+            const h = baseDeDatosHabitantes[id];
+            if (!h) { alert('Habitante no encontrado en la cache local. Refresca la pagina.'); return; }
+            const cedulaRaw = String(h.cedula || '').trim();
+            const cedulaNum = cedulaRaw.replace(/\D/g, '');
+            if (!cedulaNum || cedulaNum.length < 4 || cedulaNum.length > 10) {
+                alert('Este habitante no tiene una cedula valida (debe ser 4-10 digitos).');
+                return;
+            }
+            const nacionalidad = (h.nacionalidad === 'E' || /^[Ee]/.test(cedulaRaw)) ? 'E' : 'V';
+
+            _cneCtx = _cneEstado(id);
+            _cneCtx.cargando = true;
+            _cneRender();
+            document.getElementById('modalCNE').classList.add('visible');
+
+            try {
+                const resp = await fetch(CNE_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cedula: cedulaNum, nacionalidad })
+                });
+                const json = await resp.json();
+                if (json && json.error) {
+                    const map = {
+                        RECORD_NOT_FOUND: 'No se encontró esta cédula en el padrón del CNE.',
+                        INVALID_TOKEN: 'Credenciales del API CNE inválidas o vencidas.',
+                        MISSING_CREDENTIALS: 'Faltan los secrets del API CNE en Supabase.',
+                        ALL_QUOTAS_EXHAUSTED: 'Se agotó la cuota por hora del API CNE. Intenta más tarde.',
+                        INVALID_CEDULA: 'Formato de cédula inválido.',
+                        PROXY_ERROR: 'No se pudo contactar a cedula.com.ve.',
+                        NETWORK_ERROR: 'Error de red al consultar el CNE.',
+                    };
+                    _cneCtx.cargando = false;
+                    _cneCtx.error = map[json.error_str] || ('Error: ' + (json.error_str || 'desconocido'));
+                    _cneRender();
+                    return;
+                }
+                const d = json && json.data;
+                if (!d) { _cneCtx.cargando = false; _cneCtx.error = 'Respuesta vacía del servicio.'; _cneRender(); return; }
+                const nombreProp = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
+                const apellidoProp = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
+                _cneCtx.cargando = false;
+                _cneCtx.datos = d;
+                _cneCtx.propuesta = { nombre: nombreProp, apellido: apellidoProp, fecha_nacimiento: d.fecha_nac || '' };
+                _cneRender();
+            } catch (e) {
+                _cneCtx.cargando = false;
+                _cneCtx.error = 'Error inesperado: ' + e.message;
+                _cneRender();
+            }
+        };
+
+        window.cerrarModalCNE = function() {
+            if (_cneCtx && _cneCtx.guardando) return;  // bloquear cierre durante guardado
+            document.getElementById('modalCNE').classList.remove('visible');
+            _cneCtx = null;
+        };
+
+        function _cneRender() {
+            const box = document.getElementById('modalCNECaja');
+            if (!_cneCtx) { box.innerHTML = ''; return; }
+            const ctx = _cneCtx;
+            const h = baseDeDatosHabitantes[ctx.idHab] || {};
+
+            let html = `<h3>🆔 Consulta CNE — ${_cneEscape(h.nacionalidad || 'V')}-${_cneEscape(h.cedula || '')}</h3>`;
+
+            if (ctx.cargando) {
+                html += `<div class="cne-loading"><div class="cne-spinner"></div><div style="margin-top:14px;">Consultando registro electoral...</div></div>`;
+                box.innerHTML = html;
+                return;
+            }
+            if (ctx.error) {
+                html += `<div class="cne-error">${_cneEscape(ctx.error)}</div>`;
+                html += `<div class="cne-acciones"><button class="cne-btn cne-btn-cancel" onclick="window.cerrarModalCNE()">Cerrar</button></div>`;
+                box.innerHTML = html;
+                return;
+            }
+            if (ctx.propuesta) {
+                html += `<div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:12px; margin-bottom:14px; font-size:12px; color:#0c4a6e; font-weight:600;">
+                    Compara los datos actuales del habitante vs lo que devuelve el CNE. Al guardar, se actualizan solo los campos diferentes.
+                </div>`;
+                const filas = [
+                    { label: 'Nombre (primer + segundo)', key: 'nombre' },
+                    { label: 'Apellido (primer + segundo)', key: 'apellido' },
+                    { label: 'Fecha de nacimiento', key: 'fecha_nacimiento' },
+                ];
+                for (const f of filas) {
+                    const actual = (h[f.key] || '').toString();
+                    const propuesto = (ctx.propuesta[f.key] || '').toString();
+                    const igual = actual.trim().toUpperCase() === propuesto.trim().toUpperCase();
+                    html += `<div class="cne-fila ${!igual && propuesto ? 'cne-cambio' : ''}">
+                        <div class="cne-label">${_cneEscape(f.label)}</div>
+                        <div class="cne-cols">
+                            <div><div class="cne-actual-label">ACTUAL</div><div class="cne-igual-val">${_cneEscape(actual || '—')}</div></div>
+                            <div><div class="cne-nuevo-label">CNE</div><div class="${igual ? 'cne-igual-val' : 'cne-nuevo-val'}">${_cneEscape(propuesto || '—')} ${igual ? '✓' : ''}</div></div>
+                        </div>
+                    </div>`;
+                }
+                if (ctx.datos.cne) {
+                    html += `<details style="margin-top:8px; margin-bottom:14px; font-size:12px; color:#64748b;">
+                        <summary style="cursor:pointer; font-weight:700;">Otros datos del CNE (no se guardan)</summary>
+                        <div class="cne-extras">
+                            <div><strong>RIF:</strong> ${_cneEscape(ctx.datos.rif || '—')}</div>
+                            <div><strong>Estado:</strong> ${_cneEscape(ctx.datos.cne.estado || '—')}</div>
+                            <div><strong>Municipio:</strong> ${_cneEscape(ctx.datos.cne.municipio || '—')}</div>
+                            <div><strong>Parroquia:</strong> ${_cneEscape(ctx.datos.cne.parroquia || '—')}</div>
+                            <div><strong>Centro electoral:</strong> ${_cneEscape(ctx.datos.cne.centro_electoral || '—')}</div>
+                        </div>
+                    </details>`;
+                }
+                html += `<div class="cne-acciones">
+                    <button class="cne-btn cne-btn-cancel" ${ctx.guardando ? 'disabled' : ''} onclick="window.cerrarModalCNE()">Cancelar</button>
+                    <button class="cne-btn cne-btn-guardar" ${ctx.guardando ? 'disabled' : ''} onclick="window.aplicarCNE()">
+                        ${ctx.guardando ? '⏳ Guardando...' : '💾 Guardar cambios'}
+                    </button>
+                </div>`;
+                box.innerHTML = html;
+            }
+        }
+
+        window.aplicarCNE = async function() {
+            if (!_cneCtx || !_cneCtx.propuesta) return;
+            const h = baseDeDatosHabitantes[_cneCtx.idHab];
+            if (!h) return;
+            const patch = {};
+            const p = _cneCtx.propuesta;
+            if (p.nombre && p.nombre !== (h.nombre || '')) patch.nombre = p.nombre;
+            if (p.apellido && p.apellido !== (h.apellido || '')) patch.apellido = p.apellido;
+            if (p.fecha_nacimiento && p.fecha_nacimiento !== (h.fecha_nacimiento || '')) patch.fecha_nacimiento = p.fecha_nacimiento;
+            if (Object.keys(patch).length === 0) {
+                _cneCtx.error = 'No hay cambios para guardar — los datos ya coinciden.';
+                _cneRender();
+                return;
+            }
+            // Auditoria del cambio
+            patch.cne_actualizado_at = new Date().toISOString();
+            patch.cne_actualizado_por = (window.perfilOperador?.nombre && window.perfilOperador?.apellido)
+                ? `${window.perfilOperador.nombre} ${window.perfilOperador.apellido}`
+                : (auth.currentUser?.email || 'desconocido');
+
+            _cneCtx.guardando = true;
+            _cneRender();
+            try {
+                await update(ref(database, `habitantes/${_cneCtx.idHab}`), patch);
+                // Actualizar cache local para que la tabla refleje el cambio sin recargar
+                Object.assign(baseDeDatosHabitantes[_cneCtx.idHab], patch);
+                renderizarTabla();
+                window.cerrarModalCNE();
+            } catch (e) {
+                _cneCtx.guardando = false;
+                _cneCtx.error = 'Error al guardar: ' + e.message;
+                _cneRender();
+            }
+        };
     </script>
 
     <datalist id="catalogoEnfermedades">
@@ -2416,6 +2713,13 @@
         <option value="OSTEOPOROSIS">
         <option value="HIPERTENSION, DIABETES">
     </datalist>
+<!-- Modal Consulta CNE -->
+<div id="modalCNE" class="modal-cne-fondo" onclick="if(event.target===this) window.cerrarModalCNE()">
+    <div class="modal-cne-caja" id="modalCNECaja">
+        <!-- contenido inyectado dinamicamente -->
+    </div>
+</div>
+
 <script type="module" src="print-header.js"></script>
 </body>
 </html>

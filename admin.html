@@ -306,6 +306,12 @@
                 <div class="card-desc">Editar manualmente comunas y asignación de comunidades. Crear, renombrar, mover. (Solo Carlos).</div>
             </div>
 
+            <div id="cardActualizadorCNE" class="card hidden" onclick="location.href='actualizador-cne.html'" style="border-top: 4px solid #0e7490;">
+                <span class="card-icon">🆔</span>
+                <div class="card-title">Actualizador CNE (Batch)</div>
+                <div class="card-desc">Corre 150 consultas/hora al padrón electoral para corregir nombres, apellidos y fecha de nacimiento de todos los habitantes. (Solo Carlos).</div>
+            </div>
+
             <div id="cardVerificador" class="card card-verificador hidden" onclick="location.href='verificador.html'" style="border-top: 4px solid #ffd700;">
                 <span class="card-icon">🗂️</span>
                 <div class="card-title">Verificador de Base de Datos</div>
@@ -364,6 +370,7 @@
                     document.getElementById('cardMigracion').classList.remove('hidden');
                     document.getElementById('cardRespaldo').classList.remove('hidden');
                     document.getElementById('cardGestionTerritorial').classList.remove('hidden');
+                    document.getElementById('cardActualizadorCNE').classList.remove('hidden');
                     esAdmin = true;
                 } else {
                     const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
