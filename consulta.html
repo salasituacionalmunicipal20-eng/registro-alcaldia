@@ -2526,6 +2526,19 @@
                 .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
+        // Valida que la fecha venida del CNE sea aprovechable. Descarta
+        // "0000-00-00" (placeholder del CNE cuando no tiene la fecha real),
+        // formato distinto a YYYY-MM-DD, y anos absurdos.
+        function _esFechaCneValida(f) {
+            if (!f || typeof f !== 'string') return false;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return false;
+            if (f === '0000-00-00') return false;
+            const a = parseInt(f.substring(0, 4), 10);
+            const m = parseInt(f.substring(5, 7), 10);
+            const d = parseInt(f.substring(8, 10), 10);
+            return a >= 1900 && a <= 2030 && m >= 1 && m <= 12 && d >= 1 && d <= 31;
+        }
+
         function _cneEstado(idHab) {
             // estado local del modal por habitante
             return { idHab, cargando: false, error: '', datos: null, propuesta: null, guardando: false };
@@ -2575,9 +2588,11 @@
                 const nombreProp = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
                 const apellidoProp = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
                 const dondeVotaProp = (d.cne && d.cne.centro_electoral) ? d.cne.centro_electoral : '';
+                // Validar fecha: descartar "0000-00-00" (placeholder del CNE) y formatos invalidos
+                const fechaProp = _esFechaCneValida(d.fecha_nac) ? d.fecha_nac : '';
                 _cneCtx.cargando = false;
                 _cneCtx.datos = d;
-                _cneCtx.propuesta = { nombre: nombreProp, apellido: apellidoProp, fecha_nacimiento: d.fecha_nac || '', donde_vota: dondeVotaProp };
+                _cneCtx.propuesta = { nombre: nombreProp, apellido: apellidoProp, fecha_nacimiento: fechaProp, donde_vota: dondeVotaProp };
                 _cneRender();
             } catch (e) {
                 _cneCtx.cargando = false;

@@ -230,6 +230,39 @@
             </div>
         </div>
 
+        <!-- HERRAMIENTAS DE REPARACION -->
+        <div style="background:#1e293b; border:1px solid #7c2d12; border-radius:12px; padding:16px 20px; margin-bottom:22px;">
+            <div style="font-size:13px; color:#fb923c; text-transform:uppercase; letter-spacing:1px; font-weight:800; margin-bottom:10px;">
+                🛠️ Herramienta de reparación: fechas inválidas
+            </div>
+            <p style="font-size:12.5px; color:#cbd5e1; line-height:1.6; margin:0 0 12px;">
+                Si el batch anterior te pisó fechas válidas con <code style="background:#0f172a; padding:2px 5px; border-radius:3px; color:#fbbf24;">0000-00-00</code> (bug ya arreglado).
+                Tenés 2 opciones — la primera es <strong>la recomendada</strong> porque RESTAURA las fechas reales:
+            </p>
+
+            <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:14px; margin-bottom:12px;">
+                <div style="color:#4ade80; font-weight:800; font-size:13px; margin-bottom:8px;">💾 Opción 1: Restaurar fechas reales desde el log del batch</div>
+                <p style="font-size:12px; color:#cbd5e1; margin:0 0 10px;">
+                    Pega aquí el log del registro en vivo (lo encontrás abajo en "📋 Registro en vivo"). El script encuentra automáticamente cada línea
+                    <code style="background:#1e293b; padding:1px 4px; color:#fbbf24;">fecha_nac: "YYYY-MM-DD" → "0000-00-00"</code> y restaura la fecha ANTERIOR.
+                </p>
+                <textarea id="inputLogReversion" rows="6" placeholder="Pega aquí todo el log del batch (Ctrl+A → Ctrl+C en el log de abajo) y luego dale al botón"
+                    style="width:100%; padding:10px; background:#020617; color:#cbd5e1; border:1px solid #334155; border-radius:6px; font-family:'Courier New',monospace; font-size:11.5px; box-sizing:border-box;"></textarea>
+                <button class="btn" style="background:#10b981; color:white; margin-top:10px;" onclick="window.parsearLogYRevertir()">🔍 Parsear log y previsualizar</button>
+            </div>
+
+            <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:14px;">
+                <div style="color:#fb923c; font-weight:800; font-size:13px; margin-bottom:8px;">🗑 Opción 2 (si NO tienes el log): vaciar fechas 0000-00-00</div>
+                <p style="font-size:12px; color:#cbd5e1; margin:0 0 10px;">
+                    Pone <code style="background:#1e293b; padding:1px 4px; color:#fbbf24;">fecha_nacimiento = ""</code> en los afectados.
+                    NO restaura la fecha real — solo la deja en blanco para que el operador la llene a mano.
+                </p>
+                <button class="btn" style="background:#fb923c; color:white;" onclick="window.escanearFechasInvalidas()">🔍 Escanear fechas 0000-00-00</button>
+            </div>
+
+            <div id="resultadoEscaneo" style="margin-top:14px;"></div>
+        </div>
+
         <!-- Log -->
         <div class="log-card">
             <h2>📋 Registro en vivo</h2>
@@ -262,6 +295,21 @@
 
         // ── Endpoint del proxy CNE (Edge Function en Supabase, JWT off)
         const CNE_ENDPOINT = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co/functions/v1/consultar-cedula';
+
+        // ── Validador defensivo de fecha del CNE.
+        // El CNE devuelve "0000-00-00" como placeholder cuando no tiene la
+        // fecha real. SIN este filtro, el batch pisaba fechas validas con
+        // basura. Ahora si la fecha no pasa la validacion NO se escribe —
+        // se deja la fecha que ya tenia el habitante.
+        function esFechaCneValida(f) {
+            if (!f || typeof f !== 'string') return false;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return false;
+            if (f === '0000-00-00') return false;
+            const a = parseInt(f.substring(0, 4), 10);
+            const m = parseInt(f.substring(5, 7), 10);
+            const d = parseInt(f.substring(8, 10), 10);
+            return a >= 1900 && a <= 2030 && m >= 1 && m <= 12 && d >= 1 && d <= 31;
+        }
 
         // ── Throttle: 1 consulta cada N ms. 24000 = 150/hora exacto.
         // Si quieres ir mas rapido (250/hora) cambialo a 14400. Cuidado con la cuota.
@@ -498,7 +546,7 @@
                         patch.apellido = nuevoApellido;
                         cambios.push(`apellido: "${h.apellido || ''}" → "${nuevoApellido}"`);
                     }
-                    if (cfg.fecha_nacimiento && nuevaFecha && nuevaFecha !== (h.fecha_nacimiento || '')) {
+                    if (cfg.fecha_nacimiento && esFechaCneValida(nuevaFecha) && nuevaFecha !== (h.fecha_nacimiento || '')) {
                         patch.fecha_nacimiento = nuevaFecha;
                         cambios.push(`fecha_nac: "${h.fecha_nacimiento || ''}" → "${nuevaFecha}"`);
                     }
@@ -602,6 +650,171 @@
                 e.returnValue = '';
             }
         });
+
+        // ── HERRAMIENTA DE REPARACION: vaciar fechas "0000-00-00" que el bug
+        // del batch viejo escribió. Solo toca el campo fecha_nacimiento; el
+        // resto de campos (nombre, apellido, donde_vota) se quedan como estan.
+        window.escanearFechasInvalidas = function() {
+            const cont = document.getElementById('resultadoEscaneo');
+            cont.innerHTML = '<div style="color:#94a3b8; font-style:italic;">Escaneando...</div>';
+            // Filtrar de la cache en memoria (ya cargada desde Firebase)
+            const afectados = estado.todosLosHabitantes.filter(({ h }) => {
+                const f = (h.fecha_nacimiento || '').trim();
+                return f === '0000-00-00' || /^00\d?\d?-/.test(f) || /^0000-/.test(f);
+            });
+            if (afectados.length === 0) {
+                cont.innerHTML = '<div style="color:#4ade80; font-weight:700;">✓ Ningún habitante tiene fecha_nacimiento inválida. Todo limpio.</div>';
+                return;
+            }
+            // Listado
+            const filas = afectados.map(({ id, h }) => `
+                <tr style="border-bottom:1px solid #334155;">
+                    <td style="padding:6px 10px; color:#fbbf24; font-weight:800;">${h.nacionalidad || 'V'}-${h.cedula || ''}</td>
+                    <td style="padding:6px 10px; color:#e2e8f0;">${(h.nombre || '') + ' ' + (h.apellido || '')}</td>
+                    <td style="padding:6px 10px; color:#f87171; font-family:monospace;">${h.fecha_nacimiento || '(vacio)'}</td>
+                    <td style="padding:6px 10px; color:#94a3b8; font-size:11px;">${h.cne_actualizado_por || '—'}</td>
+                </tr>
+            `).join('');
+            cont.innerHTML = `
+                <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:12px; max-height:340px; overflow-y:auto;">
+                    <div style="color:#fb923c; font-weight:800; margin-bottom:8px; font-size:13px;">⚠ ${afectados.length} habitantes con fecha invalida</div>
+                    <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:#1e293b; color:#94a3b8; text-align:left;">
+                                <th style="padding:6px 10px;">Cédula</th>
+                                <th style="padding:6px 10px;">Nombre</th>
+                                <th style="padding:6px 10px;">Fecha actual</th>
+                                <th style="padding:6px 10px;">Actualizado por</th>
+                            </tr>
+                        </thead>
+                        <tbody>${filas}</tbody>
+                    </table>
+                </div>
+                <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn" style="background:#dc2626; color:white;"
+                            onclick="window.aplicarReversion(${JSON.stringify(afectados.map(x => x.id)).replace(/"/g, '&quot;')})">
+                        🗑 Vaciar fecha_nacimiento de los ${afectados.length} habitantes
+                    </button>
+                    <button class="btn btn-reset" onclick="document.getElementById('resultadoEscaneo').innerHTML='';">Cerrar</button>
+                </div>
+                <div style="margin-top:8px; font-size:11.5px; color:#fbbf24;">
+                    ⚠ Solo se vacia el campo fecha_nacimiento. Despues el operador debe llenarla a mano.
+                </div>
+            `;
+        };
+
+        // PARSEAR LOG Y RESTAURAR fechas reales (NO vacia — restaura el valor
+        // anterior que el log captura textualmente en cada cambio).
+        window.parsearLogYRevertir = function() {
+            const log = document.getElementById('inputLogReversion').value || '';
+            if (!log.trim()) {
+                alert('Pega el log del batch en el textarea de arriba primero.');
+                return;
+            }
+            // Patron: "✏ V-30850983 — 3 cambio(s): ... fecha_nac: "2000-12-25" → "0000-00-00""
+            // Captura: nacionalidad (V|E), numero, fecha_anterior
+            const regex = /([VE])-(\d+)[^\n]*?fecha_nac:\s*"(\d{4}-\d{2}-\d{2})"\s*→\s*"0000-00-00"/g;
+            const matches = [];
+            let m;
+            while ((m = regex.exec(log)) !== null) {
+                matches.push({ nacionalidad: m[1], cedula: m[2], fechaAnterior: m[3] });
+            }
+            const cont = document.getElementById('resultadoEscaneo');
+            if (matches.length === 0) {
+                cont.innerHTML = '<div style="color:#94a3b8; font-style:italic; padding:10px;">No se encontró ninguna línea "fecha_nac: ... → 0000-00-00" en el log pegado.</div>';
+                return;
+            }
+            // Cruzar con los habitantes en memoria para sacar el id de Firebase
+            const planeados = [];
+            const noEncontrados = [];
+            for (const x of matches) {
+                const reg = estado.todosLosHabitantes.find(({ h }) => {
+                    const cn = String(h.cedula || '').replace(/\D/g, '');
+                    const nac = (h.nacionalidad || 'V').toUpperCase();
+                    return cn === x.cedula && nac === x.nacionalidad;
+                });
+                if (reg) planeados.push({ id: reg.id, h: reg.h, fechaAnterior: x.fechaAnterior, ced: x.nacionalidad + '-' + x.cedula });
+                else noEncontrados.push(x.nacionalidad + '-' + x.cedula);
+            }
+            if (planeados.length === 0) {
+                cont.innerHTML = `<div style="color:#f87171; padding:10px;">⚠ Se encontraron ${matches.length} fechas en el log pero ninguna coincide con habitantes en Firebase. ¿Será que las cédulas se borraron?</div>`;
+                return;
+            }
+            const filas = planeados.map(p => `
+                <tr style="border-bottom:1px solid #334155;">
+                    <td style="padding:6px 10px; color:#fbbf24; font-weight:800;">${p.ced}</td>
+                    <td style="padding:6px 10px; color:#e2e8f0;">${(p.h.nombre || '') + ' ' + (p.h.apellido || '')}</td>
+                    <td style="padding:6px 10px; color:#f87171; font-family:monospace;">${p.h.fecha_nacimiento || '(vacio)'}</td>
+                    <td style="padding:6px 10px; color:#4ade80; font-family:monospace; font-weight:800;">${p.fechaAnterior}</td>
+                </tr>
+            `).join('');
+            const avisoNoEnc = noEncontrados.length > 0
+                ? `<div style="color:#fb923c; font-size:11.5px; margin-top:8px;">⚠ ${noEncontrados.length} cédulas del log no se encontraron en Firebase: ${noEncontrados.join(', ')}</div>` : '';
+            const payload = JSON.stringify(planeados.map(p => ({id: p.id, fecha: p.fechaAnterior}))).replace(/"/g, '&quot;');
+            cont.innerHTML = `
+                <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:12px; max-height:340px; overflow-y:auto;">
+                    <div style="color:#4ade80; font-weight:800; margin-bottom:8px; font-size:13px;">✓ ${planeados.length} fechas encontradas en el log — restaurar a la fecha ANTERIOR</div>
+                    <table style="width:100%; font-size:12px; border-collapse:collapse;">
+                        <thead><tr style="background:#1e293b; color:#94a3b8; text-align:left;">
+                            <th style="padding:6px 10px;">Cédula</th><th style="padding:6px 10px;">Nombre</th><th style="padding:6px 10px;">Fecha actual (rota)</th><th style="padding:6px 10px;">Restaurar a</th>
+                        </tr></thead>
+                        <tbody>${filas}</tbody>
+                    </table>
+                    ${avisoNoEnc}
+                </div>
+                <div style="margin-top:12px; display:flex; gap:10px;">
+                    <button class="btn" style="background:#10b981; color:white;" onclick="window.aplicarRestauracion(${payload})">
+                        ✓ Restaurar las ${planeados.length} fechas reales
+                    </button>
+                    <button class="btn btn-reset" onclick="document.getElementById('resultadoEscaneo').innerHTML='';">Cerrar</button>
+                </div>
+            `;
+        };
+
+        window.aplicarRestauracion = async function(items) {
+            if (!Array.isArray(items) || items.length === 0) return;
+            if (!confirm(`¿Restaurar ${items.length} fechas a su valor ANTERIOR (el que tenían antes del batch)?\n\nSolo se toca el campo fecha_nacimiento. No se toca nombre, apellido ni Centro de Votación.`)) return;
+            const cont = document.getElementById('resultadoEscaneo');
+            cont.innerHTML = '<div style="color:#fbbf24; padding:10px;">⏳ Restaurando fechas...</div>';
+            let ok = 0, fail = 0;
+            for (const item of items) {
+                try {
+                    await update(ref(database, `habitantes/${item.id}`), { fecha_nacimiento: item.fecha });
+                    const reg = estado.todosLosHabitantes.find(x => x.id === item.id);
+                    if (reg) reg.h.fecha_nacimiento = item.fecha;
+                    ok++;
+                } catch (e) {
+                    log(`✗ No se pudo restaurar ${item.id}: ${e.message}`, 'error');
+                    fail++;
+                }
+            }
+            cont.innerHTML = `<div style="color:#4ade80; font-weight:700; padding:10px;">✓ Restauración completa: ${ok} fechas restauradas a su valor real${fail > 0 ? `, ${fail} fallaron (ver log)` : ''}.</div>`;
+            log(`🛠 Restauración desde log: ${ok} fechas restauradas a su valor real, ${fail} errores.`, ok > 0 ? 'ok' : 'error');
+            actualizarCola();
+        };
+
+        window.aplicarReversion = async function(ids) {
+            if (!Array.isArray(ids) || ids.length === 0) return;
+            if (!confirm(`¿Vaciar el campo fecha_nacimiento de ${ids.length} habitantes?\n\nEsto NO toca nombre, apellido ni Centro de Votación. La fecha queda vacía y el operador la llenará a mano.`)) return;
+            const cont = document.getElementById('resultadoEscaneo');
+            cont.innerHTML = '<div style="color:#fbbf24;">⏳ Aplicando reversión...</div>';
+            let ok = 0, fail = 0;
+            for (const id of ids) {
+                try {
+                    await update(ref(database, `habitantes/${id}`), { fecha_nacimiento: '' });
+                    // Sincronizar la cache en memoria
+                    const reg = estado.todosLosHabitantes.find(x => x.id === id);
+                    if (reg) reg.h.fecha_nacimiento = '';
+                    ok++;
+                } catch (e) {
+                    log(`✗ No se pudo revertir ${id}: ${e.message}`, 'error');
+                    fail++;
+                }
+            }
+            cont.innerHTML = `<div style="color:#4ade80; font-weight:700;">✓ Reversión completa. ${ok} habitantes con fecha vaciada${fail > 0 ? `, ${fail} fallaron (ver log)` : ''}.</div>`;
+            log(`🛠 Reversión: ${ok} fechas vaciadas, ${fail} errores.`, ok > 0 ? 'ok' : 'error');
+            actualizarCola();
+        };
     </script>
 </body>
 </html>

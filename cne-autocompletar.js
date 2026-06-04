@@ -32,6 +32,25 @@
     const SUPABASE_URL = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co'
     const ENDPOINT = SUPABASE_URL + '/functions/v1/consultar-cedula'
 
+    // Validador de fecha del CNE. Descarta:
+    //   - "0000-00-00" (placeholder que el CNE usa cuando NO tiene la fecha real)
+    //   - Formato distinto de YYYY-MM-DD
+    //   - Anos absurdos (antes de 1900 o muy lejanos al futuro)
+    // Bug que se filtraba antes: el batch del actualizador escribia "0000-00-00"
+    // tal cual a Firebase, sobreescribiendo fechas validas con basura.
+    function esFechaCneValida(f) {
+        if (!f || typeof f !== 'string') return false
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return false
+        if (f === '0000-00-00') return false
+        const anio = parseInt(f.substring(0, 4), 10)
+        if (anio < 1900 || anio > 2030) return false
+        const mes = parseInt(f.substring(5, 7), 10)
+        if (mes < 1 || mes > 12) return false
+        const dia = parseInt(f.substring(8, 10), 10)
+        if (dia < 1 || dia > 31) return false
+        return true
+    }
+
     // Mapeos: para cada input de cedula posible, los IDs de los campos
     // relacionados que vamos a llenar. Si el HTML no tiene alguno, no pasa nada.
     // El campo `donde_vota` (Centro de Votación) se llena con el
@@ -106,12 +125,11 @@
                 if (apellidoEl && !apellidoEl.value.trim()) {
                     apellidoEl.value = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim()
                 }
-                if (fechaEl && d.fecha_nac && !fechaEl.value) {
+                // Validar fecha del CNE: descartar "0000-00-00", formato invalido
+                // o anos absurdos. Bug conocido: el CNE devuelve "0000-00-00" como
+                // placeholder cuando no tiene la fecha real, NO la fecha actual.
+                if (fechaEl && esFechaCneValida(d.fecha_nac) && !fechaEl.value) {
                     fechaEl.value = d.fecha_nac
-                    // Disparar change para que handlers existentes recalculen
-                    // (ej. en registro.html el handler change de fecha_nacimiento
-                    // calcula la edad y muestra/oculta secciones electorales,
-                    // incluyendo el wrapper del campo donde_vota).
                     fechaEl.dispatchEvent(new Event('change', { bubbles: true }))
                 }
                 // Centro de Votación = centro_electoral del CNE.
