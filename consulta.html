@@ -2574,9 +2574,10 @@
                 if (!d) { _cneCtx.cargando = false; _cneCtx.error = 'Respuesta vacía del servicio.'; _cneRender(); return; }
                 const nombreProp = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
                 const apellidoProp = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
+                const dondeVotaProp = (d.cne && d.cne.centro_electoral) ? d.cne.centro_electoral : '';
                 _cneCtx.cargando = false;
                 _cneCtx.datos = d;
-                _cneCtx.propuesta = { nombre: nombreProp, apellido: apellidoProp, fecha_nacimiento: d.fecha_nac || '' };
+                _cneCtx.propuesta = { nombre: nombreProp, apellido: apellidoProp, fecha_nacimiento: d.fecha_nac || '', donde_vota: dondeVotaProp };
                 _cneRender();
             } catch (e) {
                 _cneCtx.cargando = false;
@@ -2618,6 +2619,7 @@
                     { label: 'Nombre (primer + segundo)', key: 'nombre' },
                     { label: 'Apellido (primer + segundo)', key: 'apellido' },
                     { label: 'Fecha de nacimiento', key: 'fecha_nacimiento' },
+                    { label: 'Centro de Votación', key: 'donde_vota' },
                 ];
                 for (const f of filas) {
                     const actual = (h[f.key] || '').toString();
@@ -2662,6 +2664,7 @@
             if (p.nombre && p.nombre !== (h.nombre || '')) patch.nombre = p.nombre;
             if (p.apellido && p.apellido !== (h.apellido || '')) patch.apellido = p.apellido;
             if (p.fecha_nacimiento && p.fecha_nacimiento !== (h.fecha_nacimiento || '')) patch.fecha_nacimiento = p.fecha_nacimiento;
+            if (p.donde_vota && p.donde_vota !== (h.donde_vota || '')) patch.donde_vota = p.donde_vota;
             if (Object.keys(patch).length === 0) {
                 _cneCtx.error = 'No hay cambios para guardar — los datos ya coinciden.';
                 _cneRender();

@@ -295,7 +295,14 @@
             const t = new Date(h.cne_actualizado_at).getTime();
             if (isNaN(t)) return false;
             const dias = (Date.now() - t) / 86400000;
-            return dias < 30;
+            if (dias >= 30) return false;
+            // EXCEPCION: si fue consultado exitosamente (ENCONTRADO) pero le falta
+            // donde_vota (Centro de Votación), reprocesar. La respuesta viene del
+            // cache del Edge Function (TTL 30d) asi que NO consume cuota nueva.
+            // Esto cubre los habitantes que se procesaron antes de agregar
+            // donde_vota a la logica del batch.
+            if (h.cne_resultado === 'ENCONTRADO' && !h.donde_vota) return false;
+            return true;
         }
 
         function actualizarCola() {
@@ -399,6 +406,7 @@
                     const nuevoNombre = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
                     const nuevoApellido = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
                     const nuevaFecha = d.fecha_nac || '';
+                    const nuevoCV = (d.cne && d.cne.centro_electoral) ? d.cne.centro_electoral : '';
 
                     const patch = {
                         cne_actualizado_at: new Date().toISOString(),
@@ -417,6 +425,10 @@
                     if (nuevaFecha && nuevaFecha !== (h.fecha_nacimiento || '')) {
                         patch.fecha_nacimiento = nuevaFecha;
                         cambios.push(`fecha_nac: "${h.fecha_nacimiento || ''}" → "${nuevaFecha}"`);
+                    }
+                    if (nuevoCV && nuevoCV !== (h.donde_vota || '')) {
+                        patch.donde_vota = nuevoCV;
+                        cambios.push(`donde_vota: "${h.donde_vota || ''}" → "${nuevoCV}"`);
                     }
                     await update(ref(database, `habitantes/${idHab}`), patch);
                     Object.assign(reg.h, patch);
