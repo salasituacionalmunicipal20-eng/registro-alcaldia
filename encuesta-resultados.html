@@ -1633,7 +1633,10 @@
                 doc.setFontSize(11);
                 const sufijo = continuacion ? " (continuacion)" : "";
                 doc.text(`${_safePdf(nombre)}  -  ${n} respuesta${n === 1 ? "" : "s"} con texto${sufijo}`, margenX + 2, y + 5);
-                y += 9;
+                // 7mm de cintillo + 5mm de gap respiracion para que el siguiente
+                // texto en negrita ('Temas principales:') no se solape visualmente
+                // con el borde inferior del cintillo azul.
+                y += 12;
                 doc.setTextColor(0, 0, 0);
                 doc.setFont("helvetica", "normal");
             };
