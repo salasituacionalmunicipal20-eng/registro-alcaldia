@@ -1167,6 +1167,40 @@
             URL.revokeObjectURL(url);
         });
 
+        // Sanitiza texto para jsPDF helvetica (WinAnsi). Helvetica default NO soporta
+        // UTF-8 mas alla de WinAnsi (≈CP1252), asi que tildes/enie SI funcionan pero
+        // emojis, comillas curvas, ellipsis, em-dash, bullets, signos invertidos salen
+        // como cuadrados. Solucion: normalizar y transliterar antes de doc.text().
+        function _safePdf(s) {
+            if (s == null) return "";
+            let t = String(s);
+            // Normalizar a NFC para que las tildes se queden en su forma compuesta soportada por WinAnsi
+            t = t.normalize ? t.normalize("NFC") : t;
+            // Reemplazos comunes
+            t = t.replace(/[“”″]/g, '"')   // comillas curvas dobles
+                 .replace(/[‘’′]/g, "'")   // comillas curvas simples
+                 .replace(/[–—]/g, "-")          // en-dash, em-dash
+                 .replace(/[•‣◦⁃]/g, "*") // bullets
+                 .replace(/…/g, "...")                // ellipsis
+                 .replace(/[¿]/g, "")                // ¿ -> nada
+                 .replace(/[¡]/g, "")                // ¡ -> nada
+                 .replace(/[·]/g, "*")                // middle dot a *
+                 .replace(/ /g, " ");                 // no-break space a espacio
+            // Quitar emojis (rangos comunes) y simbolos pictograficos
+            t = t.replace(/[\u{1F000}-\u{1FFFF}]/gu, "")    // pictographs
+                 .replace(/[\u{2600}-\u{27BF}]/gu, "")      // misc symbols
+                 .replace(/[\u{FE00}-\u{FE0F}]/gu, "")      // variation selectors
+                 .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "");   // regional indicators (banderas)
+            // Caracteres de control que rompen jsPDF
+            t = t.replace(/[ --]/g, " ");
+            // Colapsar espacios resultantes
+            t = t.replace(/[ \t]{2,}/g, " ").trim();
+            return t;
+        }
+        function _safeLines(doc, s, maxAncho) {
+            return doc.splitTextToSize(_safePdf(s) || "-", maxAncho);
+        }
+
         // ── PDF: helper generico que arma un reporte "ficha por respuesta",
         // mucho mas legible que aplastar 30+ columnas en una tabla. Recibe:
         //   titulo: string, datos: array de objetos, preguntas: array de
@@ -1191,18 +1225,18 @@
             doc.setTextColor(0, 0, 0);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(16);
-            doc.text(titulo, margenX, y + 5);
+            doc.text(_safePdf(titulo), margenX, y + 5);
             y += 12;
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
             doc.setTextColor(100, 100, 100);
             const fechaExp = new Date().toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            doc.text(`Exportado: ${fechaExp}   ·   Total respuestas: ${datos.length}`, margenX, y);
+            doc.text(_safePdf(`Exportado: ${fechaExp}   ·   Total respuestas: ${datos.length}`), margenX, y);
             y += 8;
 
             const wrapText = (txt, maxAncho, fontSize) => {
                 doc.setFontSize(fontSize);
-                return doc.splitTextToSize(String(txt || '').trim() || '—', maxAncho);
+                return doc.splitTextToSize(_safePdf(String(txt || '').trim()) || '-', maxAncho);
             };
             const checkPag = (alturaNecesaria) => {
                 if (y + alturaNecesaria > 270) { doc.addPage(); y = 15; }
@@ -1230,24 +1264,24 @@
                 doc.setTextColor(0, 0, 0);
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(10);
-                const nombre = `${r.nombres || ''} ${r.apellidos || ''}`.trim() || (r.es_anonimo ? '🔒 ANONIMO' : '—');
-                doc.text(nombre, margenX, y);
+                const nombre = `${r.nombres || ''} ${r.apellidos || ''}`.trim() || (r.es_anonimo ? '[ANONIMO]' : '-');
+                doc.text(_safePdf(nombre), margenX, y);
                 y += 4;
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(8.5);
                 const datosLinea1 = [
-                    r.cedula ? `C.I.: ${r.cedula}` : 'C.I.: —',
-                    r.edad ? `Edad: ${r.edad}` : 'Edad: —',
+                    r.cedula ? `C.I.: ${r.cedula}` : 'C.I.: -',
+                    r.edad ? `Edad: ${r.edad}` : 'Edad: -',
                     r.sexo ? `Sexo: ${r.sexo}` : '',
                     r.telefono ? `Tel: ${r.telefono}` : ''
                 ].filter(Boolean).join('   |   ');
-                doc.text(datosLinea1, margenX, y);
+                doc.text(_safePdf(datosLinea1), margenX, y);
                 y += 4;
                 const ubic = [
                     r.comuna ? `Comuna: ${r.comuna}` : '',
                     r.comunidad ? `Comunidad: ${r.comunidad}` : ''
                 ].filter(Boolean).join('   |   ');
-                if (ubic) { doc.text(ubic, margenX, y); y += 4; }
+                if (ubic) { doc.text(_safePdf(ubic), margenX, y); y += 4; }
                 y += 2;
 
                 // Preguntas y respuestas
@@ -1340,7 +1374,7 @@
             doc.setFontSize(9);
             doc.setTextColor(100, 100, 100);
             const fechaExp = new Date().toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            doc.text(`Exportado: ${fechaExp}   ·   Total respuestas con ${esComuna ? 'comuna' : 'comunidad'}: ${total}   ·   ${esComuna ? 'Comunas' : 'Comunidades'} distintas: ${entries.length}`, margenX, y);
+            doc.text(_safePdf(`Exportado: ${fechaExp}   ·   Total respuestas con ${esComuna ? 'comuna' : 'comunidad'}: ${total}   ·   ${esComuna ? 'Comunas' : 'Comunidades'} distintas: ${entries.length}`), margenX, y);
             y += 8;
 
             // Re-render del header de tabla (usado en pagina 1 y tras saltos de pagina)
@@ -1376,14 +1410,17 @@
                 const pct = ((row[1] / total) * 100).toFixed(1);
                 doc.text(String(idx + 1), margenX + 3, y + 4);
                 if (esComuna) {
-                    const lineas = doc.splitTextToSize(row[0], 125);
-                    doc.text(lineas[0] || row[0], margenX + 12, y + 4);
+                    const nombreSafe = _safePdf(row[0]);
+                    const lineas = doc.splitTextToSize(nombreSafe, 125);
+                    doc.text(lineas[0] || nombreSafe || '-', margenX + 12, y + 4);
                 } else {
                     const [comunidad, comuna] = row[0].split('|');
-                    const lineasC = doc.splitTextToSize(comunidad, 85);
-                    doc.text(lineasC[0] || comunidad, margenX + 12, y + 4);
-                    const lineasComuna = doc.splitTextToSize(comuna || '—', 38);
-                    doc.text(lineasComuna[0] || (comuna || '—'), margenX + 100, y + 4);
+                    const comunidadSafe = _safePdf(comunidad);
+                    const comunaSafe = _safePdf(comuna) || '-';
+                    const lineasC = doc.splitTextToSize(comunidadSafe || '-', 85);
+                    doc.text(lineasC[0] || comunidadSafe || '-', margenX + 12, y + 4);
+                    const lineasComuna = doc.splitTextToSize(comunaSafe, 38);
+                    doc.text(lineasComuna[0] || comunaSafe, margenX + 100, y + 4);
                 }
                 doc.text(String(row[1]), margenX + 140, y + 4, { align: 'right' });
                 doc.text(`${pct}%`, margenX + 175, y + 4, { align: 'right' });
@@ -1512,8 +1549,9 @@
                 });
                 if (porComuna[com].ejemplos.length < 3) {
                     const ej = String(r.pregunta_mejorar).trim();
-                    if (ej.length <= 220) porComuna[com].ejemplos.push(ej);
-                    else porComuna[com].ejemplos.push(ej.slice(0, 215) + '…');
+                    const ejSafe = _safePdf(ej);
+                    if (ejSafe.length <= 220) porComuna[com].ejemplos.push(ejSafe);
+                    else porComuna[com].ejemplos.push(ejSafe.slice(0, 215) + '...');
                 }
             });
 
@@ -1530,17 +1568,17 @@
             doc.setTextColor(0, 0, 0);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(15);
-            doc.text('Analisis "¿Que mejorar en su comunidad?" por comuna', margenX, y + 5);
+            doc.text('Analisis "Que mejorar en su comunidad" por comuna', margenX, y + 5);
             y += 12;
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(11);
             doc.setTextColor(60, 60, 60);
-            doc.text('Consulta Popular del 12 de Julio · pregunta abierta clasificada por temas', margenX, y);
+            doc.text(_safePdf('Consulta Popular del 12 de Julio · pregunta abierta clasificada por temas'), margenX, y);
             y += 6;
             doc.setFontSize(9);
             doc.setTextColor(100, 100, 100);
             const fechaExp = new Date().toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            doc.text(`Exportado: ${fechaExp}   ·   Respuestas con texto: ${conTexto.length}   ·   Comunas analizadas: ${Object.keys(porComuna).length}`, margenX, y);
+            doc.text(_safePdf(`Exportado: ${fechaExp}   ·   Respuestas con texto: ${conTexto.length}   ·   Comunas analizadas: ${Object.keys(porComuna).length}`), margenX, y);
             y += 6;
             doc.setFontSize(8);
             doc.setTextColor(120, 120, 120);
@@ -1569,7 +1607,7 @@
             topCatsGlobal.forEach(([id, n]) => {
                 if (y > 270) { doc.addPage(); y = 15; }
                 const pct = ((n / conTexto.length) * 100).toFixed(1);
-                doc.text(`  • ${labelCat(id)}: ${n} menciones (${pct}% de respuestas)`, margenX, y);
+                doc.text(`  - ${labelCat(id)}: ${n} menciones (${pct}% de respuestas)`, margenX, y);
                 y += 4.5;
             });
             y += 2;
@@ -1581,22 +1619,28 @@
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
             const palGlobalLinea = topPalGlobal.map(([w, n]) => `${w} (${n})`).join(' · ');
-            const palLineas = doc.splitTextToSize(palGlobalLinea, anchoUtil);
+            const palLineas = doc.splitTextToSize(_safePdf(palGlobalLinea), anchoUtil);
             palLineas.forEach(l => { if (y > 270) { doc.addPage(); y = 15; } doc.text(l, margenX, y); y += 4.5; });
             y += 6;
 
             // ── Por comuna: ordenar de mayor n a menor n
             const comunas = Object.entries(porComuna).sort((a, b) => b[1].n - a[1].n);
+            const dibujarHeaderComuna = (nombre, n, continuacion = false) => {
+                doc.setFillColor(29, 78, 216);
+                doc.rect(margenX, y, anchoUtil, 7, "F");
+                doc.setTextColor(255, 255, 255);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(11);
+                const sufijo = continuacion ? " (continuacion)" : "";
+                doc.text(`${_safePdf(nombre)}  -  ${n} respuesta${n === 1 ? "" : "s"} con texto${sufijo}`, margenX + 2, y + 5);
+                y += 9;
+                doc.setTextColor(0, 0, 0);
+                doc.setFont("helvetica", "normal");
+            };
             comunas.forEach(([nombre, info]) => {
                 // espacio minimo necesario para el bloque de la comuna (header + 3 lineas)
                 if (y + 28 > 270) { doc.addPage(); y = 15; }
-                doc.setFillColor(29, 78, 216);
-                doc.rect(margenX, y, anchoUtil, 7, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(11);
-                doc.text(`${nombre}  ·  ${info.n} respuesta${info.n === 1 ? '' : 's'} con texto`, margenX + 2, y + 5);
-                y += 9;
+                dibujarHeaderComuna(nombre, info.n, false);
 
                 doc.setTextColor(0, 0, 0);
                 doc.setFont('helvetica', 'bold');
@@ -1606,29 +1650,29 @@
                 doc.setFontSize(9);
                 const topCats = Object.entries(info.catCount).sort((a, b) => b[1] - a[1]).slice(0, 8);
                 topCats.forEach(([id, n]) => {
-                    if (y > 270) { doc.addPage(); y = 15; }
+                    if (y > 270) { doc.addPage(); y = 15; dibujarHeaderComuna(nombre, info.n, true); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); }
                     const pct = ((n / info.n) * 100).toFixed(0);
-                    doc.text(`  • ${labelCat(id)}: ${n} (${pct}%)`, margenX, y);
+                    doc.text(`  - ${labelCat(id)}: ${n} (${pct}%)`, margenX, y);
                     y += 4.2;
                 });
                 y += 1;
 
                 const topPal = Object.entries(info.palabras).sort((a, b) => b[1] - a[1]).slice(0, 10);
                 if (topPal.length > 0) {
-                    if (y > 268) { doc.addPage(); y = 15; }
+                    if (y > 268) { doc.addPage(); y = 15; dibujarHeaderComuna(nombre, info.n, true); }
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(9.5);
                     doc.text('Palabras mas usadas:', margenX, y); y += 4.5;
                     doc.setFont('helvetica', 'normal');
                     doc.setFontSize(9);
                     const palLine = topPal.map(([w, n]) => `${w} (${n})`).join(' · ');
-                    const palWrap = doc.splitTextToSize(palLine, anchoUtil);
-                    palWrap.forEach(l => { if (y > 270) { doc.addPage(); y = 15; } doc.text(l, margenX, y); y += 4.2; });
+                    const palWrap = doc.splitTextToSize(_safePdf(palLine), anchoUtil);
+                    palWrap.forEach(l => { if (y > 270) { doc.addPage(); y = 15; dibujarHeaderComuna(nombre, info.n, true); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); } doc.text(l, margenX, y); y += 4.2; });
                 }
                 y += 1;
 
                 if (info.ejemplos.length > 0) {
-                    if (y > 265) { doc.addPage(); y = 15; }
+                    if (y > 265) { doc.addPage(); y = 15; dibujarHeaderComuna(nombre, info.n, true); }
                     doc.setFont('helvetica', 'bold');
                     doc.setFontSize(9.5);
                     doc.text('Ejemplos:', margenX, y); y += 4.5;
@@ -1636,8 +1680,8 @@
                     doc.setFontSize(8.5);
                     doc.setTextColor(80, 80, 80);
                     info.ejemplos.forEach(ej => {
-                        const lin = doc.splitTextToSize(`  "${ej}"`, anchoUtil);
-                        lin.forEach(l => { if (y > 270) { doc.addPage(); y = 15; } doc.text(l, margenX, y); y += 4; });
+                        const lin = doc.splitTextToSize(`  "${_safePdf(ej)}"`, anchoUtil);
+                        lin.forEach(l => { if (y > 270) { doc.addPage(); y = 15; dibujarHeaderComuna(nombre, info.n, true); doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(80, 80, 80); } doc.text(l, margenX, y); y += 4; });
                     });
                     doc.setFont('helvetica', 'normal');
                     doc.setTextColor(0, 0, 0);
