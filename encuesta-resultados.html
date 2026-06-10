@@ -435,6 +435,7 @@
                 <button class="btn-exportar" id="btnExportarCSV" style="background:#0ea5e9;" title="Para abrir en Excel/Sheets">📊 CSV</button>
                 <button class="btn-exportar" id="btnPartComuna" style="background:#16a34a;" title="PDF de participacion agregada por comuna">🌎 PDF por Comuna</button>
                 <button class="btn-exportar" id="btnPartComunidad" style="background:#0d9488;" title="PDF de participacion agregada por comunidad">🏘️ PDF por Comunidad</button>
+                <button class="btn-exportar" id="btnAnalisisMejoras" style="background:#7c3aed;" title="Analisis inteligente de '¿Que considera que debemos mejorar en su comunidad?' por comuna">🧠 PDF Análisis "Qué mejorar"</button>
             </div>
 
             <div class="tabla-wrap">
@@ -1415,6 +1416,246 @@
             doc.save(filename);
         }
 
+        // ── PDF: analisis inteligente (sin LLM) de la pregunta abierta
+        // "¿Que considera que debemos mejorar en su comunidad?" (consulta popular,
+        // campo `pregunta_mejorar`). Categoriza cada respuesta por keywords y
+        // saca palabras frecuentes por comuna. NO usa modelos externos: matching
+        // exacto sobre texto normalizado (sin tildes, minusculas).
+        const STOP_WORDS_ES = new Set([
+            'a','al','ante','bajo','cabe','con','contra','de','del','desde','en','entre','hacia','hasta',
+            'mediante','para','por','segun','sin','so','sobre','tras','versus','via',
+            'el','la','las','los','lo','un','una','unas','unos','y','o','u','e','ni','que','si',
+            'es','son','sea','sean','soy','eres','somos','fui','fue','fueron','sido','seria','seran','sera',
+            'mi','mis','tu','tus','su','sus','nuestro','nuestra','nuestros','nuestras','vuestro','vuestra',
+            'me','te','se','nos','os','le','les','mio','tuyo','suyo',
+            'esto','esta','este','estos','estas','eso','esa','ese','aquello','aquella','aquel',
+            'no','si','tal','tan','tanto','tanta','muy','mas','menos','poco','mucho','algo','nada','todo',
+            'tambien','aqui','alli','ahi','aca','alla','hoy','ayer','manana','siempre','nunca','cuando','donde',
+            'cual','cuales','cuanto','como','quien','quienes',
+            'pero','sino','aunque','porque','pues','asi','entonces','luego','ya',
+            'voy','vas','va','vamos','van','ir','ido','hay','han','ha','he','hemos','hubo','habia',
+            'fue','era','eran','estoy','estas','esta','estamos','estan','estuvo','estaba','estaban',
+            'puede','pueden','puedo','podemos','podia','poder',
+            'hace','hacer','hecho','haga','hagan',
+            'creo','pienso','digo','dice','dicen','quiero','quiere','queremos','quieren',
+            'mejorar','mejor','peor','bueno','buena','buenos','buenas','mal','mala','malo','malos','malas',
+            'todos','todas','toda','algunas','algunos','varios','varias','otros','otras','otro','otra',
+            'persona','personas','gente','vecino','vecinos','vecina','vecinas','comunidad','comuna','sector','zona','calle',
+            'q','x','d','l','y','o','rr','ya','sea'
+        ]);
+
+        const CATEGORIAS_MEJORA = [
+            { id: 'LUZ',       label: 'Luz / Alumbrado',     kw: ['luz','alumbrado','electric','poste','bombillo','lampar','apagon','iluminacion','iluminar','energia'] },
+            { id: 'AGUA',      label: 'Agua / Acueducto',    kw: ['agua','aguas','tuber','hidr','cisterna','acueducto','presion','escasez','servicio de agua'] },
+            { id: 'VIALIDAD',  label: 'Vialidad / Calles',   kw: ['bache','baches','asfalt','calle','calles','carretera','vial','pavim','hueco','huecos','via ','vias'] },
+            { id: 'ASEO',      label: 'Aseo / Basura',       kw: ['basura','aseo','recolec','contenedor','desech','limpiez','limpia','escombro','botadero'] },
+            { id: 'SEGURIDAD', label: 'Seguridad',           kw: ['seguridad','polic','vigil','robo','delinc','asalto','hampa','milicia'] },
+            { id: 'SALUD',     label: 'Salud',               kw: ['salud','ambulatorio','medico','medic','cdi','hospital','enferm','medicina','medicament'] },
+            { id: 'EDUCACION', label: 'Educacion',           kw: ['escuela','educac','liceo','colegio','maestr','docente','aula','estudiante','estudio'] },
+            { id: 'DRENAJES',  label: 'Drenajes / Cloacas',  kw: ['drenaje','alcantarill','cloaca','inundac','desague','rebose'] },
+            { id: 'PARQUES',   label: 'Areas verdes / Parques', kw: ['parque','plaza','area verde','areas verdes','jardin','recreac','recreativo','arbol'] },
+            { id: 'DEPORTE',   label: 'Deporte',             kw: ['deporte','cancha','polideport','gimnas','futbol','beisbol','baloncesto'] },
+            { id: 'TRANSPORTE',label: 'Transporte',          kw: ['transport','bus','ruta','terminal','pasaje','choferes','autobus'] },
+            { id: 'VIVIENDA',  label: 'Vivienda',            kw: ['vivienda','casa','mision','techo','rancho','barrio nuevo'] },
+            { id: 'GAS',       label: 'Gas',                 kw: ['gas ','bombona','bombonas','gas dom','gas comunal'] },
+            { id: 'EMPLEO',    label: 'Empleo / Economia',   kw: ['empleo','trabajo','ingreso','sueldo','salario','comercio','emprend','bodega','feria'] },
+        ];
+
+        const _normalizarTxt = (txt) => String(txt || '')
+            .toLowerCase()
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ').trim();
+
+        const _clasificarMejora = (txt) => {
+            const t = ' ' + _normalizarTxt(txt) + ' ';
+            const cats = [];
+            CATEGORIAS_MEJORA.forEach(c => {
+                if (c.kw.some(k => t.includes(' ' + k.trim() + ' ') || t.includes(k))) cats.push(c.id);
+            });
+            return cats;
+        };
+
+        function generarPdfAnalisisMejoras() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La libreria de PDF no cargo. Revisa tu conexion a internet y recarga la pagina.');
+                return;
+            }
+            const conTexto = respuestas.filter(r => r.pregunta_mejorar && String(r.pregunta_mejorar).trim().length > 3);
+            if (conTexto.length === 0) {
+                alert('Todavia no hay respuestas con texto en la pregunta "¿Que considera que debemos mejorar...?".');
+                return;
+            }
+
+            // Agrupacion por comuna: catCount, palabras (top N), totales.
+            const porComuna = {};
+            const globalCatCount = {};
+            const globalPalabras = {};
+            conTexto.forEach(r => {
+                const com = (r.comuna || 'Sin comuna registrada').trim() || 'Sin comuna registrada';
+                if (!porComuna[com]) porComuna[com] = { n: 0, catCount: {}, palabras: {}, ejemplos: [] };
+                porComuna[com].n++;
+                const cats = _clasificarMejora(r.pregunta_mejorar);
+                cats.forEach(c => {
+                    porComuna[com].catCount[c] = (porComuna[com].catCount[c] || 0) + 1;
+                    globalCatCount[c] = (globalCatCount[c] || 0) + 1;
+                });
+                if (cats.length === 0) {
+                    porComuna[com].catCount['_OTRO'] = (porComuna[com].catCount['_OTRO'] || 0) + 1;
+                    globalCatCount['_OTRO'] = (globalCatCount['_OTRO'] || 0) + 1;
+                }
+                const tokens = _normalizarTxt(r.pregunta_mejorar).split(/\s+/)
+                    .filter(w => w.length >= 4 && !STOP_WORDS_ES.has(w));
+                tokens.forEach(w => {
+                    porComuna[com].palabras[w] = (porComuna[com].palabras[w] || 0) + 1;
+                    globalPalabras[w] = (globalPalabras[w] || 0) + 1;
+                });
+                if (porComuna[com].ejemplos.length < 3) {
+                    const ej = String(r.pregunta_mejorar).trim();
+                    if (ej.length <= 220) porComuna[com].ejemplos.push(ej);
+                    else porComuna[com].ejemplos.push(ej.slice(0, 215) + '…');
+                }
+            });
+
+            const labelCat = (id) => id === '_OTRO' ? 'Otro / No clasificado' : (CATEGORIAS_MEJORA.find(c => c.id === id)?.label || id);
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const margenX = 15, anchoUtil = 180;
+            let y = 15;
+
+            // Cintillo + header
+            doc.setFillColor(29, 78, 216);
+            doc.rect(0, 0, 216, 10, 'F');
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(15);
+            doc.text('Analisis "¿Que mejorar en su comunidad?" por comuna', margenX, y + 5);
+            y += 12;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(60, 60, 60);
+            doc.text('Consulta Popular del 12 de Julio · pregunta abierta clasificada por temas', margenX, y);
+            y += 6;
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            const fechaExp = new Date().toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            doc.text(`Exportado: ${fechaExp}   ·   Respuestas con texto: ${conTexto.length}   ·   Comunas analizadas: ${Object.keys(porComuna).length}`, margenX, y);
+            y += 6;
+            doc.setFontSize(8);
+            doc.setTextColor(120, 120, 120);
+            doc.text('Metodologia: cada respuesta se normaliza (sin tildes, minusculas) y se asigna a 0+ categorias segun keywords. Una respuesta puede contar en mas de una categoria. "Otro" = no matcheo ninguna keyword.', margenX, y, { maxWidth: anchoUtil });
+            y += 10;
+
+            // ── Bloque global: top categorias y palabras a nivel todas las comunas
+            const topCatsGlobal = Object.entries(globalCatCount).sort((a, b) => b[1] - a[1]);
+            const topPalGlobal = Object.entries(globalPalabras).sort((a, b) => b[1] - a[1]).slice(0, 15);
+
+            doc.setFillColor(240, 240, 250);
+            doc.rect(margenX, y, anchoUtil, 6, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(29, 78, 216);
+            doc.text('Resumen global (todas las comunas)', margenX + 2, y + 4.2);
+            y += 8;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Categorias mas mencionadas:', margenX, y);
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            topCatsGlobal.forEach(([id, n]) => {
+                if (y > 270) { doc.addPage(); y = 15; }
+                const pct = ((n / conTexto.length) * 100).toFixed(1);
+                doc.text(`  • ${labelCat(id)}: ${n} menciones (${pct}% de respuestas)`, margenX, y);
+                y += 4.5;
+            });
+            y += 2;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text('Palabras frecuentes (top 15):', margenX, y);
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            const palGlobalLinea = topPalGlobal.map(([w, n]) => `${w} (${n})`).join(' · ');
+            const palLineas = doc.splitTextToSize(palGlobalLinea, anchoUtil);
+            palLineas.forEach(l => { if (y > 270) { doc.addPage(); y = 15; } doc.text(l, margenX, y); y += 4.5; });
+            y += 6;
+
+            // ── Por comuna: ordenar de mayor n a menor n
+            const comunas = Object.entries(porComuna).sort((a, b) => b[1].n - a[1].n);
+            comunas.forEach(([nombre, info]) => {
+                // espacio minimo necesario para el bloque de la comuna (header + 3 lineas)
+                if (y + 28 > 270) { doc.addPage(); y = 15; }
+                doc.setFillColor(29, 78, 216);
+                doc.rect(margenX, y, anchoUtil, 7, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(`${nombre}  ·  ${info.n} respuesta${info.n === 1 ? '' : 's'} con texto`, margenX + 2, y + 5);
+                y += 9;
+
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.text('Temas principales:', margenX, y); y += 4.5;
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                const topCats = Object.entries(info.catCount).sort((a, b) => b[1] - a[1]).slice(0, 8);
+                topCats.forEach(([id, n]) => {
+                    if (y > 270) { doc.addPage(); y = 15; }
+                    const pct = ((n / info.n) * 100).toFixed(0);
+                    doc.text(`  • ${labelCat(id)}: ${n} (${pct}%)`, margenX, y);
+                    y += 4.2;
+                });
+                y += 1;
+
+                const topPal = Object.entries(info.palabras).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                if (topPal.length > 0) {
+                    if (y > 268) { doc.addPage(); y = 15; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9.5);
+                    doc.text('Palabras mas usadas:', margenX, y); y += 4.5;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    const palLine = topPal.map(([w, n]) => `${w} (${n})`).join(' · ');
+                    const palWrap = doc.splitTextToSize(palLine, anchoUtil);
+                    palWrap.forEach(l => { if (y > 270) { doc.addPage(); y = 15; } doc.text(l, margenX, y); y += 4.2; });
+                }
+                y += 1;
+
+                if (info.ejemplos.length > 0) {
+                    if (y > 265) { doc.addPage(); y = 15; }
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9.5);
+                    doc.text('Ejemplos:', margenX, y); y += 4.5;
+                    doc.setFont('helvetica', 'italic');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(80, 80, 80);
+                    info.ejemplos.forEach(ej => {
+                        const lin = doc.splitTextToSize(`  "${ej}"`, anchoUtil);
+                        lin.forEach(l => { if (y > 270) { doc.addPage(); y = 15; } doc.text(l, margenX, y); y += 4; });
+                    });
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(0, 0, 0);
+                }
+                y += 5;
+            });
+
+            const totalPag = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPag; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Pagina ${i} de ${totalPag}`, 108, 275, { align: 'center' });
+            }
+
+            doc.save(`Analisis_Mejoras_por_Comuna_${new Date().toISOString().substring(0,10)}.pdf`);
+        }
+
         document.getElementById('btnExportarPDF').addEventListener('click', () => {
             const preguntas = [
                 { campo: 'p1_que_pasa_12julio',    label: '1. ¿Qué cree que pasará el 12 de Julio?' },
@@ -2037,6 +2278,9 @@
         // ============================================================
         document.getElementById('btnPartComuna').addEventListener('click', () => {
             generarPdfParticipacion('comuna', [29, 78, 216], respuestas, 'Consulta Popular del 12 de Julio');
+        });
+        document.getElementById('btnAnalisisMejoras').addEventListener('click', () => {
+            generarPdfAnalisisMejoras();
         });
         document.getElementById('btnPartComunidad').addEventListener('click', () => {
             generarPdfParticipacion('comunidad', [29, 78, 216], respuestas, 'Consulta Popular del 12 de Julio');
