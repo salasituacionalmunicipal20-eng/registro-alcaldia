@@ -1192,7 +1192,7 @@
                  .replace(/[\u{FE00}-\u{FE0F}]/gu, "")      // variation selectors
                  .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "");   // regional indicators (banderas)
             // Caracteres de control que rompen jsPDF
-            t = t.replace(/[ --]/g, " ");
+            t = t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ");
             // Colapsar espacios resultantes
             t = t.replace(/[ \t]{2,}/g, " ").trim();
             return t;
