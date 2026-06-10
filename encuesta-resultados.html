@@ -433,6 +433,8 @@
                 </div>
                 <button class="btn-exportar" id="btnExportarPDF" title="Reporte imprimible (una ficha por respuesta)">📄 Exportar PDF</button>
                 <button class="btn-exportar" id="btnExportarCSV" style="background:#0ea5e9;" title="Para abrir en Excel/Sheets">📊 CSV</button>
+                <button class="btn-exportar" id="btnPartComuna" style="background:#16a34a;" title="PDF de participacion agregada por comuna">🌎 PDF por Comuna</button>
+                <button class="btn-exportar" id="btnPartComunidad" style="background:#0d9488;" title="PDF de participacion agregada por comunidad">🏘️ PDF por Comunidad</button>
             </div>
 
             <div class="tabla-wrap">
@@ -545,6 +547,8 @@
                 </div>
                 <button class="btn-exportar" id="gob_btnExportarPDF" style="background:#b45309;" title="Reporte imprimible (una ficha por respuesta)">📄 Exportar PDF</button>
                 <button class="btn-exportar" id="gob_btnExportarCSV" style="background:#d4a017;" title="Para abrir en Excel/Sheets">📊 CSV</button>
+                <button class="btn-exportar" id="gob_btnPartComuna" style="background:#16a34a;" title="PDF de participacion agregada por comuna">🌎 PDF por Comuna</button>
+                <button class="btn-exportar" id="gob_btnPartComunidad" style="background:#0d9488;" title="PDF de participacion agregada por comunidad">🏘️ PDF por Comunidad</button>
             </div>
 
             <div class="tabla-wrap">
@@ -660,6 +664,8 @@
                 </div>
                 <button class="btn-exportar" id="perc_btnExportarPDF" style="background:#5b21b6;" title="Reporte imprimible (una ficha por respuesta)">📄 Exportar PDF</button>
                 <button class="btn-exportar" id="perc_btnExportarCSV" style="background:#6c3aed;" title="Para abrir en Excel/Sheets">📊 CSV</button>
+                <button class="btn-exportar" id="perc_btnPartComuna" style="background:#16a34a;" title="PDF de participacion agregada por comuna">🌎 PDF por Comuna</button>
+                <button class="btn-exportar" id="perc_btnPartComunidad" style="background:#0d9488;" title="PDF de participacion agregada por comunidad">🏘️ PDF por Comunidad</button>
             </div>
 
             <div class="tabla-wrap">
@@ -1277,6 +1283,138 @@
             doc.save(filename);
         }
 
+        // ── PDF: tabla de participacion agregada por comuna o por comunidad.
+        // tipo: 'comuna' | 'comunidad'. Agrupa el array de respuestas, calcula
+        // conteo + %, ordena de mayor a menor y arma una tabla imprimible.
+        // Para comunidad incluimos la comuna como columna auxiliar para evitar
+        // ambiguedades cuando dos comunas tienen comunidades con el mismo nombre.
+        function generarPdfParticipacion(tipo, color, datos, tituloEncuesta) {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La libreria de PDF no cargo. Revisa tu conexion a internet y recarga la pagina.');
+                return;
+            }
+            if (!datos || datos.length === 0) {
+                alert('No hay respuestas para generar el reporte.');
+                return;
+            }
+            const esComuna = tipo === 'comuna';
+            const conteo = {};
+            datos.forEach(r => {
+                if (esComuna) {
+                    const k = (r.comuna || '').trim();
+                    if (!k) return;
+                    conteo[k] = (conteo[k] || 0) + 1;
+                } else {
+                    const cd = (r.comunidad || '').trim();
+                    if (!cd) return;
+                    const k = `${cd}|${(r.comuna || '').trim()}`;
+                    conteo[k] = (conteo[k] || 0) + 1;
+                }
+            });
+            const total = Object.values(conteo).reduce((a, b) => a + b, 0);
+            if (total === 0) {
+                alert('Ninguna respuesta tiene ' + (esComuna ? 'comuna' : 'comunidad') + ' registrada.');
+                return;
+            }
+            const entries = Object.entries(conteo).sort((a, b) => b[1] - a[1]);
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const margenX = 15, anchoUtil = 180;
+            let y = 15;
+
+            // Cintillo de color + titulo del reporte
+            doc.setFillColor(color[0], color[1], color[2]);
+            doc.rect(0, 0, 216, 10, 'F');
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(15);
+            doc.text(`Participacion por ${esComuna ? 'Comuna' : 'Comunidad'}`, margenX, y + 5);
+            y += 12;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(60, 60, 60);
+            doc.text(tituloEncuesta, margenX, y);
+            y += 6;
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            const fechaExp = new Date().toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            doc.text(`Exportado: ${fechaExp}   ·   Total respuestas con ${esComuna ? 'comuna' : 'comunidad'}: ${total}   ·   ${esComuna ? 'Comunas' : 'Comunidades'} distintas: ${entries.length}`, margenX, y);
+            y += 8;
+
+            // Re-render del header de tabla (usado en pagina 1 y tras saltos de pagina)
+            const dibujarHeaderTabla = () => {
+                doc.setFillColor(color[0], color[1], color[2]);
+                doc.rect(margenX, y, anchoUtil, 8, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text('#', margenX + 3, y + 5.5);
+                doc.text(esComuna ? 'Comuna' : 'Comunidad', margenX + 12, y + 5.5);
+                if (!esComuna) doc.text('Comuna', margenX + 100, y + 5.5);
+                doc.text('Cantidad', margenX + 140, y + 5.5, { align: 'right' });
+                doc.text('%', margenX + 175, y + 5.5, { align: 'right' });
+                y += 8;
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+            };
+            dibujarHeaderTabla();
+
+            entries.forEach((row, idx) => {
+                if (y + 7 > 270) {
+                    doc.addPage();
+                    y = 15;
+                    dibujarHeaderTabla();
+                }
+                // Alternancia gris suave
+                if (idx % 2 === 0) {
+                    doc.setFillColor(245, 245, 245);
+                    doc.rect(margenX, y, anchoUtil, 6, 'F');
+                }
+                const pct = ((row[1] / total) * 100).toFixed(1);
+                doc.text(String(idx + 1), margenX + 3, y + 4);
+                if (esComuna) {
+                    const lineas = doc.splitTextToSize(row[0], 125);
+                    doc.text(lineas[0] || row[0], margenX + 12, y + 4);
+                } else {
+                    const [comunidad, comuna] = row[0].split('|');
+                    const lineasC = doc.splitTextToSize(comunidad, 85);
+                    doc.text(lineasC[0] || comunidad, margenX + 12, y + 4);
+                    const lineasComuna = doc.splitTextToSize(comuna || '—', 38);
+                    doc.text(lineasComuna[0] || (comuna || '—'), margenX + 100, y + 4);
+                }
+                doc.text(String(row[1]), margenX + 140, y + 4, { align: 'right' });
+                doc.text(`${pct}%`, margenX + 175, y + 4, { align: 'right' });
+                y += 6;
+            });
+
+            // Fila TOTAL en barra de color
+            y += 2;
+            if (y + 8 > 270) { doc.addPage(); y = 15; }
+            doc.setFillColor(color[0], color[1], color[2]);
+            doc.rect(margenX, y, anchoUtil, 8, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.text('TOTAL', margenX + 12, y + 5.5);
+            doc.text(String(total), margenX + 140, y + 5.5, { align: 'right' });
+            doc.text('100.0%', margenX + 175, y + 5.5, { align: 'right' });
+
+            // Numero de pagina
+            const totalPag = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPag; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Pagina ${i} de ${totalPag}`, 108, 275, { align: 'center' });
+            }
+
+            const slug = tituloEncuesta.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+            const filename = `Participacion_${esComuna ? 'Comuna' : 'Comunidad'}_${slug}_${new Date().toISOString().substring(0,10)}.pdf`;
+            doc.save(filename);
+        }
+
         document.getElementById('btnExportarPDF').addEventListener('click', () => {
             const preguntas = [
                 { campo: 'p1_que_pasa_12julio',    label: '1. ¿Qué cree que pasará el 12 de Julio?' },
@@ -1888,6 +2026,32 @@
             const filename = `Encuesta_Percepcion_${new Date().toISOString().substring(0,10)}.pdf`;
             generarPDFEncuesta('Percepción Ciudadana y Gestión Pública — Respuestas individuales',
                 [108, 58, 237], decoded, preguntas, filename);
+        });
+
+
+        // ============================================================
+        // Listeners de los botones PDF de Participacion por Comuna /
+        // Comunidad. Cada par opera sobre la encuesta de su vista y
+        // reutiliza el color de cintillo de su encuesta para que el
+        // PDF se vea visualmente alineado con el dashboard.
+        // ============================================================
+        document.getElementById('btnPartComuna').addEventListener('click', () => {
+            generarPdfParticipacion('comuna', [29, 78, 216], respuestas, 'Consulta Popular del 12 de Julio');
+        });
+        document.getElementById('btnPartComunidad').addEventListener('click', () => {
+            generarPdfParticipacion('comunidad', [29, 78, 216], respuestas, 'Consulta Popular del 12 de Julio');
+        });
+        document.getElementById('gob_btnPartComuna').addEventListener('click', () => {
+            generarPdfParticipacion('comuna', [180, 83, 9], respuestasGob, 'Reorganizacion del Gobierno');
+        });
+        document.getElementById('gob_btnPartComunidad').addEventListener('click', () => {
+            generarPdfParticipacion('comunidad', [180, 83, 9], respuestasGob, 'Reorganizacion del Gobierno');
+        });
+        document.getElementById('perc_btnPartComuna').addEventListener('click', () => {
+            generarPdfParticipacion('comuna', [108, 58, 237], respuestasPerc, 'Percepcion Ciudadana y Gestion Publica');
+        });
+        document.getElementById('perc_btnPartComunidad').addEventListener('click', () => {
+            generarPdfParticipacion('comunidad', [108, 58, 237], respuestasPerc, 'Percepcion Ciudadana y Gestion Publica');
         });
 
 
