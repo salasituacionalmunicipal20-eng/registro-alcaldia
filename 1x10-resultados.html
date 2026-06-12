@@ -389,6 +389,35 @@
                 </div>
             </div>
 
+            <!-- Link publico + QR para compartir a los jefes 1x10 -->
+            <div class="seccion" style="background:linear-gradient(135deg,#fef2f2 0%,#ffffff 60%);border-left:5px solid #E30613;">
+                <h2 style="margin-bottom:6px;">📱 Link Público para los Jefes 1x10</h2>
+                <p style="margin:0 0 14px;font-size:12.5px;color:#475569;font-weight:600;">
+                    Comparte este enlace o el código QR a cada Jefe de Patrulla. Ellos se autorregistran con su cédula y las 10 cédulas que van a movilizar.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;">
+                    <div>
+                        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;margin-bottom:10px;">
+                            <div style="font-size:11px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Link corto (TinyURL)</div>
+                            <a id="link1x10Corto" href="https://tinyurl.com/1x10cr2026" target="_blank" rel="noopener noreferrer" style="font-size:18px;font-weight:800;color:#0a2351;text-decoration:none;word-break:break-all;">
+                                https://tinyurl.com/1x10cr2026
+                            </a>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="button" class="btn-export azul" id="btnCopiarLink">📋 Copiar link</button>
+                            <button type="button" class="btn-export verde" id="btnAbrirLink">🔗 Abrir para probar</button>
+                            <button type="button" class="btn-export" id="btnCompartirWhatsApp" style="background:#25D366;">💬 Compartir por WhatsApp</button>
+                            <button type="button" class="btn-export" id="btnDescargarQR" style="background:#0a2351;">⬇️ Descargar QR</button>
+                        </div>
+                        <div id="linkCopiadoMsg" style="margin-top:8px;font-size:12px;color:#16a34a;font-weight:700;display:none;">✅ Link copiado al portapapeles</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <img id="qrCode1x10" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=10&data=https%3A%2F%2Ftinyurl.com%2F1x10cr2026" alt="Código QR 1x10" style="width:180px;height:180px;border:2px solid #E30613;border-radius:12px;background:white;display:block;" />
+                        <div style="font-size:11px;color:#64748b;font-weight:700;margin-top:6px;letter-spacing:0.3px;">ESCANEA CON EL CELULAR</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Filtros -->
             <div class="seccion">
                 <h2>Filtros</h2>
@@ -554,7 +583,72 @@
 
             $('contenido').classList.remove('hidden');
             iniciarListeners();
+            inicializarLinkCompartir();
         });
+
+        // ── Botones de la seccion "Link Publico + QR"
+        // El QR ya se renderiza por la URL del <img> via api.qrserver.com — esta
+        // funcion solo ata los 4 botones de accion.
+        function inicializarLinkCompartir() {
+            const LINK_PUBLICO = 'https://tinyurl.com/1x10cr2026';
+            const MSG_WHATSAPP =
+                'Compañero, te enviaron este link porque eres Jefe de Patrulla 1x10.\n\n' +
+                'Por favor entra desde tu telefono y registra a las 10 personas que vas a movilizar:\n' +
+                LINK_PUBLICO + '\n\n' +
+                'Solo necesitas tu cedula + las 10 cedulas de tu grupo. Los nombres se llenan solos.';
+
+            const btnCopiar = $('btnCopiarLink');
+            const btnAbrir = $('btnAbrirLink');
+            const btnWa = $('btnCompartirWhatsApp');
+            const btnQR = $('btnDescargarQR');
+            const msgCopiado = $('linkCopiadoMsg');
+
+            if (btnCopiar) btnCopiar.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(LINK_PUBLICO);
+                    msgCopiado.style.display = 'block';
+                    setTimeout(() => { msgCopiado.style.display = 'none'; }, 2500);
+                } catch {
+                    // Fallback: selecciona el texto del link
+                    const a = $('link1x10Corto');
+                    const r = document.createRange(); r.selectNode(a);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(r);
+                    alert('Tu navegador no permite copiar automaticamente. El link quedo seleccionado, presiona Ctrl+C.');
+                }
+            });
+
+            if (btnAbrir) btnAbrir.addEventListener('click', () => {
+                window.open(LINK_PUBLICO, '_blank', 'noopener,noreferrer');
+            });
+
+            if (btnWa) btnWa.addEventListener('click', () => {
+                const url = 'https://wa.me/?text=' + encodeURIComponent(MSG_WHATSAPP);
+                window.open(url, '_blank', 'noopener,noreferrer');
+            });
+
+            if (btnQR) btnQR.addEventListener('click', async () => {
+                // Descargar el QR como PNG. Pedimos un tamano mas grande
+                // (600x600) para imprimirlo bien en flyers / banners.
+                const QR_HD = 'https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=20&data=' + encodeURIComponent(LINK_PUBLICO);
+                try {
+                    const resp = await fetch(QR_HD);
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'QR-1x10-cristobal-rojas.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (e) {
+                    console.error('Error descargando QR:', e);
+                    // Fallback: abrir en pestana nueva para guardar manual
+                    window.open(QR_HD, '_blank', 'noopener,noreferrer');
+                }
+            });
+        }
 
         // ── Cerrar sesion (botones de header y de pantalla restringida)
         $('btnCerrarSesion').addEventListener('click', cerrarSesionSegura);
