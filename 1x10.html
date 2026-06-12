@@ -196,7 +196,6 @@
             letter-spacing: 0.5px;
             margin-bottom: 8px;
         }
-        .afin-bloque .ocultos { display: none; }
         .afin-bloque .label-cne {
             display: block;
             font-size: 13px;
@@ -752,11 +751,17 @@
                             </select>
                             <input id="afin_cedula_${i}" type="tel" inputmode="numeric" autocomplete="off" placeholder="Cédula" maxlength="10" />
                         </div>
-                        <div class="ocultos">
-                            <input id="afin_nombres_${i}" type="text" />
-                            <input id="afin_apellidos_${i}" type="text" />
-                        </div>
                         <span class="label-cne" id="afin_label_${i}"></span>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <div>
+                                <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Nombres</label>
+                                <input id="afin_nombres_${i}" type="text" placeholder="Si el CNE no llena, escribelo" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Apellidos</label>
+                                <input id="afin_apellidos_${i}" type="text" placeholder="Si el CNE no llena, escribelos" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
+                            </div>
+                        </div>
                     </div>
                 `;
                 cont.appendChild(bloque);
@@ -769,19 +774,6 @@
                 const inputNombres = $(`afin_nombres_${idx}`);
                 const inputApellidos = $(`afin_apellidos_${idx}`);
                 const label = $(`afin_label_${idx}`);
-
-                // Cuando cne-autocompletar.js llena nombres/apellidos y dispara
-                // dispatchEvent("input"), copiamos el resultado a la label visible.
-                const reflejarEnLabel = () => {
-                    const n = (inputNombres.value || '').trim();
-                    const a = (inputApellidos.value || '').trim();
-                    if (n || a) {
-                        label.textContent = `${n} ${a}`.trim();
-                        label.className = 'label-cne';
-                    }
-                };
-                inputNombres.addEventListener('input', reflejarEnLabel);
-                inputApellidos.addEventListener('input', reflejarEnLabel);
 
                 // Si el campo queda vacio, cancelar el timeout pendiente y limpiar label
                 inputCedula.addEventListener('input', () => {
@@ -837,8 +829,8 @@
                         const n = (inputNombres.value || '').trim();
                         const a = (inputApellidos.value || '').trim();
                         if (!n && !a) {
-                            label.textContent = 'Cédula no encontrada en el CNE — puedes continuar igual.';
-                            label.className = 'label-cne warn';
+                            label.textContent = 'ⓘ CNE no encontro esta cedula. Escribe el nombre a mano arriba.';
+                            label.className = 'label-cne';
                         }
                     }, 2500);
                     inputCedula.dataset.timeoutId = String(tid);
