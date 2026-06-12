@@ -62,8 +62,22 @@
         // Registro habitante (formulario principal, jefe de hogar)
         { cedula: 'cedula', nombre: 'nombre', apellido: 'apellido', fecha: 'fecha_nacimiento', nacionalidad: 'nacionalidad', donde_vota: 'donde_vota' },
         // Registro dependiente (modal, prefijo m_)
-        { cedula: 'm_cedula', nombre: 'm_nombre', apellido: 'm_apellido', fecha: 'm_fecha_nacimiento', nacionalidad: 'm_nacionalidad', donde_vota: 'm_donde_vota' }
+        { cedula: 'm_cedula', nombre: 'm_nombre', apellido: 'm_apellido', fecha: 'm_fecha_nacimiento', nacionalidad: 'm_nacionalidad', donde_vota: 'm_donde_vota' },
+        // Modulo 1x10: registro de JEFE de patrulla
+        { cedula: "jefe_cedula", nombre: "jefe_nombres", apellido: "jefe_apellidos", fecha: null, nacionalidad: "jefe_nacionalidad", donde_vota: null }
     ]
+
+    // Modulo 1x10 publico: 10 afines del wizard
+    for (let i = 1; i <= 10; i++) {
+        MAPEOS.push({
+            cedula: `afin_cedula_${i}`,
+            nombre: `afin_nombres_${i}`,
+            apellido: `afin_apellidos_${i}`,
+            fecha: null,
+            nacionalidad: `afin_nacionalidad_${i}`,
+            donde_vota: null
+        })
+    }
 
     function nacionalidadDe(raw, mapeo) {
         // 1) Si hay un <select id="nacionalidad"> y tiene valor, usarlo.
@@ -121,9 +135,11 @@
 
                 if (nombreEl && !nombreEl.value.trim()) {
                     nombreEl.value = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim()
+                    nombreEl.dispatchEvent(new Event('input', { bubbles: true }))
                 }
                 if (apellidoEl && !apellidoEl.value.trim()) {
                     apellidoEl.value = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim()
+                    apellidoEl.dispatchEvent(new Event('input', { bubbles: true }))
                 }
                 // Validar fecha del CNE: descartar "0000-00-00", formato invalido
                 // o anos absurdos. Bug conocido: el CNE devuelve "0000-00-00" como
