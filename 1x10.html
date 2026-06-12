@@ -844,6 +844,14 @@
                     inputCedula.dataset.timeoutId = String(tid);
                 });
             }
+
+            // Re-activar listeners del CNE para los inputs RECIEN creados.
+            // cne-autocompletar.js solo corre al cargar la pagina y registra
+            // listeners sobre los IDs que ya existen. Como los afin_cedula_1..10
+            // se crean ahora dinamicamente, hay que avisarle que vuelva a barrer
+            // el DOM. activar() es idempotente (no duplica listeners por el
+            // dataset.cneAutocompletar marker).
+            if (window._cneActivarMapeos) window._cneActivarMapeos();
         }
 
         // ============================================================

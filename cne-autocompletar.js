@@ -185,4 +185,10 @@
     } else {
         activar()
     }
+
+    // Exponer activar() globalmente para paginas que inyectan inputs de cedula
+    // DESPUES del DOMContentLoaded (ej. 1x10.html que construye los 10 inputs
+    // del paso 3 cuando el usuario hace click en Continuar). Sin esto, los
+    // inputs nuevos no tienen el listener blur y el CNE nunca se consulta.
+    window._cneActivarMapeos = activar
 })()
