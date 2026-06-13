@@ -498,6 +498,7 @@
                                 <th>Cédula</th>
                                 <th>Nombres y Apellidos</th>
                                 <th>Teléfono</th>
+                                <th>Dirección / Secretaría</th>
                                 <th>Fecha Nac. / Edad</th>
                                 <th style="width:60px;text-align:center;">Género</th>
                                 <th>Parroquia</th>
@@ -510,7 +511,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbodyJefes">
-                            <tr><td colspan="12" class="cargando">Cargando datos…</td></tr>
+                            <tr><td colspan="13" class="cargando">Cargando datos…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -771,7 +772,7 @@
                 refrescarUI();
             }, (err) => {
                 console.error('Error leyendo /jefes_1x10_empleados:', err);
-                $('tbodyJefes').innerHTML = `<tr><td colspan="12" class="cargando" style="color:#E30613;">No se pudo cargar la lista de jefes (${escapeHtml(err.message || err.code || 'desconocido')}).</td></tr>`;
+                $('tbodyJefes').innerHTML = `<tr><td colspan="13" class="cargando" style="color:#E30613;">No se pudo cargar la lista de jefes (${escapeHtml(err.message || err.code || 'desconocido')}).</td></tr>`;
             });
 
             unsubAfines = onValue(ref(database, 'afines_1x10_empleados'), (snap) => {
@@ -1000,7 +1001,7 @@
 
             const tbody = $('tbodyJefes');
             if (totalFiltrados === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" class="cargando">No hay jefes registrados con los filtros actuales.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" class="cargando">No hay jefes registrados con los filtros actuales.</td></tr>`;
                 renderPaginacion(0);
                 return;
             }
@@ -1027,6 +1028,7 @@
                         <td><b>${escapeHtml(ced)}</b></td>
                         <td>${escapeHtml(nombre)}</td>
                         <td>${escapeHtml(j.telefono || '-')}</td>
+                        <td>${escapeHtml(j.direccion_secretaria || '—')}</td>
                         <td>${celdaFnJefe}</td>
                         <td style="text-align:center;font-weight:700;">${escapeHtml(fmtGenero(j.genero))}</td>
                         <td>${escapeHtml(j.parroquia || '-')}</td>
@@ -1387,7 +1389,9 @@
                     // con Hoja Asistencia y Asistencia por Centro).
                     const afines = _afinesPorJefe.get(j);
                     // Altura aprox: header del jefe (10mm) + 4mm por afín + 4 de espacio
-                    const alturaBlock = 10 + Math.max(afines.length, 1) * 4.6 + 5;
+                    // +5mm extra si hay direccion/secretaria (linea opcional bajo Comunidad/Afines).
+                    const _altDirJefe = (j.direccion_secretaria || '').trim() ? 5 : 0;
+                    const alturaBlock = 10 + _altDirJefe + Math.max(afines.length, 1) * 4.6 + 5;
                     checkPag(alturaBlock);
 
                     // Caja del jefe
@@ -1408,6 +1412,12 @@
                     doc.text(_safePdf(`Comunidad: ${comunidad}`), margenX, y + 3.5);
                     doc.text(_safePdf(`Afines: ${afines.length}`), margenX + anchoUtil, y + 3.5, { align: 'right' });
                     y += 5;
+                    // Direccion/Secretaria de la Alcaldia a la que pertenece el empleado (opcional).
+                    const _dirSec = (j.direccion_secretaria || '').trim();
+                    if (_dirSec) {
+                        doc.text(_safePdf(`Direccion: ${_dirSec}`), margenX, y + 3.5, { maxWidth: anchoUtil - 4 });
+                        y += 5;
+                    }
 
                     // Tabla compacta de afines
                     if (afines.length === 0) {
@@ -1490,6 +1500,7 @@
                 'tipo', 'cedula', 'nacionalidad', 'nombres', 'apellidos', 'telefono',
                 'genero',
                 'fecha_nacimiento', 'edad',
+                'direccion_secretaria',
                 'parroquia', 'circuito', 'comunidad', 'centro_electoral', 'mesas',
                 'cedula_jefe', 'orden', 'fecha_registro_iso'
             ];
@@ -1509,6 +1520,7 @@
                     j.genero || '',                       // M / F / "" (vacio si no se registro)
                     j.fecha_nacimiento || '',  // fecha_nacimiento del jefe (puede venir vacia si se registro antes de la feature)
                     edadJefe !== null ? String(edadJefe) : '',
+                    j.direccion_secretaria || '',         // direccion/secretaria solo del jefe (afines la dejan vacia)
                     j.parroquia || '',
                     j.circuito || '',
                     j.comunidad_nombre || '',
@@ -1534,6 +1546,7 @@
                         a.genero || '',                       // M / F / "" (vacio si no se registro)
                         a.fecha_nacimiento || '',
                         edadAfin !== null ? String(edadAfin) : '',
+                        '',                                   // direccion_secretaria vacio para afines
                         j.parroquia || '',
                         j.circuito || '',
                         j.comunidad_nombre || '',
@@ -1727,6 +1740,7 @@
             const headerJefes = [
                 'Cedula', 'Nombres', 'Apellidos', 'Telefono', 'Nacionalidad', 'Genero',
                 'Fecha Nac', 'Edad',
+                'Direccion / Secretaria',
                 'Parroquia', 'Circuito Comunal', 'Comunidad', 'Centro Electoral',
                 'Mesas', '# Afines', 'Fecha Registro'
             ];
@@ -1746,6 +1760,7 @@
                         j.genero || '',                       // M / F / "" (vacio si no se registro)
                         j.fecha_nacimiento || '',
                         edadJ !== null ? edadJ : '',
+                        j.direccion_secretaria || '',
                         j.parroquia || '',
                         j.circuito || '',
                         j.comunidad_nombre || '',
@@ -1763,6 +1778,7 @@
             wsJefes['!cols'] = [
                 { wch: 14 }, { wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 6 }, { wch: 7 },
                 { wch: 12 }, { wch: 6 },
+                { wch: 30 },
                 { wch: 22 }, { wch: 20 }, { wch: 26 }, { wch: 32 },
                 { wch: 14 }, { wch: 9 }, { wch: 18 }
             ];
@@ -1772,8 +1788,8 @@
             // amplia (Excel real y LibreOffice).
             wsJefes['!sheetView'] = [{ state: 'frozen', topLeftCell: 'A2', xSplit: 0, ySplit: 1 }];
             wsJefes['!freeze'] = { xSplit: 0, ySplit: 1 }; // (legacy, por si algun viewer la respeta)
-            // Ahora son 15 columnas (A..O) tras agregar Fecha Nac + Edad — actualizar autofilter.
-            wsJefes['!autofilter'] = { ref: `A1:O${filasJefes.length + 1}` };
+            // Ahora son 16 columnas (A..P) tras agregar Direccion/Secretaria — actualizar autofilter.
+            wsJefes['!autofilter'] = { ref: `A1:P${filasJefes.length + 1}` };
             XLSX.utils.book_append_sheet(wb, wsJefes, 'Jefes 1x10');
 
             // ── HOJA 3: Afines ───────────────────────────────────────
@@ -1969,10 +1985,12 @@
                 const comunidad = j.comunidad_nombre || '-';
                 const centro = j.centro_electoral || '-';
                 const mesas = j.mesas || '-';
+                const dirSec = (j.direccion_secretaria || '').trim();
 
                 doc.setDrawColor(10, 35, 81);
                 doc.setLineWidth(0.4);
-                const recH = 28;
+                // Si hay direccion/secretaria, agregamos una fila extra de 5mm al recuadro.
+                const recH = dirSec ? 33 : 28;
                 doc.rect(margenX, y, anchoUtil, recH);
                 doc.setFillColor(10, 35, 81);
                 doc.rect(margenX, y, anchoUtil, 6, 'F');
@@ -2007,6 +2025,12 @@
                 doc.setFont('helvetica', 'normal'); doc.text(_safePdf(centro), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
                 doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Mesas:'), col2X, yy);
                 doc.setFont('helvetica', 'normal'); doc.text(_safePdf(mesas), col2X + labelW, yy);
+                // Linea extra (full width) solo si hay direccion/secretaria registrada.
+                if (dirSec) {
+                    yy += 5;
+                    doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Direccion:'), col1X, yy);
+                    doc.setFont('helvetica', 'normal'); doc.text(_safePdf(dirSec), col1X + labelW, yy, { maxWidth: anchoUtil - labelW - 4 });
+                }
 
                 y += recH + 5;
 

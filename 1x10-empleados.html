@@ -427,6 +427,11 @@
                         <small id="jefe_edad_display" style="display:block; margin-top:6px; font-size:13px; color:#0a2351; font-weight:700;"></small>
                     </div>
 
+                    <div class="campo">
+                        <label>Dirección o Secretaría a la que perteneces <small style="color:#94a3b8; font-weight:400; text-transform:none;">(opcional)</small></label>
+                        <input id="jefe_direccion_secretaria" type="text" maxlength="150" autocomplete="off" placeholder="Ej: Dirección de Hacienda" />
+                    </div>
+
                     <div class="botones-fila">
                         <button type="button" class="btn btn-primario" id="btnPaso1Continuar" disabled>Continuar</button>
                     </div>
@@ -758,6 +763,8 @@
                         $('jefe_genero').value = '';
                         $('jefe_fecha_nacimiento').value = '';
                         $('jefe_edad_display').textContent = '';
+                        const _dirSecEl = $('jefe_direccion_secretaria');
+                        if (_dirSecEl) _dirSecEl.value = '';
                         chequearPaso1();
                         return;
                     }
@@ -784,6 +791,11 @@
                         && data.fecha_nacimiento !== '0000-00-00') {
                         fnInput.value = data.fecha_nacimiento;
                         fnInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    // Precargar direccion/secretaria si venia guardada y el usuario no la tipeo
+                    const dirSecInput = $('jefe_direccion_secretaria');
+                    if (dirSecInput && !dirSecInput.value.trim() && data.direccion_secretaria) {
+                        dirSecInput.value = data.direccion_secretaria;
                     }
                     estado.editando = true;
                     // NO sobreescribir los inputs del paso 1; ya tienen lo que el usuario quiere.
@@ -876,6 +888,8 @@
                     if (fechaEl) {
                         const f = datos.fecha_nacimiento || '';
                         fechaEl.value = (/^\d{4}-\d{2}-\d{2}$/.test(f) && f !== '0000-00-00') ? f : '';
+                        // Disparar change para que se muestre la edad calculada en vivo
+                        fechaEl.dispatchEvent(new Event('change'));
                     }
                     const nacEl = $(`afin_nacionalidad_${id}`); if (nacEl) nacEl.value = datos.nacionalidad || 'V';
                     // Genero del afin (si vino guardado)
@@ -898,6 +912,8 @@
                                 selCirc.dispatchEvent(new Event('change'));
                                 if (datos.comunidad_slug && selCom) {
                                     selCom.value = datos.comunidad_slug;
+                                    // Disparar change para que se muestre el panel del centro electoral
+                                    selCom.dispatchEvent(new Event('change'));
                                 }
                             }
                         }
@@ -984,6 +1000,7 @@
                         <div>
                             <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Fecha de nacimiento</label>
                             <input id="afin_fecha_${id}" type="date" max="2010-12-31" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
+                            <small id="afin_edad_${id}" style="display:block; margin-top:4px; font-size:13px; color:#0a2351; font-weight:700;"></small>
                         </div>
                     </div>
                     <div style="margin-top: 10px;">
@@ -1011,6 +1028,11 @@
                         <select id="afin_comunidad_${id}" name="afin_comunidad_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
                             <option value="">-- Seleccione --</option>
                         </select>
+                        <div id="afin_centro_panel_${id}" style="display:none; margin-top:10px; padding:10px 12px; background:#eff6ff; border:1px solid #93c5fd; border-radius:6px; font-size:13px; color:#1e3a8a;">
+                            <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; color:#1e40af; margin-bottom:4px;">Centro Electoral del afín</div>
+                            <div id="afin_centro_nombre_${id}" style="font-weight:700;">—</div>
+                            <div id="afin_centro_mesas_${id}" style="font-size:12px; color:#64748b; margin-top:2px;">Mesas: —</div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1020,6 +1042,46 @@
             // El boton eliminar es por-bloque (handler local).
             const btnElim = bloque.querySelector('.btn-eliminar-afin');
             btnElim.addEventListener('click', () => eliminarAfin(id));
+
+            // EDAD EN VIVO: muestra "Edad: N años" debajo del input fecha
+            const fechaEl = $(`afin_fecha_${id}`);
+            const edadEl = $(`afin_edad_${id}`);
+            if (fechaEl && edadEl) {
+                const actualizarEdadAfin = () => {
+                    const val = (fechaEl.value || "").trim();
+                    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(val);
+                    if (!m || val === "0000-00-00") { edadEl.textContent = ""; return; }
+                    const anio = parseInt(m[1], 10), mes = parseInt(m[2], 10) - 1, dia = parseInt(m[3], 10);
+                    const hoy = new Date();
+                    let edad = hoy.getFullYear() - anio;
+                    const cumple = (hoy.getMonth() > mes) || (hoy.getMonth() === mes && hoy.getDate() >= dia);
+                    if (!cumple) edad--;
+                    edadEl.textContent = (edad >= 0 && edad <= 120) ? `Edad: ${edad} años` : "";
+                };
+                fechaEl.addEventListener("input", actualizarEdadAfin);
+                fechaEl.addEventListener("change", actualizarEdadAfin);
+            }
+
+            // PANEL CENTRO ELECTORAL READ-ONLY: se rellena al elegir comunidad
+            const selCom = $(`afin_comunidad_${id}`);
+            const panelCentro = $(`afin_centro_panel_${id}`);
+            const nombreCentroEl = $(`afin_centro_nombre_${id}`);
+            const mesasCentroEl = $(`afin_centro_mesas_${id}`);
+            if (selCom && panelCentro) {
+                const actualizarCentroAfin = () => {
+                    const slug = selCom.value;
+                    const data = (slug && TERRITORIO && TERRITORIO.comunidades) ? TERRITORIO.comunidades[slug] : null;
+                    if (!data) {
+                        panelCentro.style.display = "none";
+                        return;
+                    }
+                    panelCentro.style.display = "block";
+                    nombreCentroEl.textContent = data.centro_electoral || "(centro pendiente de asignar)";
+                    mesasCentroEl.textContent = data.mesas ? `Mesas: ${data.mesas}` : "Mesas: —";
+                };
+                selCom.addEventListener("change", actualizarCentroAfin);
+            }
+
             return bloque;
         }
 
@@ -1283,6 +1345,9 @@
                 if (fnJefeVal && /^\d{4}-\d{2}-\d{2}$/.test(fnJefeVal) && fnJefeVal !== '0000-00-00') {
                     payloadJefe.fecha_nacimiento = fnJefeVal;
                 }
+                // Direccion/Secretaria a la que pertenece el empleado (opcional, solo empleados)
+                const dirSec = ($("jefe_direccion_secretaria")?.value || "").trim();
+                if (dirSec) payloadJefe.direccion_secretaria = dirSec;
 
                 await set(ref(database, `jefes_1x10_empleados/${estado.jefe.cedula}`), payloadJefe);
 

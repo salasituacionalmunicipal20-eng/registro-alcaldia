@@ -201,6 +201,7 @@
         "nacionalidad":      { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
         "genero":            { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
         "fecha_nacimiento":  { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },
+        "direccion_secretaria": { ".validate": "newData.isString() && newData.val().length <= 150" },
         "parroquia":         { ".validate": "newData.isString() && newData.val().length <= 80" },
         "circuito":          { ".validate": "newData.isString() && newData.val().length <= 120" },
         "comunidad_slug":    { ".validate": "newData.isString() && newData.val().length <= 80" },
