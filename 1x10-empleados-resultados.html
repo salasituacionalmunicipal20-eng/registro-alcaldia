@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Resultados Movilización 1x10 - Panel Admin</title>
+    <title>Resultados 1x10 Empleados - Panel Admin</title>
     <!-- jsPDF para exportar reportes de movilización imprimibles -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- SheetJS para exportar a Excel .xlsx organizado en múltiples hojas -->
@@ -349,7 +349,7 @@
             <div class="gob-header">
                 <!-- Logos removidos temporalmente. La Alcaldesa indicara cuales usar. -->
                 <div class="titulos">
-                    <h1>RESULTADOS MOVILIZACIÓN 1x10</h1>
+                    <h1>RESULTADOS 1x10 EMPLEADOS ALCALDIA</h1>
                     <p>Sistema de Patrullas Territoriales · Municipio Cristóbal Rojas</p>
                 </div>
             </div>
@@ -405,16 +405,16 @@
 
             <!-- Link publico + QR para compartir a los jefes 1x10 -->
             <div class="seccion" style="background:linear-gradient(135deg,#fef2f2 0%,#ffffff 60%);border-left:5px solid #E30613;">
-                <h2 style="margin-bottom:6px;">📱 Link Público para los Jefes 1x10</h2>
+                <h2 style="margin-bottom:6px;">📱 Link Público para los Empleados de la Alcaldía</h2>
                 <p style="margin:0 0 14px;font-size:12.5px;color:#475569;font-weight:600;">
-                    Comparte este enlace o el código QR a cada Jefe de Patrulla. Ellos se autorregistran con su cédula y las 10 cédulas que van a movilizar.
+                    Comparte este enlace o el código QR a cada empleado de la Alcaldía. Ellos se autorregistran con su cédula y las 10 cédulas que van a movilizar.
                 </p>
                 <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;">
                     <div>
                         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;margin-bottom:10px;">
                             <div style="font-size:11px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Link corto (TinyURL)</div>
-                            <a id="link1x10Corto" href="https://tinyurl.com/1x10cr2026" target="_blank" rel="noopener noreferrer" style="font-size:18px;font-weight:800;color:#0a2351;text-decoration:none;word-break:break-all;">
-                                https://tinyurl.com/1x10cr2026
+                            <a id="link1x10Corto" href="https://tinyurl.com/1x10empleadoscr2026" target="_blank" rel="noopener noreferrer" style="font-size:18px;font-weight:800;color:#0a2351;text-decoration:none;word-break:break-all;">
+                                https://tinyurl.com/1x10empleadoscr2026
                             </a>
                         </div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -426,7 +426,7 @@
                         <div id="linkCopiadoMsg" style="margin-top:8px;font-size:12px;color:#16a34a;font-weight:700;display:none;">✅ Link copiado al portapapeles</div>
                     </div>
                     <div style="text-align:center;">
-                        <img id="qrCode1x10" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=10&data=https%3A%2F%2Ftinyurl.com%2F1x10cr2026" alt="Código QR 1x10" style="width:180px;height:180px;border:2px solid #E30613;border-radius:12px;background:white;display:block;" />
+                        <img id="qrCode1x10" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=10&data=https%3A%2F%2Ftinyurl.com%2F1x10empleadoscr2026" alt="Código QR 1x10 Empleados" style="width:180px;height:180px;border:2px solid #E30613;border-radius:12px;background:white;display:block;" />
                         <div style="font-size:11px;color:#64748b;font-weight:700;margin-top:6px;letter-spacing:0.3px;">ESCANEA CON EL CELULAR</div>
                     </div>
                 </div>
@@ -640,12 +640,9 @@
         // El QR ya se renderiza por la URL del <img> via api.qrserver.com — esta
         // funcion solo ata los 4 botones de accion.
         function inicializarLinkCompartir() {
-            const LINK_PUBLICO = 'https://tinyurl.com/1x10cr2026';
+            const LINK_PUBLICO = 'https://tinyurl.com/1x10empleadoscr2026';
             const MSG_WHATSAPP =
-                'Compañero, te enviaron este link porque eres Jefe de Patrulla 1x10.\n\n' +
-                'Por favor entra desde tu telefono y registra a las 10 personas que vas a movilizar:\n' +
-                LINK_PUBLICO + '\n\n' +
-                'Solo necesitas tu cedula + las 10 cedulas de tu grupo. Los nombres se llenan solos.';
+                'Compañero empleado de la Alcaldia, registra tu 1x10 aqui: tinyurl.com/1x10empleadoscr2026';
 
             const btnCopiar = $('btnCopiarLink');
             const btnAbrir = $('btnAbrirLink');
@@ -687,7 +684,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'QR-1x10-cristobal-rojas.png';
+                    a.download = 'QR-1x10-empleados-cristobal-rojas.png';
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -714,10 +711,10 @@
         }
 
         // ──────────────────────────────────────────────────────────
-        // LISTENERS REACTIVOS sobre /jefes_1x10 y /afines_1x10
+        // LISTENERS REACTIVOS sobre /jefes_1x10_empleados y /afines_1x10_empleados
         // ──────────────────────────────────────────────────────────
         function iniciarListeners() {
-            unsubJefes = onValue(ref(database, 'jefes_1x10'), (snap) => {
+            unsubJefes = onValue(ref(database, 'jefes_1x10_empleados'), (snap) => {
                 jefesMap = {};
                 if (snap.exists()) {
                     snap.forEach(child => {
@@ -726,11 +723,11 @@
                 }
                 refrescarUI();
             }, (err) => {
-                console.error('Error leyendo /jefes_1x10:', err);
+                console.error('Error leyendo /jefes_1x10_empleados:', err);
                 $('tbodyJefes').innerHTML = `<tr><td colspan="11" class="cargando" style="color:#E30613;">No se pudo cargar la lista de jefes (${escapeHtml(err.message || err.code || 'desconocido')}).</td></tr>`;
             });
 
-            unsubAfines = onValue(ref(database, 'afines_1x10'), (snap) => {
+            unsubAfines = onValue(ref(database, 'afines_1x10_empleados'), (snap) => {
                 afinesMap = {};
                 if (snap.exists()) {
                     snap.forEach(child => {
@@ -746,7 +743,7 @@
                 // No silenciar: si esto falla, los KPIs van a mostrar 0 afines
                 // y daria la impresion erronea de que no hay registros. Marcar
                 // los KPIs afectados como "?" y avisar visiblemente al admin.
-                console.error('Error leyendo /afines_1x10:', err);
+                console.error('Error leyendo /afines_1x10_empleados:', err);
                 const kpiAfines = $('kpiAfines'); if (kpiAfines) kpiAfines.textContent = '?';
                 const kpiCobertura = $('kpiCobertura'); if (kpiCobertura) kpiCobertura.textContent = '?';
                 const kpiJC2 = $('kpiJefesCompletos'); if (kpiJC2) kpiJC2.textContent = '?';
@@ -1082,11 +1079,11 @@
 
             try {
                 // Borrado ATOMICO con multi-path update: si una falla, ninguna se
-                // aplica. Sin esto, podiamos dejar afines huerfanos en /afines_1x10
+                // aplica. Sin esto, podiamos dejar afines huerfanos en /afines_1x10_empleados
                 // que sigan inflando el KPI tras borrar el jefe.
                 await update(ref(database), {
-                    [`jefes_1x10/${cedulaJefe}`]: null,
-                    [`afines_1x10/${cedulaJefe}`]: null
+                    [`jefes_1x10_empleados/${cedulaJefe}`]: null,
+                    [`afines_1x10_empleados/${cedulaJefe}`]: null
                 });
                 // los listeners onValue refrescan la UI solos
             } catch (e) {
@@ -1102,7 +1099,7 @@
             const ok = confirm(`¿Eliminar al afín ${nombre} (C.I. ${cedulaAfin}) de esta patrulla?`);
             if (!ok) return;
             try {
-                await remove(ref(database, `afines_1x10/${cedulaJefe}/${cedulaAfin}`));
+                await remove(ref(database, `afines_1x10_empleados/${cedulaJefe}/${cedulaAfin}`));
                 // Reabrir modal refrescado tras un pequeno delay para que el onValue actualice afinesMap
                 setTimeout(() => abrirModalAfines(cedulaJefe), 250);
             } catch (e) {
@@ -1321,7 +1318,7 @@
             }
 
             const fechaSlug = new Date().toISOString().slice(0, 10);
-            const filename = `Movilizacion_1x10_por_${esCentro ? 'CentroElectoral' : 'Comuna'}_${fechaSlug}.pdf`;
+            const filename = `Movilizacion_1x10_empleados_por_${esCentro ? 'CentroElectoral' : 'Comuna'}_${fechaSlug}.pdf`;
             doc.save(filename);
         }
 
@@ -1413,7 +1410,7 @@
             const a = document.createElement('a');
             a.href = url;
             const fechaSlug = new Date().toISOString().slice(0, 10);
-            a.download = `Movilizacion_1x10_completo_${fechaSlug}.csv`;
+            a.download = `Movilizacion_1x10_empleados_completo_${fechaSlug}.csv`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -1706,7 +1703,7 @@
             wsMov['!merges'] = merges;
             XLSX.utils.book_append_sheet(wb, wsMov, 'Movilizacion por Centro');
 
-            XLSX.writeFile(wb, `1x10_movilizacion_${fechaSlug}.xlsx`);
+            XLSX.writeFile(wb, `1x10_empleados_movilizacion_${fechaSlug}.xlsx`);
         }
 
         // ──────────────────────────────────────────────────────────
@@ -1963,7 +1960,7 @@
             }
 
             const fechaSlug = new Date().toISOString().slice(0, 10);
-            doc.save(`1x10_hoja_asistencia_${fechaSlug}.pdf`);
+            doc.save(`1x10_empleados_asistencia_${fechaSlug}.pdf`);
         }
 
         // ──────────────────────────────────────────────────────────
@@ -2244,7 +2241,7 @@
             }
 
             const fechaSlug = new Date().toISOString().slice(0, 10);
-            doc.save(`1x10_asistencia_por_centro_${fechaSlug}.pdf`);
+            doc.save(`1x10_empleados_asistencia_por_centro_${fechaSlug}.pdf`);
         }
 
         // ── Binds de los botones de export

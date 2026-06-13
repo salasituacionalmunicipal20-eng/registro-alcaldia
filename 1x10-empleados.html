@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Movilización 1x10 - Cristóbal Rojas</title>
-    <meta name="description" content="Regístrate como Jefe de Patrulla 1x10 del Municipio Cristóbal Rojas y registra a tus 10 afines." />
+    <title>Movilizacion 1x10 Empleados - Cristobal Rojas</title>
+    <meta name="description" content="Registro 1x10 para empleados de la Alcaldia de Cristobal Rojas." />
     <script defer src="cne-autocompletar.js"></script>
     <style>
         * { box-sizing: border-box; }
@@ -354,8 +354,8 @@
     <div class="contenedor">
         <div class="header">
             <!-- Logos removidos temporalmente. La Alcaldesa indicara cuales usar. -->
-            <h1>Movilización 1x10</h1>
-            <p class="subtitulo">Municipio Cristóbal Rojas</p>
+            <h1>Movilización 1x10 Empleados</h1>
+            <p class="subtitulo">Empleados de la Alcaldía de Cristóbal Rojas</p>
         </div>
 
         <!-- Progreso -->
@@ -735,11 +735,11 @@
             // re-entrar para actualizar sus datos + sus 10 afines.
             estado.editando = false;
             try {
-                const snap = await get(ref(database, `jefes_1x10/${cedNum}`));
+                const snap = await get(ref(database, `jefes_1x10_empleados/${cedNum}`));
                 if (snap.exists()) {
                     const data = snap.val() || {};
                     const confirma = confirm(
-                        `Hola ${data.nombres || ''} ${data.apellidos || ''}, ya estabas registrado como Jefe 1x10 ` +
+                        `Hola ${data.nombres || ''} ${data.apellidos || ''}, ya estabas registrado como Jefe 1x10 Empleado ` +
                         `en la comunidad ${data.comunidad_nombre || '?'}.\n\n` +
                         `¿Continuar para actualizar tus datos y tus 10 afines?`
                     );
@@ -828,7 +828,7 @@
             let afinesPrecarga = null;
             if (estado.editando) {
                 try {
-                    const snapAfines = await get(ref(database, `afines_1x10/${estado.jefe.cedula}`));
+                    const snapAfines = await get(ref(database, `afines_1x10_empleados/${estado.jefe.cedula}`));
                     if (snapAfines.exists()) {
                         const afinesData = snapAfines.val() || {};
                         afinesPrecarga = Object.entries(afinesData)
@@ -1268,7 +1268,7 @@
                 if (estado.jefe.centro_electoral) payloadJefe.centro_electoral = estado.jefe.centro_electoral;
                 if (estado.jefe.mesas) payloadJefe.mesas = estado.jefe.mesas;
 
-                await set(ref(database, `jefes_1x10/${estado.jefe.cedula}`), payloadJefe);
+                await set(ref(database, `jefes_1x10_empleados/${estado.jefe.cedula}`), payloadJefe);
 
                 // Guardar cada afin
                 const tareas = afinesValidos.map(a => {
@@ -1304,7 +1304,7 @@
                         }
                     }
                     return set(
-                        ref(database, `afines_1x10/${estado.jefe.cedula}/${a.cedula}`),
+                        ref(database, `afines_1x10_empleados/${estado.jefe.cedula}/${a.cedula}`),
                         payloadAfin
                     );
                 });
@@ -1320,8 +1320,7 @@
                 // Botón whatsapp para reenviar el link
                 const url = location.href.split('#')[0];
                 const texto = encodeURIComponent(
-                    `¡Hola compañero(a)! Soy Jefe(a) de Patrulla 1x10 del Municipio Cristóbal Rojas. ` +
-                    `Regístrate tú también como Jefe(a) en este link: ${url}`
+                    `Compañero empleado de la Alcaldía, registra a las 10 personas que vas a movilizar el día de la jornada en este link: ${url}`
                 );
                 $('btnCompartirWA').href = `https://wa.me/?text=${texto}`;
 
