@@ -313,6 +313,9 @@
             .gob-header .titulos h1 { font-size: 17px; }
             .gob-header img { height: 44px; }
             .kpi-valor { font-size: 24px; }
+            /* iOS Safari hace auto-zoom al enfocar inputs < 16px. Subimos los
+               controles del filtro en mobile para evitar la molestia. */
+            .filtros input, .filtros select { font-size: 16px; }
         }
     </style>
 </head>
@@ -459,6 +462,14 @@
                         </select>
                     </div>
                     <div class="campo">
+                        <label>Edad mín. afín</label>
+                        <input id="filtroEdadMin" type="number" min="0" max="120" inputmode="numeric" placeholder="Ej: 18" style="min-width:90px; max-width:110px;" />
+                    </div>
+                    <div class="campo">
+                        <label>Edad máx. afín</label>
+                        <input id="filtroEdadMax" type="number" min="0" max="120" inputmode="numeric" placeholder="Ej: 65" style="min-width:90px; max-width:110px;" />
+                    </div>
+                    <div class="campo">
                         <button class="btn-nav" id="btnLimpiarFiltros" type="button">Limpiar filtros</button>
                     </div>
                 </div>
@@ -476,6 +487,9 @@
 
             <!-- Tabla principal -->
             <div class="seccion">
+                <div id="bannerFiltroEdad" class="hidden" style="background:#dbeafe; color:#1e40af; border:1px solid #93c5fd; padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:13px; font-weight:600;">
+                    🔍 Filtro de edad activo: <span id="bannerEdadTexto"></span>. Solo afecta a los afines en el modal, CSV, Excel y PDFs (los jefes siguen todos visibles).
+                </div>
                 <h2>Jefes 1x10 Registrados <span style="font-size:11px;color:#64748b;font-weight:700;margin-left:6px;" id="contadorJefes"></span></h2>
                 <div class="tabla-wrap">
                     <table id="tablaJefes">
@@ -484,6 +498,7 @@
                                 <th>Cédula</th>
                                 <th>Nombres y Apellidos</th>
                                 <th>Teléfono</th>
+                                <th>Fecha Nac. / Edad</th>
                                 <th style="width:60px;text-align:center;">Género</th>
                                 <th>Parroquia</th>
                                 <th>Comuna (Circuito)</th>
@@ -495,7 +510,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbodyJefes">
-                            <tr><td colspan="11" class="cargando">Cargando datos…</td></tr>
+                            <tr><td colspan="12" class="cargando">Cargando datos…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -600,6 +615,38 @@
             const cumpleEsteAnio = (hoy.getMonth() > mes) || (hoy.getMonth() === mes && hoy.getDate() >= dia);
             if (!cumpleEsteAnio) edad--;
             return (edad >= 0 && edad <= 120) ? edad : null;
+        }
+
+        // Filtro de edad para AFINES. Si los dos inputs estan vacios, deja pasar
+        // todo. Si la fecha de nacimiento no se conoce, NO se oculta (mejor mostrar
+        // de mas que ocultar sin razon).
+        function pasaFiltroEdad(fechaNacStr) {
+            const minRaw = ($("filtroEdadMin")?.value || "").trim();
+            const maxRaw = ($("filtroEdadMax")?.value || "").trim();
+            const min = minRaw === "" ? null : parseInt(minRaw, 10);
+            const max = maxRaw === "" ? null : parseInt(maxRaw, 10);
+            // Sin filtro activo: pasa todo.
+            if (min === null && max === null) return true;
+            const edad = calcularEdad(fechaNacStr);
+            // Sin fecha de nacimiento registrada: visible por defecto (no se oculta sin razon).
+            if (edad === null) return true;
+            if (min !== null && !Number.isNaN(min) && edad < min) return false;
+            if (max !== null && !Number.isNaN(max) && edad > max) return false;
+            return true;
+        }
+
+        // Devuelve true si HAY filtro de edad activo (algun input con un entero
+        // valido dentro de [0,120]). Strings vacios, negativos o no numericos no
+        // cuentan como filtro activo, para no mostrar el banner por error de tipeo.
+        function _edadInputValida(s) {
+            if (s === "" || s == null) return false;
+            const n = parseInt(s, 10);
+            return Number.isInteger(n) && n >= 0 && n <= 120;
+        }
+        function filtroEdadActivo() {
+            const min = ($("filtroEdadMin")?.value || "").trim();
+            const max = ($("filtroEdadMax")?.value || "").trim();
+            return _edadInputValida(min) || _edadInputValida(max);
         }
 
         // ──────────────────────────────────────────────────────────
@@ -727,7 +774,7 @@
                 refrescarUI();
             }, (err) => {
                 console.error('Error leyendo /jefes_1x10:', err);
-                $('tbodyJefes').innerHTML = `<tr><td colspan="11" class="cargando" style="color:#E30613;">No se pudo cargar la lista de jefes (${escapeHtml(err.message || err.code || 'desconocido')}).</td></tr>`;
+                $('tbodyJefes').innerHTML = `<tr><td colspan="12" class="cargando" style="color:#E30613;">No se pudo cargar la lista de jefes (${escapeHtml(err.message || err.code || 'desconocido')}).</td></tr>`;
             });
 
             unsubAfines = onValue(ref(database, 'afines_1x10'), (snap) => {
@@ -767,7 +814,43 @@
         function refrescarUI() {
             actualizarKPIs();
             actualizarFiltrosCascada();
+            actualizarBannerFiltroEdad();
             renderTabla();
+        }
+
+        // Banner visual que avisa que el filtro de edad esta activo. NO afecta KPIs
+        // ni la tabla principal — solo deja claro al admin por que el modal/CSV/PDF
+        // muestra menos afines que la columna "Afines" de la tabla.
+        function actualizarBannerFiltroEdad() {
+            const min = ($("filtroEdadMin")?.value || "").trim();
+            const max = ($("filtroEdadMax")?.value || "").trim();
+            const banner = $("bannerFiltroEdad");
+            const txt = $("bannerEdadTexto");
+            if (!banner || !txt) return;
+            if (filtroEdadActivo()) {
+                banner.classList.remove("hidden");
+                // Detectar rango invalido (min > max): pintar el banner en amarillo
+                // y avisar que ningun afin con fecha conocida pasara el filtro.
+                const minN = min !== "" ? parseInt(min, 10) : null;
+                const maxN = max !== "" ? parseInt(max, 10) : null;
+                const rangoInvalido = (minN !== null && maxN !== null && !Number.isNaN(minN) && !Number.isNaN(maxN) && minN > maxN);
+                if (rangoInvalido) {
+                    banner.style.background = "#fef3c7";
+                    banner.style.color = "#92400e";
+                    banner.style.borderColor = "#fbbf24";
+                    txt.textContent = `Rango invalido (${min} a ${max}): min mayor que max. Ningun afin con fecha de nacimiento conocida pasara el filtro.`;
+                } else {
+                    // Restaurar estilo azul original
+                    banner.style.background = "";
+                    banner.style.color = "";
+                    banner.style.borderColor = "";
+                    if (min !== "" && max !== "") txt.textContent = `${min} a ${max} años`;
+                    else if (min !== "") txt.textContent = `${min} años o más`;
+                    else txt.textContent = `hasta ${max} años`;
+                }
+            } else {
+                banner.classList.add("hidden");
+            }
         }
 
         function getJefesArray() {
@@ -887,13 +970,22 @@
                 renderTabla();
             });
         });
+        // Inputs de edad min/max para AFINES — solo refrescan UI (banner + tabla),
+        // no tocan los filtros en cascada ni los KPIs porque la edad no influye
+        // en parroquia/circuito/centro ni en los KPIs (por diseno, "KPIs no se filtran").
+        const _refrescarPorEdad = () => { actualizarBannerFiltroEdad(); renderTabla(); };
+        $('filtroEdadMin').addEventListener('input', _refrescarPorEdad);
+        $('filtroEdadMax').addEventListener('input', _refrescarPorEdad);
         $('btnLimpiarFiltros').addEventListener('click', () => {
             $('filtroBusqueda').value = '';
             $('filtroParroquia').value = '';
             $('filtroCircuito').value = '';
             $('filtroCentro').value = '';
+            $('filtroEdadMin').value = '';
+            $('filtroEdadMax').value = '';
             paginaActual = 1;
             actualizarFiltrosCascada();
+            actualizarBannerFiltroEdad();
             renderTabla();
         });
 
@@ -911,7 +1003,7 @@
 
             const tbody = $('tbodyJefes');
             if (totalFiltrados === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" class="cargando">No hay jefes registrados con los filtros actuales.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="12" class="cargando">No hay jefes registrados con los filtros actuales.</td></tr>`;
                 renderPaginacion(0);
                 return;
             }
@@ -928,11 +1020,17 @@
                 const cls = n >= 10 ? 'completo' : (n > 0 ? 'parcial' : 'vacio');
                 const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
                 const nombre = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '-';
+                const edadJefe = calcularEdad(j.fecha_nacimiento);
+                const fnTxtJefe = fmtFechaNacimiento(j.fecha_nacimiento);
+                const celdaFnJefe = fnTxtJefe
+                    ? `${escapeHtml(fnTxtJefe)}${edadJefe !== null ? ` <small style="color:#64748b;">(${edadJefe} años)</small>` : ''}`
+                    : '—';
                 return `
                     <tr>
                         <td><b>${escapeHtml(ced)}</b></td>
                         <td>${escapeHtml(nombre)}</td>
                         <td>${escapeHtml(j.telefono || '-')}</td>
+                        <td>${celdaFnJefe}</td>
                         <td style="text-align:center;font-weight:700;">${escapeHtml(fmtGenero(j.genero))}</td>
                         <td>${escapeHtml(j.parroquia || '-')}</td>
                         <td>${escapeHtml(j.circuito || '-')}</td>
@@ -996,11 +1094,28 @@
             const j = jefesMap[cedulaJefe];
             if (!j) { alert('No se encontró al jefe en la base de datos.'); return; }
             const afinesObj = afinesMap[cedulaJefe] || {};
-            const afines = Object.entries(afinesObj).map(([c, a]) => ({ cedula: c, ...a }))
+            const afinesTodos = Object.entries(afinesObj).map(([c, a]) => ({ cedula: c, ...a }))
                                    .sort((a, b) => (a.orden || 99) - (b.orden || 99));
+            // Aplicar el filtro de edad SOLO a la lista de afines (el jefe sigue siempre visible).
+            const afines = afinesTodos.filter(a => pasaFiltroEdad(a.fecha_nacimiento));
 
             const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + cedulaJefe;
             const nombre = `${j.nombres || ''} ${j.apellidos || ''}`.trim() || '-';
+            // Texto del titulo: si hay filtro de edad activo, desglosar
+            // cuantos estan realmente en rango vs sin fecha (que pasan por la
+            // regla "sin fecha => visible") para no inflar la metrica de cobertura.
+            let tituloAfines;
+            if (filtroEdadActivo()) {
+                const enRango = afinesTodos.filter(a => {
+                    const e = calcularEdad(a.fecha_nacimiento);
+                    return e !== null && pasaFiltroEdad(a.fecha_nacimiento);
+                }).length;
+                const sinFecha = afinesTodos.filter(a => calcularEdad(a.fecha_nacimiento) === null).length;
+                const sinFechaTxt = sinFecha > 0 ? ` + ${sinFecha} sin fecha de nacimiento` : "";
+                tituloAfines = `Afines de ${escapeHtml(nombre)} (${enRango} en rango${sinFechaTxt}, de ${afinesTodos.length} totales)`;
+            } else {
+                tituloAfines = `Afines de ${escapeHtml(nombre)} (${afines.length})`;
+            }
 
             const filasAfin = afines.length
                 ? afines.map(a => {
@@ -1025,7 +1140,7 @@
 
             $('modalCaja').innerHTML = `
                 <button class="cerrar" id="btnCerrarModal">✕ Cerrar</button>
-                <h2>Afines de ${escapeHtml(nombre)}</h2>
+                <h2>${tituloAfines}</h2>
                 <div class="meta">
                     <b>Cédula del jefe:</b> ${escapeHtml(ced)}<br>
                     <b>Teléfono:</b> ${escapeHtml(j.telefono || '-')}<br>
@@ -1052,10 +1167,11 @@
                 </div>
             `;
             $('modal').classList.remove('hidden');
+            // Botones internos del modalCaja: se reasignan en cada apertura porque
+            // el contenido se regenera. Usamos addEventListener sobre nodos nuevos,
+            // no acumulamos handlers en el #modal. El backdrop tiene su listener
+            // unico global mas abajo (fuera de esta funcion) para evitar leaks.
             $('btnCerrarModal').addEventListener('click', cerrarModal);
-            $('modal').addEventListener('click', (e) => {
-                if (e.target.id === 'modal') cerrarModal();
-            });
             $('modalCaja').querySelectorAll('button[data-afin]').forEach(btn => {
                 btn.addEventListener('click', () => eliminarAfin(cedulaJefe, btn.dataset.afin));
             });
@@ -1101,12 +1217,23 @@
             const nombre = `${afin.nombres || ''} ${afin.apellidos || ''}`.trim() || cedulaAfin;
             const ok = confirm(`¿Eliminar al afín ${nombre} (C.I. ${cedulaAfin}) de esta patrulla?`);
             if (!ok) return;
+            // Borrado OPTIMISTA: quitamos la entrada local de afinesMap y reabrimos
+            // el modal ANTES de esperar a que el listener onValue propague el cambio.
+            // En 3G/satelite el onValue puede tardar > 250ms y el modal reabria con
+            // el afin todavia visible, dando la impresion de que el borrado fallo.
+            // Si remove() rechaza, restauramos.
+            const afinBackup = afin;
+            if (afinesMap[cedulaJefe]) delete afinesMap[cedulaJefe][cedulaAfin];
+            abrirModalAfines(cedulaJefe);
             try {
                 await remove(ref(database, `afines_1x10/${cedulaJefe}/${cedulaAfin}`));
-                // Reabrir modal refrescado tras un pequeno delay para que el onValue actualice afinesMap
-                setTimeout(() => abrirModalAfines(cedulaJefe), 250);
+                // El listener onValue terminara de sincronizar; el modal ya esta correcto.
             } catch (e) {
                 console.error('Error eliminando afín:', e);
+                // Restaurar la entrada local y refrescar el modal
+                if (!afinesMap[cedulaJefe]) afinesMap[cedulaJefe] = {};
+                afinesMap[cedulaJefe][cedulaAfin] = afinBackup;
+                abrirModalAfines(cedulaJefe);
                 alert('No se pudo eliminar al afín: ' + (e.message || e.code || 'error desconocido'));
             }
         }
@@ -1197,9 +1324,19 @@
                 day: '2-digit', month: '2-digit', year: 'numeric',
                 hour: '2-digit', minute: '2-digit'
             });
-            const totalAfin = filtrados.reduce((acc, j) => acc + j._afinesCount, 0);
+            // Pre-calculo de afines filtrados por edad por jefe (para coherencia
+            // con los otros PDFs y con el banner). Si no hay filtro activo, equivale
+            // a tomar j._afines tal cual.
+            const _afinesPorJefe = new Map();
+            filtrados.forEach(j => {
+                _afinesPorJefe.set(j, (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento)));
+            });
+            const totalAfin = filtrados.reduce((acc, j) => acc + _afinesPorJefe.get(j).length, 0);
+            const edadInfo = filtroEdadActivo()
+                ? `   *   Edad afin: ${($('filtroEdadMin').value || '0')}-${($('filtroEdadMax').value || '120')} anos`
+                : '';
             doc.text(_safePdf(
-                `Exportado: ${fechaExp}   *   Jefes: ${filtrados.length}   *   Afines: ${totalAfin}   *   Total personas: ${filtrados.length + totalAfin}   *   Grupos: ${entries.length}`
+                `Exportado: ${fechaExp}   *   Jefes: ${filtrados.length}   *   Afines: ${totalAfin}   *   Total personas: ${filtrados.length + totalAfin}   *   Grupos: ${entries.length}${edadInfo}`
             ), margenX, y);
             y += 7;
 
@@ -1219,7 +1356,9 @@
                 doc.text(_safePdf(nombreGrupo), margenX + 2, y + 5.5);
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
-                const totalP = jefesGrupo.reduce((a, j) => a + j._afinesCount, 0) + jefesGrupo.length;
+                // Sumar afines YA filtrados por edad para mantener consistencia con
+                // los otros PDFs (Hoja Asistencia y Asistencia por Centro).
+                const totalP = jefesGrupo.reduce((a, j) => a + _afinesPorJefe.get(j).length, 0) + jefesGrupo.length;
                 doc.text(_safePdf(`${jefesGrupo.length} jefe${jefesGrupo.length === 1 ? '' : 's'} - ${totalP} personas`),
                          margenX + anchoUtil - 2, y + 5.5, { align: 'right' });
                 y += 10;
@@ -1247,7 +1386,9 @@
                     const tel = j.telefono || '-';
                     const comunidad = j.comunidad_nombre || '-';
 
-                    const afines = j._afines || [];
+                    // Aplicar el filtro de edad a los afines del jefe (consistente
+                    // con Hoja Asistencia y Asistencia por Centro).
+                    const afines = _afinesPorJefe.get(j);
                     // Altura aprox: header del jefe (10mm) + 4mm por afín + 4 de espacio
                     const alturaBlock = 10 + Math.max(afines.length, 1) * 4.6 + 5;
                     checkPag(alturaBlock);
@@ -1369,7 +1510,7 @@
                     j.apellidos || '',
                     j.telefono || '',
                     j.genero || '',                       // M / F / "" (vacio si no se registro)
-                    j.fecha_nacimiento || '',  // los jefes hoy no tienen fecha_nacimiento; queda vacia
+                    j.fecha_nacimiento || '',  // fecha_nacimiento del jefe (puede venir vacia si se registro antes de la feature)
                     edadJefe !== null ? String(edadJefe) : '',
                     j.parroquia || '',
                     j.circuito || '',
@@ -1382,7 +1523,8 @@
                 ].map(csvEscape).join(','));
 
                 // Filas de cada afín — heredan ubicacion del jefe
-                (j._afines || []).forEach(a => {
+                // Filtro de edad SOLO aplica a los afines (el jefe ya se imprimio arriba).
+                (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento)).forEach(a => {
                     const fechaAfin = a.fecha_registro ? new Date(a.fecha_registro).toISOString() : '';
                     const edadAfin = calcularEdad(a.fecha_nacimiento);
                     rows.push([
@@ -1526,9 +1668,21 @@
                 .sort((a, b) => b.total - a.total)
                 .slice(0, 10);
 
+            // Si hay filtro de edad activo, agregar una fila aclaratoria al
+            // inicio del Resumen para evitar confusion: los KPIs/Movilizacion
+            // por Centro/Jefes 1x10 NO aplican filtro (por diseno, "KPIs no se
+            // filtran"), solo la hoja "Afines" lo respeta.
+            const filtroEdadFilaResumen = filtroEdadActivo()
+                ? [
+                    ['Filtro de edad activo (solo aplica a hoja "Afines")',
+                     `${($('filtroEdadMin').value || '0')}-${($('filtroEdadMax').value || '120')} anos`],
+                    []
+                  ]
+                : [];
             const matrizResumen = [
                 [{ v: 'Resultados Movilizacion 1x10', s: _estiloTituloExcel() }],
                 [`Generado: ${fechaHumana}`],
+                ...filtroEdadFilaResumen,
                 [],
                 [{ v: 'KPI', s: _estiloCabeceraExcel() }, { v: 'Valor', s: _estiloCabeceraExcel() }],
                 ['Total Jefes 1x10', totalJefes],
@@ -1559,40 +1713,51 @@
             ];
             const wsResumen = _aoaToWs(matrizResumen);
             wsResumen['!cols'] = [{ wch: 40 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
-            // Mergeamos los titulos para que ocupen toda la fila visualmente.
-            // Indices: titulo=0, "Jefes por Parroquia"=12, "Top 10 Centros"=14+filasParroquia.length+1
-            // (Las filas de KPIs ahora son 7 en vez de 6 — se agrego "Promedio afines/jefe" y "Jefes con 10+").
+            // Indices dinamicos para los merges del titulo (las dos primeras
+            // filas son fijas, mas 0 o 2 si hay aviso de filtro de edad).
+            const _offEdad = filtroEdadFilaResumen.length; // 0 o 2
             wsResumen['!merges'] = [
                 { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
-                { s: { r: 12, c: 0 }, e: { r: 12, c: 3 } },
-                { s: { r: 14 + filasParroquia.length + 1, c: 0 }, e: { r: 14 + filasParroquia.length + 1, c: 3 } }
+                { s: { r: 12 + _offEdad, c: 0 }, e: { r: 12 + _offEdad, c: 3 } },
+                { s: { r: 14 + _offEdad + filasParroquia.length + 1, c: 0 }, e: { r: 14 + _offEdad + filasParroquia.length + 1, c: 3 } }
             ];
             XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
 
             // ── HOJA 2: Jefes 1x10 ───────────────────────────────────
+            // Helper local: cantidad de afines del jefe DESPUES del filtro de edad.
+            // Cuando el filtro no esta activo, equivale a j._afinesCount.
+            const _afinesEnRango = (j) => (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento)).length;
             const headerJefes = [
                 'Cedula', 'Nombres', 'Apellidos', 'Telefono', 'Nacionalidad', 'Genero',
+                'Fecha Nac', 'Edad',
                 'Parroquia', 'Circuito Comunal', 'Comunidad', 'Centro Electoral',
                 'Mesas', '# Afines', 'Fecha Registro'
             ];
             const filasJefes = filtrados
                 .slice()
                 .sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0))
-                .map(j => [
-                    (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
-                    j.nombres || '',
-                    j.apellidos || '',
-                    j.telefono || '',
-                    j.nacionalidad || '',
-                    j.genero || '',                       // M / F / "" (vacio si no se registro)
-                    j.parroquia || '',
-                    j.circuito || '',
-                    j.comunidad_nombre || '',
-                    j.centro_electoral || '',
-                    j.mesas || '',
-                    j._afinesCount,
-                    j.fecha_registro ? fmtFecha(j.fecha_registro) : ''
-                ]);
+                .map(j => {
+                    const edadJ = calcularEdad(j.fecha_nacimiento);
+                    // Usar conteo filtrado por edad para que la columna # Afines
+                    // coincida con las filas reales en la hoja "Afines".
+                    return [
+                        (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
+                        j.nombres || '',
+                        j.apellidos || '',
+                        j.telefono || '',
+                        j.nacionalidad || '',
+                        j.genero || '',                       // M / F / "" (vacio si no se registro)
+                        j.fecha_nacimiento || '',
+                        edadJ !== null ? edadJ : '',
+                        j.parroquia || '',
+                        j.circuito || '',
+                        j.comunidad_nombre || '',
+                        j.centro_electoral || '',
+                        j.mesas || '',
+                        _afinesEnRango(j),
+                        j.fecha_registro ? fmtFecha(j.fecha_registro) : ''
+                    ];
+                });
             const matrizJefes = [
                 headerJefes.map(h => ({ v: h, s: _estiloCabeceraExcel() })),
                 ...filasJefes
@@ -1600,12 +1765,18 @@
             const wsJefes = _aoaToWs(matrizJefes);
             wsJefes['!cols'] = [
                 { wch: 14 }, { wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 6 }, { wch: 7 },
+                { wch: 12 }, { wch: 6 },
                 { wch: 22 }, { wch: 20 }, { wch: 26 }, { wch: 32 },
                 { wch: 14 }, { wch: 9 }, { wch: 18 }
             ];
-            wsJefes['!freeze'] = { xSplit: 0, ySplit: 1 };
-            // Ahora son 13 columnas (A..M) en vez de 12 (A..L) — actualizar autofilter.
-            wsJefes['!autofilter'] = { ref: `A1:M${filasJefes.length + 1}` };
+            // SheetJS community ignora la clave propietaria '!freeze'. La API real
+            // para congelar fila 1 es '!sheetView' (state='frozen' + topLeftCell)
+            // mas wb.Workbook.Views[*]. Configuramos ambos para compatibilidad
+            // amplia (Excel real y LibreOffice).
+            wsJefes['!sheetView'] = [{ state: 'frozen', topLeftCell: 'A2', xSplit: 0, ySplit: 1 }];
+            wsJefes['!freeze'] = { xSplit: 0, ySplit: 1 }; // (legacy, por si algun viewer la respeta)
+            // Ahora son 15 columnas (A..O) tras agregar Fecha Nac + Edad — actualizar autofilter.
+            wsJefes['!autofilter'] = { ref: `A1:O${filasJefes.length + 1}` };
             XLSX.utils.book_append_sheet(wb, wsJefes, 'Jefes 1x10');
 
             // ── HOJA 3: Afines ───────────────────────────────────────
@@ -1618,7 +1789,8 @@
             filtrados.forEach(j => {
                 const cedJefe = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
                 const nomJefe = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim();
-                (j._afines || []).forEach(a => {
+                // Filtro de edad SOLO aplica a los afines (el jefe va en otra hoja).
+                (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento)).forEach(a => {
                     const edad = calcularEdad(a.fecha_nacimiento);
                     filasAfines.push([
                         cedJefe,
@@ -1648,6 +1820,8 @@
                 { wch: 7 }, { wch: 14 }, { wch: 22 }, { wch: 22 },
                 { wch: 14 }, { wch: 7 }, { wch: 12 }, { wch: 6 }, { wch: 6 }, { wch: 18 }
             ];
+            // Misma estrategia que wsJefes: API real '!sheetView' + legacy '!freeze'.
+            wsAfines['!sheetView'] = [{ state: 'frozen', topLeftCell: 'A2', xSplit: 0, ySplit: 1 }];
             wsAfines['!freeze'] = { xSplit: 0, ySplit: 1 };
             // Ahora son 14 columnas (A..N) en vez de 13 (A..M) — actualizar autofilter.
             wsAfines['!autofilter'] = { ref: `A1:N${filasAfines.length + 1}` };
@@ -1667,7 +1841,8 @@
             Object.entries(porCentroDetalle)
                 .sort((a, b) => a[0].localeCompare(b[0], 'es'))
                 .forEach(([centro, jefesCen]) => {
-                    const totalPCen = jefesCen.length + jefesCen.reduce((a, j) => a + j._afinesCount, 0);
+                    // Usar conteo de afines en rango para coherencia con la hoja Afines.
+                    const totalPCen = jefesCen.length + jefesCen.reduce((a, j) => a + _afinesEnRango(j), 0);
                     matrizMov.push([{
                         v: `${centro}  —  ${jefesCen.length} jefe(s)  /  ${totalPCen} personas`,
                         s: _estiloGrupoExcel()
@@ -1694,7 +1869,7 @@
                                 j.telefono || '',
                                 j.comunidad_nombre || '',
                                 j.mesas || '',
-                                j._afinesCount
+                                _afinesEnRango(j)
                             ]);
                         });
                     matrizMov.push([]); // fila vacia entre centros
@@ -1705,6 +1880,11 @@
             ];
             wsMov['!merges'] = merges;
             XLSX.utils.book_append_sheet(wb, wsMov, 'Movilizacion por Centro');
+
+            // Configurar Workbook.Views para que las hojas que usan '!sheetView'
+            // (Jefes 1x10 y Afines) realmente abran con freeze pane aplicado.
+            wb.Workbook = wb.Workbook || {};
+            wb.Workbook.Views = [{ RTL: false }];
 
             XLSX.writeFile(wb, `1x10_movilizacion_${fechaSlug}.xlsx`);
         }
@@ -1904,11 +2084,18 @@
             jefesVisibles.forEach((j, idxJefe) => {
                 if (idxJefe > 0) doc.addPage();
 
-                const afines = j._afines || [];
-                // Si el jefe no tiene afines aun, mostrar 10 filas vacias para
-                // llenar a mano (caso clasico de hoja en blanco para campo).
-                // Si tiene afines, usar la cantidad real (puede ser <10 o >10).
-                const totalAfinesFila = afines.length > 0 ? afines.length : 10;
+                // Filtro de edad SOLO sobre los afines (el jefe se imprime igual).
+                const afinesTodos = j._afines || [];
+                const afines = afinesTodos.filter(a => pasaFiltroEdad(a.fecha_nacimiento));
+                // Distinguir tres casos:
+                //   (a) Jefe sin afines registrados   -> 10 filas vacias (clasico hoja en blanco para campo).
+                //   (b) Jefe con afines en rango       -> usar afines.length real.
+                //   (c) Jefe con afines pero TODOS excluidos por filtro de edad
+                //       -> 0 filas + nota explicativa (no confundir con caso a).
+                const afinesExcluidosPorEdad = afinesTodos.length > 0 && afines.length === 0 && filtroEdadActivo();
+                const totalAfinesFila = afines.length > 0
+                    ? afines.length
+                    : (afinesExcluidosPorEdad ? 0 : 10);
 
                 // Pagina inicial del jefe
                 let { y, ced, nombre, tel } = pintarCabeceraPagina(j, false);
@@ -1916,6 +2103,15 @@
                 // Fila 0: el jefe (gris)
                 pintarFila(y, 'J', true, { ced, nom: nombre, tel, gen: j.genero });
                 y += filaH;
+
+                // Nota explicativa si todos los afines fueron excluidos por el filtro de edad.
+                if (afinesExcluidosPorEdad) {
+                    doc.setTextColor(146, 64, 14);
+                    doc.setFont('helvetica', 'italic');
+                    doc.setFontSize(8.5);
+                    doc.text(_safePdf(`Nota: ${afinesTodos.length} afin(es) registrado(s) fuera del rango de edad activo - no se imprimen filas.`), margenX, y + 4);
+                    y += 6;
+                }
 
                 let afinIdx = 0;
                 let enPagina = 0; // cuantas filas de afin ya pintadas en la pagina actual
@@ -2041,7 +2237,9 @@
                     if (j.mesas) mesasSet.add(String(j.mesas));
                     if (j.parroquia) parrSet.add(String(j.parroquia));
                     if (j.circuito) comuSet.add(String(j.circuito));
-                    const afines = j._afines || [];
+                    // Filtro de edad SOLO sobre afines (asi el contador del recuadro
+                    // coincide con las filas realmente pintadas en la tabla del PDF).
+                    const afines = (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento));
                     totalPersonas += 1 + afines.length;
                 });
                 return {
@@ -2106,7 +2304,11 @@
                 yy += 5;
                 doc.setFont('helvetica', 'bold'); doc.text(_safePdf('# de jefes:'), col1X, yy);
                 doc.setFont('helvetica', 'normal'); doc.text(_safePdf(String(infoCentro.nJefes)), col1X + labelW, yy);
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Total personas:'), col2X, yy);
+                // En las hojas de continuacion, aclarar que el total se refiere al
+                // centro completo (no solo a las personas que caben en esa pagina),
+                // para no confundir al coordinador.
+                const labelTotal = esContinuacion ? 'Total (centro):' : 'Total personas:';
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf(labelTotal), col2X, yy);
                 doc.setFont('helvetica', 'normal'); doc.text(_safePdf(String(infoCentro.nPersonas)), col2X + labelW, yy);
 
                 y += recH + 5;
@@ -2210,8 +2412,8 @@
                     pintarFila(y, numero, true, { ced: cedJ, nom: nomJ, tel: telJ, com: comJ, gen: j.genero });
                     y += filaH;
 
-                    // Afines del jefe
-                    const afines = j._afines || [];
+                    // Afines del jefe (filtrados por rango de edad, si esta activo)
+                    const afines = (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento));
                     afines.forEach(a => {
                         if (y + filaH > Y_TOPE_PIE) {
                             pintarPie(y);
@@ -2259,6 +2461,21 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) cerrarModal();
         });
+        // ── Backdrop click cierra el modal — listener UNICO global para evitar
+        // que se acumule un handler en cada apertura (leak observado al reabrir
+        // el modal tras eliminar afines, que invoca abrirModalAfines via timeout).
+        // Usamos mousedown+mouseup en lugar de click para no cerrar accidentalmente
+        // cuando el usuario empieza a seleccionar texto DENTRO del modal y suelta
+        // afuera (el click se dispara con target=#modal y cerraria perdiendo la seleccion).
+        (function(){
+            let _mouseDownOnBackdrop = false;
+            const _modalEl = $('modal');
+            _modalEl.addEventListener('mousedown', (e) => { _mouseDownOnBackdrop = (e.target === _modalEl); });
+            _modalEl.addEventListener('mouseup', (e) => {
+                if (_mouseDownOnBackdrop && e.target === _modalEl) cerrarModal();
+                _mouseDownOnBackdrop = false;
+            });
+        })();
     </script>
 </body>
 </html>

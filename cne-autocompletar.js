@@ -56,6 +56,10 @@
     // El campo `donde_vota` (Centro de Votación) se llena con el
     // centro_electoral del CNE. La UBCH NO se toca — se queda como el
     // operador la asigna a mano.
+    // NOTA: los bloques afin_cedula_<n> del modulo 1x10 NO estan en MAPEOS porque
+    // son dinamicos (el operador agrega/elimina afines a voluntad). Su enganche
+    // se hace via registrarMapeoAfinPorId(), el MutationObserver y el scan
+    // inicial al final de este archivo — activar() no los toca.
     const MAPEOS = [
         // Encuestas publicas (prefijo f_, plural) - no tienen donde_vota
         { cedula: 'f_cedula', nombre: 'f_nombres', apellido: 'f_apellidos', fecha: 'f_fecha_nacimiento', nacionalidad: null, donde_vota: null },
@@ -64,7 +68,7 @@
         // Registro dependiente (modal, prefijo m_)
         { cedula: 'm_cedula', nombre: 'm_nombre', apellido: 'm_apellido', fecha: 'm_fecha_nacimiento', nacionalidad: 'm_nacionalidad', donde_vota: 'm_donde_vota' },
         // Modulo 1x10: registro de JEFE de patrulla
-        { cedula: "jefe_cedula", nombre: "jefe_nombres", apellido: "jefe_apellidos", fecha: null, nacionalidad: "jefe_nacionalidad", donde_vota: null }
+        { cedula: "jefe_cedula", nombre: "jefe_nombres", apellido: "jefe_apellidos", fecha: "jefe_fecha_nacimiento", nacionalidad: "jefe_nacionalidad", donde_vota: null }
     ]
 
     function nacionalidadDe(raw, mapeo) {
@@ -101,6 +105,13 @@
             cedulaEl.style.background = '#fef3c7'
             cedulaEl.placeholder = 'Consultando CNE...'
 
+            // Bandera para saber si la consulta termino con un match exitoso:
+            // si es true, el flash verde + setTimeout se encarga de restaurar el
+            // fondo; si es false (error, no_data, network fail), restauramos
+            // explicitamente en el finally. Antes comparabamos strings de
+            // style.background contra 'rgb(254, 243, 199)', lo cual era fragil
+            // entre navegadores que normalizan el shorthand de forma distinta.
+            let exito = false
             try {
                 const resp = await fetch(ENDPOINT, {
                     method: 'POST',
@@ -143,14 +154,16 @@
                     dondeVotaEl.value = d.cne.centro_electoral
                 }
                 // Flash verde breve de confirmacion
+                exito = true
                 cedulaEl.style.background = '#dcfce7'
                 setTimeout(() => { cedulaEl.style.background = bgOriginal }, 1500)
             } catch (err) {
                 console.warn('[CNE] consulta fallida:', err)
             } finally {
                 cedulaEl.placeholder = placeholderOriginal
-                // Si terminamos sin exito, restaurar fondo
-                if (cedulaEl.style.background === 'rgb(254, 243, 199)') {
+                // Si terminamos sin exito, restaurar fondo (sin depender de leer
+                // style.background, cuyo valor cadena varia entre navegadores).
+                if (!exito) {
                     cedulaEl.style.background = bgOriginal
                 }
             }
