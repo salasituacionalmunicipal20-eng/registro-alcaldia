@@ -404,6 +404,21 @@
                     <div class="kpi-valor" id="kpiMujeres">—</div>
                     <div class="kpi-sub">jefes + afines (genero = F)</div>
                 </div>
+                <div class="kpi verde">
+                    <div class="kpi-titulo">15 a 17 años</div>
+                    <div class="kpi-valor" id="kpiEdad15a17">—</div>
+                    <div class="kpi-sub">Jefes + Afines</div>
+                </div>
+                <div class="kpi morado">
+                    <div class="kpi-titulo">18 a 35 años</div>
+                    <div class="kpi-valor" id="kpiEdad18a35">—</div>
+                    <div class="kpi-sub">Jefes + Afines</div>
+                </div>
+                <div class="kpi naranja">
+                    <div class="kpi-titulo">36 años o más</div>
+                    <div class="kpi-valor" id="kpiEdad36mas">—</div>
+                    <div class="kpi-sub">Jefes + Afines</div>
+                </div>
             </div>
 
             <!-- Link publico + QR para compartir a los jefes 1x10 -->
@@ -618,6 +633,20 @@
             return (edad >= 0 && edad <= 120) ? edad : null;
         }
 
+        // Clasifica una fecha de nacimiento ("YYYY-MM-DD") en uno de los 3 rangos
+        // etarios que mostramos como KPI ("15a17" | "18a35" | "36mas"). Devuelve
+        // null si no hay fecha registrada o si la edad cae fuera (< 15 anos).
+        // Las personas sin fecha NO se cuentan en ningun rango (van implicitas en
+        // el conteo de "Total Personas" que ya existe).
+        function rangoEdad(fechaNacStr) {
+            const e = calcularEdad(fechaNacStr);
+            if (e === null) return null;
+            if (e >= 15 && e <= 17) return "15a17";
+            if (e >= 18 && e <= 35) return "18a35";
+            if (e >= 36) return "36mas";
+            return null;  // menor de 15: no se cuenta
+        }
+
         // Filtro de edad para AFINES. Si los dos inputs estan vacios, deja pasar
         // todo. Si la fecha de nacimiento no se conoce, NO se oculta (mejor mostrar
         // de mas que ocultar sin razon).
@@ -795,6 +824,12 @@
                 const kpiAfines = $('kpiAfines'); if (kpiAfines) kpiAfines.textContent = '?';
                 const kpiCobertura = $('kpiCobertura'); if (kpiCobertura) kpiCobertura.textContent = '?';
                 const kpiJC2 = $('kpiJefesCompletos'); if (kpiJC2) kpiJC2.textContent = '?';
+                // Los KPIs de rango etario tambien suman jefes + afines, asi que
+                // si /afines falla, los conteos quedarian incompletos: marcar "?"
+                // para no dar la impresion erronea de un dato parcial confiable.
+                const kEdad15 = $('kpiEdad15a17'); if (kEdad15) kEdad15.textContent = '?';
+                const kEdad18 = $('kpiEdad18a35'); if (kEdad18) kEdad18.textContent = '?';
+                const kEdad36 = $('kpiEdad36mas'); if (kEdad36) kEdad36.textContent = '?';
                 alert('No se pudo cargar la lista de afines (' + (err.message || err.code || 'error desconocido') + '). Los conteos pueden estar incompletos. Recarga la pagina o revisa los permisos.');
             });
         }
@@ -881,12 +916,23 @@
             // Conteo de genero (M / F) sumando jefes + sus afines. Los registros
             // viejos pueden no tener `genero` — se ignoran en ambos conteos.
             let hombres = 0, mujeres = 0;
+            // Conteo por rango etario (jefes + afines con fecha valida). Los
+            // registros sin fecha_nacimiento NO se cuentan en ningun rango.
+            let c15a17 = 0, c18a35 = 0, c36mas = 0;
             jefes.forEach(j => {
                 if (j.genero === 'M') hombres++;
                 else if (j.genero === 'F') mujeres++;
+                const r = rangoEdad(j.fecha_nacimiento);
+                if (r === "15a17") c15a17++;
+                else if (r === "18a35") c18a35++;
+                else if (r === "36mas") c36mas++;
                 (j._afines || []).forEach(a => {
                     if (a.genero === 'M') hombres++;
                     else if (a.genero === 'F') mujeres++;
+                    const rr = rangoEdad(a.fecha_nacimiento);
+                    if (rr === "15a17") c15a17++;
+                    else if (rr === "18a35") c18a35++;
+                    else if (rr === "36mas") c36mas++;
                 });
             });
 
@@ -900,6 +946,9 @@
             $('kpiCentros').textContent = centrosSet.size.toLocaleString('es-VE');
             const kpiH = $('kpiHombres'); if (kpiH) kpiH.textContent = hombres.toLocaleString('es-VE');
             const kpiM = $('kpiMujeres'); if (kpiM) kpiM.textContent = mujeres.toLocaleString('es-VE');
+            const k15 = $("kpiEdad15a17"); if (k15) k15.textContent = c15a17.toLocaleString('es-VE');
+            const k18 = $("kpiEdad18a35"); if (k18) k18.textContent = c18a35.toLocaleString('es-VE');
+            const k36 = $("kpiEdad36mas"); if (k36) k36.textContent = c36mas.toLocaleString('es-VE');
         }
 
         function actualizarFiltrosCascada() {
@@ -1689,6 +1738,24 @@
                     []
                   ]
                 : [];
+            // Distribucion por rango etario: contar jefes + afines con fecha
+            // valida. Recalculamos aca para no depender de variables globales
+            // (los KPIs en pantalla pueden estar marcados como "?" si /afines
+            // fallo en la carga inicial, pero aca ya tenemos los datos filtrados).
+            let _c15a17 = 0, _c18a35 = 0, _c36mas = 0;
+            filtrados.forEach(j => {
+                const r = rangoEdad(j.fecha_nacimiento);
+                if (r === "15a17") _c15a17++;
+                else if (r === "18a35") _c18a35++;
+                else if (r === "36mas") _c36mas++;
+                (j._afines || []).forEach(a => {
+                    const rr = rangoEdad(a.fecha_nacimiento);
+                    if (rr === "15a17") _c15a17++;
+                    else if (rr === "18a35") _c18a35++;
+                    else if (rr === "36mas") _c36mas++;
+                });
+            });
+            const _sinFecha = totalPersonas - _c15a17 - _c18a35 - _c36mas;
             const matrizResumen = [
                 [{ v: 'Resultados Movilizacion 1x10', s: _estiloTituloExcel() }],
                 [`Generado: ${fechaHumana}`],
@@ -1702,6 +1769,16 @@
                 ['Jefes con 10+ afines', completos],
                 ['Comunidades cubiertas', comunidadesSet.size],
                 ['Centros cubiertos', centrosSet.size],
+                [],
+                [{ v: 'Distribucion por rango etario (Jefes + Afines)', s: _estiloTituloExcel() }],
+                [
+                    { v: 'Rango etario', s: _estiloCabeceraExcel() },
+                    { v: 'Personas', s: _estiloCabeceraExcel() }
+                ],
+                ['15 a 17 anos', _c15a17],
+                ['18 a 35 anos', _c18a35],
+                ['36 anos o mas', _c36mas],
+                ['Sin fecha registrada', _sinFecha],
                 [],
                 [{ v: 'Jefes por Parroquia', s: _estiloTituloExcel() }],
                 [
@@ -1725,11 +1802,19 @@
             wsResumen['!cols'] = [{ wch: 40 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
             // Indices dinamicos para los merges del titulo (las dos primeras
             // filas son fijas, mas 0 o 2 si hay aviso de filtro de edad).
+            // El bloque "Distribucion por rango etario" agrega 7 filas nuevas
+            // entre los KPIs y "Jefes por Parroquia" (titulo + header + 4 datos
+            // + fila vacia), asi que los offsets de los titulos posteriores
+            // suben +7 respecto a la version sin el bloque.
             const _offEdad = filtroEdadFilaResumen.length; // 0 o 2
             wsResumen['!merges'] = [
                 { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+                // "Distribucion por rango etario" (nuevo): antes era posicion 12+offEdad
                 { s: { r: 12 + _offEdad, c: 0 }, e: { r: 12 + _offEdad, c: 3 } },
-                { s: { r: 14 + _offEdad + filasParroquia.length + 1, c: 0 }, e: { r: 14 + _offEdad + filasParroquia.length + 1, c: 3 } }
+                // "Jefes por Parroquia" subio 7 filas (era 12+offEdad, ahora 19+offEdad)
+                { s: { r: 19 + _offEdad, c: 0 }, e: { r: 19 + _offEdad, c: 3 } },
+                // "Top 10 Centros..." tambien subio 7 (era 14+...+1, ahora 21+...+1)
+                { s: { r: 21 + _offEdad + filasParroquia.length + 1, c: 0 }, e: { r: 21 + _offEdad + filasParroquia.length + 1, c: 3 } }
             ];
             XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
 
