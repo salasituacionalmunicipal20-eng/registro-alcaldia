@@ -67,18 +67,6 @@
         { cedula: "jefe_cedula", nombre: "jefe_nombres", apellido: "jefe_apellidos", fecha: null, nacionalidad: "jefe_nacionalidad", donde_vota: null }
     ]
 
-    // Modulo 1x10 publico: 10 afines del wizard
-    for (let i = 1; i <= 10; i++) {
-        MAPEOS.push({
-            cedula: `afin_cedula_${i}`,
-            nombre: `afin_nombres_${i}`,
-            apellido: `afin_apellidos_${i}`,
-            fecha: null,
-            nacionalidad: `afin_nacionalidad_${i}`,
-            donde_vota: null
-        })
-    }
-
     function nacionalidadDe(raw, mapeo) {
         // 1) Si hay un <select id="nacionalidad"> y tiene valor, usarlo.
         if (mapeo.nacionalidad) {
@@ -191,4 +179,43 @@
     // del paso 3 cuando el usuario hace click en Continuar). Sin esto, los
     // inputs nuevos no tienen el listener blur y el CNE nunca se consulta.
     window._cneActivarMapeos = activar
+
+    // Modulo 1x10: bloques de afin son dinamicos (el operador agrega/elimina
+    // a voluntad). Para que el listener blur se registre en inputs creados
+    // DESPUES del DOMContentLoaded, observamos mutaciones en el DOM y por cada
+    // input nuevo cuyo id sea afin_cedula_<n>, registramos el listener.
+    function registrarMapeoAfinPorId(idCedula) {
+      const m = /^afin_cedula_(\d+)$/.exec(idCedula);
+      if (!m) return;
+      const n = m[1];
+      const cedulaEl = document.getElementById(idCedula);
+      if (!cedulaEl) return;
+      if (cedulaEl.dataset.cneAutocompletar === "1") return;
+      cedulaEl.dataset.cneAutocompletar = "1";
+      const mapeo = {
+        cedula: idCedula,
+        nombre: `afin_nombres_${n}`,
+        apellido: `afin_apellidos_${n}`,
+        fecha: `afin_fecha_${n}`,
+        nacionalidad: `afin_nacionalidad_${n}`,
+        donde_vota: null
+      };
+      cedulaEl.addEventListener("blur", listenerBlur(mapeo));
+    }
+    const observer = new MutationObserver(muts => {
+      for (const m of muts) {
+        for (const node of m.addedNodes) {
+          if (node.nodeType !== 1) continue;
+          // Buscar inputs afin_cedula_<n> dentro del nodo recien agregado
+          if (node.id && /^afin_cedula_\d+$/.test(node.id)) {
+            registrarMapeoAfinPorId(node.id);
+          }
+          const nested = node.querySelectorAll ? node.querySelectorAll("input[id^=\"afin_cedula_\"]") : [];
+          nested.forEach(el => registrarMapeoAfinPorId(el.id));
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    // Tambien escanear al cargar por si los bloques ya estan en el DOM (edicion)
+    document.querySelectorAll("input[id^=\"afin_cedula_\"]").forEach(el => registrarMapeoAfinPorId(el.id));
 })()

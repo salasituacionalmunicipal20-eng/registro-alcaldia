@@ -138,7 +138,8 @@
     "jefes_1x10": {
       ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
       "$cedula": {
-        ".write": "(!data.exists() && newData.exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
+        ".read": true,
+        ".write": "newData.exists() || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
         ".validate": "$cedula.matches(/^[0-9]{4,10}$/)",
         "cedula":            { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
         "nombres":           { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -160,16 +161,20 @@
     "afines_1x10": {
       ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
       "$cedula_jefe": {
+        ".read": true,
+        ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
         ".validate": "$cedula_jefe.matches(/^[0-9]{4,10}$/)",
         "$cedula_afin": {
-          ".write": "(!data.exists() && newData.exists() && root.child('jefes_1x10').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
+          ".write": "(newData.exists() && root.child('jefes_1x10').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
           ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe",
           "cedula":          { ".validate": "newData.isString() && newData.val() === $cedula_afin && newData.val().length <= 20" },
           "nombres":         { ".validate": "newData.isString() && newData.val().length <= 100" },
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
           "nacionalidad":    { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
-          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 10" },
+          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
           "fecha_registro":  { ".validate": "newData.isNumber()" },
+          "telefono":         { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)" },
           "$other":          { ".validate": false }
         }
       }

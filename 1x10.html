@@ -196,6 +196,28 @@
             letter-spacing: 0.5px;
             margin-bottom: 8px;
         }
+        .afin-bloque .bloque-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .afin-bloque .btn-eliminar-afin {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+        .afin-bloque .btn-eliminar-afin:hover { background: #fee2e2; }
+        .afin-bloque .btn-eliminar-afin:active { transform: translateY(1px); }
         .afin-bloque .label-cne {
             display: block;
             font-size: 13px;
@@ -331,7 +353,7 @@
 <body>
     <div class="contenedor">
         <div class="header">
-            <img src="logos/psuv.png" alt="PSUV" class="header-logo">
+            <!-- Logos removidos temporalmente. La Alcaldesa indicara cuales usar. -->
             <h1>Movilización 1x10</h1>
             <p class="subtitulo">Municipio Cristóbal Rojas</p>
         </div>
@@ -437,19 +459,22 @@
                 </div>
             </div>
 
-            <!-- ============ PASO 3: 10 AFINES ============ -->
+            <!-- ============ PASO 3: AFINES (DINAMICO) ============ -->
             <div id="paso3" class="paso-vista hidden">
                 <div class="tarjeta">
                     <div class="tarjeta-titulo">
-                        <span>Tus 10 Afines del 1x10</span>
+                        <span>Tus afines del 1x10</span>
                     </div>
                     <p class="tarjeta-desc">
-                        Escribe la cédula de cada una de las 10 personas que vas a movilizar.
-                        Sus nombres se autocompletan solos. Puedes guardar con menos de 10
-                        y volver luego desde este mismo link para completar.
+                        Escribe la cédula de cada persona que vas a movilizar.
+                        Sus nombres se autocompletan solos. Puedes agregar todos los que
+                        necesites movilizar y guardar cuando quieras; siempre podrás volver
+                        desde este mismo link para editar o sumar más.
                     </p>
 
                     <div id="contenedorAfines"></div>
+
+                    <button type="button" id="btnAgregarAfin" class="btn btn-primario" style="width: 100%; margin-top: 16px; background: #16a34a;">+ Agregar otra persona</button>
 
                     <div class="botones-fila">
                         <button type="button" class="btn btn-secundario" id="btnPaso3Volver">Volver</button>
@@ -476,7 +501,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -508,7 +533,8 @@
                 parroquia: '', circuito: '', comunidad_slug: '', comunidad_nombre: '',
                 centro_electoral: null, mesas: null
             },
-            actualizando: false // true si el jefe ya existia
+            actualizando: false, // true si el jefe ya existia
+            editando: false // true si el jefe re-entro a editar (precarga UI)
         };
 
         // ============================================================
@@ -691,14 +717,61 @@
                 return;
             }
 
-            // Paso 1: solo validar formato y avanzar. La existencia previa la maneja
-            // el catch del set() final via PERMISSION_DENIED (las reglas no permiten
-            // sobreescribir un jefe ya registrado).
+            // Chequear si el jefe ya existia en Firebase. Si existe, ofrecer
+            // re-entrar para actualizar sus datos + sus 10 afines.
+            estado.editando = false;
+            try {
+                const snap = await get(ref(database, `jefes_1x10/${cedNum}`));
+                if (snap.exists()) {
+                    const data = snap.val() || {};
+                    const confirma = confirm(
+                        `Hola ${data.nombres || ''} ${data.apellidos || ''}, ya estabas registrado como Jefe 1x10 ` +
+                        `en la comunidad ${data.comunidad_nombre || '?'}.\n\n` +
+                        `¿Continuar para actualizar tus datos y tus 10 afines?`
+                    );
+                    if (!confirma) {
+                        // Cancela: limpiar inputs del paso 1 y quedarse aqui
+                        $('jefe_cedula').value = '';
+                        $('jefe_nombres').value = '';
+                        $('jefe_apellidos').value = '';
+                        $('jefe_telefono').value = '';
+                        chequearPaso1();
+                        return;
+                    }
+                    // Confirma: merge priorizando lo TECLEADO por el usuario en este paso.
+                    // Solo precargar campos que el usuario NO ha tipeado en este paso.
+                    const tecleado = {
+                        nombres: $('jefe_nombres').value.trim(),
+                        apellidos: $('jefe_apellidos').value.trim(),
+                        telefono: $('jefe_telefono').value.trim(),
+                        nacionalidad: $('jefe_nacionalidad').value || 'V'
+                    };
+                    // estado.jefe arranca con lo guardado, pero lo TECLEADO gana
+                    estado.jefe = { ...data, cedula: cedNum };
+                    Object.keys(tecleado).forEach(k => { if (tecleado[k]) estado.jefe[k] = tecleado[k]; });
+                    estado.editando = true;
+                    // NO sobreescribir los inputs del paso 1; ya tienen lo que el usuario quiere.
+                    // Precargar la cascada del paso 2 sincronamente (los change handlers son sincronos).
+                    $('jefe_parroquia').value = data.parroquia || '';
+                    $('jefe_parroquia').dispatchEvent(new Event('change'));
+                    $('jefe_circuito').value = data.circuito || '';
+                    $('jefe_circuito').dispatchEvent(new Event('change'));
+                    $('jefe_comunidad').value = data.comunidad_slug || '';
+                    $('jefe_comunidad').dispatchEvent(new Event('change'));
+                }
+            } catch (e) {
+                console.warn('[1x10] No se pudo verificar si la cedula existe:', e);
+                // No bloquear: seguir como registro nuevo
+            }
+
+            // Continuar al paso 2 (sea jefe nuevo o editando)
             estado.jefe.cedula = cedNum;
-            estado.jefe.nacionalidad = nacionalidad;
-            estado.jefe.nombres = nombres;
-            estado.jefe.apellidos = apellidos;
-            estado.jefe.telefono = telefono;
+            if (!estado.editando) {
+                estado.jefe.nacionalidad = nacionalidad;
+                estado.jefe.nombres = nombres;
+                estado.jefe.apellidos = apellidos;
+                estado.jefe.telefono = telefono;
+            }
             estado.actualizando = false;
             mostrarPaso(2);
         });
@@ -707,7 +780,7 @@
         // PASO 2 -> validar territorio y avanzar
         // ============================================================
         $('btnPaso2Volver').addEventListener('click', () => mostrarPaso(1));
-        $('btnPaso2Continuar').addEventListener('click', () => {
+        $('btnPaso2Continuar').addEventListener('click', async () => {
             limpiarMensaje();
             const parroquia = v('jefe_parroquia');
             const circuito = v('jefe_circuito');
@@ -726,125 +799,267 @@
             estado.jefe.centro_electoral = com.centro_electoral || null;
             estado.jefe.mesas = com.mesas || null;
 
-            // Construir los 10 bloques de afines (la primera vez)
-            construirBloquesAfines();
+            // Si estamos editando un jefe existente, precargar TODOS sus afines.
+            // Construir tantos bloques como afines tenga (max 100).
+            let afinesPrecarga = null;
+            if (estado.editando) {
+                try {
+                    const snapAfines = await get(ref(database, `afines_1x10/${estado.jefe.cedula}`));
+                    if (snapAfines.exists()) {
+                        const afinesData = snapAfines.val() || {};
+                        afinesPrecarga = Object.entries(afinesData)
+                            .sort((a, b) => (a[1].orden || 99) - (b[1].orden || 99));
+                    }
+                } catch (e) {
+                    console.warn('[1x10] No se pudo precargar afines:', e);
+                }
+            }
+
+            // Construir bloques: si edita y tiene N afines, N bloques (min 1, max 100).
+            // Si no edita o no tiene, 1 bloque vacio.
+            const cuantos = afinesPrecarga && afinesPrecarga.length > 0
+                ? Math.min(afinesPrecarga.length, MAX_AFINES)
+                : 1;
+            construirBloquesAfines(cuantos);
+
+            // Volcar datos precargados sobre los bloques recien creados
+            if (afinesPrecarga) {
+                const ids = obtenerIdsBloques();
+                for (let i = 0; i < ids.length && i < afinesPrecarga.length; i++) {
+                    const id = ids[i];
+                    const [ced, datos] = afinesPrecarga[i];
+                    const cedEl = $(`afin_cedula_${id}`); if (cedEl) cedEl.value = ced;
+                    const nomEl = $(`afin_nombres_${id}`); if (nomEl) nomEl.value = datos.nombres || '';
+                    const apeEl = $(`afin_apellidos_${id}`); if (apeEl) apeEl.value = datos.apellidos || '';
+                    const telEl = $(`afin_telefono_${id}`); if (telEl) telEl.value = datos.telefono || '';
+                    const fechaEl = $(`afin_fecha_${id}`);
+                    if (fechaEl) {
+                        const f = datos.fecha_nacimiento || '';
+                        fechaEl.value = (/^\d{4}-\d{2}-\d{2}$/.test(f) && f !== '0000-00-00') ? f : '';
+                    }
+                    const nacEl = $(`afin_nacionalidad_${id}`); if (nacEl) nacEl.value = datos.nacionalidad || 'V';
+                }
+            }
+
             mostrarPaso(3);
         });
 
         // ============================================================
-        // PASO 3 -> construir 10 bloques de afines
+        // PASO 3 -> construir bloques de afines DINAMICOS
         // ============================================================
-        function construirBloquesAfines() {
+        // Tope duro para evitar abuso. El jefe puede agregar cuantos quiera hasta este max.
+        const MAX_AFINES = 100;
+        // Contador global de IDs internos. Los IDs son ESTABLES (no se renumeran
+        // al eliminar) porque el CNE registra listeners por ID y no queremos
+        // duplicar/perder mapeos. La numeracion visual (#1, #2...) si se recalcula.
+        let afinIdSiguiente = 0;
+
+        // Devuelve los IDs internos de los bloques actualmente en el DOM, en orden visual.
+        function obtenerIdsBloques() {
             const cont = $('contenedorAfines');
-            if (cont.children.length > 0) return; // ya construidos
-            for (let i = 1; i <= 10; i++) {
-                const bloque = document.createElement('div');
-                bloque.className = 'afin-bloque';
-                bloque.innerHTML = `
-                    <span class="num-afin">Afín #${i}</span>
-                    <div class="campo" style="margin-bottom: 0;">
-                        <label>Cédula</label>
-                        <div class="cedula-row">
-                            <select id="afin_nacionalidad_${i}">
-                                <option value="V">V</option>
-                                <option value="E">E</option>
-                            </select>
-                            <input id="afin_cedula_${i}" type="tel" inputmode="numeric" autocomplete="off" placeholder="Cédula" maxlength="10" />
+            return Array.from(cont.querySelectorAll('.afin-bloque'))
+                .map(el => el.dataset.afinId)
+                .filter(x => x);
+        }
+
+        // Renumera las etiquetas visuales "Afín #N" segun la posicion en el DOM.
+        function renumerarLabelsVisuales() {
+            const bloques = $('contenedorAfines').querySelectorAll('.afin-bloque');
+            bloques.forEach((b, idx) => {
+                const span = b.querySelector('.num-afin');
+                if (span) span.textContent = `Afín #${idx + 1}`;
+            });
+        }
+
+        // Muestra/oculta el boton "Eliminar" de cada bloque. Si solo hay 1, se oculta.
+        function actualizarVisibilidadEliminar() {
+            const bloques = $('contenedorAfines').querySelectorAll('.afin-bloque');
+            const soloUno = bloques.length <= 1;
+            bloques.forEach(b => {
+                const btn = b.querySelector('.btn-eliminar-afin');
+                if (btn) btn.style.display = soloUno ? 'none' : 'inline-block';
+            });
+        }
+
+        // Crea UN bloque de afin con el id interno dado, lo agrega al DOM y ata sus listeners.
+        function crearBloqueAfin(id) {
+            const cont = $('contenedorAfines');
+            const bloque = document.createElement('div');
+            bloque.className = 'afin-bloque';
+            bloque.dataset.afinId = String(id);
+            bloque.innerHTML = `
+                <div class="bloque-header">
+                    <span class="num-afin">Afín #?</span>
+                    <button type="button" class="btn-eliminar-afin" data-elim-id="${id}">Eliminar</button>
+                </div>
+                <div class="campo" style="margin-bottom: 0;">
+                    <label>Cédula</label>
+                    <div class="cedula-row">
+                        <select id="afin_nacionalidad_${id}">
+                            <option value="V">V</option>
+                            <option value="E">E</option>
+                        </select>
+                        <input id="afin_cedula_${id}" type="tel" inputmode="numeric" autocomplete="off" placeholder="Cédula" maxlength="10" />
+                    </div>
+                    <span class="label-cne" id="afin_label_${id}"></span>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <div>
+                            <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Nombres</label>
+                            <input id="afin_nombres_${id}" type="text" placeholder="Si el CNE no llena, escribelo" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
                         </div>
-                        <span class="label-cne" id="afin_label_${i}"></span>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                            <div>
-                                <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Nombres</label>
-                                <input id="afin_nombres_${i}" type="text" placeholder="Si el CNE no llena, escribelo" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
-                            </div>
-                            <div>
-                                <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Apellidos</label>
-                                <input id="afin_apellidos_${i}" type="text" placeholder="Si el CNE no llena, escribelos" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
-                            </div>
+                        <div>
+                            <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Apellidos</label>
+                            <input id="afin_apellidos_${id}" type="text" placeholder="Si el CNE no llena, escribelos" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
                         </div>
                     </div>
-                `;
-                cont.appendChild(bloque);
-            }
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <div>
+                            <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Teléfono</label>
+                            <input id="afin_telefono_${id}" type="tel" placeholder="04141234567" autocomplete="off" maxlength="20" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Fecha de nacimiento</label>
+                            <input id="afin_fecha_${id}" type="date" max="2010-12-31" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
+                        </div>
+                    </div>
+                </div>
+            `;
+            cont.appendChild(bloque);
+            atarListenersAfin(id);
+            // El boton eliminar es por-bloque (handler local).
+            const btnElim = bloque.querySelector('.btn-eliminar-afin');
+            btnElim.addEventListener('click', () => eliminarAfin(id));
+            return bloque;
+        }
 
-            // Despues de inyectar, atar listeners por bloque
-            for (let i = 1; i <= 10; i++) {
-                const idx = i;
-                const inputCedula = $(`afin_cedula_${idx}`);
-                const inputNombres = $(`afin_nombres_${idx}`);
-                const inputApellidos = $(`afin_apellidos_${idx}`);
-                const label = $(`afin_label_${idx}`);
+        // Ata los listeners de validacion (input/blur) sobre el input cedula del bloque dado.
+        function atarListenersAfin(id) {
+            const inputCedula = $(`afin_cedula_${id}`);
+            const inputNombres = $(`afin_nombres_${id}`);
+            const inputApellidos = $(`afin_apellidos_${id}`);
+            const label = $(`afin_label_${id}`);
+            if (!inputCedula) return;
 
-                // Si el campo queda vacio, cancelar el timeout pendiente y limpiar label
-                inputCedula.addEventListener('input', () => {
-                    const prev = inputCedula.dataset.timeoutId;
-                    if (prev) {
-                        clearTimeout(Number(prev));
-                        delete inputCedula.dataset.timeoutId;
-                    }
-                    if (!(inputCedula.value || '').replace(/\D/g, '')) {
-                        label.textContent = '';
-                        label.className = 'label-cne';
-                    }
-                });
+            // Si el campo queda vacio, cancelar el timeout pendiente y limpiar label
+            inputCedula.addEventListener('input', () => {
+                const prev = inputCedula.dataset.timeoutId;
+                if (prev) {
+                    clearTimeout(Number(prev));
+                    delete inputCedula.dataset.timeoutId;
+                }
+                if (!(inputCedula.value || '').replace(/\D/g, '')) {
+                    label.textContent = '';
+                    label.className = 'label-cne';
+                }
+            });
 
-                // Validacion en vivo al hacer blur
-                inputCedula.addEventListener('blur', () => {
-                    // Cancelar cualquier timeout anterior antes de programar uno nuevo
-                    const prev = inputCedula.dataset.timeoutId;
-                    if (prev) {
-                        clearTimeout(Number(prev));
-                        delete inputCedula.dataset.timeoutId;
-                    }
+            // Validacion en vivo al hacer blur
+            inputCedula.addEventListener('blur', () => {
+                const prev = inputCedula.dataset.timeoutId;
+                if (prev) {
+                    clearTimeout(Number(prev));
+                    delete inputCedula.dataset.timeoutId;
+                }
 
-                    const num = (inputCedula.value || '').replace(/\D/g, '');
-                    if (!num) { label.textContent = ''; label.className = 'label-cne'; return; }
+                const num = (inputCedula.value || '').replace(/\D/g, '');
+                if (!num) { label.textContent = ''; label.className = 'label-cne'; return; }
 
-                    if (num.length < 4 || num.length > 10) {
-                        label.textContent = 'Cédula inválida (4 a 10 dígitos).';
-                        label.className = 'label-cne warn';
-                        return;
-                    }
-                    // No igual a la del jefe
-                    if (num === estado.jefe.cedula) {
-                        label.textContent = '¡Esta es TU cédula! No puede ser tu afín.';
+                if (num.length < 4 || num.length > 10) {
+                    label.textContent = 'Cédula inválida (4 a 10 dígitos).';
+                    label.className = 'label-cne warn';
+                    return;
+                }
+                // No igual a la del jefe
+                if (num === estado.jefe.cedula) {
+                    label.textContent = '¡Esta es TU cédula! No puede ser tu afín.';
+                    label.className = 'label-cne warn';
+                    inputCedula.value = '';
+                    return;
+                }
+                // No repetida entre TODOS los bloques actuales (no fijo 1..10)
+                const ids = obtenerIdsBloques();
+                for (const otroId of ids) {
+                    if (otroId === String(id)) continue;
+                    const otro = ($(`afin_cedula_${otroId}`)?.value || '').replace(/\D/g, '');
+                    if (otro && otro === num) {
+                        // Encontrar la posicion VISUAL del otro bloque
+                        const idxVisual = ids.indexOf(otroId) + 1;
+                        label.textContent = `Ya está registrada en el Afín #${idxVisual}.`;
                         label.className = 'label-cne warn';
                         inputCedula.value = '';
                         return;
                     }
-                    // No repetida entre los 10
-                    for (let j = 1; j <= 10; j++) {
-                        if (j === idx) continue;
-                        const otro = ($(`afin_cedula_${j}`)?.value || '').replace(/\D/g, '');
-                        if (otro && otro === num) {
-                            label.textContent = `Ya está registrada en el Afín #${j}.`;
-                            label.className = 'label-cne warn';
-                            inputCedula.value = '';
-                            return;
-                        }
+                }
+                // Si el label sigue vacio despues de un rato, asumimos que el CNE no la encontro
+                const tid = setTimeout(() => {
+                    delete inputCedula.dataset.timeoutId;
+                    const n = (inputNombres.value || '').trim();
+                    const a = (inputApellidos.value || '').trim();
+                    if (!n && !a) {
+                        label.textContent = 'ⓘ CNE no encontro esta cedula. Escribe el nombre a mano arriba.';
+                        label.className = 'label-cne';
                     }
-                    // Si el label sigue vacio despues de un rato, asumimos que el CNE no la encontro
-                    const tid = setTimeout(() => {
-                        delete inputCedula.dataset.timeoutId;
-                        const n = (inputNombres.value || '').trim();
-                        const a = (inputApellidos.value || '').trim();
-                        if (!n && !a) {
-                            label.textContent = 'ⓘ CNE no encontro esta cedula. Escribe el nombre a mano arriba.';
-                            label.className = 'label-cne';
-                        }
-                    }, 2500);
-                    inputCedula.dataset.timeoutId = String(tid);
-                });
-            }
+                }, 2500);
+                inputCedula.dataset.timeoutId = String(tid);
+            });
+        }
 
-            // Re-activar listeners del CNE para los inputs RECIEN creados.
-            // cne-autocompletar.js solo corre al cargar la pagina y registra
-            // listeners sobre los IDs que ya existen. Como los afin_cedula_1..10
-            // se crean ahora dinamicamente, hay que avisarle que vuelva a barrer
-            // el DOM. activar() es idempotente (no duplica listeners por el
-            // dataset.cneAutocompletar marker).
+        // Construye N bloques limpios al entrar al paso. Resetea el contenedor
+        // y el contador (cada vez que se entra al paso desde el paso 2).
+        function construirBloquesAfines(cantidad) {
+            const cont = $('contenedorAfines');
+            cont.innerHTML = '';
+            afinIdSiguiente = 0;
+            const n = Math.max(1, Math.min(cantidad || 1, MAX_AFINES));
+            for (let k = 0; k < n; k++) {
+                afinIdSiguiente++;
+                crearBloqueAfin(afinIdSiguiente);
+            }
+            renumerarLabelsVisuales();
+            actualizarVisibilidadEliminar();
+            // Re-activar listeners del CNE (idempotente).
             if (window._cneActivarMapeos) window._cneActivarMapeos();
         }
+
+        // Agrega un afin extra al final (boton "+ Agregar otra persona").
+        function agregarAfin() {
+            const bloques = $('contenedorAfines').querySelectorAll('.afin-bloque');
+            if (bloques.length >= MAX_AFINES) {
+                alert(`Máximo ${MAX_AFINES} afines por jefe.`);
+                return;
+            }
+            afinIdSiguiente++;
+            const bloque = crearBloqueAfin(afinIdSiguiente);
+            renumerarLabelsVisuales();
+            actualizarVisibilidadEliminar();
+            // Importante: registrar el listener del CNE para el nuevo input cedula.
+            if (window._cneActivarMapeos) window._cneActivarMapeos();
+            // Scroll suave y foco al input cedula del bloque recien creado
+            bloque.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const inputCed = bloque.querySelector(`#afin_cedula_${afinIdSiguiente}`);
+            if (inputCed) setTimeout(() => { try { inputCed.focus(); } catch (_) {} }, 250);
+        }
+
+        // Elimina un bloque por su ID interno. Pide confirm si tiene cedula tipeada.
+        function eliminarAfin(id) {
+            const cont = $('contenedorAfines');
+            const bloque = cont.querySelector(`.afin-bloque[data-afin-id="${id}"]`);
+            if (!bloque) return;
+            // No permitir quedarse sin bloques: si es el unico, no se elimina.
+            if (cont.querySelectorAll('.afin-bloque').length <= 1) return;
+
+            const inputCed = bloque.querySelector(`#afin_cedula_${id}`);
+            const tipeo = (inputCed?.value || '').trim();
+            if (tipeo) {
+                if (!confirm(`¿Eliminar este afín (cédula ${tipeo})?`)) return;
+            }
+            bloque.remove();
+            renumerarLabelsVisuales();
+            actualizarVisibilidadEliminar();
+        }
+
+        // Wire del boton "+ Agregar otra persona" (existe en el DOM desde el inicio).
+        $('btnAgregarAfin').addEventListener('click', agregarAfin);
 
         // ============================================================
         // GUARDAR
@@ -853,20 +1068,26 @@
         $('btnGuardar').addEventListener('click', async () => {
             limpiarMensaje();
 
-            // Recolectar afines validos
+            // Recolectar afines validos recorriendo los bloques EN ORDEN VISUAL
+            // (no IDs fijos del 1 al 10). El "orden" guardado es la posicion visual.
+            const idsBloques = obtenerIdsBloques();
             const afinesValidos = [];
-            for (let i = 1; i <= 10; i++) {
-                const num = ($(`afin_cedula_${i}`)?.value || '').replace(/\D/g, '');
+            let posicion = 0;
+            for (const id of idsBloques) {
+                const num = ($(`afin_cedula_${id}`)?.value || '').replace(/\D/g, '');
                 if (!num) continue;
                 if (num.length < 4 || num.length > 10) continue;
                 if (num === estado.jefe.cedula) continue;
                 if (afinesValidos.some(a => a.cedula === num)) continue;
+                posicion++;
                 afinesValidos.push({
                     cedula: num,
-                    nacionalidad: v(`afin_nacionalidad_${i}`) || 'V',
-                    nombres: v(`afin_nombres_${i}`),
-                    apellidos: v(`afin_apellidos_${i}`),
-                    orden: i
+                    nacionalidad: v(`afin_nacionalidad_${id}`) || 'V',
+                    nombres: v(`afin_nombres_${id}`),
+                    apellidos: v(`afin_apellidos_${id}`),
+                    telefono: (v(`afin_telefono_${id}`) || '').trim(),
+                    fecha_nacimiento: (v(`afin_fecha_${id}`) || '').trim(),
+                    orden: posicion
                 });
             }
 
@@ -911,6 +1132,12 @@
                         orden: a.orden,
                         fecha_registro: Date.now()
                     };
+                    // Solo incluir telefono si no esta vacio (whitelist rechaza strings vacios)
+                    if (a.telefono) payloadAfin.telefono = a.telefono;
+                    // Solo incluir fecha_nacimiento si tiene formato valido YYYY-MM-DD y no es el sentinela 0000-00-00
+                    if (a.fecha_nacimiento && /^\d{4}-\d{2}-\d{2}$/.test(a.fecha_nacimiento) && a.fecha_nacimiento !== '0000-00-00') {
+                        payloadAfin.fecha_nacimiento = a.fecha_nacimiento;
+                    }
                     return set(
                         ref(database, `afines_1x10/${estado.jefe.cedula}/${a.cedula}`),
                         payloadAfin
@@ -945,8 +1172,7 @@
                 const msg = (e.message || '').toLowerCase();
                 if (code === 'PERMISSION_DENIED' || msg.includes('permission_denied') || msg.includes('permission denied')) {
                     mostrarMensaje(
-                        'Esta cédula ya está registrada como Jefe 1x10. ' +
-                        'Para editar tus afines o tus datos, contacta al administrador.'
+                        'No se pudo guardar. Si el problema persiste, contacta al equipo del 1x10.'
                     );
                 } else if (msg.includes('network') || msg.includes('offline') || msg.includes('fetch') || code === 'NETWORK_ERROR') {
                     mostrarMensaje(

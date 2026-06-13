@@ -6,6 +6,8 @@
     <title>Resultados Movilización 1x10 - Panel Admin</title>
     <!-- jsPDF para exportar reportes de movilización imprimibles -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- SheetJS para exportar a Excel .xlsx organizado en múltiples hojas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #0f172a; padding-top: 30px; }
@@ -217,7 +219,7 @@
         }
         .badge-afines.completo { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
         .badge-afines.parcial  { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
-        .badge-afines.vacio    { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .badge-afines.vacio    { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
         /* Botones de acciones en filas */
         .btn-fila {
@@ -345,10 +347,7 @@
 
             <!-- Header institucional -->
             <div class="gob-header">
-                <div class="logos">
-                    <img src="logos/psuv.png" alt="PSUV" onerror="this.style.display='none'">
-                    <img src="logos/cristobal-rojas.png" alt="Cristóbal Rojas" onerror="this.style.display='none'">
-                </div>
+                <!-- Logos removidos temporalmente. La Alcaldesa indicara cuales usar. -->
                 <div class="titulos">
                     <h1>RESULTADOS MOVILIZACIÓN 1x10</h1>
                     <p>Sistema de Patrullas Territoriales · Municipio Cristóbal Rojas</p>
@@ -365,7 +364,7 @@
                 <div class="kpi azul">
                     <div class="kpi-titulo">Afines Registrados</div>
                     <div class="kpi-valor" id="kpiAfines">—</div>
-                    <div class="kpi-sub">Suma de los 10 por jefe</div>
+                    <div class="kpi-sub">Suma de afines de todos los jefes</div>
                 </div>
                 <div class="kpi morado">
                     <div class="kpi-titulo">Total Personas</div>
@@ -373,9 +372,14 @@
                     <div class="kpi-sub">Jefes + Afines</div>
                 </div>
                 <div class="kpi verde">
-                    <div class="kpi-titulo">Cobertura</div>
+                    <div class="kpi-titulo">Promedio afines/jefe</div>
                     <div class="kpi-valor" id="kpiCobertura">—</div>
-                    <div class="kpi-sub">Patrullas con los 10 afines</div>
+                    <div class="kpi-sub">promedio de movilizables por jefe</div>
+                </div>
+                <div class="kpi verde">
+                    <div class="kpi-titulo">Jefes con 10+ afines</div>
+                    <div class="kpi-valor" id="kpiJefesCompletos">—</div>
+                    <div class="kpi-sub">patrullas con la meta cumplida</div>
                 </div>
                 <div class="kpi naranja">
                     <div class="kpi-titulo">Comunidades Cubiertas</div>
@@ -454,6 +458,9 @@
                     <button class="btn-export azul" id="btnPdfCentro" type="button">PDF Movilización por Centro Electoral</button>
                     <button class="btn-export azul" id="btnPdfComuna" type="button">PDF Movilización por Comuna</button>
                     <button class="btn-export verde" id="btnCsv" type="button">CSV Completo</button>
+                    <button class="btn-export" id="btnExportarExcel" type="button" style="background:#16a34a;">📗 Excel .xlsx organizado</button>
+                    <button class="btn-export" id="btnPdfAsistencia" type="button" style="background:#7c3aed;">📝 PDF Hoja de Asistencia (firmas)</button>
+                    <button class="btn-export" id="btnPdfAsistenciaCentro" type="button" style="background:#5b21b6;">🏛️ PDF Asistencia por Centro Electoral</button>
                 </div>
             </div>
 
@@ -551,6 +558,34 @@
                 });
             } catch (e) { return '-'; }
         };
+        // fecha_nacimiento viene como string "YYYY-MM-DD" desde <input type="date">.
+        // No usar new Date() directo porque interpreta como UTC y restaria un dia.
+        const fmtFechaNacimiento = (s) => {
+            if (!s) return '—';
+            const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+            // Fallback por si viniera en otro formato (timestamp, etc)
+            try {
+                const d = new Date(s);
+                if (isNaN(d.getTime())) return '—';
+                return d.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            } catch (e) { return '—'; }
+        };
+
+        // Calcula la edad a partir de "YYYY-MM-DD" sin pasar por new Date()
+        // (evita el bug de zona horaria que adelanta/atrasa un dia).
+        function calcularEdad(fechaNacStr) {
+            if (!fechaNacStr || !/^\d{4}-\d{2}-\d{2}$/.test(fechaNacStr)) return null;
+            const partes = fechaNacStr.split("-");
+            const anio = parseInt(partes[0], 10);
+            const mes = parseInt(partes[1], 10) - 1;
+            const dia = parseInt(partes[2], 10);
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - anio;
+            const cumpleEsteAnio = (hoy.getMonth() > mes) || (hoy.getMonth() === mes && hoy.getDate() >= dia);
+            if (!cumpleEsteAnio) edad--;
+            return (edad >= 0 && edad <= 120) ? edad : null;
+        }
 
         // ──────────────────────────────────────────────────────────
         // AUTH GATE: solo super-admin Carlos o operador con rol=admin
@@ -699,6 +734,7 @@
                 console.error('Error leyendo /afines_1x10:', err);
                 const kpiAfines = $('kpiAfines'); if (kpiAfines) kpiAfines.textContent = '?';
                 const kpiCobertura = $('kpiCobertura'); if (kpiCobertura) kpiCobertura.textContent = '?';
+                const kpiJC2 = $('kpiJefesCompletos'); if (kpiJC2) kpiJC2.textContent = '?';
                 alert('No se pudo cargar la lista de afines (' + (err.message || err.code || 'error desconocido') + '). Los conteos pueden estar incompletos. Recarga la pagina o revisa los permisos.');
             });
         }
@@ -739,7 +775,9 @@
             const totalJefes = jefes.length;
             const totalAfines = jefes.reduce((acc, j) => acc + j._afinesCount, 0);
             const completos = jefes.filter(j => j._afinesCount >= 10).length;
-            const cobertura = totalJefes ? Math.round((completos / totalJefes) * 100) : 0;
+            // Promedio afines/jefe (1 decimal). Si no hay jefes, mostrar 0.0
+            const promedio = totalJefes ? (totalAfines / totalJefes) : 0;
+            const promedioTxt = promedio.toLocaleString('es-VE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
             const comunidadesSet = new Set(jefes.map(j => j.comunidad_slug || j.comunidad_nombre).filter(Boolean));
             const centrosSet = new Set(jefes.map(j => j.centro_electoral).filter(Boolean));
@@ -747,7 +785,9 @@
             $('kpiJefes').textContent = totalJefes.toLocaleString('es-VE');
             $('kpiAfines').textContent = totalAfines.toLocaleString('es-VE');
             $('kpiTotal').textContent = (totalJefes + totalAfines).toLocaleString('es-VE');
-            $('kpiCobertura').textContent = cobertura + '%';
+            $('kpiCobertura').textContent = promedioTxt;
+            const kpiJC = $('kpiJefesCompletos');
+            if (kpiJC) kpiJC.textContent = completos.toLocaleString('es-VE');
             $('kpiComunidades').textContent = comunidadesSet.size.toLocaleString('es-VE');
             $('kpiCentros').textContent = centrosSet.size.toLocaleString('es-VE');
         }
@@ -868,7 +908,7 @@
                         <td>${escapeHtml(j.circuito || '-')}</td>
                         <td>${escapeHtml(j.comunidad_nombre || '-')}</td>
                         <td>${escapeHtml(j.centro_electoral || '-')}</td>
-                        <td><span class="badge-afines ${cls}">${n}/10</span></td>
+                        <td><span class="badge-afines ${cls}">${n} af${n === 1 ? 'ín' : 'ines'}</span></td>
                         <td>${escapeHtml(fmtFechaCorta(j.fecha_registro))}</td>
                         <td>
                             <button class="btn-fila ver" data-action="ver" data-ced="${escapeHtml(j.cedula || '')}">Ver Afines</button>
@@ -933,16 +973,24 @@
             const nombre = `${j.nombres || ''} ${j.apellidos || ''}`.trim() || '-';
 
             const filasAfin = afines.length
-                ? afines.map(a => `
+                ? afines.map(a => {
+                    const edad = calcularEdad(a.fecha_nacimiento);
+                    const fechaTxt = a.fecha_nacimiento
+                        ? `${escapeHtml(fmtFechaNacimiento(a.fecha_nacimiento))}${edad !== null ? ` <small style="color:#64748b;">(${edad} años)</small>` : ""}`
+                        : "—";
+                    return `
                     <tr>
                         <td>${a.orden || '-'}</td>
                         <td><b>${escapeHtml((a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || ''))}</b></td>
                         <td>${escapeHtml(`${a.nombres || ''} ${a.apellidos || ''}`.trim() || '-')}</td>
+                        <td>${escapeHtml(a.telefono || '—')}</td>
+                        <td>${fechaTxt}</td>
                         <td>${escapeHtml(fmtFechaCorta(a.fecha_registro))}</td>
                         <td><button class="btn-fila del" data-afin="${escapeHtml(a.cedula || '')}">Eliminar</button></td>
                     </tr>
-                `).join('')
-                : `<tr><td colspan="5" style="text-align:center;padding:18px;color:#94a3b8;font-weight:600;">Este jefe aún no tiene afines registrados.</td></tr>`;
+                `;
+                  }).join('')
+                : `<tr><td colspan="7" style="text-align:center;padding:18px;color:#94a3b8;font-weight:600;">Este jefe aún no tiene afines registrados.</td></tr>`;
 
             $('modalCaja').innerHTML = `
                 <button class="cerrar" id="btnCerrarModal">✕ Cerrar</button>
@@ -961,6 +1009,8 @@
                                 <th style="width:50px;">Orden</th>
                                 <th>Cédula</th>
                                 <th>Nombres y Apellidos</th>
+                                <th>Teléfono</th>
+                                <th>Fecha Nacimiento</th>
                                 <th>Fecha registro</th>
                                 <th style="width:90px;">Acción</th>
                             </tr>
@@ -1186,7 +1236,7 @@
                     y += 6;
                     doc.setTextColor(100, 100, 100);
                     doc.text(_safePdf(`Comunidad: ${comunidad}`), margenX, y + 3.5);
-                    doc.text(_safePdf(`Afines: ${afines.length}/10`), margenX + anchoUtil, y + 3.5, { align: 'right' });
+                    doc.text(_safePdf(`Afines: ${afines.length}`), margenX + anchoUtil, y + 3.5, { align: 'right' });
                     y += 5;
 
                     // Tabla compacta de afines
@@ -1199,9 +1249,13 @@
                         doc.setFontSize(8);
                         doc.setTextColor(80, 80, 80);
                         doc.setFont('helvetica', 'bold');
+                        // Layout: #(4) | Cedula(14) | Nombre(44) | Tel(col fija a la derecha)
+                        const xTel = margenX + anchoUtil - 36; // 36mm para telefono
+                        const anchoNombre = xTel - (margenX + 44) - 2;
                         doc.text('#', margenX + 4, y + 3);
                         doc.text('Cedula', margenX + 14, y + 3);
                         doc.text('Nombre completo', margenX + 44, y + 3);
+                        doc.text('Telefono', xTel, y + 3);
                         y += 4;
                         doc.setFont('helvetica', 'normal');
                         doc.setTextColor(30, 41, 59);
@@ -1209,10 +1263,12 @@
                             checkPag(5);
                             const cedA = (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || '');
                             const nomA = `${(a.nombres || '').trim()} ${(a.apellidos || '').trim()}`.trim() || '-';
+                            const telA = a.telefono || '-';
                             doc.text(String(a.orden || (idxA + 1)), margenX + 4, y + 3);
                             doc.text(_safePdf(cedA), margenX + 14, y + 3);
-                            const nomLineas = doc.splitTextToSize(_safePdf(nomA), anchoUtil - 50);
+                            const nomLineas = doc.splitTextToSize(_safePdf(nomA), anchoNombre);
                             doc.text(nomLineas, margenX + 44, y + 3);
+                            doc.text(_safePdf(telA), xTel, y + 3);
                             y += Math.max(4, nomLineas.length * 4);
                         });
                     }
@@ -1240,8 +1296,8 @@
         // ──────────────────────────────────────────────────────────
         // CSV (una fila por persona)
         // Columnas: tipo, cedula, nacionalidad, nombres, apellidos,
-        // telefono, parroquia, circuito, comunidad, centro_electoral,
-        // mesas, cedula_jefe, orden, fecha_registro_iso
+        // telefono, fecha_nacimiento, parroquia, circuito, comunidad,
+        // centro_electoral, mesas, cedula_jefe, orden, fecha_registro_iso
         // ──────────────────────────────────────────────────────────
         function csvEscape(v) {
             if (v == null) return '';
@@ -1262,6 +1318,7 @@
 
             const header = [
                 'tipo', 'cedula', 'nacionalidad', 'nombres', 'apellidos', 'telefono',
+                'fecha_nacimiento', 'edad',
                 'parroquia', 'circuito', 'comunidad', 'centro_electoral', 'mesas',
                 'cedula_jefe', 'orden', 'fecha_registro_iso'
             ];
@@ -1269,6 +1326,7 @@
 
             filtrados.forEach(j => {
                 const fechaJefe = j.fecha_registro ? new Date(j.fecha_registro).toISOString() : '';
+                const edadJefe = calcularEdad(j.fecha_nacimiento);
                 // Fila del jefe
                 rows.push([
                     'jefe',
@@ -1277,6 +1335,8 @@
                     j.nombres || '',
                     j.apellidos || '',
                     j.telefono || '',
+                    j.fecha_nacimiento || '',  // los jefes hoy no tienen fecha_nacimiento; queda vacia
+                    edadJefe !== null ? String(edadJefe) : '',
                     j.parroquia || '',
                     j.circuito || '',
                     j.comunidad_nombre || '',
@@ -1290,13 +1350,16 @@
                 // Filas de cada afín — heredan ubicacion del jefe
                 (j._afines || []).forEach(a => {
                     const fechaAfin = a.fecha_registro ? new Date(a.fecha_registro).toISOString() : '';
+                    const edadAfin = calcularEdad(a.fecha_nacimiento);
                     rows.push([
                         'afin',
                         a.cedula || '',
                         a.nacionalidad || '',
                         a.nombres || '',
                         a.apellidos || '',
-                        '',                       // los afines no traen telefono
+                        a.telefono || '',
+                        a.fecha_nacimiento || '',
+                        edadAfin !== null ? String(edadAfin) : '',
                         j.parroquia || '',
                         j.circuito || '',
                         j.comunidad_nombre || '',
@@ -1322,10 +1385,820 @@
             URL.revokeObjectURL(url);
         }
 
+        // ──────────────────────────────────────────────────────────
+        // EXCEL .xlsx ORGANIZADO (4 hojas) — SheetJS
+        // Hoja 1 "Resumen": KPIs + jefes por parroquia + top 10 centros.
+        // Hoja 2 "Jefes 1x10": lista completa con freeze + autofilter.
+        // Hoja 3 "Afines": una fila por afin con datos del jefe + edad.
+        // Hoja 4 "Movilizacion por Centro": agrupado para imprimir.
+        // OJO: el build .full.min.js de SheetJS comunidad NO soporta
+        // estilos (colores/negrita). Igual asignamos los `s:` por si en
+        // el futuro se cambia a la version pro; lo importante hoy es la
+        // organizacion en hojas, anchos y freeze/autofilter.
+        // ──────────────────────────────────────────────────────────
+        function _estiloCabeceraExcel() {
+            return {
+                fill: { fgColor: { rgb: "0A2351" } },
+                font: { bold: true, color: { rgb: "FFFFFF" } },
+                alignment: { horizontal: "center", vertical: "center" }
+            };
+        }
+        function _estiloTituloExcel() {
+            return {
+                fill: { fgColor: { rgb: "0A2351" } },
+                font: { bold: true, color: { rgb: "FFFFFF" }, sz: 14 },
+                alignment: { horizontal: "left", vertical: "center" }
+            };
+        }
+        function _estiloGrupoExcel() {
+            return {
+                fill: { fgColor: { rgb: "E2E8F0" } },
+                font: { bold: true, color: { rgb: "0F172A" } }
+            };
+        }
+
+        // Convierte una matriz (AoA) a worksheet aplicando estilos a celdas marcadas
+        // como objetos { v, s }. SheetJS comunidad lee `v` pero ignora `s` — esta
+        // funcion existe para que el dia que se cambie a sheetjs-style funcione solo.
+        function _aoaToWs(matriz) {
+            const ws = XLSX.utils.aoa_to_sheet(
+                matriz.map(fila => fila.map(c => (c && typeof c === 'object' && 'v' in c) ? c.v : c))
+            );
+            // Re-aplicar estilos sobre las celdas que llegaron como objetos
+            for (let r = 0; r < matriz.length; r++) {
+                for (let c = 0; c < matriz[r].length; c++) {
+                    const cell = matriz[r][c];
+                    if (cell && typeof cell === 'object' && 's' in cell) {
+                        const addr = XLSX.utils.encode_cell({ r, c });
+                        if (ws[addr]) ws[addr].s = cell.s;
+                    }
+                }
+            }
+            return ws;
+        }
+
+        function exportarExcelOrganizado() {
+            if (!window.XLSX) {
+                alert('La librería de Excel no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            const jefes = getJefesArray();
+            const filtrados = aplicarFiltros(jefes);
+            if (filtrados.length === 0) {
+                alert('No hay datos para exportar con los filtros actuales.');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const fechaSlug = new Date().toISOString().slice(0, 10);
+            const fechaHumana = new Date().toLocaleString('es-VE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // ── HOJA 1: Resumen ──────────────────────────────────────
+            const totalJefes = filtrados.length;
+            const totalAfines = filtrados.reduce((acc, j) => acc + j._afinesCount, 0);
+            const totalPersonas = totalJefes + totalAfines;
+            const completos = filtrados.filter(j => j._afinesCount >= 10).length;
+            const promedio = totalJefes ? (totalAfines / totalJefes) : 0;
+            const promedioTxt = promedio.toLocaleString('es-VE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            const comunidadesSet = new Set(filtrados.map(j => j.comunidad_nombre).filter(Boolean));
+            const centrosSet = new Set(filtrados.map(j => j.centro_electoral).filter(Boolean));
+
+            // Jefes por parroquia
+            const porParroquia = {};
+            filtrados.forEach(j => {
+                const k = j.parroquia || '(SIN PARROQUIA)';
+                if (!porParroquia[k]) porParroquia[k] = { jefes: 0, afines: 0 };
+                porParroquia[k].jefes++;
+                porParroquia[k].afines += j._afinesCount;
+            });
+            const filasParroquia = Object.entries(porParroquia)
+                .sort((a, b) => a[0].localeCompare(b[0], 'es'))
+                .map(([p, v]) => [p, v.jefes, v.afines, v.jefes + v.afines]);
+
+            // Top 10 centros
+            const porCentro = {};
+            filtrados.forEach(j => {
+                const k = j.centro_electoral || '(SIN CENTRO ASIGNADO)';
+                if (!porCentro[k]) porCentro[k] = { jefes: 0, afines: 0 };
+                porCentro[k].jefes++;
+                porCentro[k].afines += j._afinesCount;
+            });
+            const top10Centros = Object.entries(porCentro)
+                .map(([c, v]) => ({ centro: c, jefes: v.jefes, afines: v.afines, total: v.jefes + v.afines }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 10);
+
+            const matrizResumen = [
+                [{ v: 'Resultados Movilizacion 1x10', s: _estiloTituloExcel() }],
+                [`Generado: ${fechaHumana}`],
+                [],
+                [{ v: 'KPI', s: _estiloCabeceraExcel() }, { v: 'Valor', s: _estiloCabeceraExcel() }],
+                ['Total Jefes 1x10', totalJefes],
+                ['Total Afines', totalAfines],
+                ['Total Personas', totalPersonas],
+                ['Promedio afines por jefe', promedioTxt],
+                ['Jefes con 10+ afines', completos],
+                ['Comunidades cubiertas', comunidadesSet.size],
+                ['Centros cubiertos', centrosSet.size],
+                [],
+                [{ v: 'Jefes por Parroquia', s: _estiloTituloExcel() }],
+                [
+                    { v: 'Parroquia', s: _estiloCabeceraExcel() },
+                    { v: 'Cantidad Jefes', s: _estiloCabeceraExcel() },
+                    { v: 'Cantidad Afines', s: _estiloCabeceraExcel() },
+                    { v: 'Total Personas', s: _estiloCabeceraExcel() }
+                ],
+                ...filasParroquia,
+                [],
+                [{ v: 'Top 10 Centros por Personas', s: _estiloTituloExcel() }],
+                [
+                    { v: 'Centro', s: _estiloCabeceraExcel() },
+                    { v: 'Jefes', s: _estiloCabeceraExcel() },
+                    { v: 'Afines', s: _estiloCabeceraExcel() },
+                    { v: 'Total', s: _estiloCabeceraExcel() }
+                ],
+                ...top10Centros.map(t => [t.centro, t.jefes, t.afines, t.total])
+            ];
+            const wsResumen = _aoaToWs(matrizResumen);
+            wsResumen['!cols'] = [{ wch: 40 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
+            // Mergeamos los titulos para que ocupen toda la fila visualmente.
+            // Indices: titulo=0, "Jefes por Parroquia"=12, "Top 10 Centros"=14+filasParroquia.length+1
+            // (Las filas de KPIs ahora son 7 en vez de 6 — se agrego "Promedio afines/jefe" y "Jefes con 10+").
+            wsResumen['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+                { s: { r: 12, c: 0 }, e: { r: 12, c: 3 } },
+                { s: { r: 14 + filasParroquia.length + 1, c: 0 }, e: { r: 14 + filasParroquia.length + 1, c: 3 } }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+            // ── HOJA 2: Jefes 1x10 ───────────────────────────────────
+            const headerJefes = [
+                'Cedula', 'Nombres', 'Apellidos', 'Telefono', 'Nacionalidad',
+                'Parroquia', 'Circuito Comunal', 'Comunidad', 'Centro Electoral',
+                'Mesas', '# Afines', 'Fecha Registro'
+            ];
+            const filasJefes = filtrados
+                .slice()
+                .sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0))
+                .map(j => [
+                    (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
+                    j.nombres || '',
+                    j.apellidos || '',
+                    j.telefono || '',
+                    j.nacionalidad || '',
+                    j.parroquia || '',
+                    j.circuito || '',
+                    j.comunidad_nombre || '',
+                    j.centro_electoral || '',
+                    j.mesas || '',
+                    j._afinesCount,
+                    j.fecha_registro ? fmtFecha(j.fecha_registro) : ''
+                ]);
+            const matrizJefes = [
+                headerJefes.map(h => ({ v: h, s: _estiloCabeceraExcel() })),
+                ...filasJefes
+            ];
+            const wsJefes = _aoaToWs(matrizJefes);
+            wsJefes['!cols'] = [
+                { wch: 14 }, { wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 6 },
+                { wch: 22 }, { wch: 20 }, { wch: 26 }, { wch: 32 },
+                { wch: 14 }, { wch: 9 }, { wch: 18 }
+            ];
+            wsJefes['!freeze'] = { xSplit: 0, ySplit: 1 };
+            wsJefes['!autofilter'] = { ref: `A1:L${filasJefes.length + 1}` };
+            XLSX.utils.book_append_sheet(wb, wsJefes, 'Jefes 1x10');
+
+            // ── HOJA 3: Afines ───────────────────────────────────────
+            const headerAfines = [
+                'Cedula Jefe', 'Nombre Jefe', 'Comunidad Jefe', 'Centro Jefe',
+                'Orden', 'Cedula Afin', 'Nombres Afin', 'Apellidos Afin',
+                'Telefono', 'Fecha Nac', 'Edad', 'Nacionalidad', 'Fecha Registro'
+            ];
+            const filasAfines = [];
+            filtrados.forEach(j => {
+                const cedJefe = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
+                const nomJefe = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim();
+                (j._afines || []).forEach(a => {
+                    const edad = calcularEdad(a.fecha_nacimiento);
+                    filasAfines.push([
+                        cedJefe,
+                        nomJefe,
+                        j.comunidad_nombre || '',
+                        j.centro_electoral || '',
+                        a.orden || '',
+                        (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || ''),
+                        a.nombres || '',
+                        a.apellidos || '',
+                        a.telefono || '',
+                        a.fecha_nacimiento || '',
+                        edad !== null ? edad : '',
+                        a.nacionalidad || '',
+                        a.fecha_registro ? fmtFecha(a.fecha_registro) : ''
+                    ]);
+                });
+            });
+            const matrizAfines = [
+                headerAfines.map(h => ({ v: h, s: _estiloCabeceraExcel() })),
+                ...filasAfines
+            ];
+            const wsAfines = _aoaToWs(matrizAfines);
+            wsAfines['!cols'] = [
+                { wch: 14 }, { wch: 30 }, { wch: 26 }, { wch: 32 },
+                { wch: 7 }, { wch: 14 }, { wch: 22 }, { wch: 22 },
+                { wch: 14 }, { wch: 12 }, { wch: 6 }, { wch: 6 }, { wch: 18 }
+            ];
+            wsAfines['!freeze'] = { xSplit: 0, ySplit: 1 };
+            wsAfines['!autofilter'] = { ref: `A1:M${filasAfines.length + 1}` };
+            XLSX.utils.book_append_sheet(wb, wsAfines, 'Afines');
+
+            // ── HOJA 4: Movilizacion por Centro ──────────────────────
+            // Agrupado por centro electoral: titulo del centro + sub-tabla
+            // con jefes de ese centro y cuantos afines tiene cada uno.
+            const porCentroDetalle = {};
+            filtrados.forEach(j => {
+                const k = j.centro_electoral || '(SIN CENTRO ASIGNADO)';
+                if (!porCentroDetalle[k]) porCentroDetalle[k] = [];
+                porCentroDetalle[k].push(j);
+            });
+            const matrizMov = [];
+            const merges = [];
+            Object.entries(porCentroDetalle)
+                .sort((a, b) => a[0].localeCompare(b[0], 'es'))
+                .forEach(([centro, jefesCen]) => {
+                    const totalPCen = jefesCen.length + jefesCen.reduce((a, j) => a + j._afinesCount, 0);
+                    matrizMov.push([{
+                        v: `${centro}  —  ${jefesCen.length} jefe(s)  /  ${totalPCen} personas`,
+                        s: _estiloGrupoExcel()
+                    }]);
+                    merges.push({ s: { r: matrizMov.length - 1, c: 0 }, e: { r: matrizMov.length - 1, c: 5 } });
+                    matrizMov.push([
+                        { v: 'Cedula Jefe', s: _estiloCabeceraExcel() },
+                        { v: 'Nombre Jefe', s: _estiloCabeceraExcel() },
+                        { v: 'Telefono', s: _estiloCabeceraExcel() },
+                        { v: 'Comunidad', s: _estiloCabeceraExcel() },
+                        { v: 'Mesas', s: _estiloCabeceraExcel() },
+                        { v: '# Afines', s: _estiloCabeceraExcel() }
+                    ]);
+                    jefesCen
+                        .sort((a, b) => {
+                            const an = `${a.apellidos || ''} ${a.nombres || ''}`;
+                            const bn = `${b.apellidos || ''} ${b.nombres || ''}`;
+                            return an.localeCompare(bn, 'es');
+                        })
+                        .forEach(j => {
+                            matrizMov.push([
+                                (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
+                                `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim(),
+                                j.telefono || '',
+                                j.comunidad_nombre || '',
+                                j.mesas || '',
+                                j._afinesCount
+                            ]);
+                        });
+                    matrizMov.push([]); // fila vacia entre centros
+                });
+            const wsMov = _aoaToWs(matrizMov);
+            wsMov['!cols'] = [
+                { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 26 }, { wch: 14 }, { wch: 9 }
+            ];
+            wsMov['!merges'] = merges;
+            XLSX.utils.book_append_sheet(wb, wsMov, 'Movilizacion por Centro');
+
+            XLSX.writeFile(wb, `1x10_movilizacion_${fechaSlug}.xlsx`);
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // PDF "HOJA DE ASISTENCIA" con espacios para FIRMA y HUELLA
+        // Una pagina por cada jefe filtrado. Fila 0 = jefe (gris), 1..N = afines.
+        // N es variable: si el jefe tiene 7 afines van 7 filas, si tiene 15 van 15.
+        // Si el jefe NO tiene afines, igual se imprimen 10 filas vacias para llenar
+        // a mano (el flujo original tipico). Si tiene mas de 20 afines, se pagina:
+        // la pagina siguiente reabre con cabecera "(continuacion)" + datos del jefe.
+        // ──────────────────────────────────────────────────────────
+        function generarPdfHojaAsistencia() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            const jefes = getJefesArray();
+            const jefesVisibles = aplicarFiltros(jefes)
+                .sort((a, b) => {
+                    const an = `${a.apellidos || ''} ${a.nombres || ''}`;
+                    const bn = `${b.apellidos || ''} ${b.nombres || ''}`;
+                    return an.localeCompare(bn, 'es');
+                });
+            if (jefesVisibles.length === 0) {
+                alert('No hay jefes 1x10 para imprimir hojas de asistencia con los filtros actuales.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const pageW = 216, pageH = 279;
+            const margenX = 12;
+            const anchoUtil = pageW - margenX * 2;
+
+            // Anchos de columna (suma = anchoUtil = 192mm)
+            // # (10) | CEDULA (22) | NOMBRE (55) | TELEFONO (22) | FIRMA (55) | HUELLA (28)
+            const colW = { num: 10, ced: 22, nom: 55, tel: 22, firma: 55, huella: 28 };
+            const xNum = margenX;
+            const xCed = xNum + colW.num;
+            const xNom = xCed + colW.ced;
+            const xTel = xNom + colW.nom;
+            const xFirma = xTel + colW.tel;
+            const xHuella = xFirma + colW.firma;
+            const filaH = 12; // 12mm de alto por fila — suficiente para firma manuscrita
+            // Cuantos afines caben por pagina (despues del jefe). Pedido del usuario:
+            // si hay >20 afines, paginar continuando en una nueva hoja.
+            const AFINES_POR_PAGINA = 20;
+
+            const fechaHumana = new Date().toLocaleString('es-VE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Helper que pinta cabecera + recuadro del jefe + cabecera de la tabla
+            // y devuelve la `y` donde empezar a pintar filas. Se reusa tanto en la
+            // primera pagina como en las paginas "(continuacion)".
+            function pintarCabeceraPagina(j, esContinuacion) {
+                // ── Cintillo rojo + titulo ─────────────────
+                doc.setFillColor(227, 6, 19);
+                doc.rect(0, 0, pageW, 10, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(_safePdf('ALCALDIA DE CRISTOBAL ROJAS'), pageW / 2, 7, { align: 'center' });
+
+                let y = 16;
+                doc.setTextColor(10, 35, 81);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(15);
+                const tit = esContinuacion
+                    ? 'HOJA DE ASISTENCIA - MOVILIZACION 1x10 (continuacion)'
+                    : 'HOJA DE ASISTENCIA - MOVILIZACION 1x10';
+                doc.text(_safePdf(tit), pageW / 2, y, { align: 'center' });
+                y += 7;
+
+                // ── Datos del jefe (recuadro) ─────────────
+                const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
+                const nombre = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '-';
+                const tel = j.telefono || '-';
+                const parroquia = j.parroquia || '-';
+                const comuna = j.circuito || '-';
+                const comunidad = j.comunidad_nombre || '-';
+                const centro = j.centro_electoral || '-';
+                const mesas = j.mesas || '-';
+
+                doc.setDrawColor(10, 35, 81);
+                doc.setLineWidth(0.4);
+                const recH = 28;
+                doc.rect(margenX, y, anchoUtil, recH);
+                doc.setFillColor(10, 35, 81);
+                doc.rect(margenX, y, anchoUtil, 6, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.text(_safePdf('DATOS DEL JEFE DE PATRULLA'), margenX + 2, y + 4.2);
+
+                doc.setTextColor(30, 41, 59);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                const labelW = 26;
+                const col1X = margenX + 2;
+                const col2X = margenX + anchoUtil / 2 + 2;
+                let yy = y + 11;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Nombre:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(nombre), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Cedula:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(ced), col2X + labelW, yy);
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Telefono:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(tel), col1X + labelW, yy);
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Parroquia:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(parroquia), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Comuna:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(comuna), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Comunidad:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(comunidad), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Centro:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(centro), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Mesas:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(mesas), col2X + labelW, yy);
+
+                y += recH + 5;
+
+                // ── Cabecera de la tabla ──────────────────
+                doc.setFillColor(10, 35, 81);
+                doc.rect(margenX, y, anchoUtil, 7, 'F');
+                doc.setDrawColor(10, 35, 81);
+                doc.setLineWidth(0.3);
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                const yCab = y + 4.8;
+                doc.text('#', xNum + colW.num / 2, yCab, { align: 'center' });
+                doc.text('CEDULA', xCed + colW.ced / 2, yCab, { align: 'center' });
+                doc.text('NOMBRE COMPLETO', xNom + colW.nom / 2, yCab, { align: 'center' });
+                doc.text('TELEFONO', xTel + colW.tel / 2, yCab, { align: 'center' });
+                doc.text('FIRMA', xFirma + colW.firma / 2, yCab, { align: 'center' });
+                doc.text('HUELLA', xHuella + colW.huella / 2, yCab, { align: 'center' });
+                y += 7;
+
+                return { y, ced, nombre, tel };
+            }
+
+            // Helper que pinta una fila (vacia o con datos)
+            function pintarFila(y, etiqueta, esJefe, datos) {
+                if (esJefe) {
+                    doc.setFillColor(226, 232, 240);
+                    doc.rect(margenX, y, anchoUtil, filaH, 'F');
+                }
+                doc.setDrawColor(120, 120, 120);
+                doc.setLineWidth(0.2);
+                doc.rect(xNum, y, colW.num, filaH);
+                doc.rect(xCed, y, colW.ced, filaH);
+                doc.rect(xNom, y, colW.nom, filaH);
+                doc.rect(xTel, y, colW.tel, filaH);
+                doc.rect(xFirma, y, colW.firma, filaH);
+                doc.rect(xHuella, y, colW.huella, filaH);
+
+                doc.setTextColor(15, 23, 42);
+                doc.setFont('helvetica', esJefe ? 'bold' : 'normal');
+                doc.setFontSize(esJefe ? 9 : 8.8);
+                const yTxt = y + filaH / 2 + 1.2;
+                doc.text(String(etiqueta), xNum + colW.num / 2, yTxt, { align: 'center' });
+                if (datos) {
+                    doc.text(_safePdf(datos.ced), xCed + 1.5, yTxt);
+                    const nomLineas = doc.splitTextToSize(_safePdf(datos.nom), colW.nom - 3);
+                    doc.text(nomLineas, xNom + 1.5, y + 4.2);
+                    doc.text(_safePdf(datos.tel), xTel + 1.5, yTxt);
+                }
+            }
+
+            // Helper para el pie de la pagina (fecha + coordinador)
+            function pintarPie(y) {
+                y += 6;
+                doc.setTextColor(80, 80, 80);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.text(_safePdf(`Fecha de impresion: ${fechaHumana}`), margenX, y);
+                y += 7;
+                doc.setTextColor(30, 41, 59);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text(_safePdf('Coordinador: __________________________'), margenX, y);
+                doc.text(_safePdf('Firma: __________________________'), margenX + anchoUtil / 2, y);
+            }
+
+            jefesVisibles.forEach((j, idxJefe) => {
+                if (idxJefe > 0) doc.addPage();
+
+                const afines = j._afines || [];
+                // Si el jefe no tiene afines aun, mostrar 10 filas vacias para
+                // llenar a mano (caso clasico de hoja en blanco para campo).
+                // Si tiene afines, usar la cantidad real (puede ser <10 o >10).
+                const totalAfinesFila = afines.length > 0 ? afines.length : 10;
+
+                // Pagina inicial del jefe
+                let { y, ced, nombre, tel } = pintarCabeceraPagina(j, false);
+
+                // Fila 0: el jefe (gris)
+                pintarFila(y, 'J', true, { ced, nom: nombre, tel });
+                y += filaH;
+
+                let afinIdx = 0;
+                let enPagina = 0; // cuantas filas de afin ya pintadas en la pagina actual
+
+                while (afinIdx < totalAfinesFila) {
+                    // Si llegamos al limite por pagina, abrir continuacion
+                    if (enPagina >= AFINES_POR_PAGINA) {
+                        // Pie de la pagina actual antes de saltar
+                        pintarPie(y);
+                        doc.addPage();
+                        const reabierto = pintarCabeceraPagina(j, true);
+                        y = reabierto.y;
+                        // En la continuacion NO repetimos la fila del jefe;
+                        // arrancamos directamente con afines.
+                        enPagina = 0;
+                    }
+
+                    const numFila = afinIdx + 1;
+                    const a = afines[afinIdx];
+                    let datos = null;
+                    if (a) {
+                        const cedA = (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || '');
+                        const nomA = `${(a.nombres || '').trim()} ${(a.apellidos || '').trim()}`.trim() || '-';
+                        const telA = a.telefono || '-';
+                        datos = { ced: cedA, nom: nomA, tel: telA };
+                    }
+                    pintarFila(y, numFila, false, datos);
+                    y += filaH;
+
+                    afinIdx++;
+                    enPagina++;
+                }
+
+                // Pie de la ultima pagina del jefe
+                pintarPie(y);
+            });
+
+            // Numeracion de paginas
+            const totalPag = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPag; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(_safePdf(`Pagina ${i} de ${totalPag}`), pageW / 2, pageH - 6, { align: 'center' });
+            }
+
+            const fechaSlug = new Date().toISOString().slice(0, 10);
+            doc.save(`1x10_hoja_asistencia_${fechaSlug}.pdf`);
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // PDF: Hoja de Asistencia agrupada POR CENTRO ELECTORAL
+        // (distinto al PDF por Jefe — aqui 1 hoja por centro lista
+        // a TODAS las personas (jefes + afines) que votan ahi, con
+        // columna firma. Para que el coordinador del centro vaya
+        // marcando asistencia/voto el dia de la jornada.)
+        // ──────────────────────────────────────────────────────────
+        function generarPdfAsistenciaPorCentro() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            const jefes = getJefesArray();
+            const jefesVisibles = aplicarFiltros(jefes);
+            if (jefesVisibles.length === 0) {
+                alert('No hay jefes 1x10 para imprimir hojas por centro con los filtros actuales.');
+                return;
+            }
+
+            // Agrupar jefes por centro electoral. Cada jefe aporta SUS afines
+            // al grupo de SU centro (asumimos que los afines votan donde el jefe).
+            const grupos = {};
+            jefesVisibles.forEach(j => {
+                const k = j.centro_electoral || '(SIN CENTRO ASIGNADO)';
+                if (!grupos[k]) grupos[k] = [];
+                grupos[k].push(j);
+            });
+            // Orden alfabetico estable de centros
+            const entries = Object.entries(grupos).sort((a, b) => a[0].localeCompare(b[0], 'es'));
+            // Dentro de cada centro, ordenar jefes por apellidos+nombres
+            entries.forEach(([, arr]) => {
+                arr.sort((a, b) => {
+                    const an = `${a.apellidos || ''} ${a.nombres || ''}`;
+                    const bn = `${b.apellidos || ''} ${b.nombres || ''}`;
+                    return an.localeCompare(bn, 'es');
+                });
+            });
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const pageW = 216, pageH = 279;
+            const margenX = 12;
+            const anchoUtil = pageW - margenX * 2; // 192mm
+
+            // Anchos de columna (suma = 192):
+            // # (8) | TIPO (16) | CEDULA (22) | NOMBRE (50) | TEL (22) | COMUNIDAD (29) | FIRMA (45)
+            const colW = { num: 8, tipo: 16, ced: 22, nom: 50, tel: 22, com: 29, firma: 45 };
+            const xNum = margenX;
+            const xTipo = xNum + colW.num;
+            const xCed = xTipo + colW.tipo;
+            const xNom = xCed + colW.ced;
+            const xTel = xNom + colW.nom;
+            const xCom = xTel + colW.tel;
+            const xFirma = xCom + colW.com;
+            const filaH = 10; // 10mm alto por fila — espacio para firma manuscrita
+            const Y_TOPE_PIE = pageH - 30; // por encima de esto, paginar antes del pie
+
+            const fechaHumana = new Date().toLocaleString('es-VE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Recolecta datos del centro: nombre, mesas (set), parroquias (set),
+            // comunas (set), # jefes, # total personas (jefes + afines).
+            function datosCentro(nombreCentro, jefesCentro) {
+                const mesasSet = new Set();
+                const parrSet = new Set();
+                const comuSet = new Set();
+                let totalPersonas = 0;
+                jefesCentro.forEach(j => {
+                    if (j.mesas) mesasSet.add(String(j.mesas));
+                    if (j.parroquia) parrSet.add(String(j.parroquia));
+                    if (j.circuito) comuSet.add(String(j.circuito));
+                    const afines = j._afines || [];
+                    totalPersonas += 1 + afines.length;
+                });
+                return {
+                    nombre: nombreCentro,
+                    mesas: Array.from(mesasSet).sort().join(', ') || '-',
+                    parroquias: Array.from(parrSet).sort().join(', ') || '-',
+                    comunas: Array.from(comuSet).sort().join(', ') || '-',
+                    nJefes: jefesCentro.length,
+                    nPersonas: totalPersonas
+                };
+            }
+
+            // Pinta cintillo + titulo + recuadro de centro + cabecera tabla.
+            // Devuelve la y donde empezar a pintar filas.
+            function pintarCabeceraPagina(infoCentro, esContinuacion) {
+                // Cintillo rojo + titulo institucional
+                doc.setFillColor(227, 6, 19);
+                doc.rect(0, 0, pageW, 10, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(_safePdf('ALCALDIA DE CRISTOBAL ROJAS'), pageW / 2, 7, { align: 'center' });
+
+                let y = 16;
+                doc.setTextColor(91, 33, 182); // morado #5b21b6 a juego con el boton
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(14);
+                const tit = esContinuacion
+                    ? 'HOJA DE ASISTENCIA - CENTRO ELECTORAL (continuacion)'
+                    : 'HOJA DE ASISTENCIA - CENTRO ELECTORAL';
+                doc.text(_safePdf(tit), pageW / 2, y, { align: 'center' });
+                y += 7;
+
+                // Recuadro datos del centro
+                doc.setDrawColor(91, 33, 182);
+                doc.setLineWidth(0.4);
+                const recH = 26;
+                doc.rect(margenX, y, anchoUtil, recH);
+                doc.setFillColor(91, 33, 182);
+                doc.rect(margenX, y, anchoUtil, 6, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.text(_safePdf('DATOS DEL CENTRO ELECTORAL'), margenX + 2, y + 4.2);
+
+                doc.setTextColor(30, 41, 59);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                const labelW = 26;
+                const col1X = margenX + 2;
+                const col2X = margenX + anchoUtil / 2 + 2;
+                let yy = y + 11;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Centro:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.nombre), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Mesas:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.mesas), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Parroquia(s):'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.parroquias), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Comuna(s):'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.comunas), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('# de jefes:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(String(infoCentro.nJefes)), col1X + labelW, yy);
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Total personas:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(String(infoCentro.nPersonas)), col2X + labelW, yy);
+
+                y += recH + 5;
+
+                // Cabecera de la tabla
+                doc.setFillColor(91, 33, 182);
+                doc.rect(margenX, y, anchoUtil, 7, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                const yCab = y + 4.8;
+                doc.text('#', xNum + colW.num / 2, yCab, { align: 'center' });
+                doc.text('TIPO', xTipo + colW.tipo / 2, yCab, { align: 'center' });
+                doc.text('CEDULA', xCed + colW.ced / 2, yCab, { align: 'center' });
+                doc.text('NOMBRE COMPLETO', xNom + colW.nom / 2, yCab, { align: 'center' });
+                doc.text('TELEFONO', xTel + colW.tel / 2, yCab, { align: 'center' });
+                doc.text('COMUNIDAD', xCom + colW.com / 2, yCab, { align: 'center' });
+                doc.text('FIRMA', xFirma + colW.firma / 2, yCab, { align: 'center' });
+                y += 7;
+
+                return y;
+            }
+
+            // Pinta una fila — datos = {ced, nom, tel, com}, esJefe controla
+            // fondo gris claro + etiqueta [JEFE] en columna TIPO.
+            function pintarFila(y, numero, esJefe, datos) {
+                if (esJefe) {
+                    doc.setFillColor(244, 244, 244); // #F4F4F4 gris claro
+                    doc.rect(margenX, y, anchoUtil, filaH, 'F');
+                }
+                doc.setDrawColor(120, 120, 120);
+                doc.setLineWidth(0.2);
+                doc.rect(xNum, y, colW.num, filaH);
+                doc.rect(xTipo, y, colW.tipo, filaH);
+                doc.rect(xCed, y, colW.ced, filaH);
+                doc.rect(xNom, y, colW.nom, filaH);
+                doc.rect(xTel, y, colW.tel, filaH);
+                doc.rect(xCom, y, colW.com, filaH);
+                doc.rect(xFirma, y, colW.firma, filaH);
+
+                doc.setTextColor(15, 23, 42);
+                doc.setFontSize(8.5);
+                const yTxt = y + filaH / 2 + 1.2;
+                doc.setFont('helvetica', 'normal');
+                doc.text(String(numero), xNum + colW.num / 2, yTxt, { align: 'center' });
+                doc.setFont('helvetica', 'bold');
+                doc.text(_safePdf(esJefe ? '[JEFE]' : 'Afin'), xTipo + colW.tipo / 2, yTxt, { align: 'center' });
+                doc.setFont('helvetica', esJefe ? 'bold' : 'normal');
+                doc.text(_safePdf(datos.ced || '-'), xCed + 1.5, yTxt);
+                const nomLineas = doc.splitTextToSize(_safePdf(datos.nom || '-'), colW.nom - 3);
+                doc.text(nomLineas, xNom + 1.5, y + 4);
+                doc.text(_safePdf(datos.tel || '-'), xTel + 1.5, yTxt);
+                const comLineas = doc.splitTextToSize(_safePdf(datos.com || '-'), colW.com - 3);
+                doc.text(comLineas, xCom + 1.5, y + 4);
+            }
+
+            // Pie de pagina: fecha + linea coordinador/firma
+            function pintarPie(y) {
+                y += 4;
+                doc.setTextColor(80, 80, 80);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.text(_safePdf(`Fecha de impresion: ${fechaHumana}`), margenX, y);
+                y += 7;
+                doc.setTextColor(30, 41, 59);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text(_safePdf('Coordinador del centro: ___________________'), margenX, y);
+                doc.text(_safePdf('Firma: ___________________'), margenX + anchoUtil / 2 + 6, y);
+            }
+
+            // Recorrer centros
+            entries.forEach(([nombreCentro, jefesCentro], idxCentro) => {
+                if (idxCentro > 0) doc.addPage();
+
+                const info = datosCentro(nombreCentro, jefesCentro);
+                let y = pintarCabeceraPagina(info, false);
+                let numero = 0;
+
+                jefesCentro.forEach(j => {
+                    // Datos del jefe
+                    const cedJ = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
+                    const nomJ = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '-';
+                    const telJ = j.telefono || '-';
+                    const comJ = j.comunidad_nombre || '-';
+
+                    // Salto de pagina si no cabe ni la fila del jefe
+                    if (y + filaH > Y_TOPE_PIE) {
+                        pintarPie(y);
+                        doc.addPage();
+                        y = pintarCabeceraPagina(info, true);
+                    }
+                    numero++;
+                    pintarFila(y, numero, true, { ced: cedJ, nom: nomJ, tel: telJ, com: comJ });
+                    y += filaH;
+
+                    // Afines del jefe
+                    const afines = j._afines || [];
+                    afines.forEach(a => {
+                        if (y + filaH > Y_TOPE_PIE) {
+                            pintarPie(y);
+                            doc.addPage();
+                            y = pintarCabeceraPagina(info, true);
+                        }
+                        numero++;
+                        const cedA = (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || '');
+                        const nomA = `${(a.nombres || '').trim()} ${(a.apellidos || '').trim()}`.trim() || '-';
+                        const telA = a.telefono || '-';
+                        // Afin hereda comunidad del jefe (suelen vivir cerca);
+                        // si el afin tiene su propia comunidad guardada, preferirla.
+                        const comA = a.comunidad_nombre || comJ;
+                        pintarFila(y, numero, false, { ced: cedA, nom: nomA, tel: telA, com: comA });
+                        y += filaH;
+                    });
+                });
+
+                // Pie de la ultima pagina del centro
+                pintarPie(y);
+            });
+
+            // Numeracion global de paginas
+            const totalPag = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPag; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(_safePdf(`Pagina ${i} de ${totalPag}`), pageW / 2, pageH - 6, { align: 'center' });
+            }
+
+            const fechaSlug = new Date().toISOString().slice(0, 10);
+            doc.save(`1x10_asistencia_por_centro_${fechaSlug}.pdf`);
+        }
+
         // ── Binds de los botones de export
         $('btnPdfCentro').addEventListener('click', () => generarPdfMovilizacion('centro'));
         $('btnPdfComuna').addEventListener('click', () => generarPdfMovilizacion('comuna'));
         $('btnCsv').addEventListener('click', generarCSV);
+        $('btnExportarExcel').addEventListener('click', exportarExcelOrganizado);
+        $('btnPdfAsistencia').addEventListener('click', generarPdfHojaAsistencia);
+        $('btnPdfAsistenciaCentro').addEventListener('click', generarPdfAsistenciaPorCentro);
 
         // ── Tecla ESC cierra el modal
         document.addEventListener('keydown', (e) => {
