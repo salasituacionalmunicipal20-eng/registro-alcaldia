@@ -2507,9 +2507,13 @@
                     const nomJ = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '-';
                     const telJ = j.telefono || '-';
                     const comJ = j.comunidad_nombre || '-';
+                    const dirSecJ = (j.direccion_secretaria || '').trim();
+                    // Altura extra para la subfila italica "Direccion: ..." (solo si hay dato).
+                    // 5mm = 4mm de texto + ~1mm de aire entre el texto y la fila siguiente.
+                    const altoExtraDir = dirSecJ ? 5 : 0;
 
-                    // Salto de pagina si no cabe ni la fila del jefe
-                    if (y + filaH > Y_TOPE_PIE) {
+                    // Salto de pagina si no cabe la fila del jefe + su subfila de direccion
+                    if (y + filaH + altoExtraDir > Y_TOPE_PIE) {
                         pintarPie(y);
                         doc.addPage();
                         y = pintarCabeceraPagina(info, true);
@@ -2517,6 +2521,23 @@
                     numero++;
                     pintarFila(y, numero, true, { ced: cedJ, nom: nomJ, tel: telJ, com: comJ, gen: j.genero });
                     y += filaH;
+
+                    // Subfila italica con la Direccion / Secretaria del jefe.
+                    // Solo se pinta si el jefe tiene el campo lleno. Permite al
+                    // coordinador del centro agrupar visualmente por dependencia.
+                    if (dirSecJ) {
+                        doc.setFont('helvetica', 'italic');
+                        doc.setFontSize(8);
+                        doc.setTextColor(71, 85, 105); // #475569 gris medio
+                        const anchoDir = colW.nom + colW.gen + colW.tel + colW.com - 3;
+                        doc.text(
+                            _safePdf('Direccion: ' + dirSecJ),
+                            xNom + 1.5,
+                            y + 3.5,
+                            { maxWidth: anchoDir }
+                        );
+                        y += altoExtraDir;
+                    }
 
                     // Afines del jefe (filtrados por rango de edad, si esta activo)
                     const afines = (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento));
