@@ -54,6 +54,9 @@
         .btn-wa:hover { background: #1ebe57; }
         .btn-wa[disabled], .btn-wa.disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; pointer-events: none; }
         .tel-mal { color: #b91c1c; font-size: 11px; font-weight: 700; }
+        .btn-cne { background: #0a2351; color: #fff; border: none; border-radius: 5px; padding: 4px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-cne:hover { background: #15356e; }
+        .btn-cne[disabled] { background: #94a3b8; cursor: default; }
         .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
         .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
         .paginacion button[disabled] { opacity: .4; cursor: default; }
@@ -152,7 +155,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         // Mismo proyecto que todas las demas paginas
         const firebaseConfig = {
@@ -196,6 +199,28 @@
 
         const primerNombre = (nombres) => (nombres || '').trim().split(/\s+/)[0] || '';
 
+        // Consulta el CNE (Edge Function de Supabase, mismo que cne-autocompletar.js)
+        // y devuelve { nombres, apellidos } o null si no lo encuentra.
+        async function consultarCne(cedula, nacionalidad) {
+            const num = (cedula || '').replace(/\D/g, '');
+            if (num.length < 4) return null;
+            try {
+                const resp = await fetch('https://tfbzghjjfcaqmkzsxrrs.supabase.co/functions/v1/consultar-cedula', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cedula: num, nacionalidad: (nacionalidad === 'E' ? 'E' : 'V') })
+                });
+                if (!resp.ok) return null;
+                const json = await resp.json();
+                if (!json || json.error || !json.data) return null;
+                const d = json.data;
+                const nombres = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
+                const apellidos = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
+                if (!nombres && !apellidos) return null;
+                return { nombres, apellidos };
+            } catch (e) { console.warn('[CNE] consulta fallida:', e); return null; }
+        }
+
         let PERSONAS = [];     // lista unificada y deduplicada por telefono
         let pagina = 1;
         const TAM = 50;
@@ -237,11 +262,12 @@
                     const snapJ = await get(ref(database, sis.jefes));
                     if (snapJ.exists()) {
                         const jefes = snapJ.val() || {};
-                        Object.values(jefes).forEach(j => {
+                        Object.entries(jefes).forEach(([cedKey, j]) => {
                             agregar(lista, vistos, {
-                                nombres: j.nombres, apellidos: j.apellidos, cedula: j.cedula,
+                                nombres: j.nombres, apellidos: j.apellidos, cedula: j.cedula || cedKey,
                                 telefono: j.telefono, sistema: sis.label, tipo: 'Jefe',
-                                comunidad: j.comunidad_nombre || j.circuito || ''
+                                comunidad: j.comunidad_nombre || j.circuito || '',
+                                nacionalidad: j.nacionalidad, _path: `${sis.jefes}/${cedKey}`
                             });
                         });
                     }
@@ -251,12 +277,13 @@
                     const snapA = await get(ref(database, sis.afines));
                     if (snapA.exists()) {
                         const porJefe = snapA.val() || {};
-                        Object.values(porJefe).forEach(grupo => {
-                            Object.values(grupo || {}).forEach(a => {
+                        Object.entries(porJefe).forEach(([cedJefe, grupo]) => {
+                            Object.entries(grupo || {}).forEach(([cedAfin, a]) => {
                                 agregar(lista, vistos, {
-                                    nombres: a.nombres, apellidos: a.apellidos, cedula: a.cedula,
+                                    nombres: a.nombres, apellidos: a.apellidos, cedula: a.cedula || cedAfin,
                                     telefono: a.telefono, sistema: sis.label, tipo: 'Afín',
-                                    comunidad: a.comunidad_nombre || a.circuito || ''
+                                    comunidad: a.comunidad_nombre || a.circuito || '',
+                                    nacionalidad: a.nacionalidad, _path: `${sis.afines}/${cedJefe}/${cedAfin}`
                                 });
                             });
                         });
@@ -267,6 +294,7 @@
             // Orden alfabetico por nombre
             lista.sort((p, q) => (p.nombre || '').localeCompare(q.nombre || '', 'es'));
             PERSONAS = lista;
+            PERSONAS.forEach((p, i) => { p._id = i; });   // id estable para los botones CNE
 
             // Stats
             $('stTotal').textContent = lista.length;
@@ -286,6 +314,7 @@
             const clave = tel.valido ? tel.e164 : ('raw:' + (row.telefono + '').replace(/\D/g, ''));
             if (vistos.has(clave)) return;
             vistos.add(clave);
+            const sinNombre = !((row.nombres || '').trim() || (row.apellidos || '').trim());
             lista.push({
                 nombre: `${(row.nombres || '').trim()} ${(row.apellidos || '').trim()}`.trim() || '(sin nombre)',
                 primerNombre: primerNombre(row.nombres) || (row.nombres || '').trim() || 'compañero(a)',
@@ -295,7 +324,10 @@
                 telValido: tel.valido,
                 sistema: row.sistema,
                 tipo: row.tipo,
-                comunidad: row.comunidad || ''
+                comunidad: row.comunidad || '',
+                nacionalidad: (row.nacionalidad === 'E' ? 'E' : 'V'),
+                _path: row._path || '',
+                sinNombre
             });
         }
 
@@ -333,9 +365,12 @@
                 const waCell = p.telValido
                     ? `<a class="btn-wa" data-action="wa" data-e164="${escapeHtml(p.e164)}" data-nombre="${escapeHtml(p.primerNombre)}" href="#" >💬 WhatsApp</a>`
                     : `<span class="tel-mal">teléfono inválido</span>`;
+                const nombreCell = p.sinNombre
+                    ? `<span style="color:#94a3b8;">(sin nombre)</span> <button class="btn-cne" data-action="cne" data-id="${p._id}" title="Buscar el nombre en el CNE por la cédula">🔍 CNE</button>`
+                    : `<b>${escapeHtml(p.nombre)}</b>`;
                 return `
                     <tr>
-                        <td><b>${escapeHtml(p.nombre)}</b></td>
+                        <td>${nombreCell}</td>
                         <td>${escapeHtml(p.cedula || '-')}</td>
                         <td>${escapeHtml(p.telDisplay || '-')}</td>
                         <td><span class="tag ${fmtSistemaTag(p.sistema)}">${escapeHtml(p.sistema)}</span></td>
@@ -355,6 +390,39 @@
                     const msg = plantilla.replace(/\{nombre\}/g, nombre);
                     const url = `https://wa.me/${e164}` + (msg.trim() ? `?text=${encodeURIComponent(msg)}` : '');
                     window.open(url, '_blank', 'noopener');
+                });
+            });
+
+            // Botones CNE (filas sin nombre): consulta cedula, rellena y guarda en Firebase
+            tbody.querySelectorAll('button[data-action="cne"]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = +btn.getAttribute('data-id');
+                    const p = PERSONAS[id];
+                    if (!p) return;
+                    btn.disabled = true;
+                    btn.textContent = '⏳ consultando…';
+                    const r = await consultarCne(p.cedula, p.nacionalidad);
+                    if (r && (r.nombres || r.apellidos)) {
+                        p.nombre = `${r.nombres} ${r.apellidos}`.trim();
+                        p.primerNombre = (r.nombres || '').trim().split(/\s+/)[0] || p.primerNombre;
+                        p.sinNombre = false;
+                        // Guardar de vuelta en Firebase para que quede (best-effort)
+                        if (p._path) {
+                            try {
+                                const patch = {};
+                                if (r.nombres) patch.nombres = r.nombres;
+                                if (r.apellidos) patch.apellidos = r.apellidos;
+                                await update(ref(database, p._path), patch);
+                            } catch (e) { console.warn('No se pudo guardar el nombre en Firebase:', e); }
+                        }
+                        render();
+                    } else {
+                        btn.disabled = false;
+                        btn.textContent = '🔍 CNE';
+                        if (!btn.nextElementSibling || !btn.nextElementSibling.classList.contains('tel-mal')) {
+                            btn.insertAdjacentHTML('afterend', ' <span class="tel-mal">no está en CNE</span>');
+                        }
+                    }
                 });
             });
 
