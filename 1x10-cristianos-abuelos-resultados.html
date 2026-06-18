@@ -1,0 +1,2581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resultados Movilización 1x10 Cristianos y Abuelos - Panel Admin</title>
+    <!-- jsPDF para exportar reportes de movilización imprimibles -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- SheetJS para exportar a Excel .xlsx organizado en múltiples hojas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; color: #0f172a; padding-top: 30px; }
+
+        /* Cintillo institucional fijo arriba */
+        .cintillo-gob {
+            width: 100%;
+            background-color: #222;
+            color: #fff;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .contenedor { max-width: 1320px; margin: 0 auto; padding: 18px 16px 40px; }
+        .hidden { display: none !important; }
+
+        /* Top-nav */
+        .top-nav {
+            display: flex; gap: 10px; flex-wrap: wrap;
+            justify-content: flex-end;
+            margin-bottom: 14px;
+        }
+        .btn-nav {
+            padding: 9px 16px;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: #0a2351;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-nav:hover { background: #f1f5f9; }
+        .btn-nav.peligro { background: #E30613; color: white; border-color: #E30613; }
+        .btn-nav.peligro:hover { background: #b9050f; }
+
+        /* Header institucional (rojo institucional) */
+        .gob-header {
+            background: linear-gradient(135deg, #0a2351, #14306b);
+            color: white;
+            padding: 22px 24px;
+            border-radius: 14px;
+            display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+            margin-bottom: 22px;
+            box-shadow: 0 4px 14px rgba(10,35,81,0.18);
+            border-left: 8px solid #E30613;
+        }
+        .gob-header .logos {
+            display: flex; align-items: center; gap: 14px;
+            background: rgba(255,255,255,0.08);
+            padding: 8px 14px;
+            border-radius: 10px;
+        }
+        .gob-header img { height: 56px; object-fit: contain; }
+        .gob-header .titulos h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 0.4px;
+            line-height: 1.1;
+        }
+        .gob-header .titulos p {
+            margin: 4px 0 0;
+            font-size: 12.5px;
+            opacity: 0.85;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* KPI cards */
+        .grid-kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+        .kpi {
+            background: white;
+            padding: 16px 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            border-top: 4px solid #0a2351;
+        }
+        .kpi.rojo { border-top-color: #E30613; }
+        .kpi.verde { border-top-color: #16a34a; }
+        .kpi.naranja { border-top-color: #f97316; }
+        .kpi.azul { border-top-color: #0a2351; }
+        .kpi.morado { border-top-color: #7c3aed; }
+        .kpi.gris { border-top-color: #64748b; }
+        .kpi-titulo {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .kpi-valor {
+            font-size: 30px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-top: 4px;
+            line-height: 1.1;
+        }
+        .kpi-sub {
+            font-size: 11.5px;
+            color: #94a3b8;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* Secciones */
+        .seccion {
+            background: white;
+            padding: 20px 22px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .seccion h2 {
+            margin: 0 0 16px;
+            font-size: 15px;
+            font-weight: 800;
+            color: #0a2351;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* Filtros */
+        .filtros { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; margin-bottom: 16px; }
+        .filtros .campo { display: flex; flex-direction: column; gap: 4px; }
+        .filtros label { font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase; }
+        .filtros input, .filtros select {
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #f8fafc;
+            color: #0f172a;
+            font-weight: 600;
+            min-width: 180px;
+            outline: none;
+        }
+        .filtros input:focus, .filtros select:focus { border-color: #0a2351; background: white; }
+
+        /* Botones export */
+        .botones-export { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+        .btn-export {
+            padding: 10px 16px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-export.azul { background: #0a2351; }
+        .btn-export.azul:hover { background: #14306b; }
+        .btn-export.verde { background: #16a34a; }
+        .btn-export.verde:hover { background: #128a3d; }
+        .btn-export.rojo { background: #E30613; }
+        .btn-export.rojo:hover { background: #b9050f; }
+
+        /* Tabla */
+        .tabla-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 1180px; }
+        thead tr { background: #f8fafc; }
+        th {
+            text-align: left;
+            padding: 11px 12px;
+            font-size: 11px;
+            color: #475569;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border-bottom: 2px solid #e2e8f0;
+            position: sticky; top: 0; background: #f8fafc;
+        }
+        td {
+            padding: 11px 12px;
+            font-size: 13px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+            vertical-align: middle;
+        }
+        tr:hover td { background: #f8fafc; }
+
+        /* Badge de afines */
+        .badge-afines {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 12px;
+            min-width: 48px;
+            text-align: center;
+        }
+        .badge-afines.completo { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .badge-afines.parcial  { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+        .badge-afines.vacio    { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+
+        /* Botones de acciones en filas */
+        .btn-fila {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 12px;
+            margin-right: 4px;
+        }
+        .btn-fila.ver { background: #0a2351; color: white; }
+        .btn-fila.ver:hover { background: #14306b; }
+        .btn-fila.del { background: #E30613; color: white; }
+        .btn-fila.del:hover { background: #b9050f; }
+
+        /* Loader */
+        .cargando { text-align: center; padding: 40px; color: #64748b; font-weight: 600; }
+
+        /* Paginacion */
+        .paginacion {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; padding: 12px 0 0; flex-wrap: wrap;
+        }
+        .paginacion-info { color: #64748b; font-weight: 700; font-size: 12px; }
+        .paginacion-btns { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .paginacion-btn {
+            padding: 7px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 6px;
+            cursor: pointer; font-weight: 700; font-size: 12px; color: #334155;
+        }
+        .paginacion-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+        .paginacion-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .paginacion-pagina { padding: 0 10px; font-weight: 800; font-size: 13px; color: #0f172a; white-space: nowrap; }
+
+        /* Modal */
+        .modal-fondo {
+            position: fixed; inset: 0; background: rgba(15,23,42,0.7); z-index: 999;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-caja {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            max-width: 880px;
+            width: 100%;
+            max-height: 88vh;
+            overflow-y: auto;
+            border-top: 6px solid #E30613;
+        }
+        .modal-caja h2 {
+            margin: 0 0 4px;
+            font-size: 18px;
+            color: #0a2351;
+            font-weight: 900;
+        }
+        .modal-caja .meta {
+            color: #475569;
+            font-size: 13px;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+        .modal-caja .meta b { color: #0a2351; }
+        .modal-caja .cerrar {
+            float: right;
+            background: #f1f5f9;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .modal-caja table { min-width: 100%; }
+        .modal-caja th, .modal-caja td { font-size: 12.5px; }
+
+        /* Acceso restringido */
+        .restringido {
+            background: white;
+            padding: 40px 24px;
+            border-radius: 14px;
+            margin: 40px auto;
+            max-width: 540px;
+            text-align: center;
+            border-top: 8px solid #E30613;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+        .restringido h2 { margin: 0 0 10px; color: #0a2351; font-size: 20px; }
+        .restringido p { color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 18px; }
+
+        @media (max-width: 720px) {
+            .gob-header { padding: 16px; }
+            .gob-header .titulos h1 { font-size: 17px; }
+            .gob-header img { height: 44px; }
+            .kpi-valor { font-size: 24px; }
+            /* iOS Safari hace auto-zoom al enfocar inputs < 16px. Subimos los
+               controles del filtro en mobile para evitar la molestia. */
+            .filtros input, .filtros select { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA | ESTADO MIRANDA | ALCALDÍA DE CRISTÓBAL ROJAS</div>
+
+    <div class="contenedor">
+
+        <!-- =================================================== -->
+        <!-- LOADER inicial mientras se valida la sesión          -->
+        <!-- =================================================== -->
+        <div id="loader" class="cargando">Verificando sesión y permisos…</div>
+
+        <!-- =================================================== -->
+        <!-- ACCESO RESTRINGIDO (no admin)                        -->
+        <!-- =================================================== -->
+        <div id="acceso-restringido" class="restringido hidden">
+            <h2>Acceso restringido</h2>
+            <p>Esta vista es exclusiva para administradores del sistema. Si necesita acceso, contacte al super-administrador del panel.</p>
+            <button class="btn-nav peligro" id="btnCerrarRest">Cerrar Sesión</button>
+        </div>
+
+        <!-- =================================================== -->
+        <!-- CONTENIDO PRINCIPAL                                 -->
+        <!-- =================================================== -->
+        <div id="contenido" class="hidden">
+            <!-- Top nav -->
+            <div class="top-nav">
+                <a class="btn-nav" href="admin.html">← Volver al Panel Admin</a>
+                <button type="button" class="btn-nav peligro" id="btnCerrarSesion">Cerrar Sesión</button>
+            </div>
+
+            <!-- Header institucional -->
+            <div class="gob-header">
+                <!-- Logos removidos temporalmente. La Alcaldesa indicara cuales usar. -->
+                <div class="titulos">
+                    <h1>RESULTADOS MOVILIZACIÓN 1x10 — CRISTIANOS Y ABUELOS</h1>
+                    <p>Sistema de Patrullas Territoriales · Municipio Cristóbal Rojas</p>
+                </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="grid-kpis">
+                <div class="kpi rojo">
+                    <div class="kpi-titulo">Jefes 1x10 Registrados</div>
+                    <div class="kpi-valor" id="kpiJefes">—</div>
+                    <div class="kpi-sub">Patrullas activas</div>
+                </div>
+                <div class="kpi azul">
+                    <div class="kpi-titulo">Afines Registrados</div>
+                    <div class="kpi-valor" id="kpiAfines">—</div>
+                    <div class="kpi-sub">Suma de afines de todos los jefes</div>
+                </div>
+                <div class="kpi morado">
+                    <div class="kpi-titulo">Total Personas</div>
+                    <div class="kpi-valor" id="kpiTotal">—</div>
+                    <div class="kpi-sub">Jefes + Afines</div>
+                </div>
+                <div class="kpi verde">
+                    <div class="kpi-titulo">Promedio afines/jefe</div>
+                    <div class="kpi-valor" id="kpiCobertura">—</div>
+                    <div class="kpi-sub">promedio de movilizables por jefe</div>
+                </div>
+                <div class="kpi verde">
+                    <div class="kpi-titulo">Jefes con 10+ afines</div>
+                    <div class="kpi-valor" id="kpiJefesCompletos">—</div>
+                    <div class="kpi-sub">patrullas con la meta cumplida</div>
+                </div>
+                <div class="kpi naranja">
+                    <div class="kpi-titulo">Comunidades Cubiertas</div>
+                    <div class="kpi-valor" id="kpiComunidades">—</div>
+                    <div class="kpi-sub">de 226 totales</div>
+                </div>
+                <div class="kpi gris">
+                    <div class="kpi-titulo">Centros Electorales</div>
+                    <div class="kpi-valor" id="kpiCentros">—</div>
+                    <div class="kpi-sub">de 50 totales</div>
+                </div>
+                <div class="kpi azul">
+                    <div class="kpi-titulo">Hombres</div>
+                    <div class="kpi-valor" id="kpiHombres">—</div>
+                    <div class="kpi-sub">jefes + afines (genero = M)</div>
+                </div>
+                <div class="kpi rojo">
+                    <div class="kpi-titulo">Mujeres</div>
+                    <div class="kpi-valor" id="kpiMujeres">—</div>
+                    <div class="kpi-sub">jefes + afines (genero = F)</div>
+                </div>
+                <div class="kpi verde">
+                    <div class="kpi-titulo">15 a 17 años</div>
+                    <div class="kpi-valor" id="kpiEdad15a17">—</div>
+                    <div class="kpi-sub">Jefes + Afines</div>
+                </div>
+                <div class="kpi morado">
+                    <div class="kpi-titulo">18 a 35 años</div>
+                    <div class="kpi-valor" id="kpiEdad18a35">—</div>
+                    <div class="kpi-sub">Jefes + Afines</div>
+                </div>
+                <div class="kpi naranja">
+                    <div class="kpi-titulo">36 años o más</div>
+                    <div class="kpi-valor" id="kpiEdad36mas">—</div>
+                    <div class="kpi-sub">Jefes + Afines</div>
+                </div>
+            </div>
+
+            <!-- Link publico + QR para compartir a los jefes 1x10 -->
+            <div class="seccion" style="background:linear-gradient(135deg,#fef2f2 0%,#ffffff 60%);border-left:5px solid #E30613;">
+                <h2 style="margin-bottom:6px;">📱 Link Público para los Jefes 1x10</h2>
+                <p style="margin:0 0 14px;font-size:12.5px;color:#475569;font-weight:600;">
+                    Comparte este enlace o el código QR a cada Jefe de Patrulla. Ellos se autorregistran con su cédula y las 10 cédulas que van a movilizar.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;">
+                    <div>
+                        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;margin-bottom:10px;">
+                            <div style="font-size:11px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Link corto (TinyURL)</div>
+                            <a id="link1x10Corto" href="https://tinyurl.com/1x10cr2026" target="_blank" rel="noopener noreferrer" style="font-size:18px;font-weight:800;color:#0a2351;text-decoration:none;word-break:break-all;">
+                                https://tinyurl.com/1x10cr2026
+                            </a>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="button" class="btn-export azul" id="btnCopiarLink">📋 Copiar link</button>
+                            <button type="button" class="btn-export verde" id="btnAbrirLink">🔗 Abrir para probar</button>
+                            <button type="button" class="btn-export" id="btnCompartirWhatsApp" style="background:#25D366;">💬 Compartir por WhatsApp</button>
+                            <button type="button" class="btn-export" id="btnDescargarQR" style="background:#0a2351;">⬇️ Descargar QR</button>
+                        </div>
+                        <div id="linkCopiadoMsg" style="margin-top:8px;font-size:12px;color:#16a34a;font-weight:700;display:none;">✅ Link copiado al portapapeles</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <img id="qrCode1x10" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=10&data=https%3A%2F%2Ftinyurl.com%2F1x10cr2026" alt="Código QR 1x10" style="width:180px;height:180px;border:2px solid #E30613;border-radius:12px;background:white;display:block;" />
+                        <div style="font-size:11px;color:#64748b;font-weight:700;margin-top:6px;letter-spacing:0.3px;">ESCANEA CON EL CELULAR</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="seccion">
+                <h2>Filtros</h2>
+                <div class="filtros">
+                    <div class="campo">
+                        <label>Buscar</label>
+                        <input id="filtroBusqueda" type="search" placeholder="Cédula, nombre o apellido del jefe" autocomplete="off" />
+                    </div>
+                    <div class="campo">
+                        <label>Parroquia</label>
+                        <select id="filtroParroquia">
+                            <option value="">Todas las parroquias</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>Circuito Comunal</label>
+                        <select id="filtroCircuito">
+                            <option value="">Todos los circuitos</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>Centro Electoral</label>
+                        <select id="filtroCentro">
+                            <option value="">Todos los centros</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>Categoría</label>
+                        <select id="filtroCategoria">
+                            <option value="">Todas las categorías</option>
+                            <option value="cristiano">Cristianos</option>
+                            <option value="abuelo">Abuelos</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>Edad mín. afín</label>
+                        <input id="filtroEdadMin" type="number" min="0" max="120" inputmode="numeric" placeholder="Ej: 18" style="min-width:90px; max-width:110px;" />
+                    </div>
+                    <div class="campo">
+                        <label>Edad máx. afín</label>
+                        <input id="filtroEdadMax" type="number" min="0" max="120" inputmode="numeric" placeholder="Ej: 65" style="min-width:90px; max-width:110px;" />
+                    </div>
+                    <div class="campo">
+                        <button class="btn-nav" id="btnLimpiarFiltros" type="button">Limpiar filtros</button>
+                    </div>
+                </div>
+
+                <!-- Botones de exportar -->
+                <div class="botones-export">
+                    <button class="btn-export azul" id="btnPdfCentro" type="button">PDF Movilización por Centro Electoral</button>
+                    <button class="btn-export azul" id="btnPdfComuna" type="button">PDF Movilización por Comuna</button>
+                    <button class="btn-export verde" id="btnCsv" type="button">CSV Completo</button>
+                    <button class="btn-export" id="btnExportarExcel" type="button" style="background:#16a34a;">📗 Excel .xlsx organizado</button>
+                    <button class="btn-export" id="btnPdfAsistencia" type="button" style="background:#7c3aed;">📝 PDF Hoja de Asistencia (firmas)</button>
+                    <button class="btn-export" id="btnPdfAsistenciaCentro" type="button" style="background:#5b21b6;">🏛️ PDF Asistencia por Centro Electoral</button>
+                </div>
+            </div>
+
+            <!-- Tabla principal -->
+            <div class="seccion">
+                <div id="bannerFiltroEdad" class="hidden" style="background:#dbeafe; color:#1e40af; border:1px solid #93c5fd; padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:13px; font-weight:600;">
+                    🔍 Filtro de edad activo: <span id="bannerEdadTexto"></span>. Solo afecta a los afines en el modal, CSV, Excel y PDFs (los jefes siguen todos visibles).
+                </div>
+                <h2>Jefes 1x10 Registrados <span style="font-size:11px;color:#64748b;font-weight:700;margin-left:6px;" id="contadorJefes"></span></h2>
+                <div class="tabla-wrap">
+                    <table id="tablaJefes">
+                        <thead>
+                            <tr>
+                                <th>Cédula</th>
+                                <th>Nombres y Apellidos</th>
+                                <th>Teléfono</th>
+                                <th>Fecha Nac. / Edad</th>
+                                <th style="width:60px;text-align:center;">Género</th>
+                                <th style="width:90px;text-align:center;">Categoría</th>
+                                <th>Parroquia</th>
+                                <th>Comuna (Circuito)</th>
+                                <th>Comunidad</th>
+                                <th>Centro Electoral</th>
+                                <th>Afines</th>
+                                <th>Fecha registro</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyJefes">
+                            <tr><td colspan="13" class="cargando">Cargando datos…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLE AFINES -->
+    <div id="modal" class="modal-fondo hidden">
+        <div class="modal-caja" id="modalCaja"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import {
+            getAuth, onAuthStateChanged, signOut
+        } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import {
+            getDatabase, ref, onValue, get, child, remove, set, update
+        } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        // ── Config Firebase (mismo proyecto que todas las demas paginas)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // ── Estado global
+        let jefesMap = {};      // { cedulaJefe: {...payload jefe} }
+        let afinesMap = {};     // { cedulaJefe: { cedulaAfin: {...payload} } }
+        let unsubJefes = null;
+        let unsubAfines = null;
+        let paginaActual = 1;
+        const PAGINA_TAM = 25;
+
+        // ── Helpers DOM
+        const $ = (id) => document.getElementById(id);
+        const escapeHtml = (s) => {
+            if (s == null) return '';
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        };
+        const fmtFecha = (ts) => {
+            if (!ts) return '-';
+            try {
+                return new Date(ts).toLocaleString('es-VE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            } catch (e) { return '-'; }
+        };
+        const fmtFechaCorta = (ts) => {
+            if (!ts) return '-';
+            try {
+                return new Date(ts).toLocaleDateString('es-VE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric'
+                });
+            } catch (e) { return '-'; }
+        };
+        // fecha_nacimiento viene como string "YYYY-MM-DD" desde <input type="date">.
+        // No usar new Date() directo porque interpreta como UTC y restaria un dia.
+        const fmtFechaNacimiento = (s) => {
+            if (!s) return '—';
+            const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+            // Fallback por si viniera en otro formato (timestamp, etc)
+            try {
+                const d = new Date(s);
+                if (isNaN(d.getTime())) return '—';
+                return d.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            } catch (e) { return '—'; }
+        };
+        // Genero llega como "M" o "F" desde Firebase (validado por rules).
+        // Si viene null/undefined/otro, mostrar guion para que no estorbe en
+        // listas (tablas, modal, PDFs, Excel, CSV).
+        const fmtGenero = (g) => g === "M" ? "M" : (g === "F" ? "F" : "—");
+        const fmtCategoria = (c) => c === "cristiano" ? "Cristiano" : (c === "abuelo" ? "Abuelo" : "—");
+
+        // Calcula la edad a partir de "YYYY-MM-DD" sin pasar por new Date()
+        // (evita el bug de zona horaria que adelanta/atrasa un dia).
+        function calcularEdad(fechaNacStr) {
+            if (!fechaNacStr || !/^\d{4}-\d{2}-\d{2}$/.test(fechaNacStr)) return null;
+            const partes = fechaNacStr.split("-");
+            const anio = parseInt(partes[0], 10);
+            const mes = parseInt(partes[1], 10) - 1;
+            const dia = parseInt(partes[2], 10);
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - anio;
+            const cumpleEsteAnio = (hoy.getMonth() > mes) || (hoy.getMonth() === mes && hoy.getDate() >= dia);
+            if (!cumpleEsteAnio) edad--;
+            return (edad >= 0 && edad <= 120) ? edad : null;
+        }
+
+        // Clasifica una fecha de nacimiento ("YYYY-MM-DD") en uno de los 3 rangos
+        // etarios que mostramos como KPI ("15a17" | "18a35" | "36mas"). Devuelve
+        // null si no hay fecha registrada o si la edad cae fuera (< 15 anos).
+        // Las personas sin fecha NO se cuentan en ningun rango (van implicitas en
+        // el conteo de "Total Personas" que ya existe).
+        function rangoEdad(fechaNacStr) {
+            const e = calcularEdad(fechaNacStr);
+            if (e === null) return null;
+            if (e >= 15 && e <= 17) return "15a17";
+            if (e >= 18 && e <= 35) return "18a35";
+            if (e >= 36) return "36mas";
+            return null;  // menor de 15: no se cuenta
+        }
+
+        // Filtro de edad para AFINES. Si los dos inputs estan vacios, deja pasar
+        // todo. Si la fecha de nacimiento no se conoce, NO se oculta (mejor mostrar
+        // de mas que ocultar sin razon).
+        function pasaFiltroEdad(fechaNacStr) {
+            const minRaw = ($("filtroEdadMin")?.value || "").trim();
+            const maxRaw = ($("filtroEdadMax")?.value || "").trim();
+            const min = minRaw === "" ? null : parseInt(minRaw, 10);
+            const max = maxRaw === "" ? null : parseInt(maxRaw, 10);
+            // Sin filtro activo: pasa todo.
+            if (min === null && max === null) return true;
+            const edad = calcularEdad(fechaNacStr);
+            // Sin fecha de nacimiento registrada: visible por defecto (no se oculta sin razon).
+            if (edad === null) return true;
+            if (min !== null && !Number.isNaN(min) && edad < min) return false;
+            if (max !== null && !Number.isNaN(max) && edad > max) return false;
+            return true;
+        }
+
+        // Devuelve true si HAY filtro de edad activo (algun input con un entero
+        // valido dentro de [0,120]). Strings vacios, negativos o no numericos no
+        // cuentan como filtro activo, para no mostrar el banner por error de tipeo.
+        function _edadInputValida(s) {
+            if (s === "" || s == null) return false;
+            const n = parseInt(s, 10);
+            return Number.isInteger(n) && n >= 0 && n <= 120;
+        }
+        function filtroEdadActivo() {
+            const min = ($("filtroEdadMin")?.value || "").trim();
+            const max = ($("filtroEdadMax")?.value || "").trim();
+            return _edadInputValida(min) || _edadInputValida(max);
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // AUTH GATE: solo super-admin Carlos o operador con rol=admin
+        // Patron identico a encuesta-resultados.html — las rules de
+        // Firebase ya bloquean lectura para operadores normales, pero
+        // ademas escondemos la UI para dar un mensaje claro.
+        // ──────────────────────────────────────────────────────────
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+
+            const esSuperAdmin = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuperAdmin;
+
+            if (!esSuperAdmin) {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}/rol`));
+                    const rol = snap.exists() ? snap.val() : null;
+                    permitido = (rol === 'admin');
+                } catch (e) {
+                    console.error('No se pudo verificar el rol del usuario:', e);
+                    permitido = false;
+                }
+            }
+
+            $('loader').classList.add('hidden');
+            if (!permitido) {
+                $('acceso-restringido').classList.remove('hidden');
+                return;
+            }
+
+            $('contenido').classList.remove('hidden');
+            iniciarListeners();
+            inicializarLinkCompartir();
+        });
+
+        // ── Botones de la seccion "Link Publico + QR"
+        // El QR ya se renderiza por la URL del <img> via api.qrserver.com — esta
+        // funcion solo ata los 4 botones de accion.
+        function inicializarLinkCompartir() {
+            const LINK_PUBLICO = 'https://tinyurl.com/1x10cr2026';
+            const MSG_WHATSAPP =
+                'Compañero, te enviaron este link porque eres Jefe de Patrulla 1x10.\n\n' +
+                'Por favor entra desde tu telefono y registra a las 10 personas que vas a movilizar:\n' +
+                LINK_PUBLICO + '\n\n' +
+                'Solo necesitas tu cedula + las 10 cedulas de tu grupo. Los nombres se llenan solos.';
+
+            const btnCopiar = $('btnCopiarLink');
+            const btnAbrir = $('btnAbrirLink');
+            const btnWa = $('btnCompartirWhatsApp');
+            const btnQR = $('btnDescargarQR');
+            const msgCopiado = $('linkCopiadoMsg');
+
+            if (btnCopiar) btnCopiar.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(LINK_PUBLICO);
+                    msgCopiado.style.display = 'block';
+                    setTimeout(() => { msgCopiado.style.display = 'none'; }, 2500);
+                } catch {
+                    // Fallback: selecciona el texto del link
+                    const a = $('link1x10Corto');
+                    const r = document.createRange(); r.selectNode(a);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(r);
+                    alert('Tu navegador no permite copiar automaticamente. El link quedo seleccionado, presiona Ctrl+C.');
+                }
+            });
+
+            if (btnAbrir) btnAbrir.addEventListener('click', () => {
+                window.open(LINK_PUBLICO, '_blank', 'noopener,noreferrer');
+            });
+
+            if (btnWa) btnWa.addEventListener('click', () => {
+                const url = 'https://wa.me/?text=' + encodeURIComponent(MSG_WHATSAPP);
+                window.open(url, '_blank', 'noopener,noreferrer');
+            });
+
+            if (btnQR) btnQR.addEventListener('click', async () => {
+                // Descargar el QR como PNG. Pedimos un tamano mas grande
+                // (600x600) para imprimirlo bien en flyers / banners.
+                const QR_HD = 'https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=20&data=' + encodeURIComponent(LINK_PUBLICO);
+                try {
+                    const resp = await fetch(QR_HD);
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'QR-1x10-cristobal-rojas.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (e) {
+                    console.error('Error descargando QR:', e);
+                    // Fallback: abrir en pestana nueva para guardar manual
+                    window.open(QR_HD, '_blank', 'noopener,noreferrer');
+                }
+            });
+        }
+
+        // ── Cerrar sesion (botones de header y de pantalla restringida)
+        $('btnCerrarSesion').addEventListener('click', cerrarSesionSegura);
+        $('btnCerrarRest').addEventListener('click', cerrarSesionSegura);
+        async function cerrarSesionSegura() {
+            try {
+                detenerListeners();
+                await signOut(auth);
+            } catch (e) {
+                console.error('Error cerrando sesion:', e);
+            }
+            location.href = 'index.html';
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // LISTENERS REACTIVOS sobre /jefes_1x10 y /afines_1x10
+        // ──────────────────────────────────────────────────────────
+        function iniciarListeners() {
+            unsubJefes = onValue(ref(database, 'jefes_1x10_cristianos_abuelos'), (snap) => {
+                jefesMap = {};
+                if (snap.exists()) {
+                    snap.forEach(child => {
+                        jefesMap[child.key] = child.val() || {};
+                    });
+                }
+                refrescarUI();
+            }, (err) => {
+                console.error('Error leyendo /jefes_1x10_cristianos_abuelos:', err);
+                $('tbodyJefes').innerHTML = `<tr><td colspan="13" class="cargando" style="color:#E30613;">No se pudo cargar la lista de jefes (${escapeHtml(err.message || err.code || 'desconocido')}).</td></tr>`;
+            });
+
+            unsubAfines = onValue(ref(database, 'afines_1x10_cristianos_abuelos'), (snap) => {
+                afinesMap = {};
+                if (snap.exists()) {
+                    snap.forEach(child => {
+                        const grupo = {};
+                        child.forEach(afinSnap => {
+                            grupo[afinSnap.key] = afinSnap.val() || {};
+                        });
+                        afinesMap[child.key] = grupo;
+                    });
+                }
+                refrescarUI();
+            }, (err) => {
+                // No silenciar: si esto falla, los KPIs van a mostrar 0 afines
+                // y daria la impresion erronea de que no hay registros. Marcar
+                // los KPIs afectados como "?" y avisar visiblemente al admin.
+                console.error('Error leyendo /afines_1x10_cristianos_abuelos:', err);
+                const kpiAfines = $('kpiAfines'); if (kpiAfines) kpiAfines.textContent = '?';
+                const kpiCobertura = $('kpiCobertura'); if (kpiCobertura) kpiCobertura.textContent = '?';
+                const kpiJC2 = $('kpiJefesCompletos'); if (kpiJC2) kpiJC2.textContent = '?';
+                // Los KPIs de rango etario tambien suman jefes + afines, asi que
+                // si /afines falla, los conteos quedarian incompletos: marcar "?"
+                // para no dar la impresion erronea de un dato parcial confiable.
+                const kEdad15 = $('kpiEdad15a17'); if (kEdad15) kEdad15.textContent = '?';
+                const kEdad18 = $('kpiEdad18a35'); if (kEdad18) kEdad18.textContent = '?';
+                const kEdad36 = $('kpiEdad36mas'); if (kEdad36) kEdad36.textContent = '?';
+                alert('No se pudo cargar la lista de afines (' + (err.message || err.code || 'error desconocido') + '). Los conteos pueden estar incompletos. Recarga la pagina o revisa los permisos.');
+            });
+        }
+
+        function detenerListeners() {
+            try { if (typeof unsubJefes === 'function') unsubJefes(); } catch(e) {}
+            try { if (typeof unsubAfines === 'function') unsubAfines(); } catch(e) {}
+            unsubJefes = null;
+            unsubAfines = null;
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // RENDER COMPLETO (KPIs + filtros en cascada + tabla)
+        // ──────────────────────────────────────────────────────────
+        function refrescarUI() {
+            actualizarKPIs();
+            actualizarFiltrosCascada();
+            actualizarBannerFiltroEdad();
+            renderTabla();
+        }
+
+        // Banner visual que avisa que el filtro de edad esta activo. NO afecta KPIs
+        // ni la tabla principal — solo deja claro al admin por que el modal/CSV/PDF
+        // muestra menos afines que la columna "Afines" de la tabla.
+        function actualizarBannerFiltroEdad() {
+            const min = ($("filtroEdadMin")?.value || "").trim();
+            const max = ($("filtroEdadMax")?.value || "").trim();
+            const banner = $("bannerFiltroEdad");
+            const txt = $("bannerEdadTexto");
+            if (!banner || !txt) return;
+            if (filtroEdadActivo()) {
+                banner.classList.remove("hidden");
+                // Detectar rango invalido (min > max): pintar el banner en amarillo
+                // y avisar que ningun afin con fecha conocida pasara el filtro.
+                const minN = min !== "" ? parseInt(min, 10) : null;
+                const maxN = max !== "" ? parseInt(max, 10) : null;
+                const rangoInvalido = (minN !== null && maxN !== null && !Number.isNaN(minN) && !Number.isNaN(maxN) && minN > maxN);
+                if (rangoInvalido) {
+                    banner.style.background = "#fef3c7";
+                    banner.style.color = "#92400e";
+                    banner.style.borderColor = "#fbbf24";
+                    txt.textContent = `Rango invalido (${min} a ${max}): min mayor que max. Ningun afin con fecha de nacimiento conocida pasara el filtro.`;
+                } else {
+                    // Restaurar estilo azul original
+                    banner.style.background = "";
+                    banner.style.color = "";
+                    banner.style.borderColor = "";
+                    if (min !== "" && max !== "") txt.textContent = `${min} a ${max} años`;
+                    else if (min !== "") txt.textContent = `${min} años o más`;
+                    else txt.textContent = `hasta ${max} años`;
+                }
+            } else {
+                banner.classList.add("hidden");
+            }
+        }
+
+        function getJefesArray() {
+            return Object.entries(jefesMap).map(([cedula, j]) => {
+                const afinesObj = afinesMap[cedula] || {};
+                const afinesList = Object.entries(afinesObj).map(([cedAfin, a]) => ({
+                    cedula: cedAfin, ...a
+                })).sort((a, b) => (a.orden || 99) - (b.orden || 99));
+                return {
+                    cedula,
+                    ...j,
+                    _afines: afinesList,
+                    _afinesCount: afinesList.length
+                };
+            });
+        }
+
+        function actualizarKPIs() {
+            const jefes = getJefesArray();
+            const totalJefes = jefes.length;
+            const totalAfines = jefes.reduce((acc, j) => acc + j._afinesCount, 0);
+            const completos = jefes.filter(j => j._afinesCount >= 10).length;
+            // Promedio afines/jefe (1 decimal). Si no hay jefes, mostrar 0.0
+            const promedio = totalJefes ? (totalAfines / totalJefes) : 0;
+            const promedioTxt = promedio.toLocaleString('es-VE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+            const comunidadesSet = new Set(jefes.map(j => j.comunidad_slug || j.comunidad_nombre).filter(Boolean));
+            const centrosSet = new Set(jefes.map(j => j.centro_electoral).filter(Boolean));
+
+            // Conteo de genero (M / F) sumando jefes + sus afines. Los registros
+            // viejos pueden no tener `genero` — se ignoran en ambos conteos.
+            let hombres = 0, mujeres = 0;
+            // Conteo por rango etario (jefes + afines con fecha valida). Los
+            // registros sin fecha_nacimiento NO se cuentan en ningun rango.
+            let c15a17 = 0, c18a35 = 0, c36mas = 0;
+            jefes.forEach(j => {
+                if (j.genero === 'M') hombres++;
+                else if (j.genero === 'F') mujeres++;
+                const r = rangoEdad(j.fecha_nacimiento);
+                if (r === "15a17") c15a17++;
+                else if (r === "18a35") c18a35++;
+                else if (r === "36mas") c36mas++;
+                (j._afines || []).forEach(a => {
+                    if (a.genero === 'M') hombres++;
+                    else if (a.genero === 'F') mujeres++;
+                    const rr = rangoEdad(a.fecha_nacimiento);
+                    if (rr === "15a17") c15a17++;
+                    else if (rr === "18a35") c18a35++;
+                    else if (rr === "36mas") c36mas++;
+                });
+            });
+
+            $('kpiJefes').textContent = totalJefes.toLocaleString('es-VE');
+            $('kpiAfines').textContent = totalAfines.toLocaleString('es-VE');
+            $('kpiTotal').textContent = (totalJefes + totalAfines).toLocaleString('es-VE');
+            $('kpiCobertura').textContent = promedioTxt;
+            const kpiJC = $('kpiJefesCompletos');
+            if (kpiJC) kpiJC.textContent = completos.toLocaleString('es-VE');
+            $('kpiComunidades').textContent = comunidadesSet.size.toLocaleString('es-VE');
+            $('kpiCentros').textContent = centrosSet.size.toLocaleString('es-VE');
+            const kpiH = $('kpiHombres'); if (kpiH) kpiH.textContent = hombres.toLocaleString('es-VE');
+            const kpiM = $('kpiMujeres'); if (kpiM) kpiM.textContent = mujeres.toLocaleString('es-VE');
+            const k15 = $("kpiEdad15a17"); if (k15) k15.textContent = c15a17.toLocaleString('es-VE');
+            const k18 = $("kpiEdad18a35"); if (k18) k18.textContent = c18a35.toLocaleString('es-VE');
+            const k36 = $("kpiEdad36mas"); if (k36) k36.textContent = c36mas.toLocaleString('es-VE');
+        }
+
+        function actualizarFiltrosCascada() {
+            const jefes = getJefesArray();
+
+            // Parroquias
+            const parroquiaActual = $('filtroParroquia').value;
+            const parroquias = Array.from(new Set(jefes.map(j => j.parroquia).filter(Boolean))).sort();
+            $('filtroParroquia').innerHTML = '<option value="">Todas las parroquias</option>' +
+                parroquias.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+            if (parroquiaActual) $('filtroParroquia').value = parroquiaActual;
+
+            // Circuitos — dependen de parroquia
+            const circuitoActual = $('filtroCircuito').value;
+            const par = $('filtroParroquia').value;
+            const baseCirc = par ? jefes.filter(j => j.parroquia === par) : jefes;
+            const circuitos = Array.from(new Set(baseCirc.map(j => j.circuito).filter(Boolean))).sort();
+            $('filtroCircuito').innerHTML = '<option value="">Todos los circuitos</option>' +
+                circuitos.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if (circuitoActual && circuitos.includes(circuitoActual)) {
+                $('filtroCircuito').value = circuitoActual;
+            }
+
+            // Centros — dependen de parroquia y circuito
+            const centroActual = $('filtroCentro').value;
+            const cir = $('filtroCircuito').value;
+            let baseCentro = jefes;
+            if (par) baseCentro = baseCentro.filter(j => j.parroquia === par);
+            if (cir) baseCentro = baseCentro.filter(j => j.circuito === cir);
+            const centros = Array.from(new Set(baseCentro.map(j => j.centro_electoral).filter(Boolean))).sort();
+            $('filtroCentro').innerHTML = '<option value="">Todos los centros</option>' +
+                centros.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            if (centroActual && centros.includes(centroActual)) {
+                $('filtroCentro').value = centroActual;
+            }
+        }
+
+        function aplicarFiltros(jefes) {
+            const q = ($('filtroBusqueda').value || '').trim().toLowerCase();
+            const par = $('filtroParroquia').value;
+            const cir = $('filtroCircuito').value;
+            const cen = $('filtroCentro').value;
+            const cat = ($('filtroCategoria') && $('filtroCategoria').value) || '';
+
+            return jefes.filter(j => {
+                if (par && j.parroquia !== par) return false;
+                if (cir && j.circuito !== cir) return false;
+                if (cen && j.centro_electoral !== cen) return false;
+                if (cat && j.categoria !== cat) return false;
+                if (q) {
+                    const blob = `${j.cedula || ''} ${j.nombres || ''} ${j.apellidos || ''}`.toLowerCase();
+                    if (!blob.includes(q)) return false;
+                }
+                return true;
+            });
+        }
+
+        // ── Listeners de filtros (resetean paginacion a 1)
+        ['filtroBusqueda', 'filtroParroquia', 'filtroCircuito', 'filtroCentro'].forEach(id => {
+            $(id).addEventListener('input', () => {
+                paginaActual = 1;
+                actualizarFiltrosCascada();
+                renderTabla();
+            });
+            $(id).addEventListener('change', () => {
+                paginaActual = 1;
+                actualizarFiltrosCascada();
+                renderTabla();
+            });
+        });
+        // Inputs de edad min/max para AFINES — solo refrescan UI (banner + tabla),
+        // no tocan los filtros en cascada ni los KPIs porque la edad no influye
+        // en parroquia/circuito/centro ni en los KPIs (por diseno, "KPIs no se filtran").
+        const _refrescarPorEdad = () => { actualizarBannerFiltroEdad(); renderTabla(); };
+        $('filtroEdadMin').addEventListener('input', _refrescarPorEdad);
+        $('filtroEdadMax').addEventListener('input', _refrescarPorEdad);
+        $('filtroCategoria').addEventListener('change', () => { paginaActual = 1; renderTabla(); });
+        $('btnLimpiarFiltros').addEventListener('click', () => {
+            $('filtroBusqueda').value = '';
+            $('filtroParroquia').value = '';
+            $('filtroCircuito').value = '';
+            $('filtroCentro').value = '';
+            $('filtroCategoria').value = '';
+            $('filtroEdadMin').value = '';
+            $('filtroEdadMax').value = '';
+            paginaActual = 1;
+            actualizarFiltrosCascada();
+            actualizarBannerFiltroEdad();
+            renderTabla();
+        });
+
+        // ──────────────────────────────────────────────────────────
+        // TABLA principal
+        // ──────────────────────────────────────────────────────────
+        function renderTabla() {
+            const jefes = getJefesArray();
+            const filtrados = aplicarFiltros(jefes).sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
+
+            const totalFiltrados = filtrados.length;
+            $('contadorJefes').textContent = totalFiltrados
+                ? `(${totalFiltrados.toLocaleString('es-VE')} jefe${totalFiltrados === 1 ? '' : 's'} en pantalla)`
+                : '';
+
+            const tbody = $('tbodyJefes');
+            if (totalFiltrados === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="cargando">No hay jefes registrados con los filtros actuales.</td></tr>`;
+                renderPaginacion(0);
+                return;
+            }
+
+            const totalPg = Math.max(1, Math.ceil(totalFiltrados / PAGINA_TAM));
+            const pg = Math.min(Math.max(1, paginaActual), totalPg);
+            paginaActual = pg;
+            const desde = (pg - 1) * PAGINA_TAM;
+            const hasta = Math.min(pg * PAGINA_TAM, totalFiltrados);
+            const slice = filtrados.slice(desde, hasta);
+
+            tbody.innerHTML = slice.map(j => {
+                const n = j._afinesCount;
+                const cls = n >= 10 ? 'completo' : (n > 0 ? 'parcial' : 'vacio');
+                const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
+                const nombre = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '-';
+                const edadJefe = calcularEdad(j.fecha_nacimiento);
+                const fnTxtJefe = fmtFechaNacimiento(j.fecha_nacimiento);
+                const celdaFnJefe = fnTxtJefe
+                    ? `${escapeHtml(fnTxtJefe)}${edadJefe !== null ? ` <small style="color:#64748b;">(${edadJefe} años)</small>` : ''}`
+                    : '—';
+                return `
+                    <tr>
+                        <td><b>${escapeHtml(ced)}</b></td>
+                        <td>${escapeHtml(nombre)}</td>
+                        <td>${escapeHtml(j.telefono || '-')}</td>
+                        <td>${celdaFnJefe}</td>
+                        <td style="text-align:center;font-weight:700;">${escapeHtml(fmtGenero(j.genero))}</td>
+                        <td style="text-align:center;">${escapeHtml(fmtCategoria(j.categoria))}</td>
+                        <td>${escapeHtml(j.parroquia || '-')}</td>
+                        <td>${escapeHtml(j.circuito || '-')}</td>
+                        <td>${escapeHtml(j.comunidad_nombre || '-')}</td>
+                        <td>${escapeHtml(j.centro_electoral || '-')}</td>
+                        <td><span class="badge-afines ${cls}">${n} af${n === 1 ? 'ín' : 'ines'}</span></td>
+                        <td>${escapeHtml(fmtFechaCorta(j.fecha_registro))}</td>
+                        <td>
+                            <button class="btn-fila ver" data-action="ver" data-ced="${escapeHtml(j.cedula || '')}">Ver Afines</button>
+                            <button class="btn-fila del" data-action="del" data-ced="${escapeHtml(j.cedula || '')}">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Delegacion de eventos sobre la tabla
+            tbody.querySelectorAll('button[data-action]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const ced = btn.dataset.ced;
+                    const act = btn.dataset.action;
+                    if (act === 'ver') abrirModalAfines(ced);
+                    else if (act === 'del') eliminarJefe(ced);
+                });
+            });
+
+            renderPaginacion(totalFiltrados);
+        }
+
+        function renderPaginacion(totalFiltrados) {
+            const cont = $('paginacion');
+            if (totalFiltrados <= PAGINA_TAM) { cont.innerHTML = ''; return; }
+            const totalPg = Math.max(1, Math.ceil(totalFiltrados / PAGINA_TAM));
+            const pg = Math.min(Math.max(1, paginaActual), totalPg);
+            const desde = totalFiltrados === 0 ? 0 : (pg - 1) * PAGINA_TAM + 1;
+            const hasta = Math.min(pg * PAGINA_TAM, totalFiltrados);
+            cont.innerHTML = `
+                <div class="paginacion">
+                    <div class="paginacion-info">
+                        Mostrando <b>${desde}–${hasta}</b> de <b>${totalFiltrados}</b> jefe${totalFiltrados === 1 ? '' : 's'}
+                    </div>
+                    <div class="paginacion-btns">
+                        <button class="paginacion-btn" ${pg === 1 ? 'disabled' : ''} data-pg="1" title="Primera">«</button>
+                        <button class="paginacion-btn" ${pg === 1 ? 'disabled' : ''} data-pg="${pg - 1}">‹ Anterior</button>
+                        <span class="paginacion-pagina">Página ${pg} de ${totalPg}</span>
+                        <button class="paginacion-btn" ${pg === totalPg ? 'disabled' : ''} data-pg="${pg + 1}">Siguiente ›</button>
+                        <button class="paginacion-btn" ${pg === totalPg ? 'disabled' : ''} data-pg="${totalPg}" title="Última">»</button>
+                    </div>
+                </div>`;
+            cont.querySelectorAll('button[data-pg]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    paginaActual = parseInt(btn.dataset.pg, 10) || 1;
+                    renderTabla();
+                });
+            });
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // MODAL DE AFINES (vista detalle)
+        // ──────────────────────────────────────────────────────────
+        function abrirModalAfines(cedulaJefe) {
+            const j = jefesMap[cedulaJefe];
+            if (!j) { alert('No se encontró al jefe en la base de datos.'); return; }
+            const afinesObj = afinesMap[cedulaJefe] || {};
+            const afinesTodos = Object.entries(afinesObj).map(([c, a]) => ({ cedula: c, ...a }))
+                                   .sort((a, b) => (a.orden || 99) - (b.orden || 99));
+            // Aplicar el filtro de edad SOLO a la lista de afines (el jefe sigue siempre visible).
+            const afines = afinesTodos.filter(a => pasaFiltroEdad(a.fecha_nacimiento));
+
+            const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + cedulaJefe;
+            const nombre = `${j.nombres || ''} ${j.apellidos || ''}`.trim() || '-';
+            // Texto del titulo: si hay filtro de edad activo, desglosar
+            // cuantos estan realmente en rango vs sin fecha (que pasan por la
+            // regla "sin fecha => visible") para no inflar la metrica de cobertura.
+            let tituloAfines;
+            if (filtroEdadActivo()) {
+                const enRango = afinesTodos.filter(a => {
+                    const e = calcularEdad(a.fecha_nacimiento);
+                    return e !== null && pasaFiltroEdad(a.fecha_nacimiento);
+                }).length;
+                const sinFecha = afinesTodos.filter(a => calcularEdad(a.fecha_nacimiento) === null).length;
+                const sinFechaTxt = sinFecha > 0 ? ` + ${sinFecha} sin fecha de nacimiento` : "";
+                tituloAfines = `Afines de ${escapeHtml(nombre)} (${enRango} en rango${sinFechaTxt}, de ${afinesTodos.length} totales)`;
+            } else {
+                tituloAfines = `Afines de ${escapeHtml(nombre)} (${afines.length})`;
+            }
+
+            const filasAfin = afines.length
+                ? afines.map(a => {
+                    const edad = calcularEdad(a.fecha_nacimiento);
+                    const fechaTxt = a.fecha_nacimiento
+                        ? `${escapeHtml(fmtFechaNacimiento(a.fecha_nacimiento))}${edad !== null ? ` <small style="color:#64748b;">(${edad} años)</small>` : ""}`
+                        : "—";
+                    return `
+                    <tr>
+                        <td>${a.orden || '-'}</td>
+                        <td><b>${escapeHtml((a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || ''))}</b></td>
+                        <td>${escapeHtml(`${a.nombres || ''} ${a.apellidos || ''}`.trim() || '-')}</td>
+                        <td>${escapeHtml(a.telefono || '—')}</td>
+                        <td style="text-align:center;font-weight:700;">${escapeHtml(fmtGenero(a.genero))}</td>
+                        <td>${fechaTxt}</td>
+                        <td>${escapeHtml(fmtFechaCorta(a.fecha_registro))}</td>
+                        <td><button class="btn-fila del" data-afin="${escapeHtml(a.cedula || '')}">Eliminar</button></td>
+                    </tr>
+                `;
+                  }).join('')
+                : `<tr><td colspan="8" style="text-align:center;padding:18px;color:#94a3b8;font-weight:600;">Este jefe aún no tiene afines registrados.</td></tr>`;
+
+            $('modalCaja').innerHTML = `
+                <button class="cerrar" id="btnCerrarModal">✕ Cerrar</button>
+                <h2>${tituloAfines}</h2>
+                <div class="meta">
+                    <b>Cédula del jefe:</b> ${escapeHtml(ced)}<br>
+                    <b>Teléfono:</b> ${escapeHtml(j.telefono || '-')}<br>
+                    <b>Parroquia:</b> ${escapeHtml(j.parroquia || '-')} · <b>Circuito:</b> ${escapeHtml(j.circuito || '-')}<br>
+                    <b>Comunidad:</b> ${escapeHtml(j.comunidad_nombre || '-')}<br>
+                    <b>Centro electoral:</b> ${escapeHtml(j.centro_electoral || '-')} ${j.mesas ? '· <b>Mesas:</b> ' + escapeHtml(String(j.mesas)) : ''}
+                </div>
+                <div class="tabla-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:50px;">Orden</th>
+                                <th>Cédula</th>
+                                <th>Nombres y Apellidos</th>
+                                <th>Teléfono</th>
+                                <th style="width:55px;text-align:center;">Género</th>
+                                <th>Fecha Nacimiento</th>
+                                <th>Fecha registro</th>
+                                <th style="width:90px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>${filasAfin}</tbody>
+                    </table>
+                </div>
+            `;
+            $('modal').classList.remove('hidden');
+            // Botones internos del modalCaja: se reasignan en cada apertura porque
+            // el contenido se regenera. Usamos addEventListener sobre nodos nuevos,
+            // no acumulamos handlers en el #modal. El backdrop tiene su listener
+            // unico global mas abajo (fuera de esta funcion) para evitar leaks.
+            $('btnCerrarModal').addEventListener('click', cerrarModal);
+            $('modalCaja').querySelectorAll('button[data-afin]').forEach(btn => {
+                btn.addEventListener('click', () => eliminarAfin(cedulaJefe, btn.dataset.afin));
+            });
+        }
+
+        function cerrarModal() {
+            $('modal').classList.add('hidden');
+            $('modalCaja').innerHTML = '';
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // ELIMINACIONES (gated por reglas de Firebase tambien)
+        // ──────────────────────────────────────────────────────────
+        async function eliminarJefe(cedulaJefe) {
+            const j = jefesMap[cedulaJefe];
+            if (!j) return;
+            const nombre = `${j.nombres || ''} ${j.apellidos || ''}`.trim() || cedulaJefe;
+            const nAfines = Object.keys(afinesMap[cedulaJefe] || {}).length;
+            const ok = confirm(
+                `¿Eliminar al jefe ${nombre} (C.I. ${cedulaJefe}) y sus ${nAfines} afín${nAfines === 1 ? '' : 'es'}?\n\n` +
+                `Esta acción NO se puede deshacer.`
+            );
+            if (!ok) return;
+
+            try {
+                // Borrado ATOMICO con multi-path update: si una falla, ninguna se
+                // aplica. Sin esto, podiamos dejar afines huerfanos en /afines_1x10
+                // que sigan inflando el KPI tras borrar el jefe.
+                await update(ref(database), {
+                    [`jefes_1x10_cristianos_abuelos/${cedulaJefe}`]: null,
+                    [`afines_1x10_cristianos_abuelos/${cedulaJefe}`]: null
+                });
+                // los listeners onValue refrescan la UI solos
+            } catch (e) {
+                console.error('Error eliminando jefe:', e);
+                alert('No se pudo eliminar al jefe: ' + (e.message || e.code || 'error desconocido'));
+            }
+        }
+
+        async function eliminarAfin(cedulaJefe, cedulaAfin) {
+            const afin = (afinesMap[cedulaJefe] || {})[cedulaAfin];
+            if (!afin) return;
+            const nombre = `${afin.nombres || ''} ${afin.apellidos || ''}`.trim() || cedulaAfin;
+            const ok = confirm(`¿Eliminar al afín ${nombre} (C.I. ${cedulaAfin}) de esta patrulla?`);
+            if (!ok) return;
+            // Borrado OPTIMISTA: quitamos la entrada local de afinesMap y reabrimos
+            // el modal ANTES de esperar a que el listener onValue propague el cambio.
+            // En 3G/satelite el onValue puede tardar > 250ms y el modal reabria con
+            // el afin todavia visible, dando la impresion de que el borrado fallo.
+            // Si remove() rechaza, restauramos.
+            const afinBackup = afin;
+            if (afinesMap[cedulaJefe]) delete afinesMap[cedulaJefe][cedulaAfin];
+            abrirModalAfines(cedulaJefe);
+            try {
+                await remove(ref(database, `afines_1x10/${cedulaJefe}/${cedulaAfin}`));
+                // El listener onValue terminara de sincronizar; el modal ya esta correcto.
+            } catch (e) {
+                console.error('Error eliminando afín:', e);
+                // Restaurar la entrada local y refrescar el modal
+                if (!afinesMap[cedulaJefe]) afinesMap[cedulaJefe] = {};
+                afinesMap[cedulaJefe][cedulaAfin] = afinBackup;
+                abrirModalAfines(cedulaJefe);
+                alert('No se pudo eliminar al afín: ' + (e.message || e.code || 'error desconocido'));
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // SANITIZADOR PDF (reusado de encuesta-resultados.html)
+        // Helvetica WinAnsi no soporta emojis, em-dash, comillas
+        // curvas, signos invertidos, bullets, etc.
+        // ──────────────────────────────────────────────────────────
+        function _safePdf(s) {
+            if (s == null) return "";
+            let t = String(s);
+            t = t.normalize ? t.normalize("NFC") : t;
+            t = t.replace(/[“”″]/g, '"')   // comillas curvas dobles
+                 .replace(/[‘’′]/g, "'")   // comillas curvas simples
+                 .replace(/[–—]/g, "-")         // en-dash, em-dash
+                 .replace(/[•‣◦⁃]/g, "*") // bullets
+                 .replace(/…/g, "...")                // ellipsis
+                 .replace(/[¿]/g, "")                // ¿
+                 .replace(/[¡]/g, "")                // ¡
+                 .replace(/[·]/g, "*")                // middle dot
+                 .replace(/ /g, " ");                 // no-break space
+            t = t.replace(/[\u{1F000}-\u{1FFFF}]/gu, "")
+                 .replace(/[\u{2600}-\u{27BF}]/gu, "")
+                 .replace(/[\u{FE00}-\u{FE0F}]/gu, "")
+                 .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "");
+            t = t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ");
+            t = t.replace(/[ \t]{2,}/g, " ").trim();
+            return t;
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // PDF: Movilizacion agrupada (por centro electoral o por comuna)
+        // ──────────────────────────────────────────────────────────
+        function generarPdfMovilizacion(modo) {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            const esCentro = modo === 'centro';
+            const todosJefes = getJefesArray();
+            const filtrados = aplicarFiltros(todosJefes);
+            if (filtrados.length === 0) {
+                alert('No hay jefes 1x10 para exportar con los filtros actuales.');
+                return;
+            }
+
+            // Agrupar
+            const grupos = {};
+            filtrados.forEach(j => {
+                const k = esCentro
+                    ? (j.centro_electoral || '(SIN CENTRO ASIGNADO)')
+                    : (j.circuito || '(SIN CIRCUITO ASIGNADO)');
+                if (!grupos[k]) grupos[k] = [];
+                grupos[k].push(j);
+            });
+
+            const entries = Object.entries(grupos).sort((a, b) => a[0].localeCompare(b[0], 'es'));
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const margenX = 12;
+            const anchoUtil = 192;
+            let y = 14;
+
+            // Cintillo rojo institucional
+            doc.setFillColor(227, 6, 19); // #E30613
+            doc.rect(0, 0, 216, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.text(_safePdf('ALCALDIA DE CRISTOBAL ROJAS - MOVILIZACION 1x10'), 108, 7, { align: 'center' });
+
+            y = 18;
+            doc.setTextColor(10, 35, 81);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(15);
+            doc.text(_safePdf(esCentro
+                ? 'Plan de Movilizacion por Centro Electoral'
+                : 'Plan de Movilizacion por Comuna (Circuito)'
+            ), margenX, y);
+            y += 6;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(80, 80, 80);
+            const fechaExp = new Date().toLocaleString('es-VE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            // Pre-calculo de afines filtrados por edad por jefe (para coherencia
+            // con los otros PDFs y con el banner). Si no hay filtro activo, equivale
+            // a tomar j._afines tal cual.
+            const _afinesPorJefe = new Map();
+            filtrados.forEach(j => {
+                _afinesPorJefe.set(j, (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento)));
+            });
+            const totalAfin = filtrados.reduce((acc, j) => acc + _afinesPorJefe.get(j).length, 0);
+            const edadInfo = filtroEdadActivo()
+                ? `   *   Edad afin: ${($('filtroEdadMin').value || '0')}-${($('filtroEdadMax').value || '120')} anos`
+                : '';
+            doc.text(_safePdf(
+                `Exportado: ${fechaExp}   *   Jefes: ${filtrados.length}   *   Afines: ${totalAfin}   *   Total personas: ${filtrados.length + totalAfin}   *   Grupos: ${entries.length}${edadInfo}`
+            ), margenX, y);
+            y += 7;
+
+            const checkPag = (alturaNecesaria) => {
+                if (y + alturaNecesaria > 268) { doc.addPage(); y = 16; }
+            };
+
+            entries.forEach(([nombreGrupo, jefesGrupo]) => {
+                checkPag(24);
+
+                // Cabecera de grupo (azul institucional)
+                doc.setFillColor(10, 35, 81); // #0a2351
+                doc.rect(margenX, y, anchoUtil, 8, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(_safePdf(nombreGrupo), margenX + 2, y + 5.5);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                // Sumar afines YA filtrados por edad para mantener consistencia con
+                // los otros PDFs (Hoja Asistencia y Asistencia por Centro).
+                const totalP = jefesGrupo.reduce((a, j) => a + _afinesPorJefe.get(j).length, 0) + jefesGrupo.length;
+                doc.text(_safePdf(`${jefesGrupo.length} jefe${jefesGrupo.length === 1 ? '' : 's'} - ${totalP} personas`),
+                         margenX + anchoUtil - 2, y + 5.5, { align: 'right' });
+                y += 10;
+
+                // Si es por centro, podemos mostrar mesas (todos los jefes del centro deberian tener la misma)
+                if (esCentro) {
+                    const mesas = jefesGrupo.map(j => j.mesas).filter(Boolean);
+                    if (mesas.length > 0) {
+                        doc.setTextColor(80, 80, 80);
+                        doc.setFontSize(9);
+                        doc.text(_safePdf(`Mesas: ${mesas[0]}`), margenX, y);
+                        y += 5;
+                    }
+                }
+
+                jefesGrupo.sort((a, b) => {
+                    const an = `${a.apellidos || ''} ${a.nombres || ''}`;
+                    const bn = `${b.apellidos || ''} ${b.nombres || ''}`;
+                    return an.localeCompare(bn, 'es');
+                });
+
+                jefesGrupo.forEach((j, idxJ) => {
+                    const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
+                    const nombre = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '-';
+                    const tel = j.telefono || '-';
+                    const comunidad = j.comunidad_nombre || '-';
+
+                    // Aplicar el filtro de edad a los afines del jefe (consistente
+                    // con Hoja Asistencia y Asistencia por Centro).
+                    const afines = _afinesPorJefe.get(j);
+                    // Altura aprox: header del jefe (10mm) + 4mm por afín + 4 de espacio
+                    const alturaBlock = 10 + Math.max(afines.length, 1) * 4.6 + 5;
+                    checkPag(alturaBlock);
+
+                    // Caja del jefe
+                    doc.setDrawColor(227, 6, 19);
+                    doc.setLineWidth(0.4);
+                    doc.line(margenX, y, margenX + anchoUtil, y);
+                    y += 1;
+                    doc.setTextColor(227, 6, 19);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    doc.text(_safePdf(`JEFE #${idxJ + 1}: ${nombre}`), margenX, y + 4);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(60, 60, 60);
+                    doc.text(_safePdf(`C.I. ${ced}   *   Tel: ${tel}`), margenX + anchoUtil, y + 4, { align: 'right' });
+                    y += 6;
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(_safePdf(`Comunidad: ${comunidad}`), margenX, y + 3.5);
+                    doc.text(_safePdf(`Afines: ${afines.length}`), margenX + anchoUtil, y + 3.5, { align: 'right' });
+                    y += 5;
+
+                    // Tabla compacta de afines
+                    if (afines.length === 0) {
+                        doc.setFontSize(8.5);
+                        doc.setTextColor(148, 163, 184);
+                        doc.text(_safePdf('(Sin afines registrados)'), margenX + 4, y + 3);
+                        y += 5;
+                    } else {
+                        doc.setFontSize(8);
+                        doc.setTextColor(80, 80, 80);
+                        doc.setFont('helvetica', 'bold');
+                        // Layout: #(4) | Cedula(14) | Nombre(44) | Tel(col fija a la derecha)
+                        const xTel = margenX + anchoUtil - 36; // 36mm para telefono
+                        const anchoNombre = xTel - (margenX + 44) - 2;
+                        doc.text('#', margenX + 4, y + 3);
+                        doc.text('Cedula', margenX + 14, y + 3);
+                        doc.text('Nombre completo', margenX + 44, y + 3);
+                        doc.text('Telefono', xTel, y + 3);
+                        y += 4;
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(30, 41, 59);
+                        afines.forEach((a, idxA) => {
+                            checkPag(5);
+                            const cedA = (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || '');
+                            const nomA = `${(a.nombres || '').trim()} ${(a.apellidos || '').trim()}`.trim() || '-';
+                            const telA = a.telefono || '-';
+                            doc.text(String(a.orden || (idxA + 1)), margenX + 4, y + 3);
+                            doc.text(_safePdf(cedA), margenX + 14, y + 3);
+                            const nomLineas = doc.splitTextToSize(_safePdf(nomA), anchoNombre);
+                            doc.text(nomLineas, margenX + 44, y + 3);
+                            doc.text(_safePdf(telA), xTel, y + 3);
+                            y += Math.max(4, nomLineas.length * 4);
+                        });
+                    }
+                    y += 3;
+                });
+
+                y += 4;
+            });
+
+            // Pie de paginas
+            const totalPag = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPag; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(_safePdf(`Pagina ${i} de ${totalPag} - Alcaldia de Cristobal Rojas - Movilizacion 1x10`),
+                         108, 276, { align: 'center' });
+            }
+
+            const fechaSlug = new Date().toISOString().slice(0, 10);
+            const filename = `Movilizacion_1x10_por_${esCentro ? 'CentroElectoral' : 'Comuna'}_${fechaSlug}.pdf`;
+            doc.save(filename);
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // CSV (una fila por persona)
+        // Columnas: tipo, cedula, nacionalidad, nombres, apellidos,
+        // telefono, fecha_nacimiento, parroquia, circuito, comunidad,
+        // centro_electoral, mesas, cedula_jefe, orden, fecha_registro_iso
+        // ──────────────────────────────────────────────────────────
+        function csvEscape(v) {
+            if (v == null) return '';
+            const s = String(v);
+            if (/[",\n;]/.test(s)) {
+                return '"' + s.replace(/"/g, '""') + '"';
+            }
+            return s;
+        }
+
+        function generarCSV() {
+            const jefes = getJefesArray();
+            const filtrados = aplicarFiltros(jefes);
+            if (filtrados.length === 0) {
+                alert('No hay datos para exportar con los filtros actuales.');
+                return;
+            }
+
+            const header = [
+                'tipo', 'cedula', 'nacionalidad', 'nombres', 'apellidos', 'telefono',
+                'genero',
+                'fecha_nacimiento', 'edad',
+                'parroquia', 'circuito', 'comunidad', 'centro_electoral', 'mesas',
+                'cedula_jefe', 'orden', 'fecha_registro_iso'
+            ];
+            const rows = [header.join(',')];
+
+            filtrados.forEach(j => {
+                const fechaJefe = j.fecha_registro ? new Date(j.fecha_registro).toISOString() : '';
+                const edadJefe = calcularEdad(j.fecha_nacimiento);
+                // Fila del jefe
+                rows.push([
+                    'jefe',
+                    j.cedula || '',
+                    j.nacionalidad || '',
+                    j.nombres || '',
+                    j.apellidos || '',
+                    j.telefono || '',
+                    j.genero || '',                       // M / F / "" (vacio si no se registro)
+                    j.fecha_nacimiento || '',  // fecha_nacimiento del jefe (puede venir vacia si se registro antes de la feature)
+                    edadJefe !== null ? String(edadJefe) : '',
+                    j.parroquia || '',
+                    j.circuito || '',
+                    j.comunidad_nombre || '',
+                    j.centro_electoral || '',
+                    j.mesas || '',
+                    j.cedula || '',  // cedula_jefe = la propia
+                    '0',
+                    fechaJefe
+                ].map(csvEscape).join(','));
+
+                // Filas de cada afín — heredan ubicacion del jefe
+                // Filtro de edad SOLO aplica a los afines (el jefe ya se imprimio arriba).
+                (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento)).forEach(a => {
+                    const fechaAfin = a.fecha_registro ? new Date(a.fecha_registro).toISOString() : '';
+                    const edadAfin = calcularEdad(a.fecha_nacimiento);
+                    rows.push([
+                        'afin',
+                        a.cedula || '',
+                        a.nacionalidad || '',
+                        a.nombres || '',
+                        a.apellidos || '',
+                        a.telefono || '',
+                        a.genero || '',                       // M / F / "" (vacio si no se registro)
+                        a.fecha_nacimiento || '',
+                        edadAfin !== null ? String(edadAfin) : '',
+                        j.parroquia || '',
+                        j.circuito || '',
+                        j.comunidad_nombre || '',
+                        j.centro_electoral || '',
+                        j.mesas || '',
+                        j.cedula || '',
+                        String(a.orden || ''),
+                        fechaAfin
+                    ].map(csvEscape).join(','));
+                });
+            });
+
+            // BOM para que Excel detecte UTF-8 con tildes correctamente
+            const blob = new Blob(['﻿' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const fechaSlug = new Date().toISOString().slice(0, 10);
+            a.download = `Movilizacion_1x10_completo_${fechaSlug}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // EXCEL .xlsx ORGANIZADO (4 hojas) — SheetJS
+        // Hoja 1 "Resumen": KPIs + jefes por parroquia + top 10 centros.
+        // Hoja 2 "Jefes 1x10": lista completa con freeze + autofilter.
+        // Hoja 3 "Afines": una fila por afin con datos del jefe + edad.
+        // Hoja 4 "Movilizacion por Centro": agrupado para imprimir.
+        // OJO: el build .full.min.js de SheetJS comunidad NO soporta
+        // estilos (colores/negrita). Igual asignamos los `s:` por si en
+        // el futuro se cambia a la version pro; lo importante hoy es la
+        // organizacion en hojas, anchos y freeze/autofilter.
+        // ──────────────────────────────────────────────────────────
+        function _estiloCabeceraExcel() {
+            return {
+                fill: { fgColor: { rgb: "0A2351" } },
+                font: { bold: true, color: { rgb: "FFFFFF" } },
+                alignment: { horizontal: "center", vertical: "center" }
+            };
+        }
+        function _estiloTituloExcel() {
+            return {
+                fill: { fgColor: { rgb: "0A2351" } },
+                font: { bold: true, color: { rgb: "FFFFFF" }, sz: 14 },
+                alignment: { horizontal: "left", vertical: "center" }
+            };
+        }
+        function _estiloGrupoExcel() {
+            return {
+                fill: { fgColor: { rgb: "E2E8F0" } },
+                font: { bold: true, color: { rgb: "0F172A" } }
+            };
+        }
+
+        // Convierte una matriz (AoA) a worksheet aplicando estilos a celdas marcadas
+        // como objetos { v, s }. SheetJS comunidad lee `v` pero ignora `s` — esta
+        // funcion existe para que el dia que se cambie a sheetjs-style funcione solo.
+        function _aoaToWs(matriz) {
+            const ws = XLSX.utils.aoa_to_sheet(
+                matriz.map(fila => fila.map(c => (c && typeof c === 'object' && 'v' in c) ? c.v : c))
+            );
+            // Re-aplicar estilos sobre las celdas que llegaron como objetos
+            for (let r = 0; r < matriz.length; r++) {
+                for (let c = 0; c < matriz[r].length; c++) {
+                    const cell = matriz[r][c];
+                    if (cell && typeof cell === 'object' && 's' in cell) {
+                        const addr = XLSX.utils.encode_cell({ r, c });
+                        if (ws[addr]) ws[addr].s = cell.s;
+                    }
+                }
+            }
+            return ws;
+        }
+
+        function exportarExcelOrganizado() {
+            if (!window.XLSX) {
+                alert('La librería de Excel no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            const jefes = getJefesArray();
+            const filtrados = aplicarFiltros(jefes);
+            if (filtrados.length === 0) {
+                alert('No hay datos para exportar con los filtros actuales.');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+            const fechaSlug = new Date().toISOString().slice(0, 10);
+            const fechaHumana = new Date().toLocaleString('es-VE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // ── HOJA 1: Resumen ──────────────────────────────────────
+            const totalJefes = filtrados.length;
+            const totalAfines = filtrados.reduce((acc, j) => acc + j._afinesCount, 0);
+            const totalPersonas = totalJefes + totalAfines;
+            const completos = filtrados.filter(j => j._afinesCount >= 10).length;
+            const promedio = totalJefes ? (totalAfines / totalJefes) : 0;
+            const promedioTxt = promedio.toLocaleString('es-VE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+            const comunidadesSet = new Set(filtrados.map(j => j.comunidad_nombre).filter(Boolean));
+            const centrosSet = new Set(filtrados.map(j => j.centro_electoral).filter(Boolean));
+
+            // Jefes por parroquia
+            const porParroquia = {};
+            filtrados.forEach(j => {
+                const k = j.parroquia || '(SIN PARROQUIA)';
+                if (!porParroquia[k]) porParroquia[k] = { jefes: 0, afines: 0 };
+                porParroquia[k].jefes++;
+                porParroquia[k].afines += j._afinesCount;
+            });
+            const filasParroquia = Object.entries(porParroquia)
+                .sort((a, b) => a[0].localeCompare(b[0], 'es'))
+                .map(([p, v]) => [p, v.jefes, v.afines, v.jefes + v.afines]);
+
+            // Top 10 centros
+            const porCentro = {};
+            filtrados.forEach(j => {
+                const k = j.centro_electoral || '(SIN CENTRO ASIGNADO)';
+                if (!porCentro[k]) porCentro[k] = { jefes: 0, afines: 0 };
+                porCentro[k].jefes++;
+                porCentro[k].afines += j._afinesCount;
+            });
+            const top10Centros = Object.entries(porCentro)
+                .map(([c, v]) => ({ centro: c, jefes: v.jefes, afines: v.afines, total: v.jefes + v.afines }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 10);
+
+            // Si hay filtro de edad activo, agregar una fila aclaratoria al
+            // inicio del Resumen para evitar confusion: los KPIs/Movilizacion
+            // por Centro/Jefes 1x10 NO aplican filtro (por diseno, "KPIs no se
+            // filtran"), solo la hoja "Afines" lo respeta.
+            const filtroEdadFilaResumen = filtroEdadActivo()
+                ? [
+                    ['Filtro de edad activo (solo aplica a hoja "Afines")',
+                     `${($('filtroEdadMin').value || '0')}-${($('filtroEdadMax').value || '120')} anos`],
+                    []
+                  ]
+                : [];
+            // Distribucion por rango etario: contar jefes + afines con fecha
+            // valida. Recalculamos aca para no depender de variables globales
+            // (los KPIs en pantalla pueden estar marcados como "?" si /afines
+            // fallo en la carga inicial, pero aca ya tenemos los datos filtrados).
+            let _c15a17 = 0, _c18a35 = 0, _c36mas = 0;
+            filtrados.forEach(j => {
+                const r = rangoEdad(j.fecha_nacimiento);
+                if (r === "15a17") _c15a17++;
+                else if (r === "18a35") _c18a35++;
+                else if (r === "36mas") _c36mas++;
+                (j._afines || []).forEach(a => {
+                    const rr = rangoEdad(a.fecha_nacimiento);
+                    if (rr === "15a17") _c15a17++;
+                    else if (rr === "18a35") _c18a35++;
+                    else if (rr === "36mas") _c36mas++;
+                });
+            });
+            const _sinFecha = totalPersonas - _c15a17 - _c18a35 - _c36mas;
+            const matrizResumen = [
+                [{ v: 'Resultados Movilizacion 1x10', s: _estiloTituloExcel() }],
+                [`Generado: ${fechaHumana}`],
+                ...filtroEdadFilaResumen,
+                [],
+                [{ v: 'KPI', s: _estiloCabeceraExcel() }, { v: 'Valor', s: _estiloCabeceraExcel() }],
+                ['Total Jefes 1x10', totalJefes],
+                ['Total Afines', totalAfines],
+                ['Total Personas', totalPersonas],
+                ['Promedio afines por jefe', promedioTxt],
+                ['Jefes con 10+ afines', completos],
+                ['Comunidades cubiertas', comunidadesSet.size],
+                ['Centros cubiertos', centrosSet.size],
+                [],
+                [{ v: 'Distribucion por rango etario (Jefes + Afines)', s: _estiloTituloExcel() }],
+                [
+                    { v: 'Rango etario', s: _estiloCabeceraExcel() },
+                    { v: 'Personas', s: _estiloCabeceraExcel() }
+                ],
+                ['15 a 17 anos', _c15a17],
+                ['18 a 35 anos', _c18a35],
+                ['36 anos o mas', _c36mas],
+                ['Sin fecha registrada', _sinFecha],
+                [],
+                [{ v: 'Jefes por Parroquia', s: _estiloTituloExcel() }],
+                [
+                    { v: 'Parroquia', s: _estiloCabeceraExcel() },
+                    { v: 'Cantidad Jefes', s: _estiloCabeceraExcel() },
+                    { v: 'Cantidad Afines', s: _estiloCabeceraExcel() },
+                    { v: 'Total Personas', s: _estiloCabeceraExcel() }
+                ],
+                ...filasParroquia,
+                [],
+                [{ v: 'Top 10 Centros por Personas', s: _estiloTituloExcel() }],
+                [
+                    { v: 'Centro', s: _estiloCabeceraExcel() },
+                    { v: 'Jefes', s: _estiloCabeceraExcel() },
+                    { v: 'Afines', s: _estiloCabeceraExcel() },
+                    { v: 'Total', s: _estiloCabeceraExcel() }
+                ],
+                ...top10Centros.map(t => [t.centro, t.jefes, t.afines, t.total])
+            ];
+            const wsResumen = _aoaToWs(matrizResumen);
+            wsResumen['!cols'] = [{ wch: 40 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
+            // Indices dinamicos para los merges del titulo (las dos primeras
+            // filas son fijas, mas 0 o 2 si hay aviso de filtro de edad).
+            // El bloque "Distribucion por rango etario" agrega 7 filas nuevas
+            // entre los KPIs y "Jefes por Parroquia" (titulo + header + 4 datos
+            // + fila vacia), asi que los offsets de los titulos posteriores
+            // suben +7 respecto a la version sin el bloque.
+            const _offEdad = filtroEdadFilaResumen.length; // 0 o 2
+            wsResumen['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+                // "Distribucion por rango etario" (nuevo): antes era posicion 12+offEdad
+                { s: { r: 12 + _offEdad, c: 0 }, e: { r: 12 + _offEdad, c: 3 } },
+                // "Jefes por Parroquia" subio 7 filas (era 12+offEdad, ahora 19+offEdad)
+                { s: { r: 19 + _offEdad, c: 0 }, e: { r: 19 + _offEdad, c: 3 } },
+                // "Top 10 Centros..." tambien subio 7 (era 14+...+1, ahora 21+...+1)
+                { s: { r: 21 + _offEdad + filasParroquia.length + 1, c: 0 }, e: { r: 21 + _offEdad + filasParroquia.length + 1, c: 3 } }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+            // ── HOJA 2: Jefes 1x10 ───────────────────────────────────
+            // Helper local: cantidad de afines del jefe DESPUES del filtro de edad.
+            // Cuando el filtro no esta activo, equivale a j._afinesCount.
+            const _afinesEnRango = (j) => (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento)).length;
+            const headerJefes = [
+                'Cedula', 'Nombres', 'Apellidos', 'Telefono', 'Nacionalidad', 'Genero',
+                'Fecha Nac', 'Edad',
+                'Parroquia', 'Circuito Comunal', 'Comunidad', 'Centro Electoral',
+                'Mesas', '# Afines', 'Fecha Registro'
+            ];
+            const filasJefes = filtrados
+                .slice()
+                .sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0))
+                .map(j => {
+                    const edadJ = calcularEdad(j.fecha_nacimiento);
+                    // Usar conteo filtrado por edad para que la columna # Afines
+                    // coincida con las filas reales en la hoja "Afines".
+                    return [
+                        (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
+                        j.nombres || '',
+                        j.apellidos || '',
+                        j.telefono || '',
+                        j.nacionalidad || '',
+                        j.genero || '',                       // M / F / "" (vacio si no se registro)
+                        j.fecha_nacimiento || '',
+                        edadJ !== null ? edadJ : '',
+                        j.parroquia || '',
+                        j.circuito || '',
+                        j.comunidad_nombre || '',
+                        j.centro_electoral || '',
+                        j.mesas || '',
+                        _afinesEnRango(j),
+                        j.fecha_registro ? fmtFecha(j.fecha_registro) : ''
+                    ];
+                });
+            const matrizJefes = [
+                headerJefes.map(h => ({ v: h, s: _estiloCabeceraExcel() })),
+                ...filasJefes
+            ];
+            const wsJefes = _aoaToWs(matrizJefes);
+            wsJefes['!cols'] = [
+                { wch: 14 }, { wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 6 }, { wch: 7 },
+                { wch: 12 }, { wch: 6 },
+                { wch: 22 }, { wch: 20 }, { wch: 26 }, { wch: 32 },
+                { wch: 14 }, { wch: 9 }, { wch: 18 }
+            ];
+            // SheetJS community ignora la clave propietaria '!freeze'. La API real
+            // para congelar fila 1 es '!sheetView' (state='frozen' + topLeftCell)
+            // mas wb.Workbook.Views[*]. Configuramos ambos para compatibilidad
+            // amplia (Excel real y LibreOffice).
+            wsJefes['!sheetView'] = [{ state: 'frozen', topLeftCell: 'A2', xSplit: 0, ySplit: 1 }];
+            wsJefes['!freeze'] = { xSplit: 0, ySplit: 1 }; // (legacy, por si algun viewer la respeta)
+            // Ahora son 15 columnas (A..O) tras agregar Fecha Nac + Edad — actualizar autofilter.
+            wsJefes['!autofilter'] = { ref: `A1:O${filasJefes.length + 1}` };
+            XLSX.utils.book_append_sheet(wb, wsJefes, 'Jefes 1x10');
+
+            // ── HOJA 3: Afines ───────────────────────────────────────
+            const headerAfines = [
+                'Cedula Jefe', 'Nombre Jefe', 'Comunidad Jefe', 'Centro Jefe',
+                'Orden', 'Cedula Afin', 'Nombres Afin', 'Apellidos Afin',
+                'Telefono', 'Genero', 'Fecha Nac', 'Edad', 'Nacionalidad', 'Fecha Registro'
+            ];
+            const filasAfines = [];
+            filtrados.forEach(j => {
+                const cedJefe = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
+                const nomJefe = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim();
+                // Filtro de edad SOLO aplica a los afines (el jefe va en otra hoja).
+                (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento)).forEach(a => {
+                    const edad = calcularEdad(a.fecha_nacimiento);
+                    filasAfines.push([
+                        cedJefe,
+                        nomJefe,
+                        j.comunidad_nombre || '',
+                        j.centro_electoral || '',
+                        a.orden || '',
+                        (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || ''),
+                        a.nombres || '',
+                        a.apellidos || '',
+                        a.telefono || '',
+                        a.genero || '',                       // M / F / "" (vacio si no se registro)
+                        a.fecha_nacimiento || '',
+                        edad !== null ? edad : '',
+                        a.nacionalidad || '',
+                        a.fecha_registro ? fmtFecha(a.fecha_registro) : ''
+                    ]);
+                });
+            });
+            const matrizAfines = [
+                headerAfines.map(h => ({ v: h, s: _estiloCabeceraExcel() })),
+                ...filasAfines
+            ];
+            const wsAfines = _aoaToWs(matrizAfines);
+            wsAfines['!cols'] = [
+                { wch: 14 }, { wch: 30 }, { wch: 26 }, { wch: 32 },
+                { wch: 7 }, { wch: 14 }, { wch: 22 }, { wch: 22 },
+                { wch: 14 }, { wch: 7 }, { wch: 12 }, { wch: 6 }, { wch: 6 }, { wch: 18 }
+            ];
+            // Misma estrategia que wsJefes: API real '!sheetView' + legacy '!freeze'.
+            wsAfines['!sheetView'] = [{ state: 'frozen', topLeftCell: 'A2', xSplit: 0, ySplit: 1 }];
+            wsAfines['!freeze'] = { xSplit: 0, ySplit: 1 };
+            // Ahora son 14 columnas (A..N) en vez de 13 (A..M) — actualizar autofilter.
+            wsAfines['!autofilter'] = { ref: `A1:N${filasAfines.length + 1}` };
+            XLSX.utils.book_append_sheet(wb, wsAfines, 'Afines');
+
+            // ── HOJA 4: Movilizacion por Centro ──────────────────────
+            // Agrupado por centro electoral: titulo del centro + sub-tabla
+            // con jefes de ese centro y cuantos afines tiene cada uno.
+            const porCentroDetalle = {};
+            filtrados.forEach(j => {
+                const k = j.centro_electoral || '(SIN CENTRO ASIGNADO)';
+                if (!porCentroDetalle[k]) porCentroDetalle[k] = [];
+                porCentroDetalle[k].push(j);
+            });
+            const matrizMov = [];
+            const merges = [];
+            Object.entries(porCentroDetalle)
+                .sort((a, b) => a[0].localeCompare(b[0], 'es'))
+                .forEach(([centro, jefesCen]) => {
+                    // Usar conteo de afines en rango para coherencia con la hoja Afines.
+                    const totalPCen = jefesCen.length + jefesCen.reduce((a, j) => a + _afinesEnRango(j), 0);
+                    matrizMov.push([{
+                        v: `${centro}  —  ${jefesCen.length} jefe(s)  /  ${totalPCen} personas`,
+                        s: _estiloGrupoExcel()
+                    }]);
+                    merges.push({ s: { r: matrizMov.length - 1, c: 0 }, e: { r: matrizMov.length - 1, c: 5 } });
+                    matrizMov.push([
+                        { v: 'Cedula Jefe', s: _estiloCabeceraExcel() },
+                        { v: 'Nombre Jefe', s: _estiloCabeceraExcel() },
+                        { v: 'Telefono', s: _estiloCabeceraExcel() },
+                        { v: 'Comunidad', s: _estiloCabeceraExcel() },
+                        { v: 'Mesas', s: _estiloCabeceraExcel() },
+                        { v: '# Afines', s: _estiloCabeceraExcel() }
+                    ]);
+                    jefesCen
+                        .sort((a, b) => {
+                            const an = `${a.apellidos || ''} ${a.nombres || ''}`;
+                            const bn = `${b.apellidos || ''} ${b.nombres || ''}`;
+                            return an.localeCompare(bn, 'es');
+                        })
+                        .forEach(j => {
+                            matrizMov.push([
+                                (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
+                                `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim(),
+                                j.telefono || '',
+                                j.comunidad_nombre || '',
+                                j.mesas || '',
+                                _afinesEnRango(j)
+                            ]);
+                        });
+                    matrizMov.push([]); // fila vacia entre centros
+                });
+            const wsMov = _aoaToWs(matrizMov);
+            wsMov['!cols'] = [
+                { wch: 14 }, { wch: 30 }, { wch: 14 }, { wch: 26 }, { wch: 14 }, { wch: 9 }
+            ];
+            wsMov['!merges'] = merges;
+            XLSX.utils.book_append_sheet(wb, wsMov, 'Movilizacion por Centro');
+
+            // Configurar Workbook.Views para que las hojas que usan '!sheetView'
+            // (Jefes 1x10 y Afines) realmente abran con freeze pane aplicado.
+            wb.Workbook = wb.Workbook || {};
+            wb.Workbook.Views = [{ RTL: false }];
+
+            XLSX.writeFile(wb, `1x10_movilizacion_${fechaSlug}.xlsx`);
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // PDF "HOJA DE ASISTENCIA" con espacios para FIRMA y HUELLA
+        // Una pagina por cada jefe filtrado. Fila 0 = jefe (gris), 1..N = afines.
+        // N es variable: si el jefe tiene 7 afines van 7 filas, si tiene 15 van 15.
+        // Si el jefe NO tiene afines, igual se imprimen 10 filas vacias para llenar
+        // a mano (el flujo original tipico). Si tiene mas de 20 afines, se pagina:
+        // la pagina siguiente reabre con cabecera "(continuacion)" + datos del jefe.
+        // ──────────────────────────────────────────────────────────
+        function generarPdfHojaAsistencia() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            const jefes = getJefesArray();
+            const jefesVisibles = aplicarFiltros(jefes)
+                .sort((a, b) => {
+                    const an = `${a.apellidos || ''} ${a.nombres || ''}`;
+                    const bn = `${b.apellidos || ''} ${b.nombres || ''}`;
+                    return an.localeCompare(bn, 'es');
+                });
+            if (jefesVisibles.length === 0) {
+                alert('No hay jefes 1x10 para imprimir hojas de asistencia con los filtros actuales.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const pageW = 216, pageH = 279;
+            const margenX = 12;
+            const anchoUtil = pageW - margenX * 2;
+
+            // Anchos de columna (suma = anchoUtil = 192mm)
+            // # (10) | CEDULA (22) | NOMBRE (50) | GEN (6) | TELEFONO (21) | FIRMA (55) | HUELLA (28)
+            // Le sacamos 5mm a NOMBRE y 1mm a TELEFONO para meter una columna GEN compacta.
+            const colW = { num: 10, ced: 22, nom: 50, gen: 6, tel: 21, firma: 55, huella: 28 };
+            const xNum = margenX;
+            const xCed = xNum + colW.num;
+            const xNom = xCed + colW.ced;
+            const xGen = xNom + colW.nom;
+            const xTel = xGen + colW.gen;
+            const xFirma = xTel + colW.tel;
+            const xHuella = xFirma + colW.firma;
+            const filaH = 12; // 12mm de alto por fila — suficiente para firma manuscrita
+            // Cuantos afines caben por pagina (despues del jefe). Pedido del usuario:
+            // si hay >20 afines, paginar continuando en una nueva hoja.
+            const AFINES_POR_PAGINA = 20;
+
+            const fechaHumana = new Date().toLocaleString('es-VE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Helper que pinta cabecera + recuadro del jefe + cabecera de la tabla
+            // y devuelve la `y` donde empezar a pintar filas. Se reusa tanto en la
+            // primera pagina como en las paginas "(continuacion)".
+            function pintarCabeceraPagina(j, esContinuacion) {
+                // ── Cintillo rojo + titulo ─────────────────
+                doc.setFillColor(227, 6, 19);
+                doc.rect(0, 0, pageW, 10, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(_safePdf('ALCALDIA DE CRISTOBAL ROJAS'), pageW / 2, 7, { align: 'center' });
+
+                let y = 16;
+                doc.setTextColor(10, 35, 81);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(15);
+                const tit = esContinuacion
+                    ? 'HOJA DE ASISTENCIA - MOVILIZACION 1x10 (continuacion)'
+                    : 'HOJA DE ASISTENCIA - MOVILIZACION 1x10';
+                doc.text(_safePdf(tit), pageW / 2, y, { align: 'center' });
+                y += 7;
+
+                // ── Datos del jefe (recuadro) ─────────────
+                const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
+                const nombre = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '-';
+                const tel = j.telefono || '-';
+                const parroquia = j.parroquia || '-';
+                const comuna = j.circuito || '-';
+                const comunidad = j.comunidad_nombre || '-';
+                const centro = j.centro_electoral || '-';
+                const mesas = j.mesas || '-';
+
+                doc.setDrawColor(10, 35, 81);
+                doc.setLineWidth(0.4);
+                const recH = 28;
+                doc.rect(margenX, y, anchoUtil, recH);
+                doc.setFillColor(10, 35, 81);
+                doc.rect(margenX, y, anchoUtil, 6, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.text(_safePdf('DATOS DEL JEFE DE PATRULLA'), margenX + 2, y + 4.2);
+
+                doc.setTextColor(30, 41, 59);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                const labelW = 26;
+                const col1X = margenX + 2;
+                const col2X = margenX + anchoUtil / 2 + 2;
+                let yy = y + 11;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Nombre:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(nombre), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Cedula:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(ced), col2X + labelW, yy);
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Telefono:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(tel), col1X + labelW, yy);
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Parroquia:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(parroquia), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Comuna:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(comuna), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Comunidad:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(comunidad), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Centro:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(centro), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Mesas:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(mesas), col2X + labelW, yy);
+
+                y += recH + 5;
+
+                // ── Cabecera de la tabla ──────────────────
+                doc.setFillColor(10, 35, 81);
+                doc.rect(margenX, y, anchoUtil, 7, 'F');
+                doc.setDrawColor(10, 35, 81);
+                doc.setLineWidth(0.3);
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                const yCab = y + 4.8;
+                doc.text('#', xNum + colW.num / 2, yCab, { align: 'center' });
+                doc.text('CEDULA', xCed + colW.ced / 2, yCab, { align: 'center' });
+                doc.text('NOMBRE COMPLETO', xNom + colW.nom / 2, yCab, { align: 'center' });
+                doc.text('G', xGen + colW.gen / 2, yCab, { align: 'center' });
+                doc.text('TELEFONO', xTel + colW.tel / 2, yCab, { align: 'center' });
+                doc.text('FIRMA', xFirma + colW.firma / 2, yCab, { align: 'center' });
+                doc.text('HUELLA', xHuella + colW.huella / 2, yCab, { align: 'center' });
+                y += 7;
+
+                return { y, ced, nombre, tel };
+            }
+
+            // Helper que pinta una fila (vacia o con datos)
+            function pintarFila(y, etiqueta, esJefe, datos) {
+                if (esJefe) {
+                    doc.setFillColor(226, 232, 240);
+                    doc.rect(margenX, y, anchoUtil, filaH, 'F');
+                }
+                doc.setDrawColor(120, 120, 120);
+                doc.setLineWidth(0.2);
+                doc.rect(xNum, y, colW.num, filaH);
+                doc.rect(xCed, y, colW.ced, filaH);
+                doc.rect(xNom, y, colW.nom, filaH);
+                doc.rect(xGen, y, colW.gen, filaH);
+                doc.rect(xTel, y, colW.tel, filaH);
+                doc.rect(xFirma, y, colW.firma, filaH);
+                doc.rect(xHuella, y, colW.huella, filaH);
+
+                doc.setTextColor(15, 23, 42);
+                doc.setFont('helvetica', esJefe ? 'bold' : 'normal');
+                doc.setFontSize(esJefe ? 9 : 8.8);
+                const yTxt = y + filaH / 2 + 1.2;
+                doc.text(String(etiqueta), xNum + colW.num / 2, yTxt, { align: 'center' });
+                if (datos) {
+                    doc.text(_safePdf(datos.ced), xCed + 1.5, yTxt);
+                    const nomLineas = doc.splitTextToSize(_safePdf(datos.nom), colW.nom - 3);
+                    doc.text(nomLineas, xNom + 1.5, y + 4.2);
+                    // Genero compacto: "M", "F" o "-" (sin em-dash para evitar problemas)
+                    const genTxt = datos.gen === 'M' ? 'M' : (datos.gen === 'F' ? 'F' : '-');
+                    doc.text(genTxt, xGen + colW.gen / 2, yTxt, { align: 'center' });
+                    doc.text(_safePdf(datos.tel), xTel + 1.5, yTxt);
+                }
+            }
+
+            // Helper para el pie de la pagina (fecha + coordinador)
+            function pintarPie(y) {
+                y += 6;
+                doc.setTextColor(80, 80, 80);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.text(_safePdf(`Fecha de impresion: ${fechaHumana}`), margenX, y);
+                y += 7;
+                doc.setTextColor(30, 41, 59);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text(_safePdf('Coordinador: __________________________'), margenX, y);
+                doc.text(_safePdf('Firma: __________________________'), margenX + anchoUtil / 2, y);
+            }
+
+            jefesVisibles.forEach((j, idxJefe) => {
+                if (idxJefe > 0) doc.addPage();
+
+                // Filtro de edad SOLO sobre los afines (el jefe se imprime igual).
+                const afinesTodos = j._afines || [];
+                const afines = afinesTodos.filter(a => pasaFiltroEdad(a.fecha_nacimiento));
+                // Distinguir tres casos:
+                //   (a) Jefe sin afines registrados   -> 10 filas vacias (clasico hoja en blanco para campo).
+                //   (b) Jefe con afines en rango       -> usar afines.length real.
+                //   (c) Jefe con afines pero TODOS excluidos por filtro de edad
+                //       -> 0 filas + nota explicativa (no confundir con caso a).
+                const afinesExcluidosPorEdad = afinesTodos.length > 0 && afines.length === 0 && filtroEdadActivo();
+                const totalAfinesFila = afines.length > 0
+                    ? afines.length
+                    : (afinesExcluidosPorEdad ? 0 : 10);
+
+                // Pagina inicial del jefe
+                let { y, ced, nombre, tel } = pintarCabeceraPagina(j, false);
+
+                // Fila 0: el jefe (gris)
+                pintarFila(y, 'J', true, { ced, nom: nombre, tel, gen: j.genero });
+                y += filaH;
+
+                // Nota explicativa si todos los afines fueron excluidos por el filtro de edad.
+                if (afinesExcluidosPorEdad) {
+                    doc.setTextColor(146, 64, 14);
+                    doc.setFont('helvetica', 'italic');
+                    doc.setFontSize(8.5);
+                    doc.text(_safePdf(`Nota: ${afinesTodos.length} afin(es) registrado(s) fuera del rango de edad activo - no se imprimen filas.`), margenX, y + 4);
+                    y += 6;
+                }
+
+                let afinIdx = 0;
+                let enPagina = 0; // cuantas filas de afin ya pintadas en la pagina actual
+
+                while (afinIdx < totalAfinesFila) {
+                    // Si llegamos al limite por pagina, abrir continuacion
+                    if (enPagina >= AFINES_POR_PAGINA) {
+                        // Pie de la pagina actual antes de saltar
+                        pintarPie(y);
+                        doc.addPage();
+                        const reabierto = pintarCabeceraPagina(j, true);
+                        y = reabierto.y;
+                        // En la continuacion NO repetimos la fila del jefe;
+                        // arrancamos directamente con afines.
+                        enPagina = 0;
+                    }
+
+                    const numFila = afinIdx + 1;
+                    const a = afines[afinIdx];
+                    let datos = null;
+                    if (a) {
+                        const cedA = (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || '');
+                        const nomA = `${(a.nombres || '').trim()} ${(a.apellidos || '').trim()}`.trim() || '-';
+                        const telA = a.telefono || '-';
+                        datos = { ced: cedA, nom: nomA, tel: telA, gen: a.genero };
+                    }
+                    pintarFila(y, numFila, false, datos);
+                    y += filaH;
+
+                    afinIdx++;
+                    enPagina++;
+                }
+
+                // Pie de la ultima pagina del jefe
+                pintarPie(y);
+            });
+
+            // Numeracion de paginas
+            const totalPag = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPag; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(_safePdf(`Pagina ${i} de ${totalPag}`), pageW / 2, pageH - 6, { align: 'center' });
+            }
+
+            const fechaSlug = new Date().toISOString().slice(0, 10);
+            doc.save(`1x10_hoja_asistencia_${fechaSlug}.pdf`);
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // PDF: Hoja de Asistencia agrupada POR CENTRO ELECTORAL
+        // (distinto al PDF por Jefe — aqui 1 hoja por centro lista
+        // a TODAS las personas (jefes + afines) que votan ahi, con
+        // columna firma. Para que el coordinador del centro vaya
+        // marcando asistencia/voto el dia de la jornada.)
+        // ──────────────────────────────────────────────────────────
+        function generarPdfAsistenciaPorCentro() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            const jefes = getJefesArray();
+            const jefesVisibles = aplicarFiltros(jefes);
+            if (jefesVisibles.length === 0) {
+                alert('No hay jefes 1x10 para imprimir hojas por centro con los filtros actuales.');
+                return;
+            }
+
+            // Agrupar jefes por centro electoral. Cada jefe aporta SUS afines
+            // al grupo de SU centro (asumimos que los afines votan donde el jefe).
+            const grupos = {};
+            jefesVisibles.forEach(j => {
+                const k = j.centro_electoral || '(SIN CENTRO ASIGNADO)';
+                if (!grupos[k]) grupos[k] = [];
+                grupos[k].push(j);
+            });
+            // Orden alfabetico estable de centros
+            const entries = Object.entries(grupos).sort((a, b) => a[0].localeCompare(b[0], 'es'));
+            // Dentro de cada centro, ordenar jefes por apellidos+nombres
+            entries.forEach(([, arr]) => {
+                arr.sort((a, b) => {
+                    const an = `${a.apellidos || ''} ${a.nombres || ''}`;
+                    const bn = `${b.apellidos || ''} ${b.nombres || ''}`;
+                    return an.localeCompare(bn, 'es');
+                });
+            });
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const pageW = 216, pageH = 279;
+            const margenX = 12;
+            const anchoUtil = pageW - margenX * 2; // 192mm
+
+            // Anchos de columna (suma = 192):
+            // # (8) | TIPO (16) | CEDULA (22) | NOMBRE (45) | GEN (6) | TEL (22) | COMUNIDAD (28) | FIRMA (45)
+            // Le sacamos 5mm a NOMBRE y 1mm a COMUNIDAD para meter una columna GEN compacta.
+            const colW = { num: 8, tipo: 16, ced: 22, nom: 45, gen: 6, tel: 22, com: 28, firma: 45 };
+            const xNum = margenX;
+            const xTipo = xNum + colW.num;
+            const xCed = xTipo + colW.tipo;
+            const xNom = xCed + colW.ced;
+            const xGen = xNom + colW.nom;
+            const xTel = xGen + colW.gen;
+            const xCom = xTel + colW.tel;
+            const xFirma = xCom + colW.com;
+            const filaH = 10; // 10mm alto por fila — espacio para firma manuscrita
+            const Y_TOPE_PIE = pageH - 30; // por encima de esto, paginar antes del pie
+
+            const fechaHumana = new Date().toLocaleString('es-VE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            // Recolecta datos del centro: nombre, mesas (set), parroquias (set),
+            // comunas (set), # jefes, # total personas (jefes + afines).
+            function datosCentro(nombreCentro, jefesCentro) {
+                const mesasSet = new Set();
+                const parrSet = new Set();
+                const comuSet = new Set();
+                let totalPersonas = 0;
+                jefesCentro.forEach(j => {
+                    if (j.mesas) mesasSet.add(String(j.mesas));
+                    if (j.parroquia) parrSet.add(String(j.parroquia));
+                    if (j.circuito) comuSet.add(String(j.circuito));
+                    // Filtro de edad SOLO sobre afines (asi el contador del recuadro
+                    // coincide con las filas realmente pintadas en la tabla del PDF).
+                    const afines = (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento));
+                    totalPersonas += 1 + afines.length;
+                });
+                return {
+                    nombre: nombreCentro,
+                    mesas: Array.from(mesasSet).sort().join(', ') || '-',
+                    parroquias: Array.from(parrSet).sort().join(', ') || '-',
+                    comunas: Array.from(comuSet).sort().join(', ') || '-',
+                    nJefes: jefesCentro.length,
+                    nPersonas: totalPersonas
+                };
+            }
+
+            // Pinta cintillo + titulo + recuadro de centro + cabecera tabla.
+            // Devuelve la y donde empezar a pintar filas.
+            function pintarCabeceraPagina(infoCentro, esContinuacion) {
+                // Cintillo rojo + titulo institucional
+                doc.setFillColor(227, 6, 19);
+                doc.rect(0, 0, pageW, 10, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(_safePdf('ALCALDIA DE CRISTOBAL ROJAS'), pageW / 2, 7, { align: 'center' });
+
+                let y = 16;
+                doc.setTextColor(91, 33, 182); // morado #5b21b6 a juego con el boton
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(14);
+                const tit = esContinuacion
+                    ? 'HOJA DE ASISTENCIA - CENTRO ELECTORAL (continuacion)'
+                    : 'HOJA DE ASISTENCIA - CENTRO ELECTORAL';
+                doc.text(_safePdf(tit), pageW / 2, y, { align: 'center' });
+                y += 7;
+
+                // Recuadro datos del centro
+                doc.setDrawColor(91, 33, 182);
+                doc.setLineWidth(0.4);
+                const recH = 26;
+                doc.rect(margenX, y, anchoUtil, recH);
+                doc.setFillColor(91, 33, 182);
+                doc.rect(margenX, y, anchoUtil, 6, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9.5);
+                doc.text(_safePdf('DATOS DEL CENTRO ELECTORAL'), margenX + 2, y + 4.2);
+
+                doc.setTextColor(30, 41, 59);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                const labelW = 26;
+                const col1X = margenX + 2;
+                const col2X = margenX + anchoUtil / 2 + 2;
+                let yy = y + 11;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Centro:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.nombre), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Mesas:'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.mesas), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Parroquia(s):'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.parroquias), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Comuna(s):'), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.comunas), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
+                yy += 5;
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('# de jefes:'), col1X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(String(infoCentro.nJefes)), col1X + labelW, yy);
+                // En las hojas de continuacion, aclarar que el total se refiere al
+                // centro completo (no solo a las personas que caben en esa pagina),
+                // para no confundir al coordinador.
+                const labelTotal = esContinuacion ? 'Total (centro):' : 'Total personas:';
+                doc.setFont('helvetica', 'bold'); doc.text(_safePdf(labelTotal), col2X, yy);
+                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(String(infoCentro.nPersonas)), col2X + labelW, yy);
+
+                y += recH + 5;
+
+                // Cabecera de la tabla
+                doc.setFillColor(91, 33, 182);
+                doc.rect(margenX, y, anchoUtil, 7, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                const yCab = y + 4.8;
+                doc.text('#', xNum + colW.num / 2, yCab, { align: 'center' });
+                doc.text('TIPO', xTipo + colW.tipo / 2, yCab, { align: 'center' });
+                doc.text('CEDULA', xCed + colW.ced / 2, yCab, { align: 'center' });
+                doc.text('NOMBRE COMPLETO', xNom + colW.nom / 2, yCab, { align: 'center' });
+                doc.text('G', xGen + colW.gen / 2, yCab, { align: 'center' });
+                doc.text('TELEFONO', xTel + colW.tel / 2, yCab, { align: 'center' });
+                doc.text('COMUNIDAD', xCom + colW.com / 2, yCab, { align: 'center' });
+                doc.text('FIRMA', xFirma + colW.firma / 2, yCab, { align: 'center' });
+                y += 7;
+
+                return y;
+            }
+
+            // Pinta una fila — datos = {ced, nom, tel, com}, esJefe controla
+            // fondo gris claro + etiqueta [JEFE] en columna TIPO.
+            function pintarFila(y, numero, esJefe, datos) {
+                if (esJefe) {
+                    doc.setFillColor(244, 244, 244); // #F4F4F4 gris claro
+                    doc.rect(margenX, y, anchoUtil, filaH, 'F');
+                }
+                doc.setDrawColor(120, 120, 120);
+                doc.setLineWidth(0.2);
+                doc.rect(xNum, y, colW.num, filaH);
+                doc.rect(xTipo, y, colW.tipo, filaH);
+                doc.rect(xCed, y, colW.ced, filaH);
+                doc.rect(xNom, y, colW.nom, filaH);
+                doc.rect(xGen, y, colW.gen, filaH);
+                doc.rect(xTel, y, colW.tel, filaH);
+                doc.rect(xCom, y, colW.com, filaH);
+                doc.rect(xFirma, y, colW.firma, filaH);
+
+                doc.setTextColor(15, 23, 42);
+                doc.setFontSize(8.5);
+                const yTxt = y + filaH / 2 + 1.2;
+                doc.setFont('helvetica', 'normal');
+                doc.text(String(numero), xNum + colW.num / 2, yTxt, { align: 'center' });
+                doc.setFont('helvetica', 'bold');
+                doc.text(_safePdf(esJefe ? '[JEFE]' : 'Afin'), xTipo + colW.tipo / 2, yTxt, { align: 'center' });
+                doc.setFont('helvetica', esJefe ? 'bold' : 'normal');
+                doc.text(_safePdf(datos.ced || '-'), xCed + 1.5, yTxt);
+                const nomLineas = doc.splitTextToSize(_safePdf(datos.nom || '-'), colW.nom - 3);
+                doc.text(nomLineas, xNom + 1.5, y + 4);
+                // Genero compacto: "M", "F" o "-" (sin em-dash para evitar problemas)
+                const genTxt = datos.gen === 'M' ? 'M' : (datos.gen === 'F' ? 'F' : '-');
+                doc.setFont('helvetica', 'bold');
+                doc.text(genTxt, xGen + colW.gen / 2, yTxt, { align: 'center' });
+                doc.setFont('helvetica', esJefe ? 'bold' : 'normal');
+                doc.text(_safePdf(datos.tel || '-'), xTel + 1.5, yTxt);
+                const comLineas = doc.splitTextToSize(_safePdf(datos.com || '-'), colW.com - 3);
+                doc.text(comLineas, xCom + 1.5, y + 4);
+            }
+
+            // Pie de pagina: fecha + linea coordinador/firma
+            function pintarPie(y) {
+                y += 4;
+                doc.setTextColor(80, 80, 80);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8.5);
+                doc.text(_safePdf(`Fecha de impresion: ${fechaHumana}`), margenX, y);
+                y += 7;
+                doc.setTextColor(30, 41, 59);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text(_safePdf('Coordinador del centro: ___________________'), margenX, y);
+                doc.text(_safePdf('Firma: ___________________'), margenX + anchoUtil / 2 + 6, y);
+            }
+
+            // Recorrer centros
+            entries.forEach(([nombreCentro, jefesCentro], idxCentro) => {
+                if (idxCentro > 0) doc.addPage();
+
+                const info = datosCentro(nombreCentro, jefesCentro);
+                let y = pintarCabeceraPagina(info, false);
+                let numero = 0;
+
+                jefesCentro.forEach(j => {
+                    // Datos del jefe
+                    const cedJ = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
+                    const nomJ = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '-';
+                    const telJ = j.telefono || '-';
+                    const comJ = j.comunidad_nombre || '-';
+
+                    // Salto de pagina si no cabe ni la fila del jefe
+                    if (y + filaH > Y_TOPE_PIE) {
+                        pintarPie(y);
+                        doc.addPage();
+                        y = pintarCabeceraPagina(info, true);
+                    }
+                    numero++;
+                    pintarFila(y, numero, true, { ced: cedJ, nom: nomJ, tel: telJ, com: comJ, gen: j.genero });
+                    y += filaH;
+
+                    // Afines del jefe (filtrados por rango de edad, si esta activo)
+                    const afines = (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento));
+                    afines.forEach(a => {
+                        if (y + filaH > Y_TOPE_PIE) {
+                            pintarPie(y);
+                            doc.addPage();
+                            y = pintarCabeceraPagina(info, true);
+                        }
+                        numero++;
+                        const cedA = (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || '');
+                        const nomA = `${(a.nombres || '').trim()} ${(a.apellidos || '').trim()}`.trim() || '-';
+                        const telA = a.telefono || '-';
+                        // Afin hereda comunidad del jefe (suelen vivir cerca);
+                        // si el afin tiene su propia comunidad guardada, preferirla.
+                        const comA = a.comunidad_nombre || comJ;
+                        pintarFila(y, numero, false, { ced: cedA, nom: nomA, tel: telA, com: comA, gen: a.genero });
+                        y += filaH;
+                    });
+                });
+
+                // Pie de la ultima pagina del centro
+                pintarPie(y);
+            });
+
+            // Numeracion global de paginas
+            const totalPag = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPag; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(_safePdf(`Pagina ${i} de ${totalPag}`), pageW / 2, pageH - 6, { align: 'center' });
+            }
+
+            const fechaSlug = new Date().toISOString().slice(0, 10);
+            doc.save(`1x10_asistencia_por_centro_${fechaSlug}.pdf`);
+        }
+
+        // ── Binds de los botones de export
+        $('btnPdfCentro').addEventListener('click', () => generarPdfMovilizacion('centro'));
+        $('btnPdfComuna').addEventListener('click', () => generarPdfMovilizacion('comuna'));
+        $('btnCsv').addEventListener('click', generarCSV);
+        $('btnExportarExcel').addEventListener('click', exportarExcelOrganizado);
+        $('btnPdfAsistencia').addEventListener('click', generarPdfHojaAsistencia);
+        $('btnPdfAsistenciaCentro').addEventListener('click', generarPdfAsistenciaPorCentro);
+
+        // ── Tecla ESC cierra el modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) cerrarModal();
+        });
+        // ── Backdrop click cierra el modal — listener UNICO global para evitar
+        // que se acumule un handler en cada apertura (leak observado al reabrir
+        // el modal tras eliminar afines, que invoca abrirModalAfines via timeout).
+        // Usamos mousedown+mouseup en lugar de click para no cerrar accidentalmente
+        // cuando el usuario empieza a seleccionar texto DENTRO del modal y suelta
+        // afuera (el click se dispara con target=#modal y cerraria perdiendo la seleccion).
+        (function(){
+            let _mouseDownOnBackdrop = false;
+            const _modalEl = $('modal');
+            _modalEl.addEventListener('mousedown', (e) => { _mouseDownOnBackdrop = (e.target === _modalEl); });
+            _modalEl.addEventListener('mouseup', (e) => {
+                if (_mouseDownOnBackdrop && e.target === _modalEl) cerrarModal();
+                _mouseDownOnBackdrop = false;
+            });
+        })();
+    </script>
+</body>
+</html>

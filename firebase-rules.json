@@ -241,6 +241,60 @@
           "$other":          { ".validate": false }
         }
       }
+    },
+    "jefes_1x10_cristianos_abuelos": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$cedula": {
+        ".read": true,
+        ".write": "newData.exists() || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
+        ".validate": "$cedula.matches(/^[0-9]{4,10}$/)",
+        "cedula":            { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
+        "nombres":           { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "apellidos":         { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "telefono":          { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "nacionalidad":      { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
+        "genero":            { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
+        "categoria":         { ".validate": "newData.isString() && newData.val().matches(/^(cristiano|abuelo)$/)" },
+        "fecha_nacimiento":  { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },
+        "parroquia":         { ".validate": "newData.isString() && newData.val().length <= 80" },
+        "circuito":          { ".validate": "newData.isString() && newData.val().length <= 120" },
+        "comunidad_slug":    { ".validate": "newData.isString() && newData.val().length <= 80" },
+        "comunidad_nombre":  { ".validate": "newData.isString() && newData.val().length <= 120" },
+        "centro_electoral":  { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "mesas":             { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 20" },
+        "registrado_por":    { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "fecha_registro":    { ".validate": "newData.isNumber()" },
+        "user_agent":        { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "$other":            { ".validate": false }
+      }
+    },
+    "afines_1x10_cristianos_abuelos": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$cedula_jefe": {
+        ".read": true,
+        ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+        ".validate": "$cedula_jefe.matches(/^[0-9]{4,10}$/)",
+        "$cedula_afin": {
+          ".write": "(newData.exists() && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
+          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe",
+          "cedula":          { ".validate": "newData.isString() && newData.val() === $cedula_afin && newData.val().length <= 20" },
+          "nombres":         { ".validate": "newData.isString() && newData.val().length <= 100" },
+          "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
+          "nacionalidad":    { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
+          "genero":          { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
+          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "fecha_registro":  { ".validate": "newData.isNumber()" },
+          "telefono":         { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },
+          "parroquia":        { ".validate": "newData.isString() && newData.val().length <= 80" },
+          "circuito":         { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "comunidad_slug":   { ".validate": "newData.isString() && newData.val().length <= 80" },
+          "comunidad_nombre": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "centro_electoral": { ".validate": "newData.isString() && newData.val().length <= 200" },
+          "mesas":            { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 20" },
+          "$other":          { ".validate": false }
+        }
+      }
     }
   }
 }
