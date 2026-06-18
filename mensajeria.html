@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mensajería WhatsApp 1x10 - Panel Admin</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f1f5f9; color: #0f172a; line-height: 1.5;
+        }
+        .topbar {
+            background: #0a2351; color: #fff; padding: 14px 20px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+        }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav {
+            background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+        }
+        .btn-nav:hover { background: rgba(255,255,255,0.22); }
+        .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        .stats { display: flex; gap: 14px; flex-wrap: wrap; }
+        .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 130px; }
+        .stat .num { font-size: 24px; font-weight: 800; color: #E30613; }
+        .stat .lbl { font-size: 12px; color: #64748b; font-weight: 600; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        textarea, input, select {
+            width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+            font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none;
+        }
+        textarea { min-height: 90px; resize: vertical; }
+        .hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .filtros { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
+        @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; }
+        th { background: #0a2351; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; position: sticky; top: 0; }
+        tbody tr:hover { background: #f8fafc; }
+        .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+        .tag-pub { background: #fee2e2; color: #b91c1c; }
+        .tag-emp { background: #ffedd5; color: #c2410c; }
+        .tag-cri { background: #ede9fe; color: #6d28d9; }
+        .tag-jefe { background: #dbeafe; color: #1d4ed8; }
+        .tag-afin { background: #f1f5f9; color: #475569; }
+        .btn-wa {
+            background: #25D366; color: #fff; border: none; border-radius: 6px; padding: 7px 12px;
+            font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+        }
+        .btn-wa:hover { background: #1ebe57; }
+        .btn-wa[disabled], .btn-wa.disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; pointer-events: none; }
+        .tel-mal { color: #b91c1c; font-size: 11px; font-weight: 700; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .paginacion .info { font-size: 13px; color: #64748b; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #E30613; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>📲 Mensajería WhatsApp — 1x10</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+
+        <div id="acceso-restringido" class="estado-box error hidden">
+            <h2 style="color:#b91c1c;">Acceso restringido</h2>
+            <p>Esta sección es solo para administradores.</p>
+        </div>
+
+        <div id="contenido" class="hidden">
+            <div class="card">
+                <h2>Resumen</h2>
+                <div class="stats">
+                    <div class="stat"><div class="num" id="stTotal">0</div><div class="lbl">Con teléfono</div></div>
+                    <div class="stat"><div class="num" id="stPub">0</div><div class="lbl">Público</div></div>
+                    <div class="stat"><div class="num" id="stEmp">0</div><div class="lbl">Empleados</div></div>
+                    <div class="stat"><div class="num" id="stCri">0</div><div class="lbl">Cristianos/Abuelos</div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Mensaje</h2>
+                <label for="mensaje">Texto que se enviará (puedes editarlo)</label>
+                <textarea id="mensaje" placeholder="Escribe tu mensaje…">Hola {nombre}, le saludamos desde la Alcaldía del Municipio Cristóbal Rojas. </textarea>
+                <div class="hint">Usa <b>{nombre}</b> y se reemplaza automáticamente por el nombre de cada persona al abrir su chat. El botón verde abre WhatsApp con el mensaje listo; tú presionas <b>Enviar</b>.</div>
+            </div>
+
+            <div class="card">
+                <h2>Personas con teléfono</h2>
+                <div class="filtros">
+                    <div>
+                        <label>Buscar</label>
+                        <input id="fBuscar" type="search" placeholder="Nombre, cédula o teléfono" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label>Sistema</label>
+                        <select id="fSistema">
+                            <option value="">Todos los sistemas</option>
+                            <option value="Público">Público</option>
+                            <option value="Empleados">Empleados</option>
+                            <option value="Cristianos/Abuelos">Cristianos/Abuelos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Tipo</label>
+                        <select id="fTipo">
+                            <option value="">Jefes y afines</option>
+                            <option value="Jefe">Solo jefes</option>
+                            <option value="Afín">Solo afines</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto; margin-top:14px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Cédula</th>
+                                <th>Teléfono</th>
+                                <th>Sistema</th>
+                                <th>Tipo</th>
+                                <th>Comunidad</th>
+                                <th style="text-align:center;">WhatsApp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody">
+                            <tr><td colspan="7" class="estado-box">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        // Mismo proyecto que todas las demas paginas
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const escapeHtml = (s) => {
+            if (s == null) return '';
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        };
+
+        // Sistemas 1x10 a leer
+        const SISTEMAS = [
+            { label: 'Público',            jefes: 'jefes_1x10',                    afines: 'afines_1x10' },
+            { label: 'Empleados',          jefes: 'jefes_1x10_empleados',          afines: 'afines_1x10_empleados' },
+            { label: 'Cristianos/Abuelos', jefes: 'jefes_1x10_cristianos_abuelos', afines: 'afines_1x10_cristianos_abuelos' }
+        ];
+
+        // Normaliza un telefono venezolano a formato internacional (58XXXXXXXXXX)
+        // Devuelve { e164, valido }. Movil VE: 0414/0424/0412/0416/0426 (11 digitos con 0).
+        function normalizarTel(raw) {
+            const d = (raw || '').replace(/\D/g, '');
+            if (!d) return { e164: '', valido: false };
+            if (d.length === 12 && d.startsWith('58')) return { e164: d, valido: true };
+            if (d.length === 11 && d.startsWith('0')) return { e164: '58' + d.slice(1), valido: true };
+            if (d.length === 10 && d.startsWith('4')) return { e164: '58' + d, valido: true };
+            // Caso raro: lo dejamos como esta pero marcado invalido para no abrir un chat erroneo
+            return { e164: d, valido: false };
+        }
+
+        const primerNombre = (nombres) => (nombres || '').trim().split(/\s+/)[0] || '';
+
+        let PERSONAS = [];     // lista unificada y deduplicada por telefono
+        let pagina = 1;
+        const TAM = 50;
+
+        const fmtSistemaTag = (s) =>
+            s === 'Público' ? 'tag-pub' : (s === 'Empleados' ? 'tag-emp' : 'tag-cri');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuperAdmin = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuperAdmin;
+            if (!esSuperAdmin) {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}/rol`));
+                    permitido = (snap.exists() && snap.val() === 'admin');
+                } catch (e) {
+                    console.error('No se pudo verificar el rol:', e);
+                    permitido = false;
+                }
+            }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            await cargarPersonas();
+        });
+
+        $('btnSalir').addEventListener('click', async () => {
+            try { await signOut(auth); } catch (e) {}
+            location.href = 'index.html';
+        });
+
+        async function cargarPersonas() {
+            const vistos = new Set();   // telefonos ya agregados (dedupe)
+            const lista = [];
+
+            for (const sis of SISTEMAS) {
+                // Jefes
+                try {
+                    const snapJ = await get(ref(database, sis.jefes));
+                    if (snapJ.exists()) {
+                        const jefes = snapJ.val() || {};
+                        Object.values(jefes).forEach(j => {
+                            agregar(lista, vistos, {
+                                nombres: j.nombres, apellidos: j.apellidos, cedula: j.cedula,
+                                telefono: j.telefono, sistema: sis.label, tipo: 'Jefe',
+                                comunidad: j.comunidad_nombre || j.circuito || ''
+                            });
+                        });
+                    }
+                } catch (e) { console.warn('Error leyendo', sis.jefes, e); }
+                // Afines (estructura: {cedJefe: {cedAfin: {...}}})
+                try {
+                    const snapA = await get(ref(database, sis.afines));
+                    if (snapA.exists()) {
+                        const porJefe = snapA.val() || {};
+                        Object.values(porJefe).forEach(grupo => {
+                            Object.values(grupo || {}).forEach(a => {
+                                agregar(lista, vistos, {
+                                    nombres: a.nombres, apellidos: a.apellidos, cedula: a.cedula,
+                                    telefono: a.telefono, sistema: sis.label, tipo: 'Afín',
+                                    comunidad: a.comunidad_nombre || a.circuito || ''
+                                });
+                            });
+                        });
+                    }
+                } catch (e) { console.warn('Error leyendo', sis.afines, e); }
+            }
+
+            // Orden alfabetico por nombre
+            lista.sort((p, q) => (p.nombre || '').localeCompare(q.nombre || '', 'es'));
+            PERSONAS = lista;
+
+            // Stats
+            $('stTotal').textContent = lista.length;
+            $('stPub').textContent = lista.filter(p => p.sistema === 'Público').length;
+            $('stEmp').textContent = lista.filter(p => p.sistema === 'Empleados').length;
+            $('stCri').textContent = lista.filter(p => p.sistema === 'Cristianos/Abuelos').length;
+
+            pagina = 1;
+            render();
+        }
+
+        function agregar(lista, vistos, row) {
+            const tel = normalizarTel(row.telefono);
+            // Solo incluir personas que TIENEN algun telefono escrito
+            if (!row.telefono || !(row.telefono + '').replace(/\D/g, '')) return;
+            // Dedupe por telefono normalizado (si es valido) o por la cadena cruda
+            const clave = tel.valido ? tel.e164 : ('raw:' + (row.telefono + '').replace(/\D/g, ''));
+            if (vistos.has(clave)) return;
+            vistos.add(clave);
+            lista.push({
+                nombre: `${(row.nombres || '').trim()} ${(row.apellidos || '').trim()}`.trim() || '(sin nombre)',
+                primerNombre: primerNombre(row.nombres) || (row.nombres || '').trim() || 'compañero(a)',
+                cedula: row.cedula || '',
+                telDisplay: row.telefono || '',
+                e164: tel.e164,
+                telValido: tel.valido,
+                sistema: row.sistema,
+                tipo: row.tipo,
+                comunidad: row.comunidad || ''
+            });
+        }
+
+        function aplicarFiltros() {
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const sis = $('fSistema').value;
+            const tipo = $('fTipo').value;
+            return PERSONAS.filter(p => {
+                if (sis && p.sistema !== sis) return false;
+                if (tipo && p.tipo !== tipo) return false;
+                if (q) {
+                    const blob = `${p.nombre} ${p.cedula} ${p.telDisplay} ${p.e164}`.toLowerCase();
+                    if (!blob.includes(q)) return false;
+                }
+                return true;
+            });
+        }
+
+        function render() {
+            const filtrados = aplicarFiltros();
+            const total = filtrados.length;
+            const totalPag = Math.max(1, Math.ceil(total / TAM));
+            if (pagina > totalPag) pagina = totalPag;
+            const ini = (pagina - 1) * TAM;
+            const slice = filtrados.slice(ini, ini + TAM);
+            const tbody = $('tbody');
+
+            if (total === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="estado-box">No hay personas con los filtros actuales.</td></tr>`;
+                $('paginacion').innerHTML = '';
+                return;
+            }
+
+            tbody.innerHTML = slice.map(p => {
+                const waCell = p.telValido
+                    ? `<a class="btn-wa" data-action="wa" data-e164="${escapeHtml(p.e164)}" data-nombre="${escapeHtml(p.primerNombre)}" href="#" >💬 WhatsApp</a>`
+                    : `<span class="tel-mal">teléfono inválido</span>`;
+                return `
+                    <tr>
+                        <td><b>${escapeHtml(p.nombre)}</b></td>
+                        <td>${escapeHtml(p.cedula || '-')}</td>
+                        <td>${escapeHtml(p.telDisplay || '-')}</td>
+                        <td><span class="tag ${fmtSistemaTag(p.sistema)}">${escapeHtml(p.sistema)}</span></td>
+                        <td><span class="tag ${p.tipo === 'Jefe' ? 'tag-jefe' : 'tag-afin'}">${escapeHtml(p.tipo)}</span></td>
+                        <td>${escapeHtml(p.comunidad || '-')}</td>
+                        <td style="text-align:center;">${waCell}</td>
+                    </tr>`;
+            }).join('');
+
+            // Botones WhatsApp
+            tbody.querySelectorAll('a[data-action="wa"]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const e164 = btn.getAttribute('data-e164');
+                    const nombre = btn.getAttribute('data-nombre') || '';
+                    const plantilla = $('mensaje').value || '';
+                    const msg = plantilla.replace(/\{nombre\}/g, nombre);
+                    const url = `https://wa.me/${e164}` + (msg.trim() ? `?text=${encodeURIComponent(msg)}` : '');
+                    window.open(url, '_blank', 'noopener');
+                });
+            });
+
+            // Paginacion
+            const desde = ini + 1, hasta = Math.min(ini + TAM, total);
+            $('paginacion').innerHTML = `
+                <button id="pgPrev" ${pagina <= 1 ? 'disabled' : ''}>← Anterior</button>
+                <span class="info">${desde}–${hasta} de ${total}  ·  pág. ${pagina}/${totalPag}</span>
+                <button id="pgNext" ${pagina >= totalPag ? 'disabled' : ''}>Siguiente →</button>`;
+            const prev = $('pgPrev'), next = $('pgNext');
+            if (prev) prev.addEventListener('click', () => { if (pagina > 1) { pagina--; render(); } });
+            if (next) next.addEventListener('click', () => { if (pagina < totalPag) { pagina++; render(); } });
+        }
+
+        // Filtros: re-render y resetear a pagina 1
+        ['fBuscar', 'fSistema', 'fTipo'].forEach(id => {
+            $(id).addEventListener('input', () => { pagina = 1; render(); });
+            $(id).addEventListener('change', () => { pagina = 1; render(); });
+        });
+    </script>
+</body>
+</html>
