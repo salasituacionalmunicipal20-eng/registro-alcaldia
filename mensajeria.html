@@ -57,6 +57,21 @@
         .btn-cne { background: #0a2351; color: #fff; border: none; border-radius: 5px; padding: 4px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
         .btn-cne:hover { background: #15356e; }
         .btn-cne[disabled] { background: #94a3b8; cursor: default; }
+        .env-ok { color: #16a34a; font-weight: 800; font-size: 12px; margin-right: 6px; }
+        .cadena-ctrl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; }
+        .btn-iniciar { background: #0a2351; color: #fff; border: none; border-radius: 7px; padding: 10px 16px; font-size: 14px; font-weight: 800; cursor: pointer; }
+        .btn-iniciar:hover { background: #15356e; }
+        .btn-link { background: none; border: none; color: #b91c1c; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: underline; }
+        .cadena-bar { position: fixed; left: 0; right: 0; bottom: 0; background: #0a2351; color: #fff; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; box-shadow: 0 -2px 14px rgba(0,0,0,0.28); z-index: 60; }
+        .cadena-info { display: flex; flex-direction: column; gap: 2px; min-width: 240px; }
+        .cadena-prog { font-weight: 800; font-size: 13px; color: #7dd3fc; }
+        .cadena-persona { font-weight: 700; font-size: 15px; }
+        .cadena-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav-2 { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 9px 13px; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .btn-nav-2:hover { background: rgba(255,255,255,0.24); }
+        .btn-nav-2.stop { background: #b91c1c; border-color: #b91c1c; }
+        .btn-sig { background: #25D366; color: #fff; border: none; border-radius: 6px; padding: 9px 16px; font-weight: 800; font-size: 14px; cursor: pointer; }
+        .btn-sig:hover { background: #1ebe57; }
         .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
         .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
         .paginacion button[disabled] { opacity: .4; cursor: default; }
@@ -129,6 +144,12 @@
                     </div>
                 </div>
 
+                <div class="cadena-ctrl">
+                    <button class="btn-iniciar" id="btnCadena" type="button">▶ Iniciar envío en cadena</button>
+                    <span class="hint" style="flex:1; min-width:220px;">Abre los chats <b>uno por uno</b> con los filtros actuales. En cada WhatsApp presionas <b>Enviar</b>, vuelves aquí y tocas <b>“Enviado → siguiente”</b>. Los ya enviados quedan con ✓.</span>
+                    <button class="btn-link" id="btnLimpiarEnviados" type="button">Limpiar marcas de enviados</button>
+                </div>
+
                 <div style="overflow-x:auto; margin-top:14px;">
                     <table>
                         <thead>
@@ -148,6 +169,20 @@
                     </table>
                 </div>
                 <div class="paginacion" id="paginacion"></div>
+            </div>
+
+            <!-- Barra fija del modo "envio en cadena" -->
+            <div id="cadenaBar" class="cadena-bar hidden">
+                <div class="cadena-info">
+                    <span class="cadena-prog" id="cadenaProg"></span>
+                    <span class="cadena-persona" id="cadenaPersona"></span>
+                </div>
+                <div class="cadena-btns">
+                    <button id="cbEnviado" class="btn-sig" type="button">✓ Enviado → siguiente</button>
+                    <button id="cbAbrir" class="btn-nav-2" type="button">↻ Reabrir</button>
+                    <button id="cbSaltar" class="btn-nav-2" type="button">⏭ Saltar</button>
+                    <button id="cbDetener" class="btn-nav-2 stop" type="button">⏹ Detener</button>
+                </div>
             </div>
         </div>
     </div>
@@ -224,6 +259,21 @@
         let PERSONAS = [];     // lista unificada y deduplicada por telefono
         let pagina = 1;
         const TAM = 50;
+
+        // ── Envío en cadena + marcas de "ya enviado" (persistidas en el navegador)
+        const LS_ENVIADOS = 'wa_enviados_1x10';
+        function cargarEnviados() { try { return new Set(JSON.parse(localStorage.getItem(LS_ENVIADOS) || '[]')); } catch (e) { return new Set(); } }
+        function guardarEnviados() { try { localStorage.setItem(LS_ENVIADOS, JSON.stringify([...enviados])); } catch (e) {} }
+        let enviados = cargarEnviados();           // Set de e164 ya contactados
+        let cadena = { activa: false, lista: [], idx: 0 };
+
+        // Abre el chat de WhatsApp con el mensaje (plantilla + {nombre}) listo para enviar.
+        function abrirWhatsApp(e164, primerNombre) {
+            const plantilla = $('mensaje').value || '';
+            const msg = plantilla.replace(/\{nombre\}/g, primerNombre || '');
+            const url = `https://wa.me/${e164}` + (msg.trim() ? `?text=${encodeURIComponent(msg)}` : '');
+            window.open(url, '_blank', 'noopener');
+        }
 
         const fmtSistemaTag = (s) =>
             s === 'Público' ? 'tag-pub' : (s === 'Empleados' ? 'tag-emp' : 'tag-cri');
@@ -362,8 +412,9 @@
             }
 
             tbody.innerHTML = slice.map(p => {
+                const yaEnv = p.telValido && enviados.has(p.e164);
                 const waCell = p.telValido
-                    ? `<a class="btn-wa" data-action="wa" data-e164="${escapeHtml(p.e164)}" data-nombre="${escapeHtml(p.primerNombre)}" href="#" >💬 WhatsApp</a>`
+                    ? `${yaEnv ? '<span class="env-ok">✓ enviado</span>' : ''}<a class="btn-wa" data-action="wa" data-e164="${escapeHtml(p.e164)}" data-nombre="${escapeHtml(p.primerNombre)}" href="#" >💬 WhatsApp</a>`
                     : `<span class="tel-mal">teléfono inválido</span>`;
                 const nombreCell = p.sinNombre
                     ? `<span style="color:#94a3b8;">(sin nombre)</span> <button class="btn-cne" data-action="cne" data-id="${p._id}" title="Buscar el nombre en el CNE por la cédula">🔍 CNE</button>`
@@ -384,12 +435,7 @@
             tbody.querySelectorAll('a[data-action="wa"]').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    const e164 = btn.getAttribute('data-e164');
-                    const nombre = btn.getAttribute('data-nombre') || '';
-                    const plantilla = $('mensaje').value || '';
-                    const msg = plantilla.replace(/\{nombre\}/g, nombre);
-                    const url = `https://wa.me/${e164}` + (msg.trim() ? `?text=${encodeURIComponent(msg)}` : '');
-                    window.open(url, '_blank', 'noopener');
+                    abrirWhatsApp(btn.getAttribute('data-e164'), btn.getAttribute('data-nombre') || '');
                 });
             });
 
@@ -441,6 +487,65 @@
         ['fBuscar', 'fSistema', 'fTipo'].forEach(id => {
             $(id).addEventListener('input', () => { pagina = 1; render(); });
             $(id).addEventListener('change', () => { pagina = 1; render(); });
+        });
+
+        // ── Envío en cadena ──────────────────────────────────────────
+        function mostrarPasoCadena() {
+            const { lista, idx } = cadena;
+            if (idx >= lista.length) { finCadena(); return; }
+            const p = lista[idx];
+            $('cadenaProg').textContent = `Enviando ${idx + 1} de ${lista.length}`;
+            $('cadenaPersona').textContent = `${p.nombre}  ·  ${p.cedula || 's/c'}  ·  ${p.telDisplay}`;
+        }
+        function abrirActual() {
+            const p = cadena.lista[cadena.idx];
+            if (p) abrirWhatsApp(p.e164, p.primerNombre);
+        }
+        function finCadena() {
+            cadena.activa = false;
+            $('cadenaBar').classList.add('hidden');
+            const n = cadena.lista.length;
+            if (n) alert(`Terminaste la tanda de ${n} contacto(s). Los marcados con ✓ ya quedaron registrados como enviados.`);
+        }
+        $('btnCadena').addEventListener('click', () => {
+            const lista = aplicarFiltros().filter(p => p.telValido);
+            if (!lista.length) { alert('No hay personas con teléfono válido en los filtros actuales.'); return; }
+            // Empezar por los que AUN no estan marcados como enviados (para no repetir)
+            const pendientes = lista.filter(p => !enviados.has(p.e164));
+            const cola = pendientes.length ? pendientes : lista;
+            const msg = pendientes.length
+                ? `Vas a contactar ${cola.length} persona(s) pendiente(s) de los filtros actuales.`
+                : `Todos ya estaban marcados como enviados; se reenviará a los ${cola.length}.`;
+            if (!confirm(msg + '\n\nSe abrira un chat a la vez. Presiona Enviar en cada WhatsApp y luego "Enviado → siguiente".')) return;
+            cadena = { activa: true, lista: cola, idx: 0 };
+            $('cadenaBar').classList.remove('hidden');
+            mostrarPasoCadena();
+            abrirActual();
+        });
+        $('cbEnviado').addEventListener('click', () => {
+            const p = cadena.lista[cadena.idx];
+            if (p) { enviados.add(p.e164); guardarEnviados(); }
+            cadena.idx++;
+            render();                 // refresca los ✓ en la tabla
+            mostrarPasoCadena();
+            if (cadena.idx < cadena.lista.length) abrirActual();
+        });
+        $('cbSaltar').addEventListener('click', () => {
+            cadena.idx++;
+            mostrarPasoCadena();
+            if (cadena.idx < cadena.lista.length) abrirActual();
+        });
+        $('cbAbrir').addEventListener('click', abrirActual);
+        $('cbDetener').addEventListener('click', () => {
+            cadena.activa = false;
+            $('cadenaBar').classList.add('hidden');
+        });
+        $('btnLimpiarEnviados').addEventListener('click', () => {
+            if (!enviados.size) { alert('No hay marcas de enviados.'); return; }
+            if (!confirm(`Vas a borrar las marcas de ✓ enviado de ${enviados.size} contacto(s). ¿Continuar?`)) return;
+            enviados = new Set();
+            guardarEnviados();
+            render();
         });
     </script>
 </body>
