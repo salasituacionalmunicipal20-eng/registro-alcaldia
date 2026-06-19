@@ -45,6 +45,7 @@
         .tag-pub { background: #fee2e2; color: #b91c1c; }
         .tag-emp { background: #ffedd5; color: #c2410c; }
         .tag-cri { background: #ede9fe; color: #6d28d9; }
+        .tag-abu { background: #cffafe; color: #0e7490; }
         .tag-jefe { background: #dbeafe; color: #1d4ed8; }
         .tag-afin { background: #f1f5f9; color: #475569; }
         .btn-wa {
@@ -107,7 +108,8 @@
                     <div class="stat"><div class="num" id="stTotal">0</div><div class="lbl">Con teléfono</div></div>
                     <div class="stat"><div class="num" id="stPub">0</div><div class="lbl">Público</div></div>
                     <div class="stat"><div class="num" id="stEmp">0</div><div class="lbl">Empleados</div></div>
-                    <div class="stat"><div class="num" id="stCri">0</div><div class="lbl">Cristianos/Abuelos</div></div>
+                    <div class="stat"><div class="num" id="stCri">0</div><div class="lbl">Cristianos</div></div>
+                    <div class="stat"><div class="num" id="stAbu">0</div><div class="lbl">Abuelos</div></div>
                 </div>
             </div>
 
@@ -131,7 +133,8 @@
                             <option value="">Todos los sistemas</option>
                             <option value="Público">Público</option>
                             <option value="Empleados">Empleados</option>
-                            <option value="Cristianos/Abuelos">Cristianos/Abuelos</option>
+                            <option value="Cristianos">Cristianos</option>
+                            <option value="Abuelos">Abuelos</option>
                         </select>
                     </div>
                     <div>
@@ -217,7 +220,8 @@
         const SISTEMAS = [
             { label: 'Público',            jefes: 'jefes_1x10',                    afines: 'afines_1x10' },
             { label: 'Empleados',          jefes: 'jefes_1x10_empleados',          afines: 'afines_1x10_empleados' },
-            { label: 'Cristianos/Abuelos', jefes: 'jefes_1x10_cristianos_abuelos', afines: 'afines_1x10_cristianos_abuelos' }
+            { label: 'Cristianos',         jefes: 'jefes_1x10_cristianos',          afines: 'afines_1x10_cristianos' },
+            { label: 'Abuelos',            jefes: 'jefes_1x10_abuelos',             afines: 'afines_1x10_abuelos' }
         ];
 
         // Normaliza un telefono venezolano a formato internacional (58XXXXXXXXXX)
@@ -276,7 +280,9 @@
         }
 
         const fmtSistemaTag = (s) =>
-            s === 'Público' ? 'tag-pub' : (s === 'Empleados' ? 'tag-emp' : 'tag-cri');
+            s === 'Público' ? 'tag-pub'
+            : (s === 'Empleados' ? 'tag-emp'
+            : (s === 'Abuelos' ? 'tag-abu' : 'tag-cri'));
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) { location.href = 'index.html'; return; }
@@ -350,7 +356,8 @@
             $('stTotal').textContent = lista.length;
             $('stPub').textContent = lista.filter(p => p.sistema === 'Público').length;
             $('stEmp').textContent = lista.filter(p => p.sistema === 'Empleados').length;
-            $('stCri').textContent = lista.filter(p => p.sistema === 'Cristianos/Abuelos').length;
+            $('stCri').textContent = lista.filter(p => p.sistema === 'Cristianos').length;
+            $('stAbu').textContent = lista.filter(p => p.sistema === 'Abuelos').length;
 
             pagina = 1;
             render();

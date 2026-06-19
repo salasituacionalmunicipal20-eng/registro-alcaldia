@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Movilización 1x10 Abuelos - Cristóbal Rojas</title>
+    <meta name="description" content="Regístrate como Jefe de Patrulla 1x10 Abuelos del Municipio Cristóbal Rojas y registra a tus afines." />
+    <script defer src="cne-autocompletar.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body {
+            min-height: 100vh;
+            background: #f1f4f8;
+            color: #1e293b;
+            padding: 0;
+        }
+        .contenedor { max-width: 760px; margin: 0 auto; padding: 0 0 48px; }
+        .contenido-pad { padding: 24px 16px 0; }
+
+        /* Header minimalista institucional */
+        .header {
+            text-align: center;
+            padding: 22px 16px 22px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        .header-logo {
+            display: block;
+            margin: 0 auto 14px;
+            width: auto;
+            max-width: 140px;
+            height: auto;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .header h1 {
+            margin: 0 0 4px;
+            font-size: 22px;
+            font-weight: 800;
+            color: #0a2351;
+            letter-spacing: 0.5px;
+        }
+        .header .subtitulo {
+            margin: 0;
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .header::after {
+            content: '';
+            display: block;
+            width: 64px;
+            height: 3px;
+            background: #d4a017;
+            margin: 16px auto 0;
+            border-radius: 2px;
+        }
+
+        /* Progreso visual */
+        .progreso {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 16px 20px;
+        }
+        .progreso .paso-dot {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700;
+            background: #e2e8f0; color: #64748b;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .progreso .paso-dot.activo {
+            background: #0a2351; color: white;
+        }
+        .progreso .paso-dot.completado {
+            background: #16a34a; color: white;
+        }
+        .progreso .linea {
+            width: 28px; height: 2px; background: #e2e8f0;
+        }
+        .progreso .linea.completado { background: #16a34a; }
+        .progreso .etiqueta {
+            display: block;
+            text-align: center;
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            margin-top: -8px;
+            margin-bottom: 12px;
+            letter-spacing: 0.3px;
+        }
+
+        .tarjeta {
+            background: white; border-radius: 6px; padding: 22px;
+            margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        .tarjeta-titulo {
+            display: flex; align-items: center; gap: 10px;
+            margin: 0 0 4px; font-size: 12px; font-weight: 700;
+            color: #0a2351; text-transform: uppercase; letter-spacing: 1px;
+            padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 16px;
+        }
+        .tarjeta-desc { color: #64748b; font-size: 13px; margin: 0 0 16px; font-weight: 400; line-height: 1.5; }
+
+        .campo { margin-bottom: 14px; }
+        .campo label {
+            display: block; font-size: 12px; font-weight: 800; color: #334155;
+            margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .campo .req { color: #ef4444; }
+        .campo input, .campo select, .campo textarea {
+            width: 100%; padding: 12px 13px; border-radius: 4px;
+            border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a;
+            font-size: 16px; font-weight: 400; font-family: inherit; outline: none;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .campo input:focus, .campo select:focus, .campo textarea:focus {
+            border-color: #0a2351; background: white;
+        }
+
+        /* Cédula: nacionalidad + número */
+        .cedula-row {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 8px;
+        }
+        .cedula-row select { padding: 12px 6px; text-align: center; font-weight: 700; font-size: 16px; }
+
+        .hint {
+            display: block;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+        .hint.warn { color: #c2410c; font-weight: 600; }
+        .hint.ok { color: #166534; font-weight: 600; }
+
+        /* Panel readonly del centro electoral */
+        .panel-centro {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-left: 3px solid #16a34a;
+            border-radius: 4px;
+            padding: 12px 14px;
+            margin-top: 8px;
+        }
+        .panel-centro.advertencia {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            border-left-color: #c2410c;
+        }
+        .panel-centro .titulo {
+            font-size: 11px;
+            font-weight: 800;
+            color: #166534;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .panel-centro.advertencia .titulo { color: #c2410c; }
+        .panel-centro .valor {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.35;
+        }
+        .panel-centro .mesas {
+            font-size: 13px;
+            color: #475569;
+            margin-top: 4px;
+        }
+
+        /* Bloques de afines */
+        .afin-bloque {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 12px 13px;
+            margin-bottom: 10px;
+            border-left: 3px solid #d4a017;
+        }
+        .afin-bloque .num-afin {
+            display: inline-block;
+            background: #d4a017; color: white;
+            font-size: 11px; font-weight: 800;
+            padding: 3px 9px; border-radius: 10px;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .afin-bloque .bloque-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        .afin-bloque .btn-eliminar-afin {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+        .afin-bloque .btn-eliminar-afin:hover { background: #fee2e2; }
+        .afin-bloque .btn-eliminar-afin:active { transform: translateY(1px); }
+        .afin-bloque .label-cne {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #166534;
+            margin-top: 6px;
+            min-height: 18px;
+            line-height: 1.3;
+        }
+        .afin-bloque .label-cne.warn {
+            color: #c2410c;
+        }
+
+        /* Botones */
+        .botones-fila {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .btn {
+            flex: 1;
+            padding: 14px 16px; border: none; border-radius: 4px;
+            font-size: 14.5px; font-weight: 700; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            transition: background 0.15s, transform 0.05s;
+            font-family: inherit;
+        }
+        .btn-primario {
+            background: #0a2351;
+            color: white;
+        }
+        .btn-primario:hover { background: #14306d; }
+        .btn-primario:active { transform: translateY(1px); }
+        .btn-primario:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-secundario {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .btn-secundario:hover { background: #cbd5e1; }
+        .btn-secundario:active { transform: translateY(1px); }
+
+        .mensaje { padding: 12px 14px; border-radius: 4px; margin-bottom: 14px; font-weight: 600; font-size: 13.5px; }
+        .mensaje.error { background: #fef2f2; color: #991b1b; border-left: 3px solid #dc2626; }
+        .mensaje.exito { background: #f0fdf4; color: #166534; border-left: 3px solid #16a34a; }
+        .mensaje.aviso { background: #fff7ed; color: #9a3412; border-left: 3px solid #c2410c; }
+
+        .pantalla-gracias {
+            background: white; border-radius: 6px; padding: 44px 28px;
+            text-align: center; border: 1px solid #e2e8f0; border-top: 4px solid #16a34a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .pantalla-gracias .check-grande {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: #16a34a;
+            color: white; display: inline-flex; align-items: center; justify-content: center;
+            font-size: 38px; margin-bottom: 18px; font-weight: 300;
+        }
+        .pantalla-gracias h2 { margin: 0 0 10px; color: #0a2351; font-size: 22px; font-weight: 700; }
+        .pantalla-gracias .resumen-comunidad {
+            color: #475569;
+            font-size: 14px;
+            margin: 4px 0 18px;
+            line-height: 1.5;
+        }
+        .pantalla-gracias .resumen-comunidad strong { color: #0a2351; }
+        .pantalla-gracias .tip-link {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 12px 14px;
+            font-size: 13px;
+            color: #475569;
+            margin: 16px 0;
+            text-align: left;
+            line-height: 1.5;
+        }
+        .pantalla-gracias .btn-whatsapp {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 22px;
+            background: #25D366;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+        }
+        .pantalla-gracias .btn-whatsapp:hover { background: #1ebe5a; }
+
+        .hidden { display: none !important; }
+
+        .loader-pequeno {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Modal confirm jefe existente */
+        .modal-bg {
+            position: fixed; inset: 0; background: rgba(15,23,42,0.55);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100; padding: 20px;
+        }
+        .modal-bg.hidden { display: none; }
+        .modal-card {
+            background: white; border-radius: 6px;
+            max-width: 420px; width: 100%;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .modal-card h3 {
+            margin: 0 0 10px; color: #0a2351;
+            font-size: 17px; font-weight: 700;
+        }
+        .modal-card p {
+            margin: 0 0 18px; color: #475569;
+            font-size: 14px; line-height: 1.5;
+        }
+        .modal-card .botones-fila { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+        <div class="header">
+            <!-- Logos removidos temporalmente. La Alcaldesa indicara cuales usar. -->
+            <h1>Movilización 1x10 — Abuelos</h1>
+            <p class="subtitulo">Municipio Cristóbal Rojas</p>
+        </div>
+
+        <!-- Progreso -->
+        <div class="progreso" id="progresoNumeros">
+            <span class="paso-dot activo" data-paso="1">1</span>
+            <span class="linea" data-linea="1"></span>
+            <span class="paso-dot" data-paso="2">2</span>
+            <span class="linea" data-linea="2"></span>
+            <span class="paso-dot" data-paso="3">3</span>
+        </div>
+        <div class="etiqueta" id="etiquetaPaso" style="text-align:center;font-size:12px;color:#64748b;font-weight:600;margin-top:-10px;margin-bottom:12px;letter-spacing:0.3px;">
+            Paso 1 de 3 — Tus datos
+        </div>
+
+        <div class="contenido-pad">
+            <div id="mensajeGlobal"></div>
+
+            <!-- ============ PASO 1: JEFE ============ -->
+            <div id="paso1" class="paso-vista">
+                <div class="tarjeta">
+                    <div class="tarjeta-titulo">
+                        <span>Datos del Jefe de Patrulla 1x10</span>
+                    </div>
+                    <p class="tarjeta-desc">
+                        Hola compañero(a). Tú serás el Jefe(a) de tu patrulla 1x10.
+                        Empezamos con tus datos personales.
+                    </p>
+
+                    <div class="campo">
+                        <label>Cédula del Jefe <span class="req">*</span></label>
+                        <div class="cedula-row">
+                            <select id="jefe_nacionalidad">
+                                <option value="V">V</option>
+                                <option value="E">E</option>
+                            </select>
+                            <input id="jefe_cedula" type="tel" inputmode="numeric" autocomplete="off" placeholder="12345678" maxlength="10" />
+                        </div>
+                        <span class="hint" id="hint_jefe_cedula">Al salir de la casilla buscamos tus datos en el CNE.</span>
+                    </div>
+
+                    <div class="campo">
+                        <label>Nombres <span class="req">*</span></label>
+                        <input id="jefe_nombres" type="text" autocomplete="off" placeholder="Tus nombres" />
+                    </div>
+
+                    <div class="campo">
+                        <label>Apellidos <span class="req">*</span></label>
+                        <input id="jefe_apellidos" type="text" autocomplete="off" placeholder="Tus apellidos" />
+                    </div>
+
+                    <div class="campo">
+                        <label>Teléfono (WhatsApp) <span class="req">*</span></label>
+                        <input id="jefe_telefono" type="tel" inputmode="numeric" autocomplete="off" placeholder="04141234567" maxlength="11" />
+                        <span class="hint">11 dígitos, sin espacios ni guiones.</span>
+                    </div>
+
+                    <div class="campo">
+                        <label>Género <span class="req">*</span></label>
+                        <select id="jefe_genero" required style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box;">
+                            <option value="">-- Seleccione --</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                        </select>
+                    </div>
+
+                    <div class="campo">
+                        <label>Fecha de nacimiento</label>
+                        <input id="jefe_fecha_nacimiento" type="date" min="1900-01-01" max="2010-12-31" />
+                        <small id="jefe_edad_display" style="display:block; margin-top:6px; font-size:13px; color:#0a2351; font-weight:700;"></small>
+                    </div>
+
+                    <div class="botones-fila">
+                        <button type="button" class="btn btn-primario" id="btnPaso1Continuar" disabled>Continuar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ PASO 2: TERRITORIO ============ -->
+            <div id="paso2" class="paso-vista hidden">
+                <div class="tarjeta">
+                    <div class="tarjeta-titulo">
+                        <span>Tu Comunidad</span>
+                    </div>
+                    <p class="tarjeta-desc">
+                        Selecciona dónde vives. Esto nos ayuda a saber en qué centro electoral
+                        votarás tú y tus 10 afines.
+                    </p>
+
+                    <div class="campo">
+                        <label>Parroquia <span class="req">*</span></label>
+                        <select id="jefe_parroquia">
+                            <option value="">Selecciona tu parroquia</option>
+                        </select>
+                    </div>
+
+                    <div class="campo hidden" id="campoCircuito">
+                        <label>Comuna (Circuito Comunal) <span class="req">*</span></label>
+                        <select id="jefe_circuito">
+                            <option value="">Selecciona tu comuna</option>
+                        </select>
+                    </div>
+
+                    <div class="campo hidden" id="campoComunidad">
+                        <label>Comunidad <span class="req">*</span></label>
+                        <select id="jefe_comunidad">
+                            <option value="">Selecciona tu comunidad</option>
+                        </select>
+                    </div>
+
+                    <div id="panelCentro" class="hidden"></div>
+
+                    <div class="botones-fila">
+                        <button type="button" class="btn btn-secundario" id="btnPaso2Volver">Volver</button>
+                        <button type="button" class="btn btn-primario" id="btnPaso2Continuar" disabled>Continuar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ PASO 3: AFINES (DINAMICO) ============ -->
+            <div id="paso3" class="paso-vista hidden">
+                <div class="tarjeta">
+                    <div class="tarjeta-titulo">
+                        <span>Tus afines del 1x10</span>
+                    </div>
+                    <p class="tarjeta-desc">
+                        Escribe la cédula de cada persona que vas a movilizar.
+                        Sus nombres se autocompletan solos. Puedes agregar todos los que
+                        necesites movilizar y guardar cuando quieras; siempre podrás volver
+                        desde este mismo link para editar o sumar más.
+                    </p>
+
+                    <div id="contenedorAfines"></div>
+
+                    <button type="button" id="btnAgregarAfin" class="btn btn-primario" style="width: 100%; margin-top: 16px; background: #16a34a;">+ Agregar otra persona</button>
+
+                    <div class="botones-fila">
+                        <button type="button" class="btn btn-secundario" id="btnPaso3Volver">Volver</button>
+                        <button type="button" class="btn btn-primario" id="btnGuardar">Guardar mi 1x10</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ VISTA GRACIAS ============ -->
+            <div id="vistaGracias" class="pantalla-gracias hidden">
+                <div class="check-grande">✓</div>
+                <h2 id="graciasTitulo">¡Listo!</h2>
+                <p class="resumen-comunidad" id="graciasResumen"></p>
+                <div class="tip-link">
+                    <strong>Tip:</strong> Si necesitas modificar tus datos o tus afines,
+                    contacta al equipo del 1x10.
+                </div>
+                <a id="btnCompartirWA" class="btn-whatsapp" href="#" target="_blank" rel="noopener">
+                    Compartir por WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // ============================================================
+        // CATALOGO TERRITORIAL EMBEBIDO (226 comunidades, 22 circuitos,
+        // 50 centros electorales, 2 parroquias)
+        // Fuente: COMUNIDADES CENTROS ELECTORALES.csv
+        // ============================================================
+        const TERRITORIO = {"meta":{"version":3,"fecha_actualizacion":"2026-06-18","fuente":"COMUNA COMUNIDAD Y UBCH 18062026.xlsx (corregido)","municipio":"CRISTOBAL ROJAS","estado":"MIRANDA","total_comunidades":226},"comunidades":{"caminos_por_hacer":{"nombre":"CAMINOS POR HACER","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL CECILIO ACOSTA","mesas":null,"activo":true},"terrazas_de_ciudad_miranda":{"nombre":"TERRAZAS DE CIUDAD MIRANDA","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL CECILIO ACOSTA","mesas":null,"activo":true},"luchadores_de_miranda":{"nombre":"LUCHADORES DE MIRANDA","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL CECILIO ACOSTA","mesas":null,"activo":true},"pasion_de_libertadores":{"nombre":"PASION DE LIBERTADORES","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL CECILIO ACOSTA","mesas":null,"activo":true},"union_cristo_bolivar":{"nombre":"UNION CRISTO BOLIVAR","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL CECILIO ACOSTA","mesas":null,"activo":true},"nuetstro_futuro":{"nombre":"NUETSTRO FUTURO","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL CECILIO ACOSTA","mesas":null,"activo":true},"chara_1":{"nombre":"CHARA 1","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL CECILIO ACOSTA","mesas":null,"activo":true},"la_nueva_ciudad_miranda":{"nombre":"LA NUEVA CIUDAD MIRANDA","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL APACUANA","mesas":null,"activo":true},"generalisimo_francisco_de_miranda":{"nombre":"GENERALISIMO FRANCISCO DE MIRANDA","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL APACUANA","mesas":null,"activo":true},"en_la_union_esta_la_fuerza":{"nombre":"EN LA UNION ESTA LA FUERZA","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL APACUANA","mesas":null,"activo":true},"unidad_patria_y_victoria":{"nombre":"UNIDAD PATRIA Y VICTORIA","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"CEIN RAMÓN VEGAS NUEVO","mesas":null,"activo":true},"dios_de_la_luz":{"nombre":"DIOS DE LA LUZ","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"CEIN RAMÓN VEGAS NUEVO","mesas":null,"activo":true},"conciencia_al_sociaismo":{"nombre":"CONCIENCIA AL SOCIAISMO","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"CEIN RAMÓN VEGAS NUEVO","mesas":null,"activo":true},"colinas_de_ciudad_miranda":{"nombre":"COLINAS DE CIUDAD MIRANDA","parroquia":"CHARALLAVE","circuito_comunal":"CIUDAD MIRANDA SOCIALISTA","centro_electoral":"BASE DE MISIONES APACUANA","mesas":null,"activo":true},"luchadores_de_las_torres":{"nombre":"LUCHADORES DE LAS TORRES","parroquia":"CHARALLAVE","circuito_comunal":"AGRARIA SOCIALISTA EL PARAISO DE CHARALLAVE","centro_electoral":"AGRARIO LAS TORRES","mesas":null,"activo":true},"casa_agraria_la_fila":{"nombre":"CASA AGRARIA LA FILA","parroquia":"CHARALLAVE","circuito_comunal":"AGRARIA SOCIALISTA EL PARAISO DE CHARALLAVE","centro_electoral":"AGRARIO LAS TORRES","mesas":null,"activo":true},"la_laguna":{"nombre":"LA LAGUNA","parroquia":"CHARALLAVE","circuito_comunal":"AGRARIA SOCIALISTA EL PARAISO DE CHARALLAVE","centro_electoral":"AGRARIO LAS TORRES","mesas":null,"activo":true},"laguna_baja_el_gas":{"nombre":"LAGUNA BAJA EL GAS","parroquia":"CHARALLAVE","circuito_comunal":"AGRARIA SOCIALISTA EL PARAISO DE CHARALLAVE","centro_electoral":"AGRARIO LAS TORRES","mesas":null,"activo":true},"el_paraiso":{"nombre":"EL PARAISO","parroquia":"CHARALLAVE","circuito_comunal":"AGRARIA SOCIALISTA EL PARAISO DE CHARALLAVE","centro_electoral":"AGRARIO LAS TORRES","mesas":null,"activo":true},"sector_c":{"nombre":"SECTOR C","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"ESCUELA BÁSICA ESTADAL JABILLITO","mesas":null,"activo":true},"sector_b":{"nombre":"SECTOR B","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"ESCUELA BÁSICA ESTADAL JABILLITO","mesas":null,"activo":true},"barrio_nuevo":{"nombre":"BARRIO NUEVO","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"ESCUELA BÁSICA ESTADAL JABILLITO","mesas":null,"activo":true},"sector_a":{"nombre":"SECTOR A","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL JARDÍN DE INFANCIA JABILLITO","mesas":null,"activo":true},"ciudad_de_dios":{"nombre":"CIUDAD DE DIOS","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL JARDÍN DE INFANCIA JABILLITO","mesas":null,"activo":true},"casitas_cardones":{"nombre":"CASITAS CARDONES","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL JARDÍN DE INFANCIA JABILLITO","mesas":null,"activo":true},"la_reforma":{"nombre":"LA REFORMA","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"CENTRO DE VOTACIÓN LOS PALOS GRANDES","mesas":null,"activo":true},"betania_ii":{"nombre":"BETANIA II","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"CENTRO DE VOTACIÓN LOS PALOS GRANDES","mesas":null,"activo":true},"ezequiel_zamora":{"nombre":"EZEQUIEL ZAMORA","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"CENTRO DE VOTACIÓN LOS PALOS GRANDES","mesas":null,"activo":true},"gamelotal":{"nombre":"GAMELOTAL","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"CENTRO DE VOTACIÓN LOS PALOS GRANDES","mesas":null,"activo":true},"sector_d":{"nombre":"SECTOR D","parroquia":"CHARALLAVE","circuito_comunal":"GIGANTE DE LA PATRIA","centro_electoral":"MERCAL JABILLITO","mesas":null,"activo":true},"penuela_ruiz_a":{"nombre":"PEÑUELA RUIZ A","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"ESCUELA ESTADAL GRADUADA POLICARPO FARRERA","mesas":null,"activo":true},"penuela_ruiz_b":{"nombre":"PEÑUELA RUIZ B","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"ESCUELA ESTADAL GRADUADA POLICARPO FARRERA","mesas":null,"activo":true},"madre_vieja":{"nombre":"MADRE VIEJA","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"ESCUELA ESTADAL GRADUADA POLICARPO FARRERA","mesas":null,"activo":true},"pueblo_abajo":{"nombre":"PUEBLO ABAJO","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"ESCUELA ESTADAL GRADUADA POLICARPO FARRERA","mesas":null,"activo":true},"la_estacion":{"nombre":"LA ESTACION","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"ESCUELA ESTADAL GRADUADA POLICARPO FARRERA","mesas":null,"activo":true},"chaparral":{"nombre":"CHAPARRAL","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"ESCUELA ESTADAL GRADUADA POLICARPO FARRERA","mesas":null,"activo":true},"samanes_a":{"nombre":"SAMANES A","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL ESTE NIÑO DON SIMÓN","mesas":null,"activo":true},"samanes_b":{"nombre":"SAMANES B","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL ESTE NIÑO DON SIMÓN","mesas":null,"activo":true},"mediterraneo":{"nombre":"MEDITERRANEO","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL ESTE NIÑO DON SIMÓN","mesas":null,"activo":true},"maria_de_san_jose":{"nombre":"MARIA DE SAN JOSE","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL ESTE NIÑO DON SIMÓN","mesas":null,"activo":true},"charallave_contry":{"nombre":"CHARALLAVE CONTRY","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL ESTE NIÑO DON SIMÓN","mesas":null,"activo":true},"vista_linda":{"nombre":"VISTA LINDA","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL ESTE NIÑO DON SIMÓN","mesas":null,"activo":true},"la_cabricera":{"nombre":"LA CABRICERA","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL ESTE NIÑO DON SIMÓN","mesas":null,"activo":true},"francisco_tosta_garcia":{"nombre":"FRANCISCO TOSTA GARCIA","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"UNIDAD EDUCATIVA PRIVADA SAGRADO CORAZON DE JESUS","mesas":null,"activo":true},"concord_plaza":{"nombre":"CONCORD PLAZA","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"UNIDAD EDUCATIVA PRIVADA SAGRADO CORAZON DE JESUS","mesas":null,"activo":true},"charalour":{"nombre":"CHARALOUR","parroquia":"CHARALLAVE","circuito_comunal":"JUANA MENCÍA","centro_electoral":"UNIDAD EDUCATIVA PRIVADA SAGRADO CORAZON DE JESUS","mesas":null,"activo":true},"don_alejandro":{"nombre":"DON ALEJANDRO","parroquia":"CHARALLAVE","circuito_comunal":"INDIO CHARAVARE","centro_electoral":"UNIDAD EDUCATIVA PRIVADA SAGRADO CORAZON DE JESUS","mesas":null,"activo":true},"el_cementerio":{"nombre":"EL CEMENTERIO","parroquia":"CHARALLAVE","circuito_comunal":"JUANA MENCÍA","centro_electoral":"CASA COMUNAL EL CEMENTERIO","mesas":null,"activo":true},"plaza_paez":{"nombre":"PLAZA PAEZ","parroquia":"CHARALLAVE","circuito_comunal":"JUANA MENCÍA","centro_electoral":"CASA COMUNAL EL CEMENTERIO","mesas":null,"activo":true},"las_quintas":{"nombre":"LAS QUINTAS","parroquia":"CHARALLAVE","circuito_comunal":"JUANA MENCÍA","centro_electoral":"CASA COMUNAL EL CEMENTERIO","mesas":null,"activo":true},"el_campito":{"nombre":"EL CAMPITO","parroquia":"CHARALLAVE","circuito_comunal":"JUANA MENCÍA","centro_electoral":"GRUPO ESCOLAR TERESA DE BOLIVAR","mesas":null,"activo":true},"miranda":{"nombre":"MIRANDA","parroquia":"CHARALLAVE","circuito_comunal":"JUANA MENCÍA","centro_electoral":"GRUPO ESCOLAR TERESA DE BOLIVAR","mesas":null,"activo":true},"gallisto_el_placer":{"nombre":"GALLISTO EL PLACER","parroquia":"CHARALLAVE","circuito_comunal":"JUANA MENCÍA","centro_electoral":"GRUPO ESCOLAR TERESA DE BOLIVAR","mesas":null,"activo":true},"terrazas_de_rio_tuy":{"nombre":"TERRAZAS DE RIO TUY","parroquia":"CHARALLAVE","circuito_comunal":"LA IMPERIAL","centro_electoral":"CENTRO DE VOTACIÓN HUGO CHÁVEZ","mesas":null,"activo":true},"imperial":{"nombre":"IMPERIAL","parroquia":"CHARALLAVE","circuito_comunal":"LA IMPERIAL","centro_electoral":"CENTRO DE VOTACIÓN HUGO CHÁVEZ","mesas":null,"activo":true},"las_violetas":{"nombre":"LAS VIOLETAS","parroquia":"CHARALLAVE","circuito_comunal":"LA IMPERIAL","centro_electoral":"CENTRO DE VOTACIÓN HUGO CHÁVEZ","mesas":null,"activo":true},"las_cayenas":{"nombre":"LAS CAYENAS","parroquia":"CHARALLAVE","circuito_comunal":"LA IMPERIAL","centro_electoral":"CENTRO DE VOTACIÓN HUGO CHÁVEZ","mesas":null,"activo":true},"los_girasoles":{"nombre":"LOS GIRASOLES","parroquia":"CHARALLAVE","circuito_comunal":"LA IMPERIAL","centro_electoral":"CENTRO DE VOTACIÓN HUGO CHÁVEZ","mesas":null,"activo":true},"las_trinitarias":{"nombre":"LAS TRINITARIAS","parroquia":"CHARALLAVE","circuito_comunal":"LA IMPERIAL","centro_electoral":"CENTRO DE VOTACIÓN HUGO CHÁVEZ","mesas":null,"activo":true},"vapor_y_mume":{"nombre":"VAPOR Y MUME","parroquia":"CHARALLAVE","circuito_comunal":"AGROTURÍSTICA LA MAGDALENA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANA MARÍA TERESA DEL TORO","mesas":null,"activo":true},"la_ceiba":{"nombre":"LA CEIBA","parroquia":"CHARALLAVE","circuito_comunal":"AGROTURÍSTICA LA MAGDALENA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANA MARÍA TERESA DEL TORO","mesas":null,"activo":true},"frente_al_tuy":{"nombre":"FRENTE AL TUY","parroquia":"CHARALLAVE","circuito_comunal":"AGROTURÍSTICA LA MAGDALENA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANA MARÍA TERESA DEL TORO","mesas":null,"activo":true},"campo_alegre":{"nombre":"CAMPO ALEGRE","parroquia":"CHARALLAVE","circuito_comunal":"AGROTURÍSTICA LA MAGDALENA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANA MARÍA TERESA DEL TORO","mesas":null,"activo":true},"la_magdalena":{"nombre":"LA MAGDALENA","parroquia":"CHARALLAVE","circuito_comunal":"AGROTURÍSTICA LA MAGDALENA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANA MARÍA TERESA DEL TORO","mesas":null,"activo":true},"eucalipto":{"nombre":"EUCALIPTO","parroquia":"CHARALLAVE","circuito_comunal":"AGROTURÍSTICA LA MAGDALENA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANA MARÍA TERESA DEL TORO","mesas":null,"activo":true},"curaciripa_b":{"nombre":"CURACIRIPA B","parroquia":"CHARALLAVE","circuito_comunal":"FLOR LANDAETA LA AVANZADORA","centro_electoral":"UNIDAD EDUCATIVA PRIVADA NUESTRA SEÑORA DE COROMOTO","mesas":null,"activo":true},"boulevar_evencio_gamez":{"nombre":"BOULEVAR EVENCIO GAMEZ","parroquia":"CHARALLAVE","circuito_comunal":"FLOR LANDAETA LA AVANZADORA","centro_electoral":"UNIDAD EDUCATIVA PRIVADA NUESTRA SEÑORA DE COROMOTO","mesas":null,"activo":true},"horquilla_parte_alta":{"nombre":"HORQUILLA PARTE ALTA","parroquia":"CHARALLAVE","circuito_comunal":"FLOR LANDAETA LA AVANZADORA","centro_electoral":"UNIDAD EDUCATIVA ESTADAL TEOTISTA AROCHA DE GALLEGOS","mesas":null,"activo":true},"horquilla_parte_baja":{"nombre":"HORQUILLA PARTE BAJA","parroquia":"CHARALLAVE","circuito_comunal":"FLOR LANDAETA LA AVANZADORA","centro_electoral":"UNIDAD EDUCATIVA ESTADAL TEOTISTA AROCHA DE GALLEGOS","mesas":null,"activo":true},"curaciripa_d":{"nombre":"CURACIRIPA D","parroquia":"CHARALLAVE","circuito_comunal":"FLOR LANDAETA LA AVANZADORA","centro_electoral":"UNIDAD EDUCATIVA ESTADAL TEOTISTA AROCHA DE GALLEGOS","mesas":null,"activo":true},"curaciripa_a":{"nombre":"CURACIRIPA A","parroquia":"CHARALLAVE","circuito_comunal":"FLOR LANDAETA LA AVANZADORA","centro_electoral":"BASE DE MISIONES NEGRA CORREA","mesas":null,"activo":true},"curaciripa_c":{"nombre":"CURACIRIPA C","parroquia":"CHARALLAVE","circuito_comunal":"FLOR LANDAETA LA AVANZADORA","centro_electoral":"CEIN CARMEN JOSEFINA AQUINOS DE DIAZ","mesas":null,"activo":true},"tierra_fertil":{"nombre":"TIERRA FERTIL","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"tierra_prometida":{"nombre":"TIERRA PROMETIDA","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"granero_dios":{"nombre":"GRANERO DIOS","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"el_calvareno":{"nombre":"EL CALVAREÑO","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"el_libertador":{"nombre":"EL LIBERTADOR","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"la_penita":{"nombre":"LA PEÑITA","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"blanco_y_negro":{"nombre":"BLANCO Y NEGRO","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"5_de_marzo":{"nombre":"5 DE MARZO","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"laguna_la_ceiba":{"nombre":"LAGUNA LA CEIBA","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"colinas_de_caujarito":{"nombre":"COLINAS DE CAUJARITO","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"la_roca":{"nombre":"LA ROCA","parroquia":"CHARALLAVE","circuito_comunal":"EL ARBOL DE LAS 4 RAICES","centro_electoral":"CENTRO DE VOTACION EL ARBOL DE LAS 4 RAICES","mesas":null,"activo":true},"vista_fresca":{"nombre":"VISTA FRESCA","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"UNIDAD EDUCATIVA ESTADAL CAUJARITO","mesas":null,"activo":true},"caujarito_i":{"nombre":"CAUJARITO I","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"UNIDAD EDUCATIVA ESTADAL CAUJARITO","mesas":null,"activo":true},"saman_de_cujarito":{"nombre":"SAMAN DE CUJARITO","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"UNIDAD EDUCATIVA ESTADAL CAUJARITO","mesas":null,"activo":true},"el_paseo_de_la_gracia_de_dios":{"nombre":"EL PASEO DE LA GRACIA DE DIOS","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"CENTRO DE VOTACION SANTO DOMINGO","mesas":null,"activo":true},"vista_de_caujarito":{"nombre":"VISTA DE CAUJARITO","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"CENTRO DE VOTACION SANTO DOMINGO","mesas":null,"activo":true},"los_olivares":{"nombre":"LOS OLIVARES","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"CENTRO DE VOTACION SANTO DOMINGO","mesas":null,"activo":true},"santo_domingo":{"nombre":"SANTO DOMINGO","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"CENTRO DE VOTACION SANTO DOMINGO","mesas":null,"activo":true},"paramaconi":{"nombre":"PARAMACONI","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANA CACIQUE TAMANACO","mesas":null,"activo":true},"tiuna_chacao":{"nombre":"TIUNA CHACAO","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANA CACIQUE TAMANACO","mesas":null,"activo":true},"los_tres_caciques":{"nombre":"LOS TRES CACIQUES","parroquia":"CHARALLAVE","circuito_comunal":"EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANA CACIQUE TAMANACO","mesas":null,"activo":true},"antonio_jose_de_sucre":{"nombre":"ANTONIO JOSE DE SUCRE","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"DESARROLLO URBANÍSTICO CHARALLAVE NORTE","mesas":null,"activo":true},"aguadita_agricola":{"nombre":"AGUADITA AGRICOLA","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"DESARROLLO URBANÍSTICO CHARALLAVE NORTE","mesas":null,"activo":true},"terrazas_de_san_ignacio":{"nombre":"TERRAZAS DE SAN IGNACIO","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"DESARROLLO URBANÍSTICO CHARALLAVE NORTE","mesas":null,"activo":true},"ferre_norte":{"nombre":"FERRE NORTE","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"DESARROLLO URBANÍSTICO CHARALLAVE NORTE","mesas":null,"activo":true},"la_vaquera":{"nombre":"LA VAQUERA","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"DESARROLLO URBANÍSTICO CHARALLAVE NORTE","mesas":null,"activo":true},"maria_gabriela_chavez":{"nombre":"MARIA GABRIELA CHAVEZ","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"DESARROLLO URBANÍSTICO CHARALLAVE NORTE","mesas":null,"activo":true},"paso_el_tren":{"nombre":"PASO EL TREN","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"DESARROLLO URBANÍSTICO CHARALLAVE NORTE","mesas":null,"activo":true},"luchadores_de_san_ignacio":{"nombre":"LUCHADORES DE SAN IGNACIO","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"DESARROLLO URBANÍSTICO CHARALLAVE NORTE","mesas":null,"activo":true},"generalisimo_jose_feliz_rivas":{"nombre":"GENERALISIMO JOSE FELIZ RIVAS","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"DESARROLLO URBANÍSTICO CHARALLAVE NORTE","mesas":null,"activo":true},"cacique_arichuna":{"nombre":"CACIQUE ARICHUNA","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"UNIDAD EDUCATIVA ESTADAL BOLIVARIANA ARICHUNA","mesas":null,"activo":true},"arichuvillas":{"nombre":"ARICHUVILLAS","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"UNIDAD EDUCATIVA ESTADAL BOLIVARIANA ARICHUNA","mesas":null,"activo":true},"arichuna_tercera_etapa":{"nombre":"ARICHUNA TERCERA ETAPA","parroquia":"CHARALLAVE","circuito_comunal":"GENERALÍSIMO FRANCISCO DE MIRANDA","centro_electoral":"UNIDAD EDUCATIVA ESTADAL BOLIVARIANA ARICHUNA","mesas":null,"activo":true},"la_libertad":{"nombre":"LA LIBERTAD","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"ESCUELA BÁSICA ESTADAL CHARALLAVE","mesas":null,"activo":true},"charavi":{"nombre":"CHARAVI","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"ESCUELA BÁSICA ESTADAL CHARALLAVE","mesas":null,"activo":true},"jose_maria_vargas":{"nombre":"JOSE MARIA VARGAS","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"ESCUELA BÁSICA ESTADAL CHARALLAVE","mesas":null,"activo":true},"los_olivos":{"nombre":"LOS OLIVOS","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"ESCUELA BÁSICA ESTADAL CHARALLAVE","mesas":null,"activo":true},"madosa_parte_baja":{"nombre":"MADOSA PARTE BAJA","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"ESCUELA BÁSICA ESTADAL CHARALLAVE","mesas":null,"activo":true},"madosa_parte_alta":{"nombre":"MADOSA PARTE ALTA","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"ESCUELA BÁSICA ESTADAL CHARALLAVE","mesas":null,"activo":true},"don_genaro":{"nombre":"DON GENARO","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CENTRO DE EDUCACION INICIAL ALI PRIMERA","mesas":null,"activo":true},"la_juventud":{"nombre":"LA JUVENTUD","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CENTRO DE EDUCACION INICIAL ALI PRIMERA","mesas":null,"activo":true},"ali_primera":{"nombre":"ALI PRIMERA","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CENTRO DE EDUCACION INICIAL ALI PRIMERA","mesas":null,"activo":true},"la_nueva_esperanza":{"nombre":"LA NUEVA ESPERANZA","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CENTRO DE EDUCACION INICIAL ALI PRIMERA","mesas":null,"activo":true},"19_de_abril":{"nombre":"19 DE ABRIL","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CENTRO DE VOTACION LAS LUCHADORAS DE MANUELA SÁENZ","mesas":null,"activo":true},"santa_eduviges":{"nombre":"SANTA EDUVIGES","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CENTRO DE VOTACION LAS LUCHADORAS DE MANUELA SÁENZ","mesas":null,"activo":true},"gran_mariscal":{"nombre":"GRAN MARISCAL","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CENTRO DE VOTACION LAS LUCHADORAS DE MANUELA SÁENZ","mesas":null,"activo":true},"el_saman_de_dios":{"nombre":"EL SAMAN DE DIOS","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CENTRO DE VOTACION LAS LUCHADORAS DE MANUELA SÁENZ","mesas":null,"activo":true},"alvarenga":{"nombre":"ALVARENGA","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CENTRO DE VOTACION LAS LUCHADORAS DE MANUELA SÁENZ","mesas":null,"activo":true},"la_chivera":{"nombre":"LA CHIVERA","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CASA COMUNAL HEREDEROS DE GUAICAIPURO","mesas":null,"activo":true},"la_calera":{"nombre":"LA CALERA","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CASA COMUNAL HEREDEROS DE GUAICAIPURO","mesas":null,"activo":true},"7_de_abril":{"nombre":"7 DE ABRIL","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CASA COMUNAL HEREDEROS DE GUAICAIPURO","mesas":null,"activo":true},"campo_elias":{"nombre":"CAMPO ELIAS","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CASA COMUNAL HEREDEROS DE GUAICAIPURO","mesas":null,"activo":true},"cacique_terepaima":{"nombre":"CACIQUE TEREPAIMA","parroquia":"CHARALLAVE","circuito_comunal":"HEREDEROS DE GUAICAIPURO","centro_electoral":"CASA COMUNAL HEREDEROS DE GUAICAIPURO","mesas":null,"activo":true},"colinas_de_santa_rosa":{"nombre":"COLINAS DE SANTA ROSA","parroquia":"CHARALLAVE","circuito_comunal":"OCTAVA ESTRELLA SUEÑOS DE BOLÍVAR","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANO CREACIÓN CHARALLAVE","mesas":null,"activo":true},"jupiter":{"nombre":"JUPITER","parroquia":"CHARALLAVE","circuito_comunal":"OCTAVA ESTRELLA SUEÑOS DE BOLÍVAR","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANO CREACIÓN CHARALLAVE","mesas":null,"activo":true},"neptuno":{"nombre":"NEPTUNO","parroquia":"CHARALLAVE","circuito_comunal":"OCTAVA ESTRELLA SUEÑOS DE BOLÍVAR","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANO CREACIÓN CHARALLAVE","mesas":null,"activo":true},"marte":{"nombre":"MARTE","parroquia":"CHARALLAVE","circuito_comunal":"OCTAVA ESTRELLA SUEÑOS DE BOLÍVAR","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANO CREACIÓN CHARALLAVE","mesas":null,"activo":true},"mercurio":{"nombre":"MERCURIO","parroquia":"CHARALLAVE","circuito_comunal":"OCTAVA ESTRELLA SUEÑOS DE BOLÍVAR","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANO CREACIÓN CHARALLAVE","mesas":null,"activo":true},"saturno":{"nombre":"SATURNO","parroquia":"CHARALLAVE","circuito_comunal":"OCTAVA ESTRELLA SUEÑOS DE BOLÍVAR","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANO CREACIÓN CHARALLAVE","mesas":null,"activo":true},"venus":{"nombre":"VENUS","parroquia":"CHARALLAVE","circuito_comunal":"OCTAVA ESTRELLA SUEÑOS DE BOLÍVAR","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANO CREACIÓN CHARALLAVE","mesas":null,"activo":true},"urano":{"nombre":"URANO","parroquia":"CHARALLAVE","circuito_comunal":"OCTAVA ESTRELLA SUEÑOS DE BOLÍVAR","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANO CREACIÓN CHARALLAVE","mesas":null,"activo":true},"pluton":{"nombre":"PLUTON","parroquia":"CHARALLAVE","circuito_comunal":"OCTAVA ESTRELLA SUEÑOS DE BOLÍVAR","centro_electoral":"UNIDAD EDUCATIVA NACIONAL BOLIVARIANO CREACIÓN CHARALLAVE","mesas":null,"activo":true},"la_octava_estrella":{"nombre":"LA OCTAVA ESTRELLA","parroquia":"LAS BRISAS","circuito_comunal":"DIOSDADO CABELLO","centro_electoral":"UNIDAD EDUCATIVA ESTADAL CRISTÓBAL ROJAS","mesas":null,"activo":true},"bienestar_comunitario":{"nombre":"BIENESTAR COMUNITARIO","parroquia":"LAS BRISAS","circuito_comunal":"DIOSDADO CABELLO","centro_electoral":"UNIDAD EDUCATIVA ESTADAL CRISTÓBAL ROJAS","mesas":null,"activo":true},"primicia_de_vencedores":{"nombre":"PRIMICIA DE VENCEDORES","parroquia":"LAS BRISAS","circuito_comunal":"DIOSDADO CABELLO","centro_electoral":"UNIDAD EDUCATIVA ESTADAL CRISTÓBAL ROJAS","mesas":null,"activo":true},"las_aguitas_iii":{"nombre":"LAS AGUITAS III","parroquia":"LAS BRISAS","circuito_comunal":"DIOSDADO CABELLO","centro_electoral":"UNIDAD EDUCATIVA ESTADAL CRISTÓBAL ROJAS","mesas":null,"activo":true},"maria_teresa_del_toro":{"nombre":"MARIA TERESA DEL TORO","parroquia":"LAS BRISAS","circuito_comunal":"DIOSDADO CABELLO","centro_electoral":"BASE DE MISIONES MARÍA LEÓN","mesas":null,"activo":true},"ana_coita":{"nombre":"ANA COITA","parroquia":"LAS BRISAS","circuito_comunal":"DIOSDADO CABELLO","centro_electoral":"BASE DE MISIONES MARÍA LEÓN","mesas":null,"activo":true},"simon_bolivar":{"nombre":"SIMON BOLIVAR","parroquia":"LAS BRISAS","circuito_comunal":"DIOSDADO CABELLO","centro_electoral":"CASA COMUNAL SIMON BOLIVAR","mesas":null,"activo":true},"la_fortaleza":{"nombre":"LA FORTALEZA","parroquia":"LAS BRISAS","circuito_comunal":"DIOSDADO CABELLO","centro_electoral":"CASA COMUNAL SIMON BOLIVAR","mesas":null,"activo":true},"mariscal_sucre_i":{"nombre":"MARISCAL SUCRE I","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL LUISA CÁCERES DE ARISMENDI","mesas":null,"activo":true},"mariscal_sucre_ii":{"nombre":"MARISCAL SUCRE II","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL LUISA CÁCERES DE ARISMENDI","mesas":null,"activo":true},"mariscal_sucre_iii":{"nombre":"MARISCAL SUCRE III","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL LUISA CÁCERES DE ARISMENDI","mesas":null,"activo":true},"desvio_i":{"nombre":"DESVIO I","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"jefa_apacuana":{"nombre":"JEFA APACUANA","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"jose_antonio_paez":{"nombre":"JOSE ANTONIO PAEZ","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"el_colegio":{"nombre":"EL COLEGIO","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"el_mercadito":{"nombre":"EL MERCADITO","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"la_fila":{"nombre":"LA FILA","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"ezequiel_zamora_2":{"nombre":"EZEQUIEL ZAMORA","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"el_bambu":{"nombre":"EL BAMBU","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"la_lagunita":{"nombre":"LA LAGUNITA","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"caiza_alto_monte":{"nombre":"CAIZA ALTO MONTE","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRÉS ELOY BLANCO (ESCUELA)","mesas":null,"activo":true},"francisco_de_miranda_i":{"nombre":"FRANCISCO DE MIRANDA I","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL LUIS DE ZUSSE NAVARRO","mesas":null,"activo":true},"francisco_ii":{"nombre":"FRANCISCO II","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL LUIS DE ZUSSE NAVARRO","mesas":null,"activo":true},"el_saman":{"nombre":"EL SAMAN","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"UNIDAD EDUCATIVA ESTADAL LUIS DE ZUSSE NAVARRO","mesas":null,"activo":true},"andres_bello_parte_baja":{"nombre":"ANDRES BELLO PARTE BAJA","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811","mesas":null,"activo":true},"andres_bello_parte_alta":{"nombre":"ANDRES BELLO PARTE ALTA","parroquia":"LAS BRISAS","circuito_comunal":"FLOR DEL ARAGUANEY","centro_electoral":"CENTRO DE EDUCACIÓN INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811","mesas":null,"activo":true},"valle_alto":{"nombre":"VALLE ALTO","parroquia":"LAS BRISAS","circuito_comunal":"EN SILENCIO","centro_electoral":"UNIDAD EDUCATIVA ANDRES ELOY (ESCUELA)","mesas":null,"activo":true},"valle_del_medio":{"nombre":"VALLE DEL MEDIO","parroquia":"LAS BRISAS","circuito_comunal":"EN SILENCIO","centro_electoral":"UNIDAD EDUCATIVA ANDRES ELOY (ESCUELA)","mesas":null,"activo":true},"valle_abajo":{"nombre":"VALLE ABAJO","parroquia":"LAS BRISAS","circuito_comunal":"EN SILENCIO","centro_electoral":"UNIDAD EDUCATIVA ANDRES ELOY (ESCUELA)","mesas":null,"activo":true},"valle_verde":{"nombre":"VALLE VERDE","parroquia":"LAS BRISAS","circuito_comunal":"EN SILENCIO","centro_electoral":"UNIDAD EDUCATIVA ANDRES ELOY (ESCUELA)","mesas":null,"activo":true},"valle_grande":{"nombre":"VALLE GRANDE","parroquia":"LAS BRISAS","circuito_comunal":"EN SILENCIO","centro_electoral":"UNIDAD EDUCATIVA ANDRES ELOY (ESCUELA)","mesas":null,"activo":true},"valle_claro":{"nombre":"VALLE CLARO","parroquia":"LAS BRISAS","circuito_comunal":"EN SILENCIO","centro_electoral":"UNIDAD EDUCATIVA ANDRES ELOY (ESCUELA)","mesas":null,"activo":true},"los_anaucos":{"nombre":"LOS ANAUCOS","parroquia":"LAS BRISAS","circuito_comunal":"LA ORQUÍDEA","centro_electoral":"CONCENTRACION ESCOLAR RURAL SABANETA","mesas":null,"activo":true},"capaya_sabaneta":{"nombre":"CAPAYA SABANETA","parroquia":"LAS BRISAS","circuito_comunal":"LA ORQUÍDEA","centro_electoral":"CONCENTRACION ESCOLAR RURAL SABANETA","mesas":null,"activo":true},"hacienda_sabaneta":{"nombre":"HACIENDA SABANETA","parroquia":"LAS BRISAS","circuito_comunal":"LA ORQUÍDEA","centro_electoral":"CONCENTRACION ESCOLAR RURAL SABANETA","mesas":null,"activo":true},"agricultores_unidos":{"nombre":"AGRICULTORES UNIDOS","parroquia":"LAS BRISAS","circuito_comunal":"LA ORQUÍDEA","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRES ELOY BLANCO (LICEO)","mesas":null,"activo":true},"mirador_de_caiza":{"nombre":"MIRADOR DE CAIZA","parroquia":"LAS BRISAS","circuito_comunal":"LA ORQUÍDEA","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRES ELOY BLANCO (LICEO)","mesas":null,"activo":true},"el_pajui":{"nombre":"EL PAJUI","parroquia":"LAS BRISAS","circuito_comunal":"LA ORQUÍDEA","centro_electoral":"UNIDAD EDUCATIVA ESTADAL ANDRES ELOY BLANCO (LICEO)","mesas":null,"activo":true},"renacer_2000":{"nombre":"RENACER 2000","parroquia":"CHARALLAVE","circuito_comunal":"CHÁVEZ VIVE CORAZÓN ADENTRO","centro_electoral":"PREESCOLAR EXTENSIÓN DIVIDIVI","mesas":null,"activo":true},"colinas_de_paso_real":{"nombre":"COLINAS DE PASO REAL","parroquia":"CHARALLAVE","circuito_comunal":"CHÁVEZ VIVE CORAZÓN ADENTRO","centro_electoral":"PREESCOLAR EXTENSIÓN DIVIDIVI","mesas":null,"activo":true},"independencia_2010":{"nombre":"INDEPENDENCIA 2010","parroquia":"CHARALLAVE","circuito_comunal":"CHÁVEZ VIVE CORAZÓN ADENTRO","centro_electoral":"PREESCOLAR EXTENSIÓN DIVIDIVI","mesas":null,"activo":true},"paso_real_2000":{"nombre":"PASO REAL 2000","parroquia":"CHARALLAVE","circuito_comunal":"CHÁVEZ VIVE CORAZÓN ADENTRO","centro_electoral":"PREESCOLAR EXTENSIÓN DIVIDIVI","mesas":null,"activo":true},"simon_bolivar_terraza_9":{"nombre":"SIMON BOLIVAR TERRAZA 9","parroquia":"CHARALLAVE","circuito_comunal":"CHÁVEZ VIVE CORAZÓN ADENTRO","centro_electoral":"PREESCOLAR EXTENSIÓN DIVIDIVI","mesas":null,"activo":true},"paraiso_de_santa_ines":{"nombre":"PARAISO DE SANTA INES","parroquia":"CHARALLAVE","circuito_comunal":"CHÁVEZ VIVE CORAZÓN ADENTRO","centro_electoral":"CASA COMUNAL PARAÍSO DE SANTA INÉS","mesas":null,"activo":true},"el_dividivi":{"nombre":"EL DIVIDIVI","parroquia":"CHARALLAVE","circuito_comunal":"CHÁVEZ VIVE CORAZÓN ADENTRO","centro_electoral":"SALA DE AUTOGOBIERNO CHÁVEZ VIVE CORAZÓN ADENTRO","mesas":null,"activo":true},"esperanza_2000":{"nombre":"ESPERANZA 2000","parroquia":"CHARALLAVE","circuito_comunal":"CHÁVEZ VIVE CORAZÓN ADENTRO","centro_electoral":"SALA DE AUTOGOBIERNO CHÁVEZ VIVE CORAZÓN ADENTRO","mesas":null,"activo":true},"pitahaya_i":{"nombre":"PITAHAYA I","parroquia":"CHARALLAVE","circuito_comunal":"PITAHAYA","centro_electoral":"ESCUELA PITAHAYA","mesas":null,"activo":true},"las_tres_letras":{"nombre":"LAS TRES LETRAS","parroquia":"CHARALLAVE","circuito_comunal":"PITAHAYA","centro_electoral":"ESCUELA PITAHAYA","mesas":null,"activo":true},"pitahaya_iii":{"nombre":"PITAHAYA III","parroquia":"CHARALLAVE","circuito_comunal":"PITAHAYA","centro_electoral":"ESCUELA PITAHAYA","mesas":null,"activo":true},"cantarrana":{"nombre":"CANTARRANA","parroquia":"CHARALLAVE","circuito_comunal":"PITAHAYA","centro_electoral":"ESCUELA PITAHAYA","mesas":null,"activo":true},"samnes_i":{"nombre":"SAMNES I","parroquia":"CHARALLAVE","circuito_comunal":"PITAHAYA","centro_electoral":"ESCUELA PITAHAYA","mesas":null,"activo":true},"samanes_ii":{"nombre":"SAMANES II","parroquia":"CHARALLAVE","circuito_comunal":"PITAHAYA","centro_electoral":"ESCUELA PITAHAYA","mesas":null,"activo":true},"samanes_iii":{"nombre":"SAMANES III","parroquia":"CHARALLAVE","circuito_comunal":"PITAHAYA","centro_electoral":"ESCUELA PITAHAYA","mesas":null,"activo":true},"pitahaya_ii":{"nombre":"PITAHAYA II","parroquia":"CHARALLAVE","circuito_comunal":"PITAHAYA","centro_electoral":"ESCUELA PITAHAYA","mesas":null,"activo":true},"milagro_de_dio_i":{"nombre":"MILAGRO DE DIO I","parroquia":"CHARALLAVE","circuito_comunal":"UNIDOS POR HUGO CHÁVEZ Y EZEQUIEL ZAMORA","centro_electoral":"CENTRO DE VOTACIÓN MILAGRO DE DIOS II","mesas":null,"activo":true},"milagro_de_dio_ii":{"nombre":"MILAGRO DE DIO II","parroquia":"CHARALLAVE","circuito_comunal":"UNIDOS POR HUGO CHÁVEZ Y EZEQUIEL ZAMORA","centro_electoral":"CENTRO DE VOTACIÓN MILAGRO DE DIOS II","mesas":null,"activo":true},"colina_de_chara":{"nombre":"COLINA DE CHARA","parroquia":"CHARALLAVE","circuito_comunal":"UNIDOS POR HUGO CHÁVEZ Y EZEQUIEL ZAMORA","centro_electoral":"CENTRO DE VOTACIÓN MILAGRO DE DIOS II","mesas":null,"activo":true},"vencedores_de_jose_felix_rivas":{"nombre":"VENCEDORES DE JOSE FELIX RIVAS","parroquia":"CHARALLAVE","circuito_comunal":"UNIDOS POR HUGO CHÁVEZ Y EZEQUIEL ZAMORA","centro_electoral":"CENTRO DE VOTACIÓN MILAGRO DE DIOS II","mesas":null,"activo":true},"altos_del_dividivi_i":{"nombre":"ALTOS DEL DIVIDIVI I","parroquia":"CHARALLAVE","circuito_comunal":"UNIDOS POR HUGO CHÁVEZ Y EZEQUIEL ZAMORA","centro_electoral":"ALTOS DEL DIVIDIVI","mesas":null,"activo":true},"altos_del_dividivi_ii":{"nombre":"ALTOS DEL DIVIDIVI II","parroquia":"CHARALLAVE","circuito_comunal":"UNIDOS POR HUGO CHÁVEZ Y EZEQUIEL ZAMORA","centro_electoral":"ALTOS DEL DIVIDIVI","mesas":null,"activo":true},"fuerza_agricola":{"nombre":"FUERZA AGRICOLA","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"29_de_abril":{"nombre":"29 DE ABRIL","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"el_progreso":{"nombre":"EL PROGRESO","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"el_placer":{"nombre":"EL PLACER","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"la_puerta":{"nombre":"LA PUERTA","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"octava_estrella":{"nombre":"OCTAVA ESTRELLA","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"mi_querer":{"nombre":"MI QUERER","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"tobias_blanco":{"nombre":"TOBIAS BLANCO","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"la_esperanza_de_vivir_mejor":{"nombre":"LA ESPERANZA DE VIVIR MEJOR","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"las_casitas":{"nombre":"LAS CASITAS","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"rural_araguaney":{"nombre":"RURAL ARAGUANEY","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"unidos_por_la_esperanza":{"nombre":"UNIDOS POR LA ESPERANZA","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA","mesas":null,"activo":true},"arenales_i":{"nombre":"ARENALES I","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA (LICEO)","mesas":null,"activo":true},"arenales_ii":{"nombre":"ARENALES II","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA (LICEO)","mesas":null,"activo":true},"arenales_iii":{"nombre":"ARENALES III","parroquia":"CHARALLAVE","circuito_comunal":"ARAÑEROS DE SABANETA","centro_electoral":"UNIDAD EDUCATIVA NACIONAL JUAN ESPAÑA (LICEO)","mesas":null,"activo":true},"villas_de_mata_linda":{"nombre":"VILLAS DE MATA LINDA","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"hugo_chavez_4_f":{"nombre":"HUGO CHAVEZ 4 F","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"la_arboleda":{"nombre":"LA ARBOLEDA","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"colinas_de_matalinda":{"nombre":"COLINAS DE MATALINDA","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"vista_p2":{"nombre":"VISTA P2","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"vista_p3":{"nombre":"VISTA P3","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"parque_rescidencial_3a1":{"nombre":"PARQUE RESCIDENCIAL 3A1","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"parque_rescidencial_3a2":{"nombre":"PARQUE RESCIDENCIAL 3A2","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"parque_rescidencial_3a3":{"nombre":"PARQUE RESCIDENCIAL 3A3","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"juajuitas_de_betania":{"nombre":"JUAJUITAS DE BETANIA","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"villas_de_apamate":{"nombre":"VILLAS DE APAMATE","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"terrazas_de_araguaney":{"nombre":"TERRAZAS DE ARAGUANEY","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"gardens_plaza":{"nombre":"GARDENS PLAZA","parroquia":"CHARALLAVE","circuito_comunal":"RAFAEL FLORES EL CALVAREÑO","centro_electoral":"CASA COMUNAL VILLAS DE MATALINDA","mesas":null,"activo":true},"colinas_de_betania":{"nombre":"COLINAS DE BETANIA","parroquia":"CHARALLAVE","circuito_comunal":"CIRCUITO COMUNAL AUTOPISTA","centro_electoral":"CENTRO ELECTORAL BOSQUE REAL","mesas":null,"activo":true},"bosque_real":{"nombre":"BOSQUE REAL","parroquia":"CHARALLAVE","circuito_comunal":"CIRCUITO COMUNAL AUTOPISTA","centro_electoral":"CENTRO ELECTORAL BOSQUE REAL","mesas":null,"activo":true},"vista_real":{"nombre":"VISTA REAL","parroquia":"CHARALLAVE","circuito_comunal":"CIRCUITO COMUNAL AUTOPISTA","centro_electoral":"CENTRO ELECTORAL BOSQUE REAL","mesas":null,"activo":true},"el_refugio":{"nombre":"EL REFUGIO","parroquia":"CHARALLAVE","circuito_comunal":"CIRCUITO COMUNAL AUTOPISTA","centro_electoral":"CENTRO ELECTORAL BOSQUE REAL","mesas":null,"activo":true}}};
+
+        // ============================================================
+        // ESTADO GLOBAL
+        // ============================================================
+        const estado = {
+            paso: 1,
+            jefe: {
+                cedula: '', nacionalidad: 'V', nombres: '', apellidos: '', telefono: '',
+                parroquia: '', circuito: '', comunidad_slug: '', comunidad_nombre: '',
+                centro_electoral: null, mesas: null
+            },
+            actualizando: false, // true si el jefe ya existia
+            editando: false // true si el jefe re-entro a editar (precarga UI)
+        };
+
+        // ============================================================
+        // HELPERS GENERICOS
+        // ============================================================
+        const $ = (id) => document.getElementById(id);
+        const v = (id) => ($(id)?.value || '').trim();
+
+        const mostrarMensaje = (texto, tipo = 'error') => {
+            const div = $('mensajeGlobal');
+            div.className = `mensaje ${tipo}`;
+            div.textContent = texto;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+        const limpiarMensaje = () => {
+            const div = $('mensajeGlobal');
+            div.className = '';
+            div.textContent = '';
+        };
+
+        // Actualizar barra de progreso visual
+        function actualizarProgreso(pasoActivo) {
+            estado.paso = pasoActivo;
+            document.querySelectorAll('.paso-dot').forEach(dot => {
+                const p = parseInt(dot.dataset.paso, 10);
+                dot.classList.remove('activo', 'completado');
+                if (p < pasoActivo) dot.classList.add('completado');
+                else if (p === pasoActivo) dot.classList.add('activo');
+            });
+            document.querySelectorAll('.linea').forEach(linea => {
+                const l = parseInt(linea.dataset.linea, 10);
+                linea.classList.toggle('completado', l < pasoActivo);
+            });
+            const etiquetas = {
+                1: 'Paso 1 de 3 — Tus datos',
+                2: 'Paso 2 de 3 — Tu comunidad',
+                3: 'Paso 3 de 3 — Tus 10 afines'
+            };
+            $('etiquetaPaso').textContent = etiquetas[pasoActivo] || '';
+        }
+
+        function mostrarPaso(n) {
+            ['paso1', 'paso2', 'paso3'].forEach((id, idx) => {
+                $(id).classList.toggle('hidden', (idx + 1) !== n);
+            });
+            actualizarProgreso(n);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ============================================================
+        // PARROQUIAS / CIRCUITOS / COMUNIDADES (cascada)
+        // ============================================================
+        function listarParroquias() {
+            const set = new Set();
+            Object.values(TERRITORIO.comunidades).forEach(c => { if (c.activo) set.add(c.parroquia); });
+            return Array.from(set).sort();
+        }
+        function listarCircuitosDe(parroquia) {
+            const set = new Set();
+            Object.values(TERRITORIO.comunidades).forEach(c => {
+                if (c.activo && c.parroquia === parroquia) set.add(c.circuito_comunal);
+            });
+            return Array.from(set).sort();
+        }
+        function listarComunidadesDe(parroquia, circuito) {
+            const arr = [];
+            Object.entries(TERRITORIO.comunidades).forEach(([slug, c]) => {
+                if (c.activo && c.parroquia === parroquia && c.circuito_comunal === circuito) {
+                    arr.push({ slug, nombre: c.nombre, centro_electoral: c.centro_electoral, mesas: c.mesas });
+                }
+            });
+            arr.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+            return arr;
+        }
+
+        // Llenar selector de parroquias al cargar
+        (function inicializarParroquias() {
+            const sel = $('jefe_parroquia');
+            listarParroquias().forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p; opt.textContent = p;
+                sel.appendChild(opt);
+            });
+        })();
+
+        // Cascada parroquia -> circuito
+        $('jefe_parroquia').addEventListener('change', (e) => {
+            const par = e.target.value;
+            const selCirc = $('jefe_circuito');
+            const selCom = $('jefe_comunidad');
+            selCirc.innerHTML = '<option value="">Selecciona tu comuna</option>';
+            selCom.innerHTML = '<option value="">Selecciona tu comunidad</option>';
+            $('campoComunidad').classList.add('hidden');
+            $('panelCentro').classList.add('hidden');
+            if (par) {
+                listarCircuitosDe(par).forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c; opt.textContent = c;
+                    selCirc.appendChild(opt);
+                });
+                $('campoCircuito').classList.remove('hidden');
+            } else {
+                $('campoCircuito').classList.add('hidden');
+            }
+        });
+
+        // Cascada circuito -> comunidad
+        $('jefe_circuito').addEventListener('change', (e) => {
+            const par = v('jefe_parroquia');
+            const circ = e.target.value;
+            const selCom = $('jefe_comunidad');
+            selCom.innerHTML = '<option value="">Selecciona tu comunidad</option>';
+            $('panelCentro').classList.add('hidden');
+            if (circ) {
+                listarComunidadesDe(par, circ).forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.slug; opt.textContent = c.nombre;
+                    opt.dataset.centro = c.centro_electoral || '';
+                    opt.dataset.mesas = (c.mesas != null) ? c.mesas : '';
+                    opt.dataset.nombre = c.nombre;
+                    selCom.appendChild(opt);
+                });
+                $('campoComunidad').classList.remove('hidden');
+            } else {
+                $('campoComunidad').classList.add('hidden');
+            }
+        });
+
+        // Cascada comunidad -> panel del centro
+        $('jefe_comunidad').addEventListener('change', (e) => {
+            const slug = e.target.value;
+            const panel = $('panelCentro');
+            if (!slug) { panel.classList.add('hidden'); return; }
+            const opt = e.target.selectedOptions[0];
+            const centro = opt.dataset.centro || '';
+            const mesas = opt.dataset.mesas || '';
+            if (centro) {
+                panel.className = 'panel-centro';
+                panel.innerHTML = `
+                    <div class="titulo">Centro Electoral (UBCH)</div>
+                    <div class="valor">${escapeHtml(centro)}</div>
+                    <div class="mesas">Mesas: ${escapeHtml(mesas)}</div>
+                `;
+            } else {
+                panel.className = 'panel-centro advertencia';
+                panel.innerHTML = `
+                    <div class="titulo">Centro pendiente de asignar</div>
+                    <div class="valor">Esta comunidad aún no tiene centro electoral asignado.</div>
+                    <div class="mesas">Puedes registrarte igual; se asignará después.</div>
+                `;
+            }
+            panel.classList.remove('hidden');
+        });
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        // ============================================================
+        // PASO 1 -> validar + chequear si jefe existe
+        // ============================================================
+        $('btnPaso1Continuar').addEventListener('click', async () => {
+            limpiarMensaje();
+            const cedNum = v('jefe_cedula').replace(/\D/g, '');
+            const nombres = v('jefe_nombres');
+            const apellidos = v('jefe_apellidos');
+            const telefono = v('jefe_telefono').replace(/\D/g, '');
+            const nacionalidad = v('jefe_nacionalidad') || 'V';
+            const genero = (v('jefe_genero') || '').trim();
+
+            if (!cedNum || cedNum.length < 4 || cedNum.length > 10) {
+                mostrarMensaje('Escribe tu cédula (entre 4 y 10 dígitos).');
+                return;
+            }
+            if (!nombres) { mostrarMensaje('Escribe tus nombres.'); return; }
+            if (!apellidos) { mostrarMensaje('Escribe tus apellidos.'); return; }
+            if (telefono.length !== 11) {
+                mostrarMensaje('El teléfono debe tener 11 dígitos (ejemplo: 04141234567).');
+                return;
+            }
+            if (genero !== 'M' && genero !== 'F') {
+                mostrarMensaje('Selecciona tu género (Masculino o Femenino).');
+                return;
+            }
+
+            // Chequear si el jefe ya existia en Firebase. Si existe, ofrecer
+            // re-entrar para actualizar sus datos + sus 10 afines.
+            estado.editando = false;
+            try {
+                const snap = await get(ref(database, `jefes_1x10_abuelos/${cedNum}`));
+                if (snap.exists()) {
+                    const data = snap.val() || {};
+                    const confirma = confirm(
+                        `Hola ${data.nombres || ''} ${data.apellidos || ''}, ya estabas registrado como Jefe 1x10 ` +
+                        `en la comunidad ${data.comunidad_nombre || '?'}.\n\n` +
+                        `¿Continuar para actualizar tus datos y tus 10 afines?`
+                    );
+                    if (!confirma) {
+                        // Cancela: limpiar inputs del paso 1 y quedarse aqui
+                        $('jefe_cedula').value = '';
+                        $('jefe_nombres').value = '';
+                        $('jefe_apellidos').value = '';
+                        $('jefe_telefono').value = '';
+                        $('jefe_genero').value = '';
+                        $('jefe_fecha_nacimiento').value = '';
+                        $('jefe_edad_display').textContent = '';
+                        chequearPaso1();
+                        return;
+                    }
+                    // Confirma: merge priorizando lo TECLEADO por el usuario en este paso.
+                    // Solo precargar campos que el usuario NO ha tipeado en este paso.
+                    const tecleado = {
+                        nombres: $('jefe_nombres').value.trim(),
+                        apellidos: $('jefe_apellidos').value.trim(),
+                        telefono: $('jefe_telefono').value.trim(),
+                        nacionalidad: $('jefe_nacionalidad').value || 'V',
+                        genero: ($('jefe_genero').value || '').trim()
+                    };
+                    // estado.jefe arranca con lo guardado, pero lo TECLEADO gana
+                    estado.jefe = { ...data, cedula: cedNum };
+                    Object.keys(tecleado).forEach(k => { if (tecleado[k]) estado.jefe[k] = tecleado[k]; });
+                    // Precargar el input de genero si venia guardado y el usuario no lo tipeo
+                    if (!tecleado.genero && (data.genero === 'M' || data.genero === 'F')) {
+                        $('jefe_genero').value = data.genero;
+                    }
+                    // Precargar fecha_nacimiento si venia guardada y el usuario no la tipeo
+                    const fnInput = $('jefe_fecha_nacimiento');
+                    if (fnInput && !fnInput.value && data.fecha_nacimiento
+                        && /^\d{4}-\d{2}-\d{2}$/.test(data.fecha_nacimiento)
+                        && data.fecha_nacimiento !== '0000-00-00') {
+                        fnInput.value = data.fecha_nacimiento;
+                        fnInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    estado.editando = true;
+                    // NO sobreescribir los inputs del paso 1; ya tienen lo que el usuario quiere.
+                    // Precargar la cascada del paso 2 sincronamente (los change handlers son sincronos).
+                    $('jefe_parroquia').value = data.parroquia || '';
+                    $('jefe_parroquia').dispatchEvent(new Event('change'));
+                    $('jefe_circuito').value = data.circuito || '';
+                    $('jefe_circuito').dispatchEvent(new Event('change'));
+                    $('jefe_comunidad').value = data.comunidad_slug || '';
+                    $('jefe_comunidad').dispatchEvent(new Event('change'));
+                }
+            } catch (e) {
+                console.warn('[1x10] No se pudo verificar si la cedula existe:', e);
+                // No bloquear: seguir como registro nuevo
+            }
+
+            // Continuar al paso 2 (sea jefe nuevo o editando)
+            estado.jefe.cedula = cedNum;
+            if (!estado.editando) {
+                estado.jefe.nacionalidad = nacionalidad;
+                estado.jefe.nombres = nombres;
+                estado.jefe.apellidos = apellidos;
+                estado.jefe.telefono = telefono;
+                estado.jefe.genero = genero;
+            } else {
+                // En modo edicion, lo TECLEADO siempre gana (si tiene valor)
+                if (genero === 'M' || genero === 'F') estado.jefe.genero = genero;
+            }
+            estado.actualizando = false;
+            mostrarPaso(2);
+        });
+
+        // ============================================================
+        // PASO 2 -> validar territorio y avanzar
+        // ============================================================
+        $('btnPaso2Volver').addEventListener('click', () => mostrarPaso(1));
+        $('btnPaso2Continuar').addEventListener('click', async () => {
+            limpiarMensaje();
+            const parroquia = v('jefe_parroquia');
+            const circuito = v('jefe_circuito');
+            const comunidadSlug = v('jefe_comunidad');
+            if (!parroquia) { mostrarMensaje('Selecciona tu parroquia.'); return; }
+            if (!circuito) { mostrarMensaje('Selecciona tu comuna (circuito comunal).'); return; }
+            if (!comunidadSlug) { mostrarMensaje('Selecciona tu comunidad.'); return; }
+
+            const com = TERRITORIO.comunidades[comunidadSlug];
+            if (!com) { mostrarMensaje('La comunidad seleccionada no es válida.'); return; }
+
+            estado.jefe.parroquia = parroquia;
+            estado.jefe.circuito = circuito;
+            estado.jefe.comunidad_slug = comunidadSlug;
+            estado.jefe.comunidad_nombre = com.nombre;
+            estado.jefe.centro_electoral = com.centro_electoral || null;
+            estado.jefe.mesas = com.mesas || null;
+
+            // Si estamos editando un jefe existente, precargar TODOS sus afines.
+            // Construir tantos bloques como afines tenga (max 100).
+            let afinesPrecarga = null;
+            if (estado.editando) {
+                try {
+                    const snapAfines = await get(ref(database, `afines_1x10_abuelos/${estado.jefe.cedula}`));
+                    if (snapAfines.exists()) {
+                        const afinesData = snapAfines.val() || {};
+                        afinesPrecarga = Object.entries(afinesData)
+                            .sort((a, b) => (a[1].orden || 99) - (b[1].orden || 99));
+                    }
+                } catch (e) {
+                    console.warn('[1x10] No se pudo precargar afines:', e);
+                }
+            }
+
+            // Construir bloques: si edita y tiene N afines, N bloques (min 1, max 100).
+            // Si no edita o no tiene, 1 bloque vacio.
+            const cuantos = afinesPrecarga && afinesPrecarga.length > 0
+                ? Math.min(afinesPrecarga.length, MAX_AFINES)
+                : 1;
+            construirBloquesAfines(cuantos);
+
+            // Volcar datos precargados sobre los bloques recien creados
+            if (afinesPrecarga) {
+                const ids = obtenerIdsBloques();
+                for (let i = 0; i < ids.length && i < afinesPrecarga.length; i++) {
+                    const id = ids[i];
+                    const [ced, datos] = afinesPrecarga[i];
+                    const cedEl = $(`afin_cedula_${id}`); if (cedEl) cedEl.value = ced;
+                    const nomEl = $(`afin_nombres_${id}`); if (nomEl) nomEl.value = datos.nombres || '';
+                    const apeEl = $(`afin_apellidos_${id}`); if (apeEl) apeEl.value = datos.apellidos || '';
+                    const telEl = $(`afin_telefono_${id}`); if (telEl) telEl.value = datos.telefono || '';
+                    const fechaEl = $(`afin_fecha_${id}`);
+                    if (fechaEl) {
+                        const f = datos.fecha_nacimiento || '';
+                        fechaEl.value = (/^\d{4}-\d{2}-\d{2}$/.test(f) && f !== '0000-00-00') ? f : '';
+                        // Disparar change para que se muestre la edad calculada en vivo
+                        fechaEl.dispatchEvent(new Event('change'));
+                    }
+                    const nacEl = $(`afin_nacionalidad_${id}`); if (nacEl) nacEl.value = datos.nacionalidad || 'V';
+                    // Genero del afin (si vino guardado)
+                    const genEl = $(`afin_genero_${id}`);
+                    if (genEl && (datos.genero === 'M' || datos.genero === 'F')) genEl.value = datos.genero;
+                    // Cascada propia del afin: si vino parroquia/circuito/comunidad
+                    // propios, precargarlos. La cascada arranca VACIA (ver
+                    // inicializarCascadaAfin), asi que aqui simplemente set+dispatch
+                    // para que el listener llene los niveles siguientes y queden los
+                    // valores guardados.
+                    if (datos.parroquia) {
+                        const selPar = $(`afin_parroquia_${id}`);
+                        const selCirc = $(`afin_circuito_${id}`);
+                        const selCom = $(`afin_comunidad_${id}`);
+                        if (selPar) {
+                            selPar.value = datos.parroquia;
+                            selPar.dispatchEvent(new Event('change'));
+                            if (datos.circuito && selCirc) {
+                                selCirc.value = datos.circuito;
+                                selCirc.dispatchEvent(new Event('change'));
+                                if (datos.comunidad_slug && selCom) {
+                                    selCom.value = datos.comunidad_slug;
+                                    // Disparar change para que se muestre el panel del centro electoral
+                                    selCom.dispatchEvent(new Event('change'));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            mostrarPaso(3);
+        });
+
+        // ============================================================
+        // PASO 3 -> construir bloques de afines DINAMICOS
+        // ============================================================
+        // Tope duro para evitar abuso. El jefe puede agregar cuantos quiera hasta este max.
+        const MAX_AFINES = 100;
+        // Contador global de IDs internos. Los IDs son ESTABLES (no se renumeran
+        // al eliminar) porque el CNE registra listeners por ID y no queremos
+        // duplicar/perder mapeos. La numeracion visual (#1, #2...) si se recalcula.
+        let afinIdSiguiente = 0;
+
+        // Devuelve los IDs internos de los bloques actualmente en el DOM, en orden visual.
+        function obtenerIdsBloques() {
+            const cont = $('contenedorAfines');
+            return Array.from(cont.querySelectorAll('.afin-bloque'))
+                .map(el => el.dataset.afinId)
+                .filter(x => x);
+        }
+
+        // Renumera las etiquetas visuales "Afín #N" segun la posicion en el DOM.
+        function renumerarLabelsVisuales() {
+            const bloques = $('contenedorAfines').querySelectorAll('.afin-bloque');
+            bloques.forEach((b, idx) => {
+                const span = b.querySelector('.num-afin');
+                if (span) span.textContent = `Afín #${idx + 1}`;
+            });
+        }
+
+        // Muestra/oculta el boton "Eliminar" de cada bloque. Si solo hay 1, se oculta.
+        function actualizarVisibilidadEliminar() {
+            const bloques = $('contenedorAfines').querySelectorAll('.afin-bloque');
+            const soloUno = bloques.length <= 1;
+            bloques.forEach(b => {
+                const btn = b.querySelector('.btn-eliminar-afin');
+                if (btn) btn.style.display = soloUno ? 'none' : 'inline-block';
+            });
+        }
+
+        // Crea UN bloque de afin con el id interno dado, lo agrega al DOM y ata sus listeners.
+        function crearBloqueAfin(id) {
+            const cont = $('contenedorAfines');
+            const bloque = document.createElement('div');
+            bloque.className = 'afin-bloque';
+            bloque.dataset.afinId = String(id);
+            bloque.innerHTML = `
+                <div class="bloque-header">
+                    <span class="num-afin">Afín #?</span>
+                    <button type="button" class="btn-eliminar-afin" data-elim-id="${id}">Eliminar</button>
+                </div>
+                <div class="campo" style="margin-bottom: 0;">
+                    <label>Cédula</label>
+                    <div class="cedula-row">
+                        <select id="afin_nacionalidad_${id}">
+                            <option value="V">V</option>
+                            <option value="E">E</option>
+                        </select>
+                        <input id="afin_cedula_${id}" type="tel" inputmode="numeric" autocomplete="off" placeholder="Cédula" maxlength="10" />
+                    </div>
+                    <span class="label-cne" id="afin_label_${id}"></span>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <div>
+                            <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Nombres</label>
+                            <input id="afin_nombres_${id}" type="text" placeholder="Si el CNE no llena, escribelo" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Apellidos</label>
+                            <input id="afin_apellidos_${id}" type="text" placeholder="Si el CNE no llena, escribelos" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                        <div>
+                            <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Teléfono</label>
+                            <input id="afin_telefono_${id}" type="tel" placeholder="04141234567" autocomplete="off" maxlength="20" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Fecha de nacimiento</label>
+                            <input id="afin_fecha_${id}" type="date" max="2010-12-31" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;" />
+                            <small id="afin_edad_${id}" style="display:block; margin-top:4px; font-size:13px; color:#0a2351; font-weight:700;"></small>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Género</label>
+                        <select id="afin_genero_${id}" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
+                            <option value="">-- Seleccione --</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Parroquia del afín <span style="text-transform: none; font-weight: 400; color: #94a3b8;">(si vive en otra comunidad que el jefe)</span></label>
+                        <select id="afin_parroquia_${id}" name="afin_parroquia_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Circuito Comunal del afín</label>
+                        <select id="afin_circuito_${id}" name="afin_circuito_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Comunidad del afín</label>
+                        <select id="afin_comunidad_${id}" name="afin_comunidad_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
+                            <option value="">-- Seleccione --</option>
+                        </select>
+                        <div id="afin_centro_panel_${id}" style="display:none; margin-top:10px; padding:10px 12px; background:#eff6ff; border:1px solid #93c5fd; border-radius:6px; font-size:13px; color:#1e3a8a;">
+                            <div style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.3px; color:#1e40af; margin-bottom:4px;">Centro Electoral del afín</div>
+                            <div id="afin_centro_nombre_${id}" style="font-weight:700;">—</div>
+                            <div id="afin_centro_mesas_${id}" style="font-size:12px; color:#64748b; margin-top:2px;">Mesas: —</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            cont.appendChild(bloque);
+            atarListenersAfin(id);
+            inicializarCascadaAfin(id);
+            // El boton eliminar es por-bloque (handler local).
+            const btnElim = bloque.querySelector('.btn-eliminar-afin');
+            btnElim.addEventListener('click', () => eliminarAfin(id));
+
+            // EDAD EN VIVO: muestra "Edad: N años" debajo del input fecha
+            const fechaEl = $(`afin_fecha_${id}`);
+            const edadEl = $(`afin_edad_${id}`);
+            if (fechaEl && edadEl) {
+                const actualizarEdadAfin = () => {
+                    const val = (fechaEl.value || "").trim();
+                    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(val);
+                    if (!m || val === "0000-00-00") { edadEl.textContent = ""; return; }
+                    const anio = parseInt(m[1], 10), mes = parseInt(m[2], 10) - 1, dia = parseInt(m[3], 10);
+                    const hoy = new Date();
+                    let edad = hoy.getFullYear() - anio;
+                    const cumple = (hoy.getMonth() > mes) || (hoy.getMonth() === mes && hoy.getDate() >= dia);
+                    if (!cumple) edad--;
+                    edadEl.textContent = (edad >= 0 && edad <= 120) ? `Edad: ${edad} años` : "";
+                };
+                fechaEl.addEventListener("input", actualizarEdadAfin);
+                fechaEl.addEventListener("change", actualizarEdadAfin);
+            }
+
+            // PANEL CENTRO ELECTORAL READ-ONLY: se rellena al elegir comunidad
+            const selCom = $(`afin_comunidad_${id}`);
+            const panelCentro = $(`afin_centro_panel_${id}`);
+            const nombreCentroEl = $(`afin_centro_nombre_${id}`);
+            const mesasCentroEl = $(`afin_centro_mesas_${id}`);
+            if (selCom && panelCentro) {
+                const actualizarCentroAfin = () => {
+                    const slug = selCom.value;
+                    const data = (slug && TERRITORIO && TERRITORIO.comunidades) ? TERRITORIO.comunidades[slug] : null;
+                    if (!data) {
+                        panelCentro.style.display = "none";
+                        return;
+                    }
+                    panelCentro.style.display = "block";
+                    nombreCentroEl.textContent = data.centro_electoral || "(centro pendiente de asignar)";
+                    mesasCentroEl.textContent = data.mesas ? `Mesas: ${data.mesas}` : "Mesas: —";
+                };
+                selCom.addEventListener("change", actualizarCentroAfin);
+            }
+
+            return bloque;
+        }
+
+        // Inicializa la cascada parroquia/circuito/comunidad del afin dado.
+        // - Llena el select de parroquias con TODAS las parroquias.
+        // - Arranca VACIA (sin pre-poblar con los datos del jefe). Si el operador
+        //   no elige nada, el afin se guarda sin cascada propia y el panel admin
+        //   asume herencia del jefe.
+        // - Ata listeners para que parroquia limpie circuito+comunidad,
+        //   y circuito limpie comunidad.
+        function inicializarCascadaAfin(id) {
+            const selPar = $(`afin_parroquia_${id}`);
+            const selCirc = $(`afin_circuito_${id}`);
+            const selCom = $(`afin_comunidad_${id}`);
+            if (!selPar || !selCirc || !selCom) return;
+
+            // Llenar parroquias
+            listarParroquias().forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p; opt.textContent = p;
+                selPar.appendChild(opt);
+            });
+
+            // Listener: parroquia -> reset circuito y comunidad, llenar circuitos
+            selPar.addEventListener('change', () => {
+                const par = selPar.value;
+                selCirc.innerHTML = '<option value="">-- Seleccione --</option>';
+                selCom.innerHTML = '<option value="">-- Seleccione --</option>';
+                if (par) {
+                    listarCircuitosDe(par).forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c; opt.textContent = c;
+                        selCirc.appendChild(opt);
+                    });
+                }
+            });
+
+            // Listener: circuito -> reset comunidad, llenar comunidades
+            selCirc.addEventListener('change', () => {
+                const par = selPar.value;
+                const circ = selCirc.value;
+                selCom.innerHTML = '<option value="">-- Seleccione --</option>';
+                if (par && circ) {
+                    listarComunidadesDe(par, circ).forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.slug; opt.textContent = c.nombre;
+                        opt.dataset.centro = c.centro_electoral || '';
+                        opt.dataset.mesas = (c.mesas != null) ? c.mesas : '';
+                        opt.dataset.nombre = c.nombre;
+                        selCom.appendChild(opt);
+                    });
+                }
+            });
+
+            // NOTA: Antes aqui se pre-poblaba la cascada con los valores del jefe
+            // (estado.jefe.parroquia/circuito/comunidad_slug) disparando change
+            // sincronicamente. Se removio a pedido: ahora arranca VACIA y si el
+            // operador no toca nada, el afin se guarda sin cascada propia (el panel
+            // admin hereda del jefe). El modo EDICION sigue precargando si el afin
+            // tenia cascada propia guardada (ver bloque "Cascada propia del afin").
+        }
+
+        // Ata los listeners de validacion (input/blur) sobre el input cedula del bloque dado.
+        function atarListenersAfin(id) {
+            const inputCedula = $(`afin_cedula_${id}`);
+            const inputNombres = $(`afin_nombres_${id}`);
+            const inputApellidos = $(`afin_apellidos_${id}`);
+            const label = $(`afin_label_${id}`);
+            if (!inputCedula) return;
+
+            // Si el campo queda vacio, cancelar el timeout pendiente y limpiar label
+            inputCedula.addEventListener('input', () => {
+                const prev = inputCedula.dataset.timeoutId;
+                if (prev) {
+                    clearTimeout(Number(prev));
+                    delete inputCedula.dataset.timeoutId;
+                }
+                if (!(inputCedula.value || '').replace(/\D/g, '')) {
+                    label.textContent = '';
+                    label.className = 'label-cne';
+                }
+            });
+
+            // Validacion en vivo al hacer blur
+            inputCedula.addEventListener('blur', () => {
+                const prev = inputCedula.dataset.timeoutId;
+                if (prev) {
+                    clearTimeout(Number(prev));
+                    delete inputCedula.dataset.timeoutId;
+                }
+
+                const num = (inputCedula.value || '').replace(/\D/g, '');
+                if (!num) { label.textContent = ''; label.className = 'label-cne'; return; }
+
+                if (num.length < 4 || num.length > 10) {
+                    label.textContent = 'Cédula inválida (4 a 10 dígitos).';
+                    label.className = 'label-cne warn';
+                    return;
+                }
+                // No igual a la del jefe
+                if (num === estado.jefe.cedula) {
+                    label.textContent = '¡Esta es TU cédula! No puede ser tu afín.';
+                    label.className = 'label-cne warn';
+                    inputCedula.value = '';
+                    return;
+                }
+                // No repetida entre TODOS los bloques actuales (no fijo 1..10)
+                const ids = obtenerIdsBloques();
+                for (const otroId of ids) {
+                    if (otroId === String(id)) continue;
+                    const otro = ($(`afin_cedula_${otroId}`)?.value || '').replace(/\D/g, '');
+                    if (otro && otro === num) {
+                        // Encontrar la posicion VISUAL del otro bloque
+                        const idxVisual = ids.indexOf(otroId) + 1;
+                        label.textContent = `Ya está registrada en el Afín #${idxVisual}.`;
+                        label.className = 'label-cne warn';
+                        inputCedula.value = '';
+                        return;
+                    }
+                }
+                // Si el label sigue vacio despues de un rato, asumimos que el CNE no la encontro
+                const tid = setTimeout(() => {
+                    delete inputCedula.dataset.timeoutId;
+                    const n = (inputNombres.value || '').trim();
+                    const a = (inputApellidos.value || '').trim();
+                    if (!n && !a) {
+                        label.textContent = 'ⓘ CNE no encontro esta cedula. Escribe el nombre a mano arriba.';
+                        label.className = 'label-cne';
+                    }
+                }, 2500);
+                inputCedula.dataset.timeoutId = String(tid);
+            });
+        }
+
+        // Construye N bloques limpios al entrar al paso. Resetea el contenedor
+        // y el contador (cada vez que se entra al paso desde el paso 2).
+        function construirBloquesAfines(cantidad) {
+            const cont = $('contenedorAfines');
+            cont.innerHTML = '';
+            afinIdSiguiente = 0;
+            const n = Math.max(1, Math.min(cantidad || 1, MAX_AFINES));
+            for (let k = 0; k < n; k++) {
+                afinIdSiguiente++;
+                crearBloqueAfin(afinIdSiguiente);
+            }
+            renumerarLabelsVisuales();
+            actualizarVisibilidadEliminar();
+            // Re-activar listeners del CNE (idempotente).
+            if (window._cneActivarMapeos) window._cneActivarMapeos();
+        }
+
+        // Agrega un afin extra al final (boton "+ Agregar otra persona").
+        function agregarAfin() {
+            const bloques = $('contenedorAfines').querySelectorAll('.afin-bloque');
+            if (bloques.length >= MAX_AFINES) {
+                alert(`Máximo ${MAX_AFINES} afines por jefe.`);
+                return;
+            }
+            afinIdSiguiente++;
+            const bloque = crearBloqueAfin(afinIdSiguiente);
+            renumerarLabelsVisuales();
+            actualizarVisibilidadEliminar();
+            // Importante: registrar el listener del CNE para el nuevo input cedula.
+            if (window._cneActivarMapeos) window._cneActivarMapeos();
+            // Scroll suave y foco al input cedula del bloque recien creado
+            bloque.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const inputCed = bloque.querySelector(`#afin_cedula_${afinIdSiguiente}`);
+            if (inputCed) setTimeout(() => { try { inputCed.focus(); } catch (_) {} }, 250);
+        }
+
+        // Elimina un bloque por su ID interno. Pide confirm si tiene cedula tipeada.
+        function eliminarAfin(id) {
+            const cont = $('contenedorAfines');
+            const bloque = cont.querySelector(`.afin-bloque[data-afin-id="${id}"]`);
+            if (!bloque) return;
+            // No permitir quedarse sin bloques: si es el unico, no se elimina.
+            if (cont.querySelectorAll('.afin-bloque').length <= 1) return;
+
+            const inputCed = bloque.querySelector(`#afin_cedula_${id}`);
+            const tipeo = (inputCed?.value || '').trim();
+            if (tipeo) {
+                if (!confirm(`¿Eliminar este afín (cédula ${tipeo})?`)) return;
+            }
+            bloque.remove();
+            renumerarLabelsVisuales();
+            actualizarVisibilidadEliminar();
+        }
+
+        // Wire del boton "+ Agregar otra persona" (existe en el DOM desde el inicio).
+        $('btnAgregarAfin').addEventListener('click', agregarAfin);
+
+        // ============================================================
+        // GUARDAR
+        // ============================================================
+        $('btnPaso3Volver').addEventListener('click', () => mostrarPaso(2));
+        $('btnGuardar').addEventListener('click', async () => {
+            limpiarMensaje();
+
+            // Recolectar afines validos recorriendo los bloques EN ORDEN VISUAL
+            // (no IDs fijos del 1 al 10). El "orden" guardado es la posicion visual.
+            const idsBloques = obtenerIdsBloques();
+            const afinesValidos = [];
+            let posicion = 0;
+            for (const id of idsBloques) {
+                const num = ($(`afin_cedula_${id}`)?.value || '').replace(/\D/g, '');
+                if (!num) continue;
+                if (num.length < 4 || num.length > 10) continue;
+                if (num === estado.jefe.cedula) continue;
+                if (afinesValidos.some(a => a.cedula === num)) continue;
+                posicion++;
+                // Cascada propia del afin (puede haber sido cambiada respecto al jefe)
+                const aPar = (v(`afin_parroquia_${id}`) || '').trim();
+                const aCirc = (v(`afin_circuito_${id}`) || '').trim();
+                const aComSlug = (v(`afin_comunidad_${id}`) || '').trim();
+                afinesValidos.push({
+                    cedula: num,
+                    nacionalidad: v(`afin_nacionalidad_${id}`) || 'V',
+                    nombres: v(`afin_nombres_${id}`),
+                    apellidos: v(`afin_apellidos_${id}`),
+                    telefono: (v(`afin_telefono_${id}`) || '').trim(),
+                    fecha_nacimiento: (v(`afin_fecha_${id}`) || '').trim(),
+                    genero: (v(`afin_genero_${id}`) || '').trim(),
+                    parroquia: aPar,
+                    circuito: aCirc,
+                    comunidad_slug: aComSlug,
+                    orden: posicion
+                });
+            }
+
+            if (afinesValidos.length === 0) {
+                mostrarMensaje('Debes registrar al menos una cédula afín antes de guardar.');
+                return;
+            }
+
+            const btn = $('btnGuardar');
+            btn.disabled = true;
+            const textoOriginal = btn.textContent;
+            btn.innerHTML = '<span class="loader-pequeno"></span>Guardando...';
+
+            try {
+                // Payload del jefe — solo campos del whitelist firebase-rules.json
+                const payloadJefe = {
+                    cedula: estado.jefe.cedula,
+                    nombres: estado.jefe.nombres,
+                    apellidos: estado.jefe.apellidos,
+                    telefono: estado.jefe.telefono,
+                    nacionalidad: estado.jefe.nacionalidad,
+                    genero: estado.jefe.genero,
+                    parroquia: estado.jefe.parroquia,
+                    circuito: estado.jefe.circuito,
+                    comunidad_slug: estado.jefe.comunidad_slug,
+                    comunidad_nombre: estado.jefe.comunidad_nombre,
+                    fecha_registro: Date.now(),
+                    user_agent: navigator.userAgent.substring(0, 200)
+                };
+                // Solo incluir centro_electoral/mesas si existen (VALLE_X no tiene centro)
+                if (estado.jefe.centro_electoral) payloadJefe.centro_electoral = estado.jefe.centro_electoral;
+                if (estado.jefe.mesas) payloadJefe.mesas = estado.jefe.mesas;
+                // Solo incluir fecha_nacimiento si tiene formato valido YYYY-MM-DD y no es el sentinela 0000-00-00
+                const fnJefeVal = ($('jefe_fecha_nacimiento')?.value || '').trim();
+                if (fnJefeVal && /^\d{4}-\d{2}-\d{2}$/.test(fnJefeVal) && fnJefeVal !== '0000-00-00') {
+                    payloadJefe.fecha_nacimiento = fnJefeVal;
+                }
+
+                await set(ref(database, `jefes_1x10_abuelos/${estado.jefe.cedula}`), payloadJefe);
+
+                // Guardar cada afin
+                const tareas = afinesValidos.map(a => {
+                    const payloadAfin = {
+                        cedula: a.cedula,
+                        nacionalidad: a.nacionalidad,
+                        nombres: a.nombres || '',
+                        apellidos: a.apellidos || '',
+                        orden: a.orden,
+                        fecha_registro: Date.now()
+                    };
+                    // Solo incluir telefono si no esta vacio (whitelist rechaza strings vacios)
+                    if (a.telefono) payloadAfin.telefono = a.telefono;
+                    // Solo incluir fecha_nacimiento si tiene formato valido YYYY-MM-DD y no es el sentinela 0000-00-00
+                    if (a.fecha_nacimiento && /^\d{4}-\d{2}-\d{2}$/.test(a.fecha_nacimiento) && a.fecha_nacimiento !== '0000-00-00') {
+                        payloadAfin.fecha_nacimiento = a.fecha_nacimiento;
+                    }
+                    // Genero del afin: solo si tiene valor valido ('' = omitir)
+                    if (a.genero === 'M' || a.genero === 'F') payloadAfin.genero = a.genero;
+                    // Cascada territorial del afin: solo si eligio comunidad PROPIA
+                    // distinta a la del jefe. Si coincide con la del jefe, omitir
+                    // (queda implicita en el jefe).
+                    if (a.parroquia && a.circuito && a.comunidad_slug
+                        && a.comunidad_slug !== estado.jefe.comunidad_slug) {
+                        const com = TERRITORIO.comunidades[a.comunidad_slug];
+                        if (com) {
+                            payloadAfin.parroquia = a.parroquia;
+                            payloadAfin.circuito = a.circuito;
+                            payloadAfin.comunidad_slug = a.comunidad_slug;
+                            payloadAfin.comunidad_nombre = com.nombre;
+                            if (com.centro_electoral) payloadAfin.centro_electoral = com.centro_electoral;
+                            if (com.mesas != null && com.mesas !== '') payloadAfin.mesas = com.mesas;
+                        }
+                    }
+                    return set(
+                        ref(database, `afines_1x10_abuelos/${estado.jefe.cedula}/${a.cedula}`),
+                        payloadAfin
+                    );
+                });
+                await Promise.all(tareas);
+
+                // Mostrar pantalla de gracias
+                $('graciasTitulo').textContent = `¡Listo, ${estado.jefe.nombres.toUpperCase()} ${estado.jefe.apellidos.toUpperCase()}!`;
+                $('graciasResumen').innerHTML =
+                    `Registraste a <strong>${afinesValidos.length}</strong> ` +
+                    `${afinesValidos.length === 1 ? 'persona' : 'personas'} de tu 1x10 ` +
+                    `en la comunidad <strong>${escapeHtml(estado.jefe.comunidad_nombre)}</strong>.`;
+
+                // Botón whatsapp para reenviar el link
+                const url = location.href.split('#')[0];
+                const texto = encodeURIComponent(
+                    `¡Hola compañero(a)! Soy Jefe(a) de Patrulla 1x10 del Municipio Cristóbal Rojas. ` +
+                    `Regístrate tú también como Jefe(a) en este link: ${url}`
+                );
+                $('btnCompartirWA').href = `https://wa.me/?text=${texto}`;
+
+                // Ocultar wizard
+                document.querySelectorAll('.paso-vista').forEach(p => p.classList.add('hidden'));
+                $('progresoNumeros').classList.add('hidden');
+                $('etiquetaPaso').classList.add('hidden');
+                $('vistaGracias').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (e) {
+                console.error('[1x10] Error guardando:', e);
+                const code = (e.code || '').toUpperCase();
+                const msg = (e.message || '').toLowerCase();
+                if (code === 'PERMISSION_DENIED' || msg.includes('permission_denied') || msg.includes('permission denied')) {
+                    mostrarMensaje(
+                        'No se pudo guardar. Si el problema persiste, contacta al equipo del 1x10.'
+                    );
+                } else if (msg.includes('network') || msg.includes('offline') || msg.includes('fetch') || code === 'NETWORK_ERROR') {
+                    mostrarMensaje(
+                        'Problema de conexión a internet. Verifica tu red y vuelve a intentar.'
+                    );
+                } else {
+                    mostrarMensaje('No se pudo enviar: ' + (e.message || 'verifica tu conexión a internet.'));
+                }
+                btn.disabled = false;
+                btn.textContent = textoOriginal;
+            }
+        });
+
+        // ============================================================
+        // HABILITAR/DESHABILITAR BOTONES SEGUN VALIDEZ EN VIVO
+        // ============================================================
+        function chequearPaso1() {
+            const ced = (v('jefe_cedula') || '').replace(/\D/g, '');
+            const nombres = (v('jefe_nombres') || '').trim();
+            const apellidos = (v('jefe_apellidos') || '').trim();
+            const tel = (v('jefe_telefono') || '').replace(/\D/g, '');
+            const genero = (v('jefe_genero') || '').trim();
+            const ok = ced.length >= 4 && ced.length <= 10
+                    && nombres.length > 0
+                    && apellidos.length > 0
+                    && tel.length === 11
+                    && (genero === 'M' || genero === 'F');
+            $('btnPaso1Continuar').disabled = !ok;
+        }
+        ['jefe_cedula', 'jefe_nombres', 'jefe_apellidos', 'jefe_telefono', 'jefe_genero'].forEach(id => {
+            const el = $(id);
+            if (el) {
+                el.addEventListener('input', chequearPaso1);
+                el.addEventListener('change', chequearPaso1);
+            }
+        });
+        $('jefe_nacionalidad')?.addEventListener('change', chequearPaso1);
+
+        // ── EDAD EN VIVO del jefe ─────────────────────────────────
+        // Muestra "Edad: N años" debajo del input de fecha de nacimiento.
+        // Escucha "input" Y "change" para que tambien dispare cuando
+        // cne-autocompletar.js setea el valor (dispatcha "change").
+        function actualizarEdadJefe() {
+            const f = ($('jefe_fecha_nacimiento')?.value || '').trim();
+            const sp = $('jefe_edad_display');
+            if (!sp) return;
+            if (!f || !/^\d{4}-\d{2}-\d{2}$/.test(f) || f === '0000-00-00') { sp.textContent = ''; return; }
+            const anio = parseInt(f.substring(0, 4), 10);
+            const mes = parseInt(f.substring(5, 7), 10);
+            const dia = parseInt(f.substring(8, 10), 10);
+            if (anio < 1900 || anio > 2030 || mes < 1 || mes > 12 || dia < 1 || dia > 31) { sp.textContent = ''; return; }
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - anio;
+            const mesHoy = hoy.getMonth() + 1;
+            const diaHoy = hoy.getDate();
+            if (mesHoy < mes || (mesHoy === mes && diaHoy < dia)) edad--;
+            if (edad < 0 || edad > 120) { sp.textContent = ''; return; }
+            sp.textContent = `Edad: ${edad} años`;
+        }
+        const _fnJefeEl = $('jefe_fecha_nacimiento');
+        if (_fnJefeEl) {
+            _fnJefeEl.addEventListener('input', actualizarEdadJefe);
+            _fnJefeEl.addEventListener('change', actualizarEdadJefe);
+        }
+
+        function chequearPaso2() {
+            const p = v('jefe_parroquia');
+            const c = v('jefe_circuito');
+            const co = v('jefe_comunidad');
+            const ok = !!p && !!c && !!co;
+            $('btnPaso2Continuar').disabled = !ok;
+        }
+        ['jefe_parroquia', 'jefe_circuito', 'jefe_comunidad'].forEach(id => {
+            const el = $(id);
+            if (el) {
+                el.addEventListener('change', chequearPaso2);
+                el.addEventListener('input', chequearPaso2);
+            }
+        });
+
+        // Estado inicial
+        chequearPaso1();
+        chequearPaso2();
+        actualizarEdadJefe();
+    </script>
+</body>
+</html>
