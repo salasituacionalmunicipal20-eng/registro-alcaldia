@@ -150,7 +150,7 @@
     <div class="container">
         <div class="info-banner">
             <strong>Cómo funciona:</strong> recorre todos los habitantes con cédula válida que aún no han sido consultados contra el CNE. Hace
-            <strong>1 consulta cada 24 segundos</strong> (= 150/hora, dentro del límite seguro de tu cuota de cedula.com.ve). Solo actualiza <strong>nombre</strong>, <strong>apellido</strong> y <strong>fecha de nacimiento</strong> cuando hay diferencia real. Marca cada habitante con <code>cne_actualizado_at</code> para no reprocesar.
+            <strong>1 consulta cada 12 segundos</strong> (= 300/hora, ritmo acelerado para la recta final). Solo actualiza <strong>nombre</strong>, <strong>apellido</strong> y <strong>fecha de nacimiento</strong> cuando hay diferencia real. Marca cada habitante con <code>cne_actualizado_at</code> para no reprocesar.
             <br><br>
             ⚠️ <strong>Mantén esta pestaña abierta.</strong> Si la cierras el batch se pausa; al volver a abrir continúa donde quedó.
         </div>
@@ -220,7 +220,7 @@
             </div>
             <div class="progreso-stats">
                 <span id="progresoActual">Listo para empezar</span>
-                <span id="progresoVelocidad">150 consultas/hora</span>
+                <span id="progresoVelocidad">300 consultas/hora</span>
             </div>
 
             <div class="controles">
@@ -311,9 +311,9 @@
             return a >= 1900 && a <= 2030 && m >= 1 && m <= 12 && d >= 1 && d <= 31;
         }
 
-        // ── Throttle: 1 consulta cada N ms. 24000 = 150/hora exacto.
-        // Si quieres ir mas rapido (250/hora) cambialo a 14400. Cuidado con la cuota.
-        const INTERVALO_MS = 24000;
+        // ── Throttle: 1 consulta cada N ms. 12000 = 300/hora exacto.
+        // Subido a 300/hora en la recta final (ya no hace falta cuidar tanto la cuota).
+        const INTERVALO_MS = 12000;
 
         // ── Estado del batch
         const estado = {
