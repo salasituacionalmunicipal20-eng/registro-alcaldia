@@ -431,8 +431,8 @@
                     <div>
                         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;margin-bottom:10px;">
                             <div style="font-size:11px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Link corto (TinyURL)</div>
-                            <a id="link1x10Corto" href="https://tinyurl.com/1x10cr2026" target="_blank" rel="noopener noreferrer" style="font-size:18px;font-weight:800;color:#0a2351;text-decoration:none;word-break:break-all;">
-                                https://tinyurl.com/1x10cr2026
+                            <a id="link1x10Corto" href="https://tinyurl.com/1x10abueloscr2026" target="_blank" rel="noopener noreferrer" style="font-size:18px;font-weight:800;color:#0a2351;text-decoration:none;word-break:break-all;">
+                                https://tinyurl.com/1x10abueloscr2026
                             </a>
                         </div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -444,7 +444,7 @@
                         <div id="linkCopiadoMsg" style="margin-top:8px;font-size:12px;color:#16a34a;font-weight:700;display:none;">✅ Link copiado al portapapeles</div>
                     </div>
                     <div style="text-align:center;">
-                        <img id="qrCode1x10" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=10&data=https%3A%2F%2Ftinyurl.com%2F1x10cr2026" alt="Código QR 1x10" style="width:180px;height:180px;border:2px solid #E30613;border-radius:12px;background:white;display:block;" />
+                        <img id="qrCode1x10" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=10&data=https%3A%2F%2Ftinyurl.com%2F1x10abueloscr2026" alt="Código QR 1x10" style="width:180px;height:180px;border:2px solid #E30613;border-radius:12px;background:white;display:block;" />
                         <div style="font-size:11px;color:#64748b;font-weight:700;margin-top:6px;letter-spacing:0.3px;">ESCANEA CON EL CELULAR</div>
                     </div>
                 </div>
@@ -716,7 +716,7 @@
         // El QR ya se renderiza por la URL del <img> via api.qrserver.com — esta
         // funcion solo ata los 4 botones de accion.
         function inicializarLinkCompartir() {
-            const LINK_PUBLICO = 'https://tinyurl.com/1x10cr2026';
+            const LINK_PUBLICO = 'https://tinyurl.com/1x10abueloscr2026';
             const MSG_WHATSAPP =
                 'Compañero, te enviaron este link porque eres Jefe de Patrulla 1x10.\n\n' +
                 'Por favor entra desde tu telefono y registra a las 10 personas que vas a movilizar:\n' +
@@ -763,7 +763,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'QR-1x10-cristobal-rojas.png';
+                    a.download = 'QR-1x10-abuelos-cristobal-rojas.png';
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
