@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Movilización 1x10 Cristianos - Cristóbal Rojas</title>
-    <meta name="description" content="Regístrate como Jefe de Patrulla 1x10 Cristianos del Municipio Cristóbal Rojas y registra a tus afines." />
+    <title>Movilizacion 1x10 Salud - Cristobal Rojas</title>
+    <meta name="description" content="Registro 1x10 para personal del sector salud de Cristobal Rojas." />
     <script defer src="cne-autocompletar.js"></script>
     <style>
         * { box-sizing: border-box; }
@@ -354,8 +354,8 @@
     <div class="contenedor">
         <div class="header">
             <!-- Logos removidos temporalmente. La Alcaldesa indicara cuales usar. -->
-            <h1>Movilización 1x10 — Cristianos</h1>
-            <p class="subtitulo">Municipio Cristóbal Rojas</p>
+            <h1>Movilización 1x10 Salud</h1>
+            <p class="subtitulo">Personal del Sector Salud de Cristóbal Rojas</p>
         </div>
 
         <!-- Progreso -->
@@ -425,6 +425,11 @@
                         <label>Fecha de nacimiento</label>
                         <input id="jefe_fecha_nacimiento" type="date" min="1900-01-01" max="2010-12-31" />
                         <small id="jefe_edad_display" style="display:block; margin-top:6px; font-size:13px; color:#0a2351; font-weight:700;"></small>
+                    </div>
+
+                    <div class="campo">
+                        <label>Dirección o Secretaría a la que perteneces <small style="color:#94a3b8; font-weight:400; text-transform:none;">(opcional)</small></label>
+                        <input id="jefe_profesion_salud" type="text" maxlength="150" autocomplete="off" placeholder="Ej: Dirección de Hacienda" />
                     </div>
 
                     <div class="botones-fila">
@@ -741,11 +746,11 @@
             // re-entrar para actualizar sus datos + sus 10 afines.
             estado.editando = false;
             try {
-                const snap = await get(ref(database, `jefes_1x10_cristianos/${cedNum}`));
+                const snap = await get(ref(database, `jefes_1x10_salud/${cedNum}`));
                 if (snap.exists()) {
                     const data = snap.val() || {};
                     const confirma = confirm(
-                        `Hola ${data.nombres || ''} ${data.apellidos || ''}, ya estabas registrado como Jefe 1x10 ` +
+                        `Hola ${data.nombres || ''} ${data.apellidos || ''}, ya estabas registrado como Jefe 1x10 Salud ` +
                         `en la comunidad ${data.comunidad_nombre || '?'}.\n\n` +
                         `¿Continuar para actualizar tus datos y tus 10 afines?`
                     );
@@ -758,6 +763,8 @@
                         $('jefe_genero').value = '';
                         $('jefe_fecha_nacimiento').value = '';
                         $('jefe_edad_display').textContent = '';
+                        const _dirSecEl = $('jefe_profesion_salud');
+                        if (_dirSecEl) _dirSecEl.value = '';
                         chequearPaso1();
                         return;
                     }
@@ -784,6 +791,11 @@
                         && data.fecha_nacimiento !== '0000-00-00') {
                         fnInput.value = data.fecha_nacimiento;
                         fnInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    // Precargar direccion/secretaria si venia guardada y el usuario no la tipeo
+                    const dirSecInput = $('jefe_profesion_salud');
+                    if (dirSecInput && !dirSecInput.value.trim() && data.profesion_salud) {
+                        dirSecInput.value = data.profesion_salud;
                     }
                     estado.editando = true;
                     // NO sobreescribir los inputs del paso 1; ya tienen lo que el usuario quiere.
@@ -844,7 +856,7 @@
             let afinesPrecarga = null;
             if (estado.editando) {
                 try {
-                    const snapAfines = await get(ref(database, `afines_1x10_cristianos/${estado.jefe.cedula}`));
+                    const snapAfines = await get(ref(database, `afines_1x10_salud/${estado.jefe.cedula}`));
                     if (snapAfines.exists()) {
                         const afinesData = snapAfines.val() || {};
                         afinesPrecarga = Object.entries(afinesData)
@@ -1309,13 +1321,13 @@
             // ============================================================
             // VALIDACION CRUZADA: verificar que esta cedula NO este en OTRO 1x10
             // ============================================================
-            const SISTEMAS_CHECK = ['jefes_1x10','jefes_1x10_empleados','jefes_1x10_abuelos','jefes_1x10_cristianos_abuelos','jefes_1x10_salud','jefes_1x10_educacion'];
+            const SISTEMAS_CHECK = ['jefes_1x10','jefes_1x10_empleados','jefes_1x10_cristianos','jefes_1x10_abuelos','jefes_1x10_cristianos_abuelos','jefes_1x10_educacion'];
             for (const otroSistema of SISTEMAS_CHECK) {
                 try {
                     const snapCheck = await get(ref(database, otroSistema + '/' + estado.jefe.cedula));
                     if (snapCheck.exists()) {
                         const nombreSistema = otroSistema.replace('jefes_1x10_','').replace('jefes_1x10','General');
-                        mostrarMensaje('La cedula ' + estado.jefe.cedula + ' ya esta registrada en el sistema 1x10 ' + nombreSistema + '. No puedes registrarte en dos sistemas distintos.');
+                        mostrarMensaje('La cédula ' + estado.jefe.cedula + ' ya esta registrada en el sistema 1x10 ' + nombreSistema + '. No puedes registrarte en dos sistemas distintos.');
                         return;
                     }
                 } catch(e) { /* si falla la consulta, continuar */ }
@@ -1349,8 +1361,11 @@
                 if (fnJefeVal && /^\d{4}-\d{2}-\d{2}$/.test(fnJefeVal) && fnJefeVal !== '0000-00-00') {
                     payloadJefe.fecha_nacimiento = fnJefeVal;
                 }
+                // Direccion/Secretaria a la que pertenece el empleado (opcional, solo empleados)
+                const dirSec = ($("jefe_profesion_salud")?.value || "").trim();
+                if (dirSec) payloadJefe.profesion_salud = dirSec;
 
-                await set(ref(database, `jefes_1x10_cristianos/${estado.jefe.cedula}`), payloadJefe);
+                await set(ref(database, `jefes_1x10_salud/${estado.jefe.cedula}`), payloadJefe);
 
                 // Guardar cada afin
                 const tareas = afinesValidos.map(a => {
@@ -1386,7 +1401,7 @@
                         }
                     }
                     return set(
-                        ref(database, `afines_1x10_cristianos/${estado.jefe.cedula}/${a.cedula}`),
+                        ref(database, `afines_1x10_salud/${estado.jefe.cedula}/${a.cedula}`),
                         payloadAfin
                     );
                 });
@@ -1402,8 +1417,7 @@
                 // Botón whatsapp para reenviar el link
                 const url = location.href.split('#')[0];
                 const texto = encodeURIComponent(
-                    `¡Hola compañero(a)! Soy Jefe(a) de Patrulla 1x10 del Municipio Cristóbal Rojas. ` +
-                    `Regístrate tú también como Jefe(a) en este link: ${url}`
+                    `Compañero empleado de la Alcaldía, registra a las 10 personas que vas a movilizar el día de la jornada en este link: ${url}`
                 );
                 $('btnCompartirWA').href = `https://wa.me/?text=${texto}`;
 

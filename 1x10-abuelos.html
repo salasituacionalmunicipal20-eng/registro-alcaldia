@@ -1305,6 +1305,22 @@
             }
 
             const btn = $('btnGuardar');
+
+            // ============================================================
+            // VALIDACION CRUZADA: verificar que esta cedula NO este en OTRO 1x10
+            // ============================================================
+            const SISTEMAS_CHECK = ['jefes_1x10','jefes_1x10_empleados','jefes_1x10_cristianos','jefes_1x10_cristianos_abuelos','jefes_1x10_salud','jefes_1x10_educacion'];
+            for (const otroSistema of SISTEMAS_CHECK) {
+                try {
+                    const snapCheck = await get(ref(database, otroSistema + '/' + estado.jefe.cedula));
+                    if (snapCheck.exists()) {
+                        const nombreSistema = otroSistema.replace('jefes_1x10_','').replace('jefes_1x10','General');
+                        mostrarMensaje('La cedula ' + estado.jefe.cedula + ' ya esta registrada en el sistema 1x10 ' + nombreSistema + '. No puedes registrarte en dos sistemas distintos.');
+                        return;
+                    }
+                } catch(e) { /* si falla la consulta, continuar */ }
+            }
+
             btn.disabled = true;
             const textoOriginal = btn.textContent;
             btn.innerHTML = '<span class="loader-pequeno"></span>Guardando...';

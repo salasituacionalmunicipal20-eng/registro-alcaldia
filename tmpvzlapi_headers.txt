@@ -1,0 +1,19 @@
+HTTP/1.1 500 Internal Server Error
+Date: Thu, 04 Jun 2026 15:56:48 GMT
+Content-Type: application/json
+Content-Length: 142
+Connection: keep-alive
+X-Permitted-Cross-Domain-Policies: none
+alt-svc: h3=":443"; ma=86400
+x-cloud-trace-context: d2b853b13a76bdacd4abad253df37e73;o=1
+cf-cache-status: DYNAMIC
+Server: cloudflare
+Strict-Transport-Security: max-age=15552000; includeSubDomains
+Via: 1.1 google
+Referrer-Policy: strict-origin-when-cross-origin
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+Report-To: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=w3wr9L29wvCdmUqVFVKTzUMCnQFRGu4Zpriy47s0lZS3dvXhENw%2BsbR1nnxJHuRUR8N%2Bv6%2FNbzEABjOdur7OpC1buJDELpy9%2BcxQFjnKi6P3E7wNq%2FDO4SMu2F6hs6jEMg%3D%3D"}]}
+CF-RAY: a068211f7973216c-MAD
+
