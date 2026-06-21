@@ -1307,7 +1307,37 @@
             const btn = $('btnGuardar');
 
             // ============================================================
-            // VALIDACION CRUZADA: verificar que esta cedula NO este en OTRO 1x10
+            // VALIDACION TOTAL: evitar cedula repetida en CUALQUIER sistema/rol
+            const TODOS_SISTEMAS = ["jefes_1x10","jefes_1x10_empleados","jefes_1x10_cristianos","jefes_1x10_abuelos","jefes_1x10_cristianos_abuelos","jefes_1x10_salud","jefes_1x10_educacion"];
+            const TODOS_AFINES = ["afines_1x10","afines_1x10_empleados","afines_1x10_cristianos","afines_1x10_abuelos","afines_1x10_cristianos_abuelos","afines_1x10_salud","afines_1x10_educacion"];
+            for (const otroSistema of TODOS_SISTEMAS) {
+                if (otroSistema === 'jefes_1x10') continue;
+                try {
+                    const snapJefe = await get(ref(database, otroSistema + '/' + estado.jefe.cedula));
+                    if (snapJefe.exists()) {
+                        const nombreSistema = otroSistema.replace('jefes_1x10_','').replace('jefes_1x10','General');
+                        mostrarMensaje('La cédula ' + estado.jefe.cedula + ' ya esta registrada como JEFE en el sistema 1x10 ' + nombreSistema + '. No puedes estar en dos sistemas distintos.');
+                        return;
+                    }
+                } catch(e) { /* continuar */ }
+            }
+            for (const otroAfinPath of TODOS_AFINES) {
+                try {
+                    const snapAfin = await get(ref(database, otroAfinPath));
+                    if (snapAfin.exists()) {
+                        const datos = snapAfin.val();
+                        for (const cedJefe in datos) {
+                            if (datos[cedJefe][estado.jefe.cedula]) {
+                                mostrarMensaje('La cédula ' + estado.jefe.cedula + ' ya esta registrada como AFIN en el sistema ' + otroAfinPath.replace('afines_1x10_','').replace('afines_1x10','General') + '. No puedes estar en dos sistemas distintos.');
+                                return;
+                            }
+                        }
+                    }
+                } catch(e) { /* continuar */ }
+            }
+            // ============================================================
+            // ============================================================
+            // VALIDACION DUPLICADOS: evitar cedula repetida en este sistema
             // ============================================================
             const SISTEMAS_CHECK = ['jefes_1x10_empleados','jefes_1x10_cristianos','jefes_1x10_abuelos','jefes_1x10_cristianos_abuelos','jefes_1x10_salud','jefes_1x10_educacion'];
             for (const otroSistema of SISTEMAS_CHECK) {
