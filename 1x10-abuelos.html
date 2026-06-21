@@ -1321,6 +1321,30 @@
                     }
                 } catch(e) { /* continuar */ }
             }
+            const cedulasYaUsadas = new Set([estado.jefe.cedula]);
+            for (const idBloque of ["bloque1","bloque2","bloque3","bloque4","bloque5"]) {
+                const cedJefeExistente = (document.getElementById(jefe_cedula)?.value || '').replace(/\D/g, '');
+                if (cedJefeExistente && cedJefeExistente !== estado.jefe.cedula && cedulasYaUsadas.has(cedJefeExistente)) {
+                    mostrarMensaje('Cédula duplicada en bloque ' + idBloque.replace('bloque','') + '.');
+                    return;
+                }
+                if (cedJefeExistente && cedJefeExistente !== estado.jefe.cedula) cedulasYaUsadas.add(cedJefeExistente);
+            }
+            for (const idBloque of ["bloque1","bloque2","bloque3","bloque4","bloque5"]) {
+                for (let i = 1; i <= 10; i++) {
+                    const cedAfin = (document.getElementById('afin_cedula_' + i + '_' + idBloque)?.value || '').replace(/\D/g, '');
+                    if (!cedAfin || cedAfin.length < 4) continue;
+                    if (cedAfin === estado.jefe.cedula) {
+                        mostrarMensaje('En bloque ' + idBloque.replace('bloque','') + ', cédula ' + cedAfin + ' es la tuya.');
+                        return;
+                    }
+                    if (cedulasYaUsadas.has(cedAfin)) {
+                        mostrarMensaje('Cédula ' + cedAfin + ' repetida en bloque ' + idBloque.replace('bloque','') + '.');
+                        return;
+                    }
+                    cedulasYaUsadas.add(cedAfin);
+                }
+            }
             for (const otroAfinPath of TODOS_AFINES) {
                 try {
                     const snapAfin = await get(ref(database, otroAfinPath));
