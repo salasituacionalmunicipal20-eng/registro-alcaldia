@@ -4,8 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Empleados sin 1x10 - Panel Admin</title>
-    <!-- SheetJS para exportar a Excel .xlsx -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- xlsx-js-style: fork gratuito de SheetJS que SÍ aplica estilos de celda (colores, bordes, fuentes).
+         La versión community estándar (xlsx.full.min.js) ignora la propiedad .s y exporta sin formato. -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <!-- jsPDF + autoTable para descargar la lista en PDF imprimible y legible (tabla paginada). -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
@@ -86,6 +90,7 @@
             <div class="card">
                 <h2>Empleados sin 1x10</h2>
                 <button id="btnExportarEmpleados" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">📊 Exportar Excel 1x10 Empleados</button>
+                <button id="btnExportarPDF" style="background:#E30613;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;margin-left:8px;">📄 Descargar PDF</button>
                 <div class="filtros">
                     <div>
                         <label>Buscar</label>
@@ -120,6 +125,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
 
         // Firebase = alcaldia-admin (donde viven los 1x10)
         const firebaseConfig = {
@@ -317,40 +323,145 @@
             const hechos = EMPLEADOS.filter(e => e._ced && CEDS_1X10.has(e._ced));
 
             const header = ['Dirección / Secretaría', 'Nombre y Apellido', 'Cédula', 'Teléfono'];
+            const ahora = new Date();
+            const fechaLarga = ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' });
 
-            const mkSheet = (arr) => {
+            // Paleta institucional (azul oficial + rojo oficial)
+            const NAVY = '0A2351', ROJO = 'E30613', ZEBRA = 'F1F5F9', TEXTO = '0F172A', GRIS = '64748B';
+            const thin = { style: 'thin', color: { rgb: 'CBD5E1' } };
+            const borde = { top: thin, bottom: thin, left: thin, right: thin };
+            const estBanner = { font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const estSub    = { font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: ROJO } }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const estMeta   = { font: { italic: true, sz: 10, color: { rgb: GRIS } }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const estHead   = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: borde };
+
+            const mkSheet = (arr, subtitulo) => {
                 const data = [
+                    ['ALCALDÍA DE CRISTÓBAL ROJAS', '', '', ''],
+                    [subtitulo, '', '', ''],
+                    [`Generado el ${fechaLarga}  ·  ${arr.length} empleado(s)`, '', '', ''],
                     header,
                     ...arr.map(e => [e.departamento || '-', e._nombre || '(sin nombre)', String(e.cedula || '-'), String(e.telefono || '-')])
                 ];
                 const ws = XLSX.utils.aoa_to_sheet(data);
-                const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '0A2351' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
-                const cellStyle = { alignment: { vertical: 'center', wrapText: true }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
-                const zebraStyle = { alignment: { vertical: 'center', wrapText: true }, fill: { fgColor: { rgb: 'F1F5F9' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
-                for (let c = 1; c <= 4; c++) {
-                    const cell = ws[XLSX.utils.encode_col(c - 1) + '1'];
-                    if (cell) cell.s = headerStyle;
-                }
-                const rowCount = data.length;
-                for (let i = 2; i <= rowCount; i++) {
-                    const style = i % 2 === 0 ? cellStyle : zebraStyle;
-                    for (let c = 1; c <= 4; c++) {
-                        const cell = ws[XLSX.utils.encode_col(c - 1) + i];
-                        if (cell) cell.s = style;
+                const setS = (r, c, s) => {
+                    const addr = XLSX.utils.encode_cell({ r, c });
+                    if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+                    ws[addr].s = s;
+                };
+                // Filas de título (0=banner, 1=subtítulo, 2=fecha) y encabezado (3)
+                for (let c = 0; c < 4; c++) { setS(0, c, estBanner); setS(1, c, estSub); setS(2, c, estMeta); setS(3, c, estHead); }
+                // Filas de datos (4 en adelante): zebra alternada + alineación por columna
+                for (let r = 4; r < data.length; r++) {
+                    const fondo = (r % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {};
+                    for (let c = 0; c < 4; c++) {
+                        const algn = c >= 2 ? 'center' : 'left'; // cédula y teléfono centrados
+                        setS(r, c, { font: { sz: 11, color: { rgb: TEXTO } }, alignment: { horizontal: algn, vertical: 'center', wrapText: true }, border: borde, ...fondo });
                     }
                 }
-                ws['!cols'] = [{ wch: 38 }, { wch: 38 }, { wch: 14 }, { wch: 16 }];
+                ws['!merges'] = [
+                    { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+                    { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } },
+                    { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } }
+                ];
+                ws['!cols'] = [{ wch: 36 }, { wch: 34 }, { wch: 15 }, { wch: 16 }];
+                ws['!rows'] = [{ hpt: 26 }, { hpt: 20 }, { hpt: 16 }, { hpt: 22 }];
+                ws['!autofilter'] = { ref: `A4:D${data.length}` };
                 return ws;
             };
 
             const wb = XLSX.utils.book_new();
-            wb.SheetNames.push('No hicieron 1x10');
-            wb.SheetNames.push('Hicieron 1x10');
-            wb.Sheets['No hicieron 1x10'] = mkSheet(faltantes);
-            wb.Sheets['Hicieron 1x10'] = mkSheet(hechos);
+            XLSX.utils.book_append_sheet(wb, mkSheet(faltantes, 'EMPLEADOS QUE NO HAN HECHO SU 1X10'), 'No hicieron 1x10');
+            XLSX.utils.book_append_sheet(wb, mkSheet(hechos, 'EMPLEADOS QUE YA HICIERON SU 1X10'), 'Hicieron 1x10');
 
-            const fecha = new Date().toISOString().slice(0,10);
+            const fecha = ahora.toISOString().slice(0, 10);
             XLSX.writeFile(wb, `1x10_empleados_${fecha}.xlsx`);
+        });
+
+        // ──────────────────────────────────────────────────────────
+        // Exportar a PDF imprimible: lista de pendientes, legible y paginada.
+        // Respeta los filtros activos (dirección + búsqueda) = imprime lo que ves.
+        // ──────────────────────────────────────────────────────────
+        // Sanea texto para jsPDF (conserva acentos; quita emojis, comillas curvas y control chars).
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s);
+            t = t.normalize ? t.normalize('NFC') : t;
+            t = t.replace(/[“”″]/g, '"').replace(/[‘’′]/g, "'")
+                 .replace(/[–—]/g, '-').replace(/[•‣◦⁃]/g, '*')
+                 .replace(/…/g, '...').replace(/[¿¡]/g, '').replace(/[·]/g, '*')
+                 .replace(/\u00A0/g, ' ');
+            t = t.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').replace(/[\u{2600}-\u{27BF}]/gu, '')
+                 .replace(/[\u{FE00}-\u{FE0F}]/gu, '').replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
+            t = t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ');
+            return t.replace(/[ \t]{2,}/g, ' ').trim();
+        }
+
+        // Faltantes con los mismos filtros que la tabla en pantalla, ordenados por nombre.
+        function listaFiltradaFaltantes() {
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const dir = $('fDir').value;
+            return faltantes().filter(e => {
+                if (dir && e.departamento !== dir) return false;
+                if (q) { const blob = `${e._nombre} ${e.cedula} ${e.telefono || ''}`.toLowerCase(); if (!blob.includes(q)) return false; }
+                return true;
+            }).sort((a, b) => a._nombre.localeCompare(b._nombre, 'es'));
+        }
+
+        $('btnExportarPDF').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') {
+                alert('El complemento de tablas PDF (autoTable) no cargó. Recarga la página.');
+                return;
+            }
+            const lista = listaFiltradaFaltantes();
+            if (lista.length === 0) {
+                alert('No hay empleados pendientes con los filtros actuales.');
+                return;
+            }
+
+            const dir = $('fDir').value;
+            const q = ($('fBuscar').value || '').trim();
+            const subt = _safePdf(`${dir ? 'Direccion: ' + dir : 'Todas las direcciones'}${q ? '  *  Busqueda: "' + q + '"' : ''}  *  ${lista.length} pendiente(s)`);
+
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const body = lista.map((e, i) => [
+                String(i + 1),
+                _safePdf(e._nombre || '(sin nombre)'),
+                _safePdf(String(e.cedula || '-')),
+                _safePdf(e.departamento || '-'),
+                _safePdf(e.telefono || '-'),
+                ''
+            ]);
+
+            jsPDF.API.autoTable.call(doc, {
+                head: [['#', 'Nombre y Apellido', 'Cedula', 'Direccion / Secretaria', 'Telefono', 'Contactado']],
+                body,
+                startY: 55,
+                margin: { top: 55, bottom: 18, left: 14, right: 14 },
+                theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 9, cellPadding: 2, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
+                headStyles: { fillColor: [10, 35, 81], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9.5, halign: 'center', valign: 'middle' },
+                alternateRowStyles: { fillColor: [241, 245, 249] },
+                columnStyles: {
+                    0: { cellWidth: 10, halign: 'center' },
+                    1: { cellWidth: 56 },
+                    2: { cellWidth: 24, halign: 'center' },
+                    3: { cellWidth: 52 },
+                    4: { cellWidth: 28, halign: 'center' },
+                    5: { cellWidth: 16, halign: 'center' }
+                },
+                didDrawPage: () => {
+                    dibujarHeaderPDF(doc, { titulo: 'Empleados sin registrar su 1x10', subtitulo: subt });
+                    dibujarFooterPDF(doc);
+                }
+            });
+
+            doc.save(`empleados_sin_1x10_${new Date().toISOString().slice(0, 10)}.pdf`);
         });
     </script>
 </body>
