@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Empleados sin 1x10 - Panel Admin</title>
+    <!-- SheetJS para exportar a Excel .xlsx -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
@@ -83,6 +85,7 @@
 
             <div class="card">
                 <h2>Empleados sin 1x10</h2>
+                <button id="btnExportarEmpleados" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">📊 Exportar Excel 1x10 Empleados</button>
                 <div class="filtros">
                     <div>
                         <label>Buscar</label>
@@ -302,6 +305,32 @@
         ['fBuscar','fDir'].forEach(id => {
             $(id).addEventListener('input', () => { pagina = 1; render(); });
             $(id).addEventListener('change', () => { pagina = 1; render(); });
+        });
+
+        // Exportar a Excel: dos hojas (faltantes y cumplidores) solo empleados registrados
+        $('btnExportarEmpleados').addEventListener('click', () => {
+            if (typeof XLSX === 'undefined') {
+                alert('SheetJS no está cargado.');
+                return;
+            }
+            const faltantes = EMPLEADOS.filter(e => e._ced && !CEDS_1X10.has(e._ced));
+            const hechos = EMPLEADOS.filter(e => e._ced && CEDS_1X10.has(e._ced));
+
+            const header = ['Dirección / Secretaría', 'Nombre y Apellido'];
+
+            const mkSheet = (arr) => [
+                header,
+                ...arr.map(e => [e.departamento || '-', e._nombre || '(sin nombre)'])
+            ];
+
+            const wb = XLSX.utils.book_new();
+            wb.SheetNames.push('No hicieron 1x10');
+            wb.SheetNames.push('Hicieron 1x10');
+            wb.Sheets['No hicieron 1x10'] = XLSX.utils.aoa_to_sheet(mkSheet(faltantes));
+            wb.Sheets['Hicieron 1x10'] = XLSX.utils.aoa_to_sheet(mkSheet(hechos));
+
+            const fecha = new Date().toISOString().slice(0,10);
+            XLSX.writeFile(wb, `1x10_empleados_${fecha}.xlsx`);
         });
     </script>
 </body>
