@@ -307,7 +307,7 @@
             $(id).addEventListener('change', () => { pagina = 1; render(); });
         });
 
-        // Exportar a Excel: dos hojas (faltantes y cumplidores) solo empleados registrados
+        // Exportar a Excel: dos hojas (faltantes y cumplidores) con formato
         $('btnExportarEmpleados').addEventListener('click', () => {
             if (typeof XLSX === 'undefined') {
                 alert('SheetJS no está cargado.');
@@ -318,16 +318,28 @@
 
             const header = ['Dirección / Secretaría', 'Nombre y Apellido'];
 
-            const mkSheet = (arr) => [
-                header,
-                ...arr.map(e => [e.departamento || '-', e._nombre || '(sin nombre)'])
-            ];
+            const mkSheet = (arr) => {
+                const data = [
+                    header,
+                    ...arr.map(e => [e.departamento || '-', e._nombre || '(sin nombre)'])
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                if (ws['A1']) ws['A1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
+                if (ws['B1']) ws['B1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
+                const rowCount = data.length;
+                for (let i = 2; i <= rowCount; i++) {
+                    if (ws[`A${i}`]) ws[`A${i}`].s = { alignment: { wrapText: true } };
+                    if (ws[`B${i}`]) ws[`B${i}`].s = { alignment: { wrapText: true } };
+                }
+                ws['!cols'] = [{ wch: 35 }, { wch: 35 }];
+                return ws;
+            };
 
             const wb = XLSX.utils.book_new();
             wb.SheetNames.push('No hicieron 1x10');
             wb.SheetNames.push('Hicieron 1x10');
-            wb.Sheets['No hicieron 1x10'] = XLSX.utils.aoa_to_sheet(mkSheet(faltantes));
-            wb.Sheets['Hicieron 1x10'] = XLSX.utils.aoa_to_sheet(mkSheet(hechos));
+            wb.Sheets['No hicieron 1x10'] = mkSheet(faltantes);
+            wb.Sheets['Hicieron 1x10'] = mkSheet(hechos);
 
             const fecha = new Date().toISOString().slice(0,10);
             XLSX.writeFile(wb, `1x10_empleados_${fecha}.xlsx`);
