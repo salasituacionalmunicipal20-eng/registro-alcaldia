@@ -90,7 +90,8 @@
             <div class="card">
                 <h2>Empleados sin 1x10</h2>
                 <button id="btnExportarEmpleados" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;">📊 Exportar Excel 1x10 Empleados</button>
-                <button id="btnExportarPDF" style="background:#E30613;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;margin-left:8px;">📄 Descargar PDF</button>
+                <button id="btnPdfSin" style="background:#E30613;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;margin-left:8px;">📄 PDF — Faltan por hacer 1x10</button>
+                <button id="btnPdfCon" style="background:#16a34a;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;margin-left:8px;">📄 PDF — Ya hicieron su 1x10</button>
                 <div class="filtros">
                     <div>
                         <label>Buscar</label>
@@ -397,18 +398,19 @@
             return t.replace(/[ \t]{2,}/g, ' ').trim();
         }
 
-        // Faltantes con los mismos filtros que la tabla en pantalla, ordenados por nombre.
-        function listaFiltradaFaltantes() {
+        // Aplica los mismos filtros que la tabla en pantalla (dirección + búsqueda) y ordena por nombre.
+        function aplicarFiltrosLista(arr) {
             const q = ($('fBuscar').value || '').trim().toLowerCase();
             const dir = $('fDir').value;
-            return faltantes().filter(e => {
+            return arr.filter(e => {
                 if (dir && e.departamento !== dir) return false;
                 if (q) { const blob = `${e._nombre} ${e.cedula} ${e.telefono || ''}`.toLowerCase(); if (!blob.includes(q)) return false; }
                 return true;
             }).sort((a, b) => a._nombre.localeCompare(b._nombre, 'es'));
         }
 
-        $('btnExportarPDF').addEventListener('click', () => {
+        // Genera un PDF imprimible. conContacto = agrega columna vacía "Contactado" para marcar al llamar.
+        function generarPdfEmpleados({ lista, titulo, archivo, headColor, conContacto }) {
             if (!window.jspdf || !window.jspdf.jsPDF) {
                 alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
                 return;
@@ -418,51 +420,70 @@
                 alert('El complemento de tablas PDF (autoTable) no cargó. Recarga la página.');
                 return;
             }
-            const lista = listaFiltradaFaltantes();
             if (lista.length === 0) {
-                alert('No hay empleados pendientes con los filtros actuales.');
+                alert('No hay empleados para exportar con los filtros actuales.');
                 return;
             }
 
             const dir = $('fDir').value;
             const q = ($('fBuscar').value || '').trim();
-            const subt = _safePdf(`${dir ? 'Direccion: ' + dir : 'Todas las direcciones'}${q ? '  *  Busqueda: "' + q + '"' : ''}  *  ${lista.length} pendiente(s)`);
+            const subt = _safePdf(`${dir ? 'Direccion: ' + dir : 'Todas las direcciones'}${q ? '  *  Busqueda: "' + q + '"' : ''}  *  ${lista.length} empleado(s)`);
 
             const doc = new jsPDF({ unit: 'mm', format: 'letter' });
-            const body = lista.map((e, i) => [
-                String(i + 1),
-                _safePdf(e._nombre || '(sin nombre)'),
-                _safePdf(String(e.cedula || '-')),
-                _safePdf(e.departamento || '-'),
-                _safePdf(e.telefono || '-'),
-                ''
-            ]);
+            const head = conContacto
+                ? [['#', 'Nombre y Apellido', 'Cedula', 'Direccion / Secretaria', 'Telefono', 'Contactado']]
+                : [['#', 'Nombre y Apellido', 'Cedula', 'Direccion / Secretaria', 'Telefono']];
+            const body = lista.map((e, i) => {
+                const fila = [
+                    String(i + 1),
+                    _safePdf(e._nombre || '(sin nombre)'),
+                    _safePdf(String(e.cedula || '-')),
+                    _safePdf(e.departamento || '-'),
+                    _safePdf(e.telefono || '-')
+                ];
+                if (conContacto) fila.push('');
+                return fila;
+            });
+            const columnStyles = conContacto
+                ? { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 56 }, 2: { cellWidth: 24, halign: 'center' }, 3: { cellWidth: 52 }, 4: { cellWidth: 28, halign: 'center' }, 5: { cellWidth: 16, halign: 'center' } }
+                : { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 62 }, 2: { cellWidth: 26, halign: 'center' }, 3: { cellWidth: 60 }, 4: { cellWidth: 30, halign: 'center' } };
 
             jsPDF.API.autoTable.call(doc, {
-                head: [['#', 'Nombre y Apellido', 'Cedula', 'Direccion / Secretaria', 'Telefono', 'Contactado']],
+                head,
                 body,
                 startY: 55,
                 margin: { top: 55, bottom: 18, left: 14, right: 14 },
                 theme: 'grid',
                 styles: { font: 'helvetica', fontSize: 9, cellPadding: 2, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
-                headStyles: { fillColor: [10, 35, 81], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9.5, halign: 'center', valign: 'middle' },
+                headStyles: { fillColor: headColor, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9.5, halign: 'center', valign: 'middle' },
                 alternateRowStyles: { fillColor: [241, 245, 249] },
-                columnStyles: {
-                    0: { cellWidth: 10, halign: 'center' },
-                    1: { cellWidth: 56 },
-                    2: { cellWidth: 24, halign: 'center' },
-                    3: { cellWidth: 52 },
-                    4: { cellWidth: 28, halign: 'center' },
-                    5: { cellWidth: 16, halign: 'center' }
-                },
+                columnStyles,
                 didDrawPage: () => {
-                    dibujarHeaderPDF(doc, { titulo: 'Empleados sin registrar su 1x10', subtitulo: subt });
+                    dibujarHeaderPDF(doc, { titulo, subtitulo: subt });
                     dibujarFooterPDF(doc);
                 }
             });
 
-            doc.save(`empleados_sin_1x10_${new Date().toISOString().slice(0, 10)}.pdf`);
-        });
+            doc.save(`${archivo}_${new Date().toISOString().slice(0, 10)}.pdf`);
+        }
+
+        // PDF (encabezado azul) — empleados que FALTAN por hacer su 1x10, con columna "Contactado".
+        $('btnPdfSin').addEventListener('click', () => generarPdfEmpleados({
+            lista: aplicarFiltrosLista(faltantes()),
+            titulo: 'Empleados que faltan por hacer su 1x10',
+            archivo: 'empleados_SIN_1x10',
+            headColor: [10, 35, 81],
+            conContacto: true
+        }));
+
+        // PDF (encabezado verde) — empleados que YA hicieron su 1x10 (lista de registrados).
+        $('btnPdfCon').addEventListener('click', () => generarPdfEmpleados({
+            lista: aplicarFiltrosLista(EMPLEADOS.filter(e => e._ced && CEDS_1X10.has(e._ced))),
+            titulo: 'Empleados que YA hicieron su 1x10',
+            archivo: 'empleados_CON_1x10',
+            headColor: [22, 163, 74],
+            conContacto: false
+        }));
     </script>
 </body>
 </html>
