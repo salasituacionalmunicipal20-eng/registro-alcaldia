@@ -321,21 +321,25 @@
             const mkSheet = (arr) => {
                 const data = [
                     header,
-                    ...arr.map(e => [e.departamento || '-', e._nombre || '(sin nombre)', e.cedula || '-', e.telefono || '-'])
+                    ...arr.map(e => [e.departamento || '-', e._nombre || '(sin nombre)', String(e.cedula || '-'), String(e.telefono || '-')])
                 ];
                 const ws = XLSX.utils.aoa_to_sheet(data);
-                if (ws['A1']) ws['A1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
-                if (ws['B1']) ws['B1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
-                if (ws['C1']) ws['C1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
-                if (ws['D1']) ws['D1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
+                const headerStyle = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '0A2351' } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
+                const cellStyle = { alignment: { vertical: 'center', wrapText: true }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
+                const zebraStyle = { alignment: { vertical: 'center', wrapText: true }, fill: { fgColor: { rgb: 'F1F5F9' } }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
+                for (let c = 1; c <= 4; c++) {
+                    const cell = ws[XLSX.utils.encode_col(c - 1) + '1'];
+                    if (cell) cell.s = headerStyle;
+                }
                 const rowCount = data.length;
                 for (let i = 2; i <= rowCount; i++) {
-                    if (ws[`A${i}`]) ws[`A${i}`].s = { alignment: { wrapText: true } };
-                    if (ws[`B${i}`]) ws[`B${i}`].s = { alignment: { wrapText: true } };
-                    if (ws[`C${i}`]) ws[`C${i}`].s = { alignment: { wrapText: true } };
-                    if (ws[`D${i}`]) ws[`D${i}`].s = { alignment: { wrapText: true } };
+                    const style = i % 2 === 0 ? cellStyle : zebraStyle;
+                    for (let c = 1; c <= 4; c++) {
+                        const cell = ws[XLSX.utils.encode_col(c - 1) + i];
+                        if (cell) cell.s = style;
+                    }
                 }
-                ws['!cols'] = [{ wch: 35 }, { wch: 35 }, { wch: 15 }, { wch: 15 }];
+                ws['!cols'] = [{ wch: 38 }, { wch: 38 }, { wch: 14 }, { wch: 16 }];
                 return ws;
             };
 
