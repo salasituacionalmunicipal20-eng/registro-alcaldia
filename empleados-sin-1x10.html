@@ -316,22 +316,26 @@
             const faltantes = EMPLEADOS.filter(e => e._ced && !CEDS_1X10.has(e._ced));
             const hechos = EMPLEADOS.filter(e => e._ced && CEDS_1X10.has(e._ced));
 
-            const header = ['Dirección / Secretaría', 'Nombre y Apellido'];
+            const header = ['Dirección / Secretaría', 'Nombre y Apellido', 'Cédula', 'Teléfono'];
 
             const mkSheet = (arr) => {
                 const data = [
                     header,
-                    ...arr.map(e => [e.departamento || '-', e._nombre || '(sin nombre)'])
+                    ...arr.map(e => [e.departamento || '-', e._nombre || '(sin nombre)', e.cedula || '-', e.telefono || '-'])
                 ];
                 const ws = XLSX.utils.aoa_to_sheet(data);
                 if (ws['A1']) ws['A1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
                 if (ws['B1']) ws['B1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
+                if (ws['C1']) ws['C1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
+                if (ws['D1']) ws['D1'].s = { font: { bold: true }, fill: { fgColor: { rgb: '0A2351' } }, font_color: { rgb: 'FFFFFF' } };
                 const rowCount = data.length;
                 for (let i = 2; i <= rowCount; i++) {
                     if (ws[`A${i}`]) ws[`A${i}`].s = { alignment: { wrapText: true } };
                     if (ws[`B${i}`]) ws[`B${i}`].s = { alignment: { wrapText: true } };
+                    if (ws[`C${i}`]) ws[`C${i}`].s = { alignment: { wrapText: true } };
+                    if (ws[`D${i}`]) ws[`D${i}`].s = { alignment: { wrapText: true } };
                 }
-                ws['!cols'] = [{ wch: 35 }, { wch: 35 }];
+                ws['!cols'] = [{ wch: 35 }, { wch: 35 }, { wch: 15 }, { wch: 15 }];
                 return ws;
             };
 
