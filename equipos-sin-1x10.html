@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Equipos políticos sin 1x10 - Panel Admin</title>
+    <!-- xlsx-js-style: SheetJS con estilos de celda (Excel con formato). -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <!-- jsPDF + autoTable para PDF imprimible y legible. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #0a2351; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-nav:hover { background: rgba(255,255,255,0.22); }
+        .wrap { max-width: 1250px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        .stats { display: flex; gap: 14px; flex-wrap: wrap; }
+        .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 150px; }
+        .stat .num { font-size: 26px; font-weight: 800; }
+        .stat.faltan .num { color: #E30613; }
+        .stat.ok .num { color: #16a34a; }
+        .stat .lbl { font-size: 12px; color: #64748b; font-weight: 600; }
+        .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #16a34a; font-weight: 700; }
+        .live .dot { width: 9px; height: 9px; border-radius: 50%; background: #16a34a; animation: pulso 1.4s infinite; }
+        @keyframes pulso { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        .filtros { display: grid; grid-template-columns: 2fr 1.5fr; gap: 12px; }
+        @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 9px 11px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #0a2351; color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; position: sticky; top: 0; }
+        tbody tr:hover { background: #f8fafc; }
+        .btn-wa { background: #25D366; color: #fff; border: none; border-radius: 6px; padding: 7px 12px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .btn-wa:hover { background: #1ebe57; }
+        .tel-mal { color: #b91c1c; font-size: 11px; font-weight: 700; }
+        .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #e2e8f0; color: #475569; margin: 1px 2px; }
+        .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin-bottom: 10px; margin-right: 8px; color: #fff; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .paginacion .info { font-size: 13px; color: #64748b; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #E30613; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>🔎 Equipos políticos que faltan por hacer su 1x10</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <a class="btn-nav" href="equipos.html">🗂️ Ver Equipos</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden">
+            <h2 style="color:#b91c1c;">Acceso restringido</h2>
+            <p>Esta sección es solo para administradores.</p>
+        </div>
+
+        <div id="contenido" class="hidden">
+            <div class="card">
+                <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
+                <div class="stats">
+                    <div class="stat faltan"><div class="num" id="stFaltan">—</div><div class="lbl">Faltan por hacer su 1x10</div></div>
+                    <div class="stat ok"><div class="num" id="stHechos">—</div><div class="lbl">Ya hicieron su 1x10</div></div>
+                    <div class="stat"><div class="num" id="stTotal">—</div><div class="lbl">Total personas (con cédula)</div></div>
+                </div>
+                <div class="hint" id="hintInfo">Cruza a <b>todos los miembros de los Equipos Políticos</b> (cargados desde EQUIPOS.xlsx) contra <b>todos los 1x10</b> (público, empleados, cristianos, abuelos, salud, educación). Una persona en varios equipos aparece una sola vez. Cuando hace su 1x10, <b>desaparece solo</b> de esta lista en tiempo real.</div>
+            </div>
+
+            <div class="card">
+                <h2>Mensaje para llamarlos (opcional)</h2>
+                <input id="mensaje" value="Hola {nombre}, te recordamos hacer tu registro 1x10. " />
+                <div class="hint">Usa <b>{nombre}</b> y se reemplaza por el nombre de cada persona al abrir su WhatsApp.</div>
+            </div>
+
+            <div class="card">
+                <h2>Miembros sin 1x10</h2>
+                <div>
+                    <button id="btnExportarExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnPdfSin" class="btn-exp" style="background:#E30613;">📄 PDF — Faltan por hacer 1x10</button>
+                    <button id="btnPdfCon" class="btn-exp" style="background:#16a34a;">📄 PDF — Ya hicieron su 1x10</button>
+                </div>
+                <div class="filtros">
+                    <div>
+                        <label>Buscar</label>
+                        <input id="fBuscar" type="search" placeholder="Nombre, cédula, teléfono o equipo" autocomplete="off" />
+                    </div>
+                    <div>
+                        <label>Equipo</label>
+                        <select id="fEquipo"><option value="">Todos los equipos</option></select>
+                    </div>
+                </div>
+                <div style="overflow-x:auto; margin-top:14px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Cédula</th>
+                                <th>Equipo(s)</th>
+                                <th>Teléfono</th>
+                                <th style="text-align:center;">WhatsApp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody"><tr><td colspan="5" class="estado-box">Cargando…</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        // Todos los sistemas 1x10 a validar [jefes, afines]
+        const SISTEMAS_1X10 = [
+            ['jefes_1x10', 'afines_1x10'],
+            ['jefes_1x10_empleados', 'afines_1x10_empleados'],
+            ['jefes_1x10_cristianos', 'afines_1x10_cristianos'],
+            ['jefes_1x10_abuelos', 'afines_1x10_abuelos'],
+            ['jefes_1x10_cristianos_abuelos', 'afines_1x10_cristianos_abuelos'],
+            ['jefes_1x10_salud', 'afines_1x10_salud'],
+            ['jefes_1x10_educacion', 'afines_1x10_educacion']
+        ];
+
+        const $ = (id) => document.getElementById(id);
+        const escapeHtml = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        const soloDigitos = (s) => (s || '').replace(/\D/g, '');
+        const primerNombre = (n) => (n || '').trim().split(/\s+/)[0] || 'compañero(a)';
+        const toArr = (x) => Array.isArray(x) ? x : (x ? Object.values(x) : []);
+
+        function normalizarTel(raw) {
+            const d = soloDigitos(raw);
+            if (!d) return { e164: '', ok: false };
+            if (d.length === 12 && d.startsWith('58')) return { e164: d, ok: true };
+            if (d.length === 11 && d.startsWith('0')) return { e164: '58' + d.slice(1), ok: true };
+            if (d.length === 10 && d.startsWith('4')) return { e164: '58' + d, ok: true };
+            return { e164: d, ok: false };
+        }
+
+        let MIEMBROS = [];                // miembros únicos por cédula
+        let EQUIPOS_DEF = [];             // [{id, nombre}] para el selector
+        let sinCedula = 0;               // registros descartados por no tener cédula
+        const cedsPorPath = {};           // path -> [cedulas digitos]
+        let CEDS_1X10 = new Set();        // union de todas las cedulas en 1x10
+        let pagina = 1;
+        const TAM = 50;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuper;
+            if (!esSuper) {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}/rol`));
+                    permitido = (snap.exists() && snap.val() === 'admin');
+                } catch (e) { permitido = false; }
+            }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            escucharEquipos();
+            escuchar1x10();
+        });
+
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch(e){} location.href = 'index.html'; });
+
+        // Lee /equipos y aplana todos los miembros, deduplicando por cédula.
+        function escucharEquipos() {
+            onValue(ref(database, 'equipos'), (snap) => {
+                const DATA = snap.exists() ? snap.val() : null;
+                construirMiembros(DATA);
+                render();
+            }, () => { MIEMBROS = []; render(); });
+        }
+
+        function construirMiembros(DATA) {
+            const map = new Map();
+            sinCedula = 0;
+            EQUIPOS_DEF = [];
+            if (DATA && DATA.lista) {
+                const eqs = Object.entries(DATA.lista)
+                    .map(([id, t]) => ({ id, nombre: t.nombre || id, orden: t.orden || 99, registros: toArr(t.registros) }))
+                    .sort((a, b) => a.orden - b.orden);
+                EQUIPOS_DEF = eqs.map(e => ({ id: e.id, nombre: e.nombre }));
+                for (const t of eqs) {
+                    for (const r of t.registros) {
+                        const ced = soloDigitos(r.cedula);
+                        if (!ced) { sinCedula++; continue; }
+                        const nombre = String(r.nombre || r.responsable || '').trim() || '(sin nombre)';
+                        const tel = r.telefono || '';
+                        if (!map.has(ced)) {
+                            map.set(ced, { _ced: ced, _nombre: nombre, telefono: tel, _eqNom: new Set([t.nombre]), _eqId: new Set([t.id]) });
+                        } else {
+                            const ex = map.get(ced);
+                            ex._eqNom.add(t.nombre); ex._eqId.add(t.id);
+                            if (ex._nombre === '(sin nombre)' && nombre !== '(sin nombre)') ex._nombre = nombre;
+                            if (!ex.telefono && tel) ex.telefono = tel;
+                        }
+                    }
+                }
+            }
+            MIEMBROS = Array.from(map.values()).map(m => ({
+                _ced: m._ced, _nombre: m._nombre, telefono: m.telefono,
+                equipos: Array.from(m._eqNom).join(', '), equiposIds: Array.from(m._eqId)
+            }));
+            // poblar selector de equipos
+            const sel = $('fEquipo');
+            const prev = sel.value;
+            sel.innerHTML = '<option value="">Todos los equipos</option>' +
+                EQUIPOS_DEF.map(e => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.nombre)}</option>`).join('');
+            if (prev) sel.value = prev;
+        }
+
+        function escuchar1x10() {
+            for (const [jefesPath, afinesPath] of SISTEMAS_1X10) {
+                onValue(ref(database, jefesPath), (snap) => {
+                    const v = snap.val() || {};
+                    cedsPorPath[jefesPath] = Object.keys(v).map(soloDigitos).filter(Boolean);
+                    recomputar();
+                }, () => { cedsPorPath[jefesPath] = []; recomputar(); });
+
+                onValue(ref(database, afinesPath), (snap) => {
+                    const v = snap.val() || {};
+                    const arr = [];
+                    Object.values(v).forEach(grupo => Object.keys(grupo || {}).forEach(cedAfin => arr.push(soloDigitos(cedAfin))));
+                    cedsPorPath[afinesPath] = arr.filter(Boolean);
+                    recomputar();
+                }, () => { cedsPorPath[afinesPath] = []; recomputar(); });
+            }
+        }
+
+        function recomputar() {
+            CEDS_1X10 = new Set();
+            Object.values(cedsPorPath).forEach(arr => arr.forEach(c => CEDS_1X10.add(c)));
+            render();
+        }
+
+        function faltantes() { return MIEMBROS.filter(m => !CEDS_1X10.has(m._ced)); }
+        function hechos() { return MIEMBROS.filter(m => CEDS_1X10.has(m._ced)); }
+
+        function aplicaFiltro(m, q, eqId) {
+            if (eqId && !m.equiposIds.includes(eqId)) return false;
+            if (q) { const blob = `${m._nombre} ${m._ced} ${m.telefono || ''} ${m.equipos}`.toLowerCase(); if (!blob.includes(q)) return false; }
+            return true;
+        }
+
+        function render() {
+            const falt = faltantes();
+            $('stTotal').textContent = MIEMBROS.length;
+            $('stFaltan').textContent = falt.length;
+            $('stHechos').textContent = MIEMBROS.length - falt.length;
+
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const eqId = $('fEquipo').value;
+            let lista = falt.filter(m => aplicaFiltro(m, q, eqId));
+
+            const total = lista.length;
+            const totalPag = Math.max(1, Math.ceil(total / TAM));
+            if (pagina > totalPag) pagina = totalPag;
+            const ini = (pagina - 1) * TAM;
+            const slice = lista.slice(ini, ini + TAM);
+            const tbody = $('tbody');
+
+            if (MIEMBROS.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="estado-box">No hay datos de equipos cargados. Importa EQUIPOS.xlsx en el módulo <b>Equipos Políticos</b>.</td></tr>`;
+                $('paginacion').innerHTML = ''; return;
+            }
+            if (total === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="estado-box">🎉 No hay personas pendientes con estos filtros.</td></tr>`;
+                $('paginacion').innerHTML = ''; return;
+            }
+
+            tbody.innerHTML = slice.map(m => {
+                const tel = normalizarTel(m.telefono);
+                const waCell = tel.ok
+                    ? `<a class="btn-wa" data-action="wa" data-e164="${escapeHtml(tel.e164)}" data-nombre="${escapeHtml(primerNombre(m._nombre))}" href="#">💬 WhatsApp</a>`
+                    : (m.telefono ? `<span class="tel-mal">tel. inválido</span>` : `<span class="tel-mal">sin teléfono</span>`);
+                const tags = m.equipos.split(', ').map(e => `<span class="tag">${escapeHtml(e)}</span>`).join('');
+                return `
+                    <tr>
+                        <td><b>${escapeHtml(m._nombre)}</b></td>
+                        <td>${escapeHtml(m._ced || '-')}</td>
+                        <td>${tags}</td>
+                        <td>${escapeHtml(m.telefono || '-')}</td>
+                        <td style="text-align:center;">${waCell}</td>
+                    </tr>`;
+            }).join('');
+
+            tbody.querySelectorAll('a[data-action="wa"]').forEach(btn => {
+                btn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    const e164 = btn.getAttribute('data-e164');
+                    const nombre = btn.getAttribute('data-nombre') || '';
+                    const msg = ($('mensaje').value || '').replace(/\{nombre\}/g, nombre);
+                    window.open(`https://wa.me/${e164}` + (msg.trim() ? `?text=${encodeURIComponent(msg)}` : ''), '_blank', 'noopener');
+                });
+            });
+
+            const desde = ini + 1, hasta = Math.min(ini + TAM, total);
+            $('paginacion').innerHTML = `
+                <button id="pgPrev" ${pagina<=1?'disabled':''}>← Anterior</button>
+                <span class="info">${desde}–${hasta} de ${total} · pág. ${pagina}/${totalPag}</span>
+                <button id="pgNext" ${pagina>=totalPag?'disabled':''}>Siguiente →</button>`;
+            const p = $('pgPrev'), n = $('pgNext');
+            if (p) p.addEventListener('click', () => { if (pagina>1){ pagina--; render(); } });
+            if (n) n.addEventListener('click', () => { if (pagina<totalPag){ pagina++; render(); } });
+        }
+
+        ['fBuscar','fEquipo'].forEach(id => {
+            $(id).addEventListener('input', () => { pagina = 1; render(); });
+            $(id).addEventListener('change', () => { pagina = 1; render(); });
+        });
+
+        // ───────── Exportar a Excel: dos hojas (faltan / ya hicieron) con formato ─────────
+        $('btnExportarExcel').addEventListener('click', () => {
+            if (typeof XLSX === 'undefined') { alert('SheetJS no está cargado.'); return; }
+            const arrFaltan = faltantes();
+            const arrHechos = hechos();
+
+            const header = ['Equipo(s)', 'Nombre y Apellido', 'Cédula', 'Teléfono'];
+            const ahora = new Date();
+            const fechaLarga = ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' });
+
+            const NAVY = '0A2351', ROJO = 'E30613', ZEBRA = 'F1F5F9', TEXTO = '0F172A', GRIS = '64748B';
+            const thin = { style: 'thin', color: { rgb: 'CBD5E1' } };
+            const borde = { top: thin, bottom: thin, left: thin, right: thin };
+            const estBanner = { font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const estSub    = { font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: ROJO } }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const estMeta   = { font: { italic: true, sz: 10, color: { rgb: GRIS } }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const estHead   = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: borde };
+
+            const mkSheet = (arr, subtitulo) => {
+                const data = [
+                    ['ALCALDÍA DE CRISTÓBAL ROJAS', '', '', ''],
+                    [subtitulo, '', '', ''],
+                    [`Generado el ${fechaLarga}  ·  ${arr.length} persona(s)`, '', '', ''],
+                    header,
+                    ...arr.map(m => [m.equipos || '-', m._nombre || '(sin nombre)', String(m._ced || '-'), String(m.telefono || '-')])
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const setS = (r, c, s) => {
+                    const addr = XLSX.utils.encode_cell({ r, c });
+                    if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+                    ws[addr].s = s;
+                };
+                for (let c = 0; c < 4; c++) { setS(0, c, estBanner); setS(1, c, estSub); setS(2, c, estMeta); setS(3, c, estHead); }
+                for (let r = 4; r < data.length; r++) {
+                    const fondo = (r % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {};
+                    for (let c = 0; c < 4; c++) {
+                        const algn = c >= 2 ? 'center' : 'left';
+                        setS(r, c, { font: { sz: 11, color: { rgb: TEXTO } }, alignment: { horizontal: algn, vertical: 'center', wrapText: true }, border: borde, ...fondo });
+                    }
+                }
+                ws['!merges'] = [
+                    { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+                    { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } },
+                    { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } }
+                ];
+                ws['!cols'] = [{ wch: 40 }, { wch: 34 }, { wch: 15 }, { wch: 16 }];
+                ws['!rows'] = [{ hpt: 26 }, { hpt: 20 }, { hpt: 16 }, { hpt: 22 }];
+                ws['!autofilter'] = { ref: `A4:D${data.length}` };
+                return ws;
+            };
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, mkSheet(arrFaltan, 'EQUIPOS QUE NO HAN HECHO SU 1X10'), 'No hicieron 1x10');
+            XLSX.utils.book_append_sheet(wb, mkSheet(arrHechos, 'EQUIPOS QUE YA HICIERON SU 1X10'), 'Hicieron 1x10');
+            XLSX.writeFile(wb, `1x10_equipos_${ahora.toISOString().slice(0, 10)}.xlsx`);
+        });
+
+        // ───────── PDF imprimible (respeta filtros activos) ─────────
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s);
+            t = t.normalize ? t.normalize('NFC') : t;
+            t = t.replace(/[“”″]/g, '"').replace(/[‘’′]/g, "'")
+                 .replace(/[–—]/g, '-').replace(/[•‣◦⁃]/g, '*')
+                 .replace(/…/g, '...').replace(/[¿¡]/g, '').replace(/[·]/g, '*')
+                 .replace(/\u00A0/g, ' ');
+            t = t.replace(/[\u{1F000}-\u{1FFFF}]/gu, '').replace(/[\u{2600}-\u{27BF}]/gu, '')
+                 .replace(/[\u{FE00}-\u{FE0F}]/gu, '').replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '');
+            t = t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, ' ');
+            return t.replace(/[ \t]{2,}/g, ' ').trim();
+        }
+
+        function aplicarFiltrosLista(arr) {
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const eqId = $('fEquipo').value;
+            return arr.filter(m => aplicaFiltro(m, q, eqId)).sort((a, b) => a._nombre.localeCompare(b._nombre, 'es'));
+        }
+
+        function generarPdfEquipos({ lista, titulo, archivo, headColor, conContacto }) {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.'); return;
+            }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') {
+                alert('El complemento de tablas PDF (autoTable) no cargó. Recarga la página.'); return;
+            }
+            if (lista.length === 0) { alert('No hay personas para exportar con los filtros actuales.'); return; }
+
+            const eqId = $('fEquipo').value;
+            const eqNom = eqId ? (EQUIPOS_DEF.find(e => e.id === eqId) || {}).nombre : '';
+            const q = ($('fBuscar').value || '').trim();
+            const subt = _safePdf(`${eqNom ? 'Equipo: ' + eqNom : 'Todos los equipos'}${q ? '  *  Busqueda: "' + q + '"' : ''}  *  ${lista.length} persona(s)`);
+
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const head = conContacto
+                ? [['#', 'Nombre y Apellido', 'Cedula', 'Equipo(s)', 'Telefono', 'Contactado']]
+                : [['#', 'Nombre y Apellido', 'Cedula', 'Equipo(s)', 'Telefono']];
+            const body = lista.map((m, i) => {
+                const fila = [
+                    String(i + 1),
+                    _safePdf(m._nombre || '(sin nombre)'),
+                    _safePdf(String(m._ced || '-')),
+                    _safePdf(m.equipos || '-'),
+                    _safePdf(m.telefono || '-')
+                ];
+                if (conContacto) fila.push('');
+                return fila;
+            });
+            const columnStyles = conContacto
+                ? { 0: { cellWidth: 9, halign: 'center' }, 1: { cellWidth: 52 }, 2: { cellWidth: 23, halign: 'center' }, 3: { cellWidth: 52 }, 4: { cellWidth: 26, halign: 'center' }, 5: { cellWidth: 14, halign: 'center' } }
+                : { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 56 }, 2: { cellWidth: 25, halign: 'center' }, 3: { cellWidth: 66 }, 4: { cellWidth: 29, halign: 'center' } };
+
+            jsPDF.API.autoTable.call(doc, {
+                head, body,
+                startY: 55,
+                margin: { top: 55, bottom: 18, left: 14, right: 14 },
+                theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 9, cellPadding: 2, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
+                headStyles: { fillColor: headColor, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9.5, halign: 'center', valign: 'middle' },
+                alternateRowStyles: { fillColor: [241, 245, 249] },
+                columnStyles,
+                didDrawPage: () => {
+                    dibujarHeaderPDF(doc, { titulo, subtitulo: subt });
+                    dibujarFooterPDF(doc);
+                }
+            });
+            doc.save(`${archivo}_${new Date().toISOString().slice(0, 10)}.pdf`);
+        }
+
+        $('btnPdfSin').addEventListener('click', () => generarPdfEquipos({
+            lista: aplicarFiltrosLista(faltantes()),
+            titulo: 'Equipos politicos que faltan por hacer su 1x10',
+            archivo: 'equipos_SIN_1x10',
+            headColor: [10, 35, 81],
+            conContacto: true
+        }));
+
+        $('btnPdfCon').addEventListener('click', () => generarPdfEquipos({
+            lista: aplicarFiltrosLista(hechos()),
+            titulo: 'Equipos politicos que YA hicieron su 1x10',
+            archivo: 'equipos_CON_1x10',
+            headColor: [22, 163, 74],
+            conContacto: false
+        }));
+    </script>
+</body>
+</html>
