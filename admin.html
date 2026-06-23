@@ -181,6 +181,8 @@
         .card-tickets::before { background-color: #ef4444; }
         .card-constancias { background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%); border: 1px solid #c4b5fd; }
         .card-constancias::before { background-color: #7c3aed; }
+        .card-equipos { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); border: 1px solid #a5b4fc; }
+        .card-equipos::before { background-color: #4f46e5; }
 
         .card-icon { 
             font-size: 50px; 
@@ -334,6 +336,12 @@
                 <span class="card-icon">📄</span>
                 <div class="card-title">Constancias y Notificaciones</div>
                 <div class="card-desc">Genere documentos oficiales con plantillas: residencia, llamado de atención, felicitación, notificación de bono, autorizaciones.</div>
+            </div>
+
+            <div class="card card-equipos" onclick="location.href='equipos.html'" style="border-top: 4px solid #4f46e5;">
+                <span class="card-icon">🗂️</span>
+                <div class="card-title">Equipos Políticos</div>
+                <div class="card-desc">Estructura política del municipio (Jefes de UBCH, CCBI, CBBI, equipos municipal/parroquiales/comunal, JPSUV, salas de autogobierno) importada de EQUIPOS.xlsx. Buscador por equipo, WhatsApp y exportación a Excel.</div>
             </div>
 
             <div id="cardMigracion" class="card card-migracion hidden" onclick="location.href='migrador.html'">
