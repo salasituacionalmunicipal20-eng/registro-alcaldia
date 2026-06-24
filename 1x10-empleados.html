@@ -638,7 +638,20 @@
                 opt.value = p; opt.textContent = p;
                 sel.appendChild(opt);
             });
+            // Opción para empleados que NO viven en el municipio.
+            const optOtro = document.createElement('option');
+            optOtro.value = 'OTRO';
+            optOtro.textContent = 'OTRO (no vive en el municipio)';
+            sel.appendChild(optOtro);
         })();
+
+        // Panel de centro electoral mostrado cuando el territorio es OTRO.
+        function mostrarPanelCentroOtro() {
+            const panel = $('panelCentro');
+            panel.className = 'panel-centro';
+            panel.innerHTML = '<div class="titulo">Centro Electoral</div><div class="valor">OTRO — fuera del municipio</div>';
+            panel.classList.remove('hidden');
+        }
 
         // Cascada parroquia -> circuito
         $('jefe_parroquia').addEventListener('change', (e) => {
@@ -649,6 +662,14 @@
             selCom.innerHTML = '<option value="">Selecciona tu comunidad</option>';
             $('campoComunidad').classList.add('hidden');
             $('panelCentro').classList.add('hidden');
+            if (par === 'OTRO') {
+                selCirc.innerHTML = '<option value="OTRO">OTRO</option>';
+                selCom.innerHTML = '<option value="OTRO">OTRO</option>';
+                $('campoCircuito').classList.remove('hidden');
+                $('campoComunidad').classList.remove('hidden');
+                mostrarPanelCentroOtro();
+                return;
+            }
             if (par) {
                 listarCircuitosDe(par).forEach(c => {
                     const opt = document.createElement('option');
@@ -668,6 +689,12 @@
             const selCom = $('jefe_comunidad');
             selCom.innerHTML = '<option value="">Selecciona tu comunidad</option>';
             $('panelCentro').classList.add('hidden');
+            if (par === 'OTRO' || circ === 'OTRO') {
+                selCom.innerHTML = '<option value="OTRO">OTRO</option>';
+                $('campoComunidad').classList.remove('hidden');
+                mostrarPanelCentroOtro();
+                return;
+            }
             if (circ) {
                 listarComunidadesDe(par, circ).forEach(c => {
                     const opt = document.createElement('option');
@@ -688,6 +715,7 @@
             const slug = e.target.value;
             const panel = $('panelCentro');
             if (!slug) { panel.classList.add('hidden'); return; }
+            if (slug === 'OTRO') { mostrarPanelCentroOtro(); return; }
             const opt = e.target.selectedOptions[0];
             const centro = opt.dataset.centro || '';
             const mesas = opt.dataset.mesas || '';
@@ -841,15 +869,25 @@
             if (!circuito) { mostrarMensaje('Selecciona tu comuna (circuito comunal).'); return; }
             if (!comunidadSlug) { mostrarMensaje('Selecciona tu comunidad.'); return; }
 
-            const com = TERRITORIO.comunidades[comunidadSlug];
-            if (!com) { mostrarMensaje('La comunidad seleccionada no es válida.'); return; }
+            if (parroquia === 'OTRO' || comunidadSlug === 'OTRO') {
+                // Empleado que no vive en el municipio: todo el territorio queda como OTRO.
+                estado.jefe.parroquia = 'OTRO';
+                estado.jefe.circuito = 'OTRO';
+                estado.jefe.comunidad_slug = 'OTRO';
+                estado.jefe.comunidad_nombre = 'OTRO';
+                estado.jefe.centro_electoral = 'OTRO';
+                estado.jefe.mesas = null;
+            } else {
+                const com = TERRITORIO.comunidades[comunidadSlug];
+                if (!com) { mostrarMensaje('La comunidad seleccionada no es válida.'); return; }
 
-            estado.jefe.parroquia = parroquia;
-            estado.jefe.circuito = circuito;
-            estado.jefe.comunidad_slug = comunidadSlug;
-            estado.jefe.comunidad_nombre = com.nombre;
-            estado.jefe.centro_electoral = com.centro_electoral || null;
-            estado.jefe.mesas = com.mesas || null;
+                estado.jefe.parroquia = parroquia;
+                estado.jefe.circuito = circuito;
+                estado.jefe.comunidad_slug = comunidadSlug;
+                estado.jefe.comunidad_nombre = com.nombre;
+                estado.jefe.centro_electoral = com.centro_electoral || null;
+                estado.jefe.mesas = com.mesas || null;
+            }
 
             // Si estamos editando un jefe existente, precargar TODOS sus afines.
             // Construir tantos bloques como afines tenga (max 100).
