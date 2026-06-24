@@ -30,3 +30,10 @@ escritorio/out/
 UNIFICADO EJE CHL ACT.csv
 alcaldia-admin-default-rtdb-export.json
 habitantes-export-*.json
+
+# Claves de cuenta de servicio Firebase / Google - NUNCA commitear (acceso total al proyecto)
+*firebase-adminsdk*.json
+*service-account*.json
+serviceAccount*.json
+*-sa.json
+.firebase/
