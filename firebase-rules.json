@@ -1,15 +1,19 @@
 {
   "rules": {
     "habitantes": {
-      ".read": "auth != null",
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists()",
       "$habitanteId": {
-        ".write": "auth != null && (newData.exists() || auth.token.email === 'carlos.admin@alcaldia.com')"
+        ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || (auth != null && root.child('operadores').child(auth.uid).exists() && newData.exists())"
       }
     },
     "operadores": {
       ".read": "auth != null",
       "$uid": {
-        ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || $uid === auth.uid"
+        ".write": "auth.token.email === 'carlos.admin@alcaldia.com'",
+        "cambio_obligatorio": {
+          ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || $uid === auth.uid",
+          ".validate": "newData.isBoolean()"
+        }
       }
     },
     "filtros_territoriales": {
@@ -29,6 +33,20 @@
     "config": {
       ".read": "auth != null",
       ".write": "auth.token.email === 'carlos.admin@alcaldia.com'"
+    },
+    "equipos": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      ".write": "auth.token.email === 'carlos.admin@alcaldia.com'"
+    },
+    "visitas": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists()",
+      "$visitaId": {
+        ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || (auth != null && root.child('operadores').child(auth.uid).exists())"
+      }
+    },
+    "historial_cambios": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || (auth != null && root.child('operadores').child(auth.uid).exists())"
     },
     "tickets": {
       ".read": "auth != null",
@@ -174,7 +192,7 @@
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
           "nacionalidad":    { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
           "genero":          { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
-          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 500" },
           "fecha_registro":  { ".validate": "newData.isNumber()" },
           "telefono":         { ".validate": "newData.isString() && newData.val().length <= 30" },
           "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },
@@ -228,7 +246,7 @@
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
           "nacionalidad":    { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
           "genero":          { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
-          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 500" },
           "fecha_registro":  { ".validate": "newData.isNumber()" },
           "telefono":         { ".validate": "newData.isString() && newData.val().length <= 30" },
           "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },
@@ -282,7 +300,7 @@
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
           "nacionalidad":    { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
           "genero":          { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
-          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 500" },
           "fecha_registro":  { ".validate": "newData.isNumber()" },
           "telefono":         { ".validate": "newData.isString() && newData.val().length <= 30" },
           "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },
@@ -335,7 +353,7 @@
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
           "nacionalidad":    { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
           "genero":          { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
-          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 500" },
           "fecha_registro":  { ".validate": "newData.isNumber()" },
           "telefono":         { ".validate": "newData.isString() && newData.val().length <= 30" },
           "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },
@@ -388,7 +406,7 @@
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
           "nacionalidad":    { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
           "genero":          { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
-          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 500" },
           "fecha_registro":  { ".validate": "newData.isNumber()" },
           "telefono":         { ".validate": "newData.isString() && newData.val().length <= 30" },
           "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },
@@ -442,7 +460,7 @@
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
           "nacionalidad":    { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
           "genero":          { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
-          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 500" },
           "fecha_registro":  { ".validate": "newData.isNumber()" },
           "telefono":         { ".validate": "newData.isString() && newData.val().length <= 30" },
           "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },
@@ -496,7 +514,7 @@
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
           "nacionalidad":    { ".validate": "newData.isString() && newData.val().matches(/^[VE]$/)" },
           "genero":          { ".validate": "newData.isString() && newData.val().matches(/^[MF]$/)" },
-          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "orden":           { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 500" },
           "fecha_registro":  { ".validate": "newData.isNumber()" },
           "telefono":         { ".validate": "newData.isString() && newData.val().length <= 30" },
           "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^(19|20)\\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/)" },

@@ -984,6 +984,12 @@
                 }
             }
 
+            // Operador sin perfil (dado de baja) y no admin: sin acceso.
+            if (!esAdmin && !window.perfilOperador) {
+                window.location.href = "index.html";
+                return;
+            }
+
             if (esAdmin) {
                 const btnAdmin = document.getElementById('btnAdminPanel');
                 btnAdmin.classList.remove('hidden');

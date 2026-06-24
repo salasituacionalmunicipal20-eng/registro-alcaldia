@@ -1316,6 +1316,12 @@
                 }
             }
 
+            // Operador sin perfil (dado de baja) y no admin: sin acceso. Evita que misComunas=[] muestre TODO.
+            if (!esAdmin && !window.perfilOperador) {
+                window.location.href = "index.html";
+                return;
+            }
+
             if (esAdmin) {
                 document.getElementById('thResponsable').classList.remove('hidden');
                 const btnAdmin = document.getElementById('btnAdminPanel');
@@ -1704,13 +1710,13 @@
                 const tr = document.createElement('tr');
                 tr.setAttribute('style', filaResaltada);
                 tr.innerHTML = `
-                    <td>${banderitaObs}<strong>${h.nombre} ${h.apellido}</strong></td>
-                    <td>${cedFinal}</td>
-                    <td>${h.ubch || ''}</td>
-                    <td>${h.comunidad}</td>
-                    <td>${h.calle}</td>
-                    <td>${h.telefono}</td>
-                    ${esAdmin ? `<td style="color:#E30613; font-weight:bold;">${h.registrado_por_nombre || 'Desconocido'}</td>` : ""}
+                    <td>${banderitaObs}<strong>${escapeHtml(h.nombre)} ${escapeHtml(h.apellido)}</strong></td>
+                    <td>${escapeHtml(cedFinal)}</td>
+                    <td>${escapeHtml(h.ubch || '')}</td>
+                    <td>${escapeHtml(h.comunidad)}</td>
+                    <td>${escapeHtml(h.calle)}</td>
+                    <td>${escapeHtml(h.telefono)}</td>
+                    ${esAdmin ? `<td style="color:#E30613; font-weight:bold;">${escapeHtml(h.registrado_por_nombre || 'Desconocido')}</td>` : ""}
                     <td class="no-print">
                         <button class="btn-edit" onclick="window.editarRegistro('${id}')">Detalle</button>
                         ${h.cedula ? `<button class="btn-cne" onclick="window.abrirModalCNE('${id}')" title="Consultar CNE y previsualizar correcciones">🆔 CNE</button>` : ""}

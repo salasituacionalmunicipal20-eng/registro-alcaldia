@@ -1275,7 +1275,7 @@
             if (afinesMap[cedulaJefe]) delete afinesMap[cedulaJefe][cedulaAfin];
             abrirModalAfines(cedulaJefe);
             try {
-                await remove(ref(database, `afines_1x10/${cedulaJefe}/${cedulaAfin}`));
+                await remove(ref(database, `afines_1x10_abuelos/${cedulaJefe}/${cedulaAfin}`));
                 // El listener onValue terminara de sincronizar; el modal ya esta correcto.
             } catch (e) {
                 console.error('Error eliminando afín:', e);
