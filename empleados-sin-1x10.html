@@ -172,9 +172,6 @@
             return { e164: d, ok: false };
         }
 
-        // Cédulas excluidas manualmente del reporte (no se muestran aunque sigan en el padrón).
-        // Se comparan por dígitos. Personas de "Sala Situacional" que el usuario pidió sacar.
-        const EXCLUIDOS = new Set(['16370021','33426838','22348836','13320802','32587535']);
         let EMPLEADOS = [];               // de Supabase
         const cedsPorPath = {};           // path -> [cedulas digitos]
         let CEDS_1X10 = new Set();        // union de todas las cedulas en 1x10
@@ -205,7 +202,7 @@
                 const resp = await fetch(`${SB_URL}/rest/v1/empleados?select=cedula,nombres,apellidos,departamento,cargo,telefono,activo&order=nombres.asc&limit=5000`,
                     { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } });
                 const data = await resp.json();
-                EMPLEADOS = (Array.isArray(data) ? data : []).filter(e => e.activo !== false && !EXCLUIDOS.has(soloDigitos(e.cedula))).map(e => ({
+                EMPLEADOS = (Array.isArray(data) ? data : []).filter(e => e.activo !== false).map(e => ({
                     ...e, _ced: soloDigitos(e.cedula),
                     _nombre: `${(e.nombres||'').trim()} ${(e.apellidos||'').trim()}`.trim() || '(sin nombre)'
                 }));
