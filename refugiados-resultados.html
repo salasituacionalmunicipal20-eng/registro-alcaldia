@@ -74,6 +74,23 @@
         </div>
 
         <div id="contenido" class="hidden">
+            <div class="card" style="border-top:4px solid #25D366;">
+                <h2>📣 Compartir / Viralizar</h2>
+                <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:center;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Ftinyurl.com%2F2bjrjtzg" alt="QR registro de refugiados" width="170" height="170" style="border:1px solid #e2e8f0; border-radius:10px; background:#fff; padding:6px;" />
+                    <div style="flex:1; min-width:250px;">
+                        <div style="font-size:13px;color:#64748b;margin-bottom:8px;">Comparte este enlace o el código QR para que reporten a quienes llegan (anónimo o con responsable):</div>
+                        <a href="https://tinyurl.com/2bjrjtzg" target="_blank" rel="noopener" style="font-size:20px;font-weight:800;color:#b91c1c;text-decoration:none;">tinyurl.com/2bjrjtzg</a>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+                            <button id="btnCopiar" class="btn-nav" style="background:#0a2351;">📋 Copiar enlace</button>
+                            <a id="btnWa" class="btn-nav" style="background:#25D366;" target="_blank" rel="noopener" href="#">💬 Compartir por WhatsApp</a>
+                            <a class="btn-nav" style="background:#0a2351;" href="https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=https%3A%2F%2Ftinyurl.com%2F2bjrjtzg&download=1" target="_blank" rel="noopener">⬇️ Descargar QR</a>
+                        </div>
+                        <div style="font-size:11px;color:#94a3b8;margin-top:10px;word-break:break-all;">Enlace completo: https://salasituacionalmunicipal20-eng.github.io/registro-alcaldia/refugiados.html</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
                 <div class="stats">
@@ -82,7 +99,7 @@
                     <div class="stat"><div class="num" id="stVuln">—</div><div class="lbl">Reportes con vulnerabilidad</div></div>
                     <div class="stat b"><div class="num" id="stAnon">—</div><div class="lbl">Reportes anónimos</div></div>
                 </div>
-                <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Link público para viralizar: <b>refugiados.html</b> (crear TinyURL). Cada reporte aparece aquí en tiempo real.</div>
+                <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Cada reporte aparece aquí en tiempo real. Comparte el enlace de arriba (o el QR) para viralizar.</div>
             </div>
 
             <div class="card">
@@ -169,6 +186,21 @@
             escuchar();
         });
         $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch(e){} location.href = 'index.html'; });
+
+        // Compartir / viralizar
+        const LINK_PUBLICO = 'https://tinyurl.com/2bjrjtzg';
+        (function () {
+            const bc = $('btnCopiar');
+            if (bc) bc.addEventListener('click', async () => {
+                try { await navigator.clipboard.writeText(LINK_PUBLICO); bc.textContent = '✓ Copiado'; setTimeout(() => { bc.textContent = '📋 Copiar enlace'; }, 1500); }
+                catch (e) { prompt('Copia el enlace:', LINK_PUBLICO); }
+            });
+            const bw = $('btnWa');
+            if (bw) {
+                const msg = '🆘 Registro de Refugiados - Alcaldía de Cristóbal Rojas. Si llegaste por la emergencia o estás recibiendo a alguien, regístralo aquí: ' + LINK_PUBLICO;
+                bw.href = 'https://wa.me/?text=' + encodeURIComponent(msg);
+            }
+        })();
 
         function escuchar() {
             onValue(ref(database, 'refugiados'), (snap) => {
