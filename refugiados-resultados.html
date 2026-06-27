@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Refugiados — Reporte en vivo</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #7f1d1d; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-nav:hover { background: rgba(255,255,255,0.25); }
+        .wrap { max-width: 1300px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #7f1d1d; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        .stats { display: flex; gap: 14px; flex-wrap: wrap; }
+        .stat { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 16px; min-width: 150px; }
+        .stat .num { font-size: 26px; font-weight: 800; color: #b91c1c; }
+        .stat.b .num { color: #0a2351; }
+        .stat .lbl { font-size: 12px; color: #64748b; font-weight: 600; }
+        .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #16a34a; font-weight: 700; }
+        .live .dot { width: 9px; height: 9px; border-radius: 50%; background: #16a34a; animation: pulso 1.4s infinite; }
+        @keyframes pulso { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        .filtros { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
+        @media (max-width: 760px) { .filtros { grid-template-columns: 1fr; } }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #7f1d1d; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; position: sticky; top: 0; }
+        tbody tr:hover { background: #fff7ed; }
+        .btn-wa { background: #25D366; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; text-decoration: none; white-space: nowrap; }
+        .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+        .tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #fee2e2; color: #991b1b; margin: 1px 2px; }
+        .tag.n { background: #dbeafe; color: #1e3a8a; }
+        .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 10px 0; color: #fff; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .paginacion .info { font-size: 13px; color: #64748b; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #b91c1c; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #fff; border-radius: 12px; max-width: 620px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px; }
+        .modal h3 { color: #7f1d1d; margin-bottom: 10px; }
+        .modal .fila { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .modal .fila .k { color: #64748b; font-weight: 600; }
+        .modal .fila .val { text-align: right; font-weight: 600; }
+        .modal .cerrar { margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>🆘 Refugiados — Reporte en vivo</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden">
+            <h2 style="color:#b91c1c;">Acceso restringido</h2><p>Solo para administradores.</p>
+        </div>
+
+        <div id="contenido" class="hidden">
+            <div class="card">
+                <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
+                <div class="stats">
+                    <div class="stat"><div class="num" id="stReportes">—</div><div class="lbl">Reportes</div></div>
+                    <div class="stat b"><div class="num" id="stPersonas">—</div><div class="lbl">Personas (con grupo familiar)</div></div>
+                    <div class="stat"><div class="num" id="stVuln">—</div><div class="lbl">Reportes con vulnerabilidad</div></div>
+                    <div class="stat b"><div class="num" id="stAnon">—</div><div class="lbl">Reportes anónimos</div></div>
+                </div>
+                <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Link público para viralizar: <b>refugiados.html</b> (crear TinyURL). Cada reporte aparece aquí en tiempo real.</div>
+            </div>
+
+            <div class="card">
+                <h2>Reportes</h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnPdf" class="btn-exp" style="background:#b91c1c;">📄 Descargar PDF</button>
+                </div>
+                <div class="filtros">
+                    <div><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, dirección…" autocomplete="off" /></div>
+                    <div><label>Procedencia</label><select id="fProc"><option value="">Todas</option></select></div>
+                    <div><label>Comuna (aquí)</label><select id="fComuna"><option value="">Todas</option></select></div>
+                </div>
+                <div style="overflow-x:auto; margin-top:14px;">
+                    <table>
+                        <thead><tr>
+                            <th>Nombre</th><th>Cédula</th><th>Procedencia</th><th>Dónde se queda</th>
+                            <th style="text-align:center;">Personas</th><th>Vulnerabilidad</th><th>Teléfono</th><th>Fecha</th><th></th>
+                        </tr></thead>
+                        <tbody id="tbody"><tr><td colspan="9" class="estado-box">Cargando…</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        const soloDig = (s) => (s || '').replace(/\D/g, '');
+        const toArr = (x) => Array.isArray(x) ? x : (x ? Object.values(x) : []);
+        const primerNombre = (n) => (n || '').trim().split(/\s+/)[0] || 'persona';
+
+        function edadDe(fecha) {
+            if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return '';
+            const [a, m, d] = fecha.split('-').map(Number);
+            const h = new Date(); let e = h.getFullYear() - a;
+            if (h.getMonth() + 1 < m || (h.getMonth() + 1 === m && h.getDate() < d)) e--;
+            return (e >= 0 && e <= 120) ? e : '';
+        }
+        function normalizarTel(raw) {
+            const d = soloDig(raw); if (!d) return { e164: '', ok: false };
+            if (d.length === 12 && d.startsWith('58')) return { e164: d, ok: true };
+            if (d.length === 11 && d.startsWith('0')) return { e164: '58' + d.slice(1), ok: true };
+            if (d.length === 10 && d.startsWith('4')) return { e164: '58' + d, ok: true };
+            return { e164: d, ok: false };
+        }
+
+        let REGS = [];        // [{id, ...}]
+        let pagina = 1; const TAM = 50;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuper;
+            if (!esSuper) {
+                try { const s = await get(child(ref(database), `operadores/${user.uid}/rol`)); permitido = (s.exists() && s.val() === 'admin'); } catch (e) { permitido = false; }
+            }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            escuchar();
+        });
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch(e){} location.href = 'index.html'; });
+
+        function escuchar() {
+            onValue(ref(database, 'refugiados'), (snap) => {
+                const v = snap.val() || {};
+                REGS = Object.entries(v).map(([id, r]) => ({ id, ...r }))
+                    .sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
+                poblarFiltros();
+                render();
+            }, () => { REGS = []; render(); });
+        }
+
+        function poblarFiltros() {
+            const procs = [...new Set(REGS.map(r => r.procedencia).filter(Boolean))].sort();
+            const coms = [...new Set(REGS.map(r => r.comunidad_nombre).filter(Boolean))].sort();
+            const llenar = (sel, arr) => { const prev = sel.value; sel.innerHTML = '<option value="">Todas</option>' + arr.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join(''); if (prev) sel.value = prev; };
+            llenar($('fProc'), procs); llenar($('fComuna'), coms);
+        }
+
+        function filtrados() {
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const fp = $('fProc').value, fc = $('fComuna').value;
+            return REGS.filter(r => {
+                if (fp && r.procedencia !== fp) return false;
+                if (fc && r.comunidad_nombre !== fc) return false;
+                if (q) { const blob = `${r.nombres||''} ${r.apellidos||''} ${r.cedula||''} ${r.direccion||''} ${r.telefono||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
+                return true;
+            });
+        }
+
+        function render() {
+            // KPIs
+            $('stReportes').textContent = REGS.length;
+            $('stPersonas').textContent = REGS.reduce((s, r) => s + (Number(r.total_personas) || (1 + toArr(r.grupo_familiar).length)), 0);
+            $('stVuln').textContent = REGS.filter(r => toArr(r.vulnerabilidad).length > 0).length;
+            $('stAnon').textContent = REGS.filter(r => r.reporta_anonimo).length;
+
+            const lista = filtrados();
+            const total = lista.length, totalPag = Math.max(1, Math.ceil(total / TAM));
+            if (pagina > totalPag) pagina = totalPag;
+            const ini = (pagina - 1) * TAM, slice = lista.slice(ini, ini + TAM);
+            const tb = $('tbody');
+            if (total === 0) { tb.innerHTML = `<tr><td colspan="9" class="estado-box">Sin reportes con estos filtros.</td></tr>`; $('paginacion').innerHTML = ''; return; }
+
+            tb.innerHTML = slice.map(r => {
+                const tel = normalizarTel(r.telefono);
+                const wa = tel.ok ? `<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${tel.e164}">💬 WA</a>` : (r.telefono ? esc(r.telefono) : '—');
+                const vuln = toArr(r.vulnerabilidad).map(x => `<span class="tag">${esc(x)}</span>`).join('') || '—';
+                const donde = `${esc(r.direccion || '—')}${r.comunidad_nombre ? '<br><b>' + esc(r.comunidad_nombre) + '</b>' : ''}`;
+                const fecha = r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+                return `<tr>
+                    <td><b>${esc((r.nombres||'') + ' ' + (r.apellidos||''))}</b></td>
+                    <td>${esc(r.cedula || '—')}</td>
+                    <td>${esc(r.procedencia || '—')}</td>
+                    <td>${donde}</td>
+                    <td style="text-align:center;font-weight:800;">${esc(r.total_personas || (1 + toArr(r.grupo_familiar).length))}</td>
+                    <td>${vuln}</td>
+                    <td>${wa}</td>
+                    <td>${esc(fecha)}</td>
+                    <td><button class="btn-ver" data-id="${esc(r.id)}">Ver</button></td>
+                </tr>`;
+            }).join('');
+
+            tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+
+            const desde = ini + 1, hasta = Math.min(ini + TAM, total);
+            $('paginacion').innerHTML = `<button id="pgP" ${pagina<=1?'disabled':''}>← Anterior</button><span class="info">${desde}–${hasta} de ${total} · pág ${pagina}/${totalPag}</span><button id="pgN" ${pagina>=totalPag?'disabled':''}>Siguiente →</button>`;
+            const p = $('pgP'), n = $('pgN');
+            if (p) p.addEventListener('click', () => { if (pagina > 1) { pagina--; render(); } });
+            if (n) n.addEventListener('click', () => { if (pagina < totalPag) { pagina++; render(); } });
+        }
+
+        function fila(k, val) { return `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val || '—')}</span></div>`; }
+        function verDetalle(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const grupo = toArr(r.grupo_familiar);
+            const reporta = r.reporta_anonimo ? 'Anónimo' : `${r.reporta_nombre || '—'}${r.reporta_ubch ? ' · UBCH: ' + r.reporta_ubch : ''}${r.reporta_telefono ? ' · Tel: ' + r.reporta_telefono : ''}`;
+            $('modal').innerHTML = `
+                <h3>${esc((r.nombres||'') + ' ' + (r.apellidos||''))}</h3>
+                ${fila('Cédula', r.cedula)}
+                ${fila('Edad', edadDe(r.fecha_nacimiento) || '—')}${fila('Sexo', r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '—')}
+                ${fila('Teléfono', r.telefono)}
+                ${fila('Procedencia', r.procedencia)}
+                ${fila('Dirección', r.direccion)}
+                ${fila('Parroquia / Comuna', `${r.parroquia||'—'} / ${r.circuito||'—'}`)}
+                ${fila('Comunidad', r.comunidad_nombre)}${fila('Centro electoral', r.centro_electoral)}
+                ${fila('Vulnerabilidad', toArr(r.vulnerabilidad).join(', '))}
+                ${fila('Necesidades', toArr(r.necesidades).join(', '))}
+                ${fila('Reportado por', reporta)}
+                <div style="margin-top:12px;font-weight:800;color:#7f1d1d;">Grupo familiar (${grupo.length})</div>
+                ${grupo.length ? grupo.map((g, i) => `<div class="fila"><span class="k">#${i+1} ${esc((g.nombres||'') + ' ' + (g.apellidos||''))}</span><span class="val">${esc(g.cedula||'s/c')}${g.edad?(' · '+g.edad+'a'):''}${g.sexo?(' · '+g.sexo):''}</span></div>`).join('') : '<div class="fila"><span class="k">Sin acompañantes</span></div>'}
+                <button class="btn-nav cerrar" style="background:#7f1d1d;" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+        }
+        $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        ['fBuscar','fProc','fComuna'].forEach(id => { $(id).addEventListener('input', () => { pagina = 1; render(); }); $(id).addEventListener('change', () => { pagina = 1; render(); }); });
+
+        // ---- Sanitizador PDF (sin escapes unicode problemáticos) ----
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s); try { t = t.normalize('NFC'); } catch (e) {}
+            let out = '';
+            for (const ch of t) {
+                const c = ch.codePointAt(0);
+                if (c === 0x201C || c === 0x201D || c === 0x2033) out += '"';
+                else if (c === 0x2018 || c === 0x2019 || c === 0x2032) out += "'";
+                else if (c === 0x2013 || c === 0x2014) out += '-';
+                else if (c === 0x2026) out += '...';
+                else if (c === 0x00A0) out += ' ';
+                else if (c < 32 || c === 127) out += ' ';
+                else if (c <= 255) out += ch;
+                else out += '';
+            }
+            return out.replace(/ {2,}/g, ' ').trim();
+        }
+
+        // ---- Excel: 2 hojas (Reportes + Todas las personas) ----
+        $('btnExcel').addEventListener('click', () => {
+            if (typeof XLSX === 'undefined') { alert('SheetJS no cargó.'); return; }
+            const ahora = new Date(); const fechaLarga = ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' });
+            const NAVY='0A2351', ROJO='B91C1C', ZEBRA='FEF2F2', TEXTO='0F172A', GRIS='64748B';
+            const thin = { style:'thin', color:{rgb:'E5C5C5'} }, borde = { top:thin,bottom:thin,left:thin,right:thin };
+            const estB = { font:{bold:true,sz:15,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:ROJO}}, alignment:{horizontal:'center',vertical:'center'} };
+            const estS = { font:{italic:true,sz:10,color:{rgb:GRIS}}, alignment:{horizontal:'center',vertical:'center'} };
+            const estH = { font:{bold:true,sz:11,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:NAVY}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:borde };
+            const mkSheet = (titulo, header, filas, cols) => {
+                const data = [[titulo].concat(Array(header.length-1).fill('')), [`Generado ${fechaLarga} · ${filas.length} fila(s)`].concat(Array(header.length-1).fill('')), header, ...filas];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const setS=(r,c,s)=>{const a=XLSX.utils.encode_cell({r,c}); if(!ws[a])ws[a]={t:'s',v:''}; ws[a].s=s;};
+                for (let c=0;c<header.length;c++){ setS(0,c,estB); setS(1,c,estS); setS(2,c,estH); }
+                for (let r=3;r<data.length;r++){ const fondo=(r%2===0)?{fill:{fgColor:{rgb:ZEBRA}}}:{}; for(let c=0;c<header.length;c++) setS(r,c,{font:{sz:10,color:{rgb:TEXTO}},alignment:{vertical:'center',wrapText:true},border:borde,...fondo}); }
+                ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}},{s:{r:1,c:0},e:{r:1,c:header.length-1}}];
+                ws['!cols']=cols.map(w=>({wch:w}));
+                ws['!autofilter']={ref:`A3:${XLSX.utils.encode_col(header.length-1)}${data.length}`};
+                return ws;
+            };
+            const hdr1 = ['Fecha','Nombre','Apellidos','Cédula','Edad','Sexo','Teléfono','Procedencia','Dirección','Parroquia','Comuna','Comunidad','Personas','Vulnerabilidad','Necesidades','Reporta'];
+            const f1 = REGS.map(r => [
+                r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '',
+                r.nombres||'', r.apellidos||'', String(r.cedula||''), String(edadDe(r.fecha_nacimiento)||''),
+                r.sexo||'', String(r.telefono||''), r.procedencia||'', r.direccion||'', r.parroquia||'', r.circuito||'', r.comunidad_nombre||'',
+                String(r.total_personas || (1 + toArr(r.grupo_familiar).length)),
+                toArr(r.vulnerabilidad).join(', '), toArr(r.necesidades).join(', '),
+                r.reporta_anonimo ? 'Anónimo' : ((r.reporta_nombre||'') + (r.reporta_ubch?(' / '+r.reporta_ubch):''))
+            ]);
+            const hdr2 = ['Rol','Nombre','Apellidos','Cédula','Edad','Sexo','Pertenece a','Procedencia','Dónde se queda'];
+            const f2 = [];
+            REGS.forEach(r => {
+                const ref = `${r.nombres||''} ${r.apellidos||''}`.trim();
+                const donde = `${r.direccion||''}${r.comunidad_nombre?(' ('+r.comunidad_nombre+')'):''}`;
+                f2.push(['Principal', r.nombres||'', r.apellidos||'', String(r.cedula||''), String(edadDe(r.fecha_nacimiento)||''), r.sexo||'', ref, r.procedencia||'', donde]);
+                toArr(r.grupo_familiar).forEach(g => f2.push(['Acompañante', g.nombres||'', g.apellidos||'', String(g.cedula||''), String(g.edad||''), g.sexo||'', ref, r.procedencia||'', donde]));
+            });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — REPORTES', hdr1, f1, [20,18,18,12,7,7,14,22,30,16,16,18,9,24,24,24]), 'Reportes');
+            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — TODAS LAS PERSONAS', hdr2, f2, [13,18,18,12,7,7,24,18,34]), 'Todas las personas');
+            XLSX.writeFile(wb, `refugiados_${ahora.toISOString().slice(0,10)}.xlsx`);
+        });
+
+        // ---- PDF imprimible ----
+        $('btnPdf').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay reportes para exportar con estos filtros.'); return; }
+            const doc = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'landscape' });
+            const body = lista.map((r, i) => [
+                String(i + 1),
+                _safePdf((r.nombres||'') + ' ' + (r.apellidos||'')),
+                _safePdf(String(r.cedula || '-')),
+                _safePdf(String(r.total_personas || (1 + toArr(r.grupo_familiar).length))),
+                _safePdf(r.procedencia || '-'),
+                _safePdf((r.direccion || '-') + (r.comunidad_nombre ? (' / ' + r.comunidad_nombre) : '')),
+                _safePdf(toArr(r.vulnerabilidad).join(', ') || '-'),
+                _safePdf(r.telefono || '-')
+            ]);
+            jsPDF.API.autoTable.call(doc, {
+                head: [['#', 'Nombre y Apellido', 'Cedula', 'Pers.', 'Procedencia', 'Donde se queda', 'Vulnerabilidad', 'Telefono']],
+                body, startY: 55, margin: { top: 55, bottom: 16, left: 12, right: 12 },
+                theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.8, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
+                headStyles: { fillColor: [127,29,29], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9, halign: 'center' },
+                alternateRowStyles: { fillColor: [254,242,242] },
+                columnStyles: { 0:{cellWidth:9,halign:'center'}, 1:{cellWidth:45}, 2:{cellWidth:22,halign:'center'}, 3:{cellWidth:12,halign:'center'}, 4:{cellWidth:34}, 5:{cellWidth:62}, 6:{cellWidth:40}, 7:{cellWidth:26,halign:'center'} },
+                didDrawPage: () => {
+                    dibujarHeaderPDF(doc, { titulo: 'Censo de Refugiados', subtitulo: _safePdf(`${lista.length} reporte(s)`) });
+                    dibujarFooterPDF(doc);
+                }
+            });
+            doc.save(`refugiados_${new Date().toISOString().slice(0,10)}.pdf`);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro de Refugiados — Alcaldía de Cristóbal Rojas</title>
+    <meta name="description" content="Registro de personas que llegan al Municipio Cristóbal Rojas en calidad de refugiado tras el terremoto. Alcaldía de Cristóbal Rojas." />
+    <script defer src="territorio-data.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #eef2f7; color: #0f172a; line-height: 1.5; padding-bottom: 40px; }
+        .cintillo { background: #111827; color: #fff; text-align: center; font-size: 11px; font-weight: bold; letter-spacing: .5px; padding: 6px 10px; }
+        .hero { background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%); color: #fff; padding: 22px 18px; text-align: center; }
+        .hero h1 { font-size: 21px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; }
+        .hero p { font-size: 13px; opacity: .95; margin-top: 6px; }
+        .wrap { max-width: 640px; margin: 0 auto; padding: 16px; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 14px; border-top: 4px solid #b91c1c; }
+        .card h2 { font-size: 14px; font-weight: 800; color: #b91c1c; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 4px; }
+        .card .sub { font-size: 12px; color: #64748b; margin-bottom: 12px; }
+        label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin: 10px 0 4px; }
+        input, select, textarea { width: 100%; padding: 12px 13px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: #b91c1c; background: #fff; }
+        textarea { min-height: 70px; resize: vertical; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .row-ced { display: grid; grid-template-columns: 70px 1fr; gap: 8px; }
+        .hint { font-size: 11.5px; color: #64748b; margin-top: 3px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .chip { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 999px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none; }
+        .chip input { width: auto; }
+        .chip.on { background: #fee2e2; border-color: #b91c1c; color: #7f1d1d; }
+        .radio-grp { display: flex; gap: 10px; flex-wrap: wrap; }
+        .radio-card { flex: 1; min-width: 160px; border: 2px solid #cbd5e1; border-radius: 10px; padding: 12px; cursor: pointer; font-size: 14px; font-weight: 600; }
+        .radio-card.on { border-color: #b91c1c; background: #fef2f2; }
+        .acomp { border: 1px dashed #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #fafafa; position: relative; }
+        .acomp .num { font-size: 12px; font-weight: 800; color: #b91c1c; margin-bottom: 6px; }
+        .btn-quitar { position: absolute; top: 8px; right: 8px; background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 4px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn { display: block; width: 100%; border: none; border-radius: 10px; padding: 15px; font-size: 16px; font-weight: 800; cursor: pointer; }
+        .btn-add { background: #e0e7ff; color: #3730a3; margin-top: 6px; }
+        .btn-enviar { background: #16a34a; color: #fff; margin-top: 8px; box-shadow: 0 4px 12px rgba(22,163,74,.35); }
+        .btn-enviar:disabled { opacity: .6; }
+        .msg { padding: 11px 13px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; display: none; }
+        .msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
+        .panel-centro { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 13px; }
+        .panel-centro .t { font-weight: 800; color: #166534; font-size: 11px; text-transform: uppercase; }
+        .hidden { display: none !important; }
+        .exito { text-align: center; padding: 40px 20px; }
+        .exito .ico { font-size: 60px; }
+        .exito h2 { color: #16a34a; font-size: 22px; margin: 10px 0; }
+        .req { color: #b91c1c; }
+    </style>
+</head>
+<body>
+    <div class="cintillo">REPÚBLICA BOLIVARIANA DE VENEZUELA · ESTADO MIRANDA · ALCALDÍA DE CRISTÓBAL ROJAS</div>
+    <div class="hero">
+        <h1>🆘 Registro de Refugiados</h1>
+        <p>Si llegaste a nuestro municipio por la emergencia, o estás recibiendo a alguien, regístralo aquí. Tu información nos ayuda a llevarte ayuda.</p>
+    </div>
+
+    <div class="wrap" id="formWrap">
+
+        <!-- QUIÉN REPORTA -->
+        <div class="card">
+            <h2>¿Quién está reportando?</h2>
+            <div class="sub">Para coordinar la ayuda. Puedes hacerlo de forma anónima.</div>
+            <div class="radio-grp">
+                <label class="radio-card on" id="rc_resp"><input type="radio" name="reporta" value="responsable" checked style="width:auto;margin-right:6px;">Soy responsable / UBCH / parte del gobierno</label>
+                <label class="radio-card" id="rc_anon"><input type="radio" name="reporta" value="anonimo" style="width:auto;margin-right:6px;">Prefiero reportar anónimo</label>
+            </div>
+            <div id="bloqueResponsable">
+                <label>UBCH / Punto donde se recibe</label>
+                <input id="r_ubch" type="text" placeholder="Nombre de la UBCH o punto de recepción" autocomplete="off" />
+                <label>Tu nombre y apellido</label>
+                <input id="r_nombre" type="text" placeholder="Nombre del responsable" autocomplete="off" />
+                <div class="row2">
+                    <div><label>Tu cédula</label><input id="r_cedula" type="tel" inputmode="numeric" placeholder="12345678" maxlength="10" autocomplete="off" /></div>
+                    <div><label>Tu teléfono</label><input id="r_telefono" type="tel" inputmode="numeric" placeholder="04141234567" maxlength="11" autocomplete="off" /></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DATOS DEL REFUGIADO -->
+        <div class="card">
+            <h2>Datos de la persona refugiada</h2>
+            <div class="sub">La persona que llegó al municipio por la emergencia.</div>
+            <label>Cédula <span class="hint">(buscamos sus datos en el CNE)</span></label>
+            <div class="row-ced">
+                <select id="ref_nacionalidad"><option value="V">V</option><option value="E">E</option></select>
+                <input id="ref_cedula" type="tel" inputmode="numeric" placeholder="12345678" maxlength="10" autocomplete="off" />
+            </div>
+            <div class="hint" id="ref_cne_hint"></div>
+            <div class="row2">
+                <div><label>Nombres <span class="req">*</span></label><input id="ref_nombres" type="text" placeholder="Si el CNE no llena, escríbelo" autocomplete="off" /></div>
+                <div><label>Apellidos <span class="req">*</span></label><input id="ref_apellidos" type="text" placeholder="Si el CNE no llena, escríbelos" autocomplete="off" /></div>
+            </div>
+            <div class="row2">
+                <div><label>Teléfono</label><input id="ref_telefono" type="tel" inputmode="numeric" placeholder="04141234567" maxlength="11" autocomplete="off" /></div>
+                <div><label>Sexo</label><select id="ref_sexo"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option></select></div>
+            </div>
+            <div class="row2">
+                <div><label>Fecha de nacimiento</label><input id="ref_fecha" type="date" /></div>
+                <div><label>¿De dónde viene? (procedencia)</label>
+                    <select id="ref_procedencia"></select>
+                </div>
+            </div>
+        </div>
+
+        <!-- VULNERABILIDAD -->
+        <div class="card">
+            <h2>Condición / Vulnerabilidad</h2>
+            <div class="sub">Marca lo que aplique (para priorizar la ayuda).</div>
+            <div class="chips" id="chipsVuln"></div>
+        </div>
+
+        <!-- NECESIDADES -->
+        <div class="card">
+            <h2>Necesidades urgentes</h2>
+            <div class="sub">¿Qué necesitan con más urgencia?</div>
+            <div class="chips" id="chipsNec"></div>
+        </div>
+
+        <!-- DÓNDE SE QUEDA -->
+        <div class="card">
+            <h2>¿Dónde se está quedando?</h2>
+            <div class="sub">Dirección dentro del Municipio Cristóbal Rojas.</div>
+            <label>Dirección completa <span class="req">*</span></label>
+            <textarea id="ref_direccion" placeholder="Sector, calle, casa/edificio, punto de referencia…"></textarea>
+            <label>Parroquia</label>
+            <select id="jefe_parroquia"><option value="">Selecciona la parroquia</option></select>
+            <div id="campoCircuito" class="hidden"><label>Comuna</label><select id="jefe_circuito"><option value="">Selecciona la comuna</option></select></div>
+            <div id="campoComunidad" class="hidden"><label>Comunidad</label><select id="jefe_comunidad"><option value="">Selecciona la comunidad</option></select></div>
+            <div id="panelCentro" class="hidden"></div>
+        </div>
+
+        <!-- GRUPO FAMILIAR -->
+        <div class="card">
+            <h2>¿Llega acompañado? (grupo familiar)</h2>
+            <div class="sub">Agrega a las personas que llegaron con él/ella. Si vino solo, deja esto vacío.</div>
+            <div id="acompanantes"></div>
+            <button type="button" class="btn btn-add" id="btnAddAcomp">＋ Agregar acompañante</button>
+        </div>
+
+        <div id="msg" class="msg"></div>
+        <button type="button" class="btn btn-enviar" id="btnEnviar">Enviar registro</button>
+    </div>
+
+    <!-- ÉXITO -->
+    <div class="wrap hidden" id="exitoWrap">
+        <div class="card">
+            <div class="exito">
+                <div class="ico">✅</div>
+                <h2>¡Registro enviado!</h2>
+                <p>Gracias. La Alcaldía de Cristóbal Rojas ya tiene el reporte y coordinará la ayuda.</p>
+                <button type="button" class="btn btn-enviar" id="btnOtro" style="margin-top:20px;">Registrar otra persona</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const v = (id) => ($(id) && $(id).value || '').trim();
+        const soloDig = (s) => (s || '').replace(/\D/g, '');
+        const CNE_ENDPOINT = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co/functions/v1/consultar-cedula';
+
+        const ESTADOS = ['La Guaira (Vargas)','Distrito Capital','Miranda','Aragua','Carabobo','Anzoátegui','Amazonas','Apure','Barinas','Bolívar','Cojedes','Delta Amacuro','Falcón','Guárico','Lara','Mérida','Monagas','Nueva Esparta','Portuguesa','Sucre','Táchira','Trujillo','Yaracuy','Zulia','Otro / No sé'];
+        const VULN = ['Niños/as','Embarazadas','Adultos mayores','Personas con discapacidad','Enfermos crónicos'];
+        const NEC = ['Alimentos','Agua','Medicinas','Colchones / cobijas','Ropa','Artículos de higiene','Otro'];
+
+        // ---- Poblar procedencia, vulnerabilidad, necesidades ----
+        (function init() {
+            const sp = $('ref_procedencia');
+            ESTADOS.forEach(e => { const o = document.createElement('option'); o.value = e; o.textContent = e; sp.appendChild(o); });
+            sp.value = 'La Guaira (Vargas)';
+            const mkChips = (cont, arr, prefix) => arr.forEach((t, i) => {
+                const lbl = document.createElement('label');
+                lbl.className = 'chip';
+                lbl.innerHTML = `<input type="checkbox" value="${t}"> ${t}`;
+                lbl.querySelector('input').addEventListener('change', (e) => lbl.classList.toggle('on', e.target.checked));
+                cont.appendChild(lbl);
+            });
+            mkChips($('chipsVuln'), VULN, 'v');
+            mkChips($('chipsNec'), NEC, 'n');
+        })();
+
+        function chipsSeleccionados(contId) {
+            return Array.from($(contId).querySelectorAll('input:checked')).map(c => c.value);
+        }
+
+        // ---- Reporta: responsable vs anónimo ----
+        document.querySelectorAll('input[name="reporta"]').forEach(r => {
+            r.addEventListener('change', () => {
+                const anon = document.querySelector('input[name="reporta"]:checked').value === 'anonimo';
+                $('bloqueResponsable').classList.toggle('hidden', anon);
+                $('rc_resp').classList.toggle('on', !anon);
+                $('rc_anon').classList.toggle('on', anon);
+            });
+        });
+
+        // ---- CNE ----
+        async function consultarCNE(cedula, nacionalidad) {
+            try {
+                const resp = await fetch(CNE_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cedula, nacionalidad }) });
+                if (!resp.ok) return null;
+                const json = await resp.json();
+                if (!json || json.error || !json.data) return null;
+                return json.data;
+            } catch (e) { return null; }
+        }
+        function fechaCneValida(f) { return f && /^\d{4}-\d{2}-\d{2}$/.test(f) && f !== '0000-00-00' && +f.slice(0,4) >= 1900 && +f.slice(0,4) <= 2030; }
+        // Engancha el CNE al blur de un input de cédula -> llena nombre/apellido/fecha si están vacíos.
+        function engancharCNE(idCed, idNom, idApe, idFecha, idNac, hintId) {
+            const ced = $(idCed); if (!ced) return;
+            ced.addEventListener('blur', async () => {
+                const num = soloDig(ced.value); if (num.length < 4 || num.length > 10) return;
+                const nom = $(idNom), ape = $(idApe);
+                if ((nom && nom.value.trim()) || (ape && ape.value.trim())) return;
+                const nac = (idNac && $(idNac) ? $(idNac).value : 'V') || 'V';
+                if (hintId) $(hintId).textContent = 'Consultando CNE…';
+                const bg = ced.style.background; ced.style.background = '#fef3c7';
+                const d = await consultarCNE(num, nac);
+                ced.style.background = bg;
+                if (!d) { if (hintId) $(hintId).textContent = 'No se encontró en el CNE — escríbelo a mano.'; return; }
+                if (nom && !nom.value.trim()) nom.value = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
+                if (ape && !ape.value.trim()) ape.value = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
+                if (idFecha && $(idFecha) && !$(idFecha).value && fechaCneValida(d.fecha_nac)) $(idFecha).value = d.fecha_nac;
+                if (hintId) $(hintId).textContent = '✓ Datos encontrados en el CNE.';
+            });
+        }
+        engancharCNE('ref_cedula', 'ref_nombres', 'ref_apellidos', 'ref_fecha', 'ref_nacionalidad', 'ref_cne_hint');
+        engancharCNE('r_cedula', 'r_nombre', null, null, null, null);
+
+        // ---- Cascada territorial (comuna/comunidad de DONDE SE QUEDA) ----
+        function T() { return window.TERRITORIO && window.TERRITORIO.comunidades ? window.TERRITORIO.comunidades : {}; }
+        function listarParroquias() { const s = new Set(); Object.values(T()).forEach(c => { if (c.activo) s.add(c.parroquia); }); return [...s].sort(); }
+        function listarCircuitosDe(par) { const s = new Set(); Object.values(T()).forEach(c => { if (c.activo && c.parroquia === par) s.add(c.circuito_comunal); }); return [...s].sort(); }
+        function listarComunidadesDe(par, circ) { const a = []; Object.entries(T()).forEach(([slug, c]) => { if (c.activo && c.parroquia === par && c.circuito_comunal === circ) a.push({ slug, nombre: c.nombre, centro_electoral: c.centro_electoral, mesas: c.mesas }); }); a.sort((x, y) => x.nombre.localeCompare(y.nombre, 'es')); return a; }
+        function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+        function panelOtro() { const p = $('panelCentro'); p.className = 'panel-centro'; p.innerHTML = '<div class="t">Centro Electoral</div><div>OTRO / No sé</div>'; p.classList.remove('hidden'); }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const sp = $('jefe_parroquia');
+            listarParroquias().forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; sp.appendChild(o); });
+            const oo = document.createElement('option'); oo.value = 'OTRO'; oo.textContent = 'OTRO / No sé'; sp.appendChild(oo);
+        });
+        $('jefe_parroquia').addEventListener('change', (e) => {
+            const par = e.target.value, selC = $('jefe_circuito'), selCom = $('jefe_comunidad');
+            selC.innerHTML = '<option value="">Selecciona la comuna</option>';
+            selCom.innerHTML = '<option value="">Selecciona la comunidad</option>';
+            $('campoComunidad').classList.add('hidden'); $('panelCentro').classList.add('hidden');
+            if (par === 'OTRO') { selC.innerHTML = '<option value="OTRO">OTRO</option>'; selCom.innerHTML = '<option value="OTRO">OTRO</option>'; $('campoCircuito').classList.remove('hidden'); $('campoComunidad').classList.remove('hidden'); panelOtro(); return; }
+            if (par) { listarCircuitosDe(par).forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; selC.appendChild(o); }); $('campoCircuito').classList.remove('hidden'); }
+            else $('campoCircuito').classList.add('hidden');
+        });
+        $('jefe_circuito').addEventListener('change', (e) => {
+            const par = v('jefe_parroquia'), circ = e.target.value, selCom = $('jefe_comunidad');
+            selCom.innerHTML = '<option value="">Selecciona la comunidad</option>'; $('panelCentro').classList.add('hidden');
+            if (par === 'OTRO' || circ === 'OTRO') { selCom.innerHTML = '<option value="OTRO">OTRO</option>'; $('campoComunidad').classList.remove('hidden'); panelOtro(); return; }
+            if (circ) { listarComunidadesDe(par, circ).forEach(c => { const o = document.createElement('option'); o.value = c.slug; o.textContent = c.nombre; o.dataset.centro = c.centro_electoral || ''; o.dataset.nombre = c.nombre; selCom.appendChild(o); }); $('campoComunidad').classList.remove('hidden'); }
+            else $('campoComunidad').classList.add('hidden');
+        });
+        $('jefe_comunidad').addEventListener('change', (e) => {
+            const slug = e.target.value, p = $('panelCentro');
+            if (!slug) { p.classList.add('hidden'); return; }
+            if (slug === 'OTRO') { panelOtro(); return; }
+            const opt = e.target.selectedOptions[0], centro = opt.dataset.centro || '';
+            p.className = 'panel-centro';
+            p.innerHTML = `<div class="t">Centro Electoral (UBCH)</div><div>${centro ? escapeHtml(centro) : 'Pendiente de asignar'}</div>`;
+            p.classList.remove('hidden');
+        });
+
+        // ---- Grupo familiar (acompañantes dinámicos) ----
+        let acompId = 0;
+        $('btnAddAcomp').addEventListener('click', () => agregarAcomp());
+        function agregarAcomp() {
+            const id = ++acompId;
+            const div = document.createElement('div');
+            div.className = 'acomp'; div.dataset.id = id;
+            div.innerHTML = `
+                <div class="num">Acompañante #${$('acompanantes').children.length + 1}</div>
+                <button type="button" class="btn-quitar">Quitar</button>
+                <label>Cédula <span class="hint">(opcional · busca en CNE)</span></label>
+                <div class="row-ced">
+                    <select id="ac_nac_${id}"><option value="V">V</option><option value="E">E</option></select>
+                    <input id="ac_ced_${id}" type="tel" inputmode="numeric" placeholder="Cédula (si tiene)" maxlength="10" autocomplete="off" />
+                </div>
+                <div class="row2">
+                    <div><label>Nombres</label><input id="ac_nom_${id}" type="text" autocomplete="off" /></div>
+                    <div><label>Apellidos</label><input id="ac_ape_${id}" type="text" autocomplete="off" /></div>
+                </div>
+                <div class="row2">
+                    <div><label>Edad</label><input id="ac_edad_${id}" type="number" min="0" max="120" inputmode="numeric" /></div>
+                    <div><label>Sexo</label><select id="ac_sexo_${id}"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option></select></div>
+                </div>`;
+            $('acompanantes').appendChild(div);
+            div.querySelector('.btn-quitar').addEventListener('click', () => { div.remove(); renumerarAcomp(); });
+            engancharCNE(`ac_ced_${id}`, `ac_nom_${id}`, `ac_ape_${id}`, null, `ac_nac_${id}`, null);
+        }
+        function renumerarAcomp() {
+            Array.from($('acompanantes').children).forEach((d, i) => { d.querySelector('.num').textContent = `Acompañante #${i + 1}`; });
+        }
+
+        function mostrarMsg(t) { const m = $('msg'); m.textContent = t; m.className = 'msg err'; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+        // ---- Enviar ----
+        $('btnEnviar').addEventListener('click', async () => {
+            $('msg').className = 'msg';
+            const anon = document.querySelector('input[name="reporta"]:checked').value === 'anonimo';
+            const nombres = v('ref_nombres'), apellidos = v('ref_apellidos');
+            const direccion = v('ref_direccion');
+            if (!nombres || !apellidos) { mostrarMsg('Escribe los nombres y apellidos de la persona refugiada.'); return; }
+            if (!direccion) { mostrarMsg('Escribe la dirección donde se está quedando.'); return; }
+
+            // Grupo familiar
+            const grupo = [];
+            Array.from($('acompanantes').children).forEach(d => {
+                const id = d.dataset.id;
+                const nom = v(`ac_nom_${id}`), ape = v(`ac_ape_${id}`), ced = soloDig(($(`ac_ced_${id}`) || {}).value || '');
+                if (!nom && !ape && !ced) return;
+                grupo.push({
+                    cedula: ced, nacionalidad: ($(`ac_nac_${id}`) || {}).value || 'V',
+                    nombres: nom, apellidos: ape,
+                    edad: v(`ac_edad_${id}`) ? Number(v(`ac_edad_${id}`)) : null,
+                    sexo: ($(`ac_sexo_${id}`) || {}).value || ''
+                });
+            });
+
+            const comSlug = v('jefe_comunidad');
+            let comNombre = '';
+            if (comSlug === 'OTRO') comNombre = 'OTRO';
+            else if (comSlug && T()[comSlug]) comNombre = T()[comSlug].nombre;
+            let centro = '';
+            const comOpt = $('jefe_comunidad').selectedOptions[0];
+            if (comSlug === 'OTRO') centro = 'OTRO';
+            else if (comOpt) centro = comOpt.dataset.centro || '';
+
+            const payload = {
+                reporta_anonimo: anon,
+                reporta_ubch: anon ? '' : v('r_ubch'),
+                reporta_nombre: anon ? '' : v('r_nombre'),
+                reporta_cedula: anon ? '' : soloDig(v('r_cedula')),
+                reporta_telefono: anon ? '' : soloDig(v('r_telefono')),
+                cedula: soloDig(v('ref_cedula')),
+                nacionalidad: v('ref_nacionalidad') || 'V',
+                nombres, apellidos,
+                telefono: soloDig(v('ref_telefono')),
+                sexo: v('ref_sexo'),
+                fecha_nacimiento: v('ref_fecha'),
+                procedencia: v('ref_procedencia'),
+                vulnerabilidad: chipsSeleccionados('chipsVuln'),
+                necesidades: chipsSeleccionados('chipsNec'),
+                direccion,
+                parroquia: v('jefe_parroquia'),
+                circuito: v('jefe_circuito'),
+                comunidad_slug: comSlug,
+                comunidad_nombre: comNombre,
+                centro_electoral: centro,
+                grupo_familiar: grupo,
+                total_personas: 1 + grupo.length,
+                fecha_registro: Date.now(),
+                user_agent: (navigator.userAgent || '').slice(0, 300)
+            };
+
+            const btn = $('btnEnviar'); btn.disabled = true; btn.textContent = 'Enviando…';
+            try {
+                await set(push(ref(database, 'refugiados')), payload);
+                $('formWrap').classList.add('hidden');
+                $('exitoWrap').classList.remove('hidden');
+                window.scrollTo(0, 0);
+            } catch (e) {
+                mostrarMsg('No se pudo enviar (' + (e.message || e.code || 'error') + '). Revisa tu internet e intenta de nuevo.');
+                btn.disabled = false; btn.textContent = 'Enviar registro';
+            }
+        });
+
+        $('btnOtro').addEventListener('click', () => location.reload());
+    </script>
+</body>
+</html>

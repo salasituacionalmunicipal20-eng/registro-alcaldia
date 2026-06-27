@@ -48,6 +48,13 @@
       ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
       ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || (auth != null && root.child('operadores').child(auth.uid).exists())"
     },
+    "refugiados": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      "$id": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com'",
+        ".validate": "newData.hasChildren(['nombres','apellidos']) && newData.child('nombres').isString() && newData.child('nombres').val().length <= 150 && newData.child('apellidos').isString() && newData.child('apellidos').val().length <= 150"
+      }
+    },
     "tickets": {
       ".read": "auth != null",
       "$ticketId": {
