@@ -80,8 +80,14 @@
             <div id="bloqueFamiliar" class="hidden">
                 <label>Parentesco / relación con la persona refugiada</label>
                 <input id="f_parentesco" type="text" placeholder="Ej: hijo, hermana, vecino, amigo…" autocomplete="off" />
+                <label>Tu cédula <span class="hint">(buscamos tus datos en el CNE)</span></label>
+                <div class="row-ced">
+                    <select id="f_nacionalidad"><option value="V">V</option><option value="E">E</option></select>
+                    <input id="f_cedula" type="tel" inputmode="numeric" placeholder="12345678" maxlength="10" autocomplete="off" />
+                </div>
+                <div class="hint" id="f_cne_hint"></div>
                 <label>Tu nombre y apellido</label>
-                <input id="f_nombre" type="text" placeholder="Nombre de quien reporta" autocomplete="off" />
+                <input id="f_nombre" type="text" placeholder="Si el CNE no llena, escríbelo" autocomplete="off" />
                 <label>Tu teléfono</label>
                 <input id="f_telefono" type="tel" inputmode="numeric" placeholder="04141234567" maxlength="11" autocomplete="off" />
             </div>
@@ -246,7 +252,11 @@
                 const d = await consultarCNE(num, nac);
                 ced.style.background = bg;
                 if (!d) { if (hintId) $(hintId).textContent = 'No se encontró en el CNE — escríbelo a mano.'; return; }
-                if (nom && !nom.value.trim()) nom.value = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
+                if (nom && !nom.value.trim()) {
+                    const _n = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
+                    const _a = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
+                    nom.value = ape ? _n : [_n, _a].filter(Boolean).join(' ').trim();
+                }
                 if (ape && !ape.value.trim()) ape.value = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
                 if (idFecha && $(idFecha) && !$(idFecha).value && fechaCneValida(d.fecha_nac)) $(idFecha).value = d.fecha_nac;
                 if (hintId) $(hintId).textContent = '✓ Datos encontrados en el CNE.';
@@ -254,6 +264,7 @@
         }
         engancharCNE('ref_cedula', 'ref_nombres', 'ref_apellidos', 'ref_fecha', 'ref_nacionalidad', 'ref_cne_hint');
         engancharCNE('r_cedula', 'r_nombre', null, null, null, null);
+        engancharCNE('f_cedula', 'f_nombre', null, null, 'f_nacionalidad', 'f_cne_hint');
 
         // ---- Cascada territorial (comuna/comunidad de DONDE SE QUEDA) ----
         function T() { return window.TERRITORIO && window.TERRITORIO.comunidades ? window.TERRITORIO.comunidades : {}; }
@@ -364,7 +375,7 @@
                 reporta_anonimo: tipo === 'anonimo',
                 reporta_ubch: tipo === 'responsable' ? v('r_ubch') : '',
                 reporta_nombre: tipo === 'responsable' ? v('r_nombre') : (tipo === 'familiar' ? v('f_nombre') : ''),
-                reporta_cedula: tipo === 'responsable' ? soloDig(v('r_cedula')) : '',
+                reporta_cedula: tipo === 'responsable' ? soloDig(v('r_cedula')) : (tipo === 'familiar' ? soloDig(v('f_cedula')) : ''),
                 reporta_telefono: tipo === 'responsable' ? soloDig(v('r_telefono')) : (tipo === 'familiar' ? soloDig(v('f_telefono')) : ''),
                 reporta_parentesco: tipo === 'familiar' ? v('f_parentesco') : '',
                 cedula: soloDig(v('ref_cedula')),
