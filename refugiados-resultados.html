@@ -276,7 +276,11 @@
         function verDetalle(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
             const grupo = toArr(r.grupo_familiar);
-            const reporta = r.reporta_anonimo ? 'Anónimo' : `${r.reporta_nombre || '—'}${r.reporta_ubch ? ' · UBCH: ' + r.reporta_ubch : ''}${r.reporta_telefono ? ' · Tel: ' + r.reporta_telefono : ''}`;
+            const tipoTxt = (r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Anónimo'
+                : r.reporta_tipo === 'familiar' ? ('Familiar' + (r.reporta_parentesco ? ' (' + r.reporta_parentesco + ')' : ''))
+                : 'Responsable / UBCH';
+            const reporta = (r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Anónimo'
+                : `${tipoTxt} · ${r.reporta_nombre || '—'}${r.reporta_ubch ? ' · UBCH: ' + r.reporta_ubch : ''}${r.reporta_telefono ? ' · Tel: ' + r.reporta_telefono : ''}`;
             $('modal').innerHTML = `
                 <h3>${esc((r.nombres||'') + ' ' + (r.apellidos||''))}</h3>
                 ${fila('Cédula', r.cedula)}
@@ -345,7 +349,7 @@
                 r.sexo||'', String(r.telefono||''), r.procedencia||'', r.direccion||'', r.parroquia||'', r.circuito||'', r.comunidad_nombre||'',
                 String(r.total_personas || (1 + toArr(r.grupo_familiar).length)),
                 toArr(r.vulnerabilidad).join(', '), toArr(r.necesidades).join(', '),
-                r.reporta_anonimo ? 'Anónimo' : ((r.reporta_nombre||'') + (r.reporta_ubch?(' / '+r.reporta_ubch):''))
+                (r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Anónimo' : ((r.reporta_tipo === 'familiar' ? ('Familiar' + (r.reporta_parentesco ? ' ('+r.reporta_parentesco+')' : '') + ': ') : '') + (r.reporta_nombre||'') + (r.reporta_ubch?(' / '+r.reporta_ubch):''))
             ]);
             const hdr2 = ['Rol','Nombre','Apellidos','Cédula','Edad','Sexo','Pertenece a','Procedencia','Dónde se queda'];
             const f2 = [];

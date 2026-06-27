@@ -64,6 +64,7 @@
             <div class="sub">Para coordinar la ayuda. Puedes hacerlo de forma anónima.</div>
             <div class="radio-grp">
                 <label class="radio-card on" id="rc_resp"><input type="radio" name="reporta" value="responsable" checked style="width:auto;margin-right:6px;">Soy responsable / UBCH / parte del gobierno</label>
+                <label class="radio-card" id="rc_fam"><input type="radio" name="reporta" value="familiar" style="width:auto;margin-right:6px;">Lo agrega un familiar / allegado</label>
                 <label class="radio-card" id="rc_anon"><input type="radio" name="reporta" value="anonimo" style="width:auto;margin-right:6px;">Prefiero reportar anónimo</label>
             </div>
             <div id="bloqueResponsable">
@@ -75,6 +76,14 @@
                     <div><label>Tu cédula</label><input id="r_cedula" type="tel" inputmode="numeric" placeholder="12345678" maxlength="10" autocomplete="off" /></div>
                     <div><label>Tu teléfono</label><input id="r_telefono" type="tel" inputmode="numeric" placeholder="04141234567" maxlength="11" autocomplete="off" /></div>
                 </div>
+            </div>
+            <div id="bloqueFamiliar" class="hidden">
+                <label>Parentesco / relación con la persona refugiada</label>
+                <input id="f_parentesco" type="text" placeholder="Ej: hijo, hermana, vecino, amigo…" autocomplete="off" />
+                <label>Tu nombre y apellido</label>
+                <input id="f_nombre" type="text" placeholder="Nombre de quien reporta" autocomplete="off" />
+                <label>Tu teléfono</label>
+                <input id="f_telefono" type="tel" inputmode="numeric" placeholder="04141234567" maxlength="11" autocomplete="off" />
             </div>
         </div>
 
@@ -204,10 +213,12 @@
         // ---- Reporta: responsable vs anónimo ----
         document.querySelectorAll('input[name="reporta"]').forEach(r => {
             r.addEventListener('change', () => {
-                const anon = document.querySelector('input[name="reporta"]:checked').value === 'anonimo';
-                $('bloqueResponsable').classList.toggle('hidden', anon);
-                $('rc_resp').classList.toggle('on', !anon);
-                $('rc_anon').classList.toggle('on', anon);
+                const val = document.querySelector('input[name="reporta"]:checked').value;
+                $('bloqueResponsable').classList.toggle('hidden', val !== 'responsable');
+                $('bloqueFamiliar').classList.toggle('hidden', val !== 'familiar');
+                $('rc_resp').classList.toggle('on', val === 'responsable');
+                $('rc_fam').classList.toggle('on', val === 'familiar');
+                $('rc_anon').classList.toggle('on', val === 'anonimo');
             });
         });
 
@@ -319,7 +330,7 @@
         // ---- Enviar ----
         $('btnEnviar').addEventListener('click', async () => {
             $('msg').className = 'msg';
-            const anon = document.querySelector('input[name="reporta"]:checked').value === 'anonimo';
+            const tipo = document.querySelector('input[name="reporta"]:checked').value;
             const nombres = v('ref_nombres'), apellidos = v('ref_apellidos');
             const direccion = v('ref_direccion');
             if (!nombres || !apellidos) { mostrarMsg('Escribe los nombres y apellidos de la persona refugiada.'); return; }
@@ -349,11 +360,13 @@
             else if (comOpt) centro = comOpt.dataset.centro || '';
 
             const payload = {
-                reporta_anonimo: anon,
-                reporta_ubch: anon ? '' : v('r_ubch'),
-                reporta_nombre: anon ? '' : v('r_nombre'),
-                reporta_cedula: anon ? '' : soloDig(v('r_cedula')),
-                reporta_telefono: anon ? '' : soloDig(v('r_telefono')),
+                reporta_tipo: tipo,
+                reporta_anonimo: tipo === 'anonimo',
+                reporta_ubch: tipo === 'responsable' ? v('r_ubch') : '',
+                reporta_nombre: tipo === 'responsable' ? v('r_nombre') : (tipo === 'familiar' ? v('f_nombre') : ''),
+                reporta_cedula: tipo === 'responsable' ? soloDig(v('r_cedula')) : '',
+                reporta_telefono: tipo === 'responsable' ? soloDig(v('r_telefono')) : (tipo === 'familiar' ? soloDig(v('f_telefono')) : ''),
+                reporta_parentesco: tipo === 'familiar' ? v('f_parentesco') : '',
                 cedula: soloDig(v('ref_cedula')),
                 nacionalidad: v('ref_nacionalidad') || 'V',
                 nombres, apellidos,
