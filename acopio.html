@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Centro de Acopio — Inventario</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #0a2351; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-nav:hover { background: rgba(255,255,255,0.25); }
+        .wrap { max-width: 1280px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        .stats { display: flex; gap: 14px; flex-wrap: wrap; }
+        .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 140px; }
+        .stat .num { font-size: 24px; font-weight: 800; color: #0a2351; }
+        .stat.e .num { color: #16a34a; } .stat.s .num { color: #b91c1c; }
+        .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #16a34a; font-weight: 700; }
+        .live .dot { width: 9px; height: 9px; border-radius: 50%; background: #16a34a; animation: pulso 1.4s infinite; }
+        @keyframes pulso { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .filtros { display: grid; grid-template-columns: 2fr 1.4fr; gap: 12px; }
+        @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; position: sticky; top: 0; }
+        tbody tr:hover { background: #f8fafc; }
+        .num-cell { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+        .stock-ok { color: #16a34a; } .stock-bajo { color: #b91c1c; }
+        .badge { display: inline-block; font-size: 10.5px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+        .badge.e { background: #dcfce7; color: #166534; } .badge.s { background: #fee2e2; color: #991b1b; }
+        .btn { border: none; border-radius: 8px; padding: 12px 16px; font-size: 14px; font-weight: 800; cursor: pointer; color: #fff; }
+        .btn-reg { background: #16a34a; width: 100%; margin-top: 6px; }
+        .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 10px 0; color: #fff; }
+        .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .radio-grp { display: flex; gap: 10px; margin-bottom: 4px; }
+        .radio-card { flex: 1; border: 2px solid #cbd5e1; border-radius: 10px; padding: 10px; cursor: pointer; font-size: 14px; font-weight: 700; text-align: center; }
+        .radio-card.on-e { border-color: #16a34a; background: #f0fdf4; color: #166534; }
+        .radio-card.on-s { border-color: #b91c1c; background: #fef2f2; color: #991b1b; }
+        .msg { padding: 10px 13px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; display: none; }
+        .msg.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; display: block; }
+        .msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .paginacion .info { font-size: 13px; color: #64748b; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #0a2351; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>📦 Centro de Acopio — Inventario</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden"><h2 style="color:#b91c1c;">Acceso restringido</h2><p>Solo para administradores.</p></div>
+
+        <div id="contenido" class="hidden">
+
+            <!-- REGISTRAR MOVIMIENTO -->
+            <div class="card">
+                <h2>Registrar movimiento</h2>
+                <div class="radio-grp">
+                    <label class="radio-card on-e" id="rcEntrada"><input type="radio" name="tipo" value="entrada" checked style="margin-right:6px;">⬇️ Entrada (llegó donación)</label>
+                    <label class="radio-card" id="rcSalida"><input type="radio" name="tipo" value="salida" style="margin-right:6px;">⬆️ Salida (entrega / despacho)</label>
+                </div>
+                <div class="grid" style="margin-top:10px;">
+                    <div><label>Categoría</label><select id="mCategoria"></select></div>
+                    <div><label>Artículo</label><input id="mArticulo" list="dlArticulos" placeholder="Ej: Arroz, Paracetamol, Cobijas…" autocomplete="off" /><datalist id="dlArticulos"></datalist></div>
+                    <div><label>Cantidad</label><input id="mCantidad" type="number" min="0" step="any" inputmode="decimal" placeholder="0" /></div>
+                    <div><label>Unidad</label><select id="mUnidad"></select></div>
+                    <div><label id="lblContraparte">Donante (opcional)</label><input id="mContraparte" placeholder="Quién donó / a quién se entrega" autocomplete="off" /></div>
+                    <div><label>Observación</label><input id="mObs" placeholder="Lote, vencimiento, estado…" autocomplete="off" /></div>
+                </div>
+                <button class="btn btn-reg" id="btnRegistrar" type="button">Registrar entrada</button>
+                <div id="msg" class="msg"></div>
+            </div>
+
+            <!-- RESUMEN -->
+            <div class="card">
+                <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
+                <div class="stats">
+                    <div class="stat"><div class="num" id="stArticulos">—</div><div class="lbl" style="font-size:12px;color:#64748b;font-weight:600;">Artículos en inventario</div></div>
+                    <div class="stat e"><div class="num" id="stEntradas">—</div><div class="lbl" style="font-size:12px;color:#64748b;font-weight:600;">Entradas registradas</div></div>
+                    <div class="stat s"><div class="num" id="stSalidas">—</div><div class="lbl" style="font-size:12px;color:#64748b;font-weight:600;">Salidas registradas</div></div>
+                </div>
+            </div>
+
+            <!-- INVENTARIO -->
+            <div class="card">
+                <h2>Inventario disponible</h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
+                </div>
+                <div class="filtros">
+                    <div><label>Buscar artículo</label><input id="fBuscar" type="search" placeholder="Nombre del artículo…" autocomplete="off" /></div>
+                    <div><label>Categoría</label><select id="fCategoria"><option value="">Todas</option></select></div>
+                </div>
+                <div style="overflow-x:auto; margin-top:14px;">
+                    <table>
+                        <thead><tr><th>Categoría</th><th>Artículo</th><th>Unidad</th><th class="num-cell">Entradas</th><th class="num-cell">Salidas</th><th class="num-cell">Disponible</th></tr></thead>
+                        <tbody id="tbodyInv"><tr><td colspan="6" class="estado-box">Cargando…</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MOVIMIENTOS -->
+            <div class="card">
+                <h2>Movimientos recientes</h2>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Artículo</th><th class="num-cell">Cantidad</th><th>Unidad</th><th>Donante / Destino</th><th>Registró</th><th></th></tr></thead>
+                        <tbody id="tbodyMov"><tr><td colspan="9" class="estado-box">—</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="pagMov"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, push, set, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        const toArr = (x) => Array.isArray(x) ? x : (x ? Object.values(x) : []);
+        const nfmt = (n) => { const x = Math.round((Number(n) || 0) * 100) / 100; return (Number.isInteger(x) ? x.toString() : x.toFixed(2)); };
+
+        const CATEGORIAS = ['Alimentos','Agua','Medicinas','Ropa','Calzado','Colchones / cobijas','Artículos de higiene','Productos de limpieza','Pañales','Útiles escolares','Otro'];
+        const UNIDADES = ['Unidades','Kg','Gramos','Litros','Cajas','Paquetes','Bultos','Sacos','Pares','Bolsas','Otro'];
+
+        let MOVS = [];               // [{id, tipo, categoria, articulo, cantidad, unidad, contraparte, observacion, fecha_registro, registrado_por}]
+        let nombreUsuario = '';
+        let pagMov = 1; const TAM = 60;
+
+        // Poblar selects
+        CATEGORIAS.forEach(c => { [$('mCategoria'), $('fCategoria')].forEach(sel => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); }); });
+        UNIDADES.forEach(u => { const o = document.createElement('option'); o.value = u; o.textContent = u; $('mUnidad').appendChild(o); });
+
+        // Tipo entrada/salida
+        document.querySelectorAll('input[name="tipo"]').forEach(r => r.addEventListener('change', () => {
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            const ent = tipo === 'entrada';
+            $('rcEntrada').classList.toggle('on-e', ent); $('rcSalida').classList.toggle('on-s', !ent);
+            $('lblContraparte').textContent = ent ? 'Donante (opcional)' : 'Destino / a quién se entrega';
+            $('mContraparte').placeholder = ent ? 'Quién donó' : 'A quién / comunidad';
+            $('btnRegistrar').textContent = ent ? 'Registrar entrada' : 'Registrar salida';
+        }));
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuper;
+            nombreUsuario = esSuper ? 'CARLOS ADMIN' : (user.email || '');
+            if (!esSuper) {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    if (snap.exists() && snap.val().rol === 'admin') {
+                        permitido = true;
+                        const p = snap.val(); nombreUsuario = `${(p.nombre||'').trim()} ${(p.apellido||'').trim()}`.trim() || user.email;
+                    }
+                } catch (e) { permitido = false; }
+            }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            escuchar();
+        });
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch(e){} location.href = 'index.html'; });
+
+        function escuchar() {
+            onValue(ref(database, 'acopio'), (snap) => {
+                const v = snap.val() || {};
+                MOVS = Object.entries(v).map(([id, m]) => ({ id, ...m })).sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
+                render();
+            }, () => { MOVS = []; render(); });
+        }
+
+        // Agregación de inventario por (categoria | articulo | unidad)
+        function inventario() {
+            const map = new Map();
+            MOVS.forEach(m => {
+                const art = (m.articulo || '').trim();
+                if (!art) return;
+                const key = (m.categoria || '') + '||' + art.toLowerCase() + '||' + (m.unidad || '');
+                if (!map.has(key)) map.set(key, { categoria: m.categoria || '', articulo: art, unidad: m.unidad || '', entradas: 0, salidas: 0 });
+                const it = map.get(key);
+                const cant = Number(m.cantidad) || 0;
+                if (m.tipo === 'salida') it.salidas += cant; else it.entradas += cant;
+            });
+            return Array.from(map.values()).map(it => ({ ...it, stock: it.entradas - it.salidas }))
+                .sort((a, b) => (a.categoria.localeCompare(b.categoria, 'es') || a.articulo.localeCompare(b.articulo, 'es')));
+        }
+
+        function render() {
+            const inv = inventario();
+            $('stArticulos').textContent = inv.length;
+            $('stEntradas').textContent = MOVS.filter(m => m.tipo !== 'salida').length;
+            $('stSalidas').textContent = MOVS.filter(m => m.tipo === 'salida').length;
+
+            // datalist de articulos
+            const arts = [...new Set(MOVS.map(m => (m.articulo||'').trim()).filter(Boolean))].sort();
+            $('dlArticulos').innerHTML = arts.map(a => `<option value="${esc(a)}">`).join('');
+
+            // tabla inventario (filtros)
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const fc = $('fCategoria').value;
+            const lista = inv.filter(it => (!fc || it.categoria === fc) && (!q || it.articulo.toLowerCase().includes(q)));
+            const tbi = $('tbodyInv');
+            if (lista.length === 0) { tbi.innerHTML = `<tr><td colspan="6" class="estado-box">Sin artículos${q||fc?' con ese filtro':''}.</td></tr>`; }
+            else tbi.innerHTML = lista.map(it => `<tr>
+                <td>${esc(it.categoria||'—')}</td>
+                <td><b>${esc(it.articulo)}</b></td>
+                <td>${esc(it.unidad||'—')}</td>
+                <td class="num-cell">${nfmt(it.entradas)}</td>
+                <td class="num-cell">${nfmt(it.salidas)}</td>
+                <td class="num-cell ${it.stock > 0 ? 'stock-ok' : 'stock-bajo'}">${nfmt(it.stock)}</td>
+            </tr>`).join('');
+
+            // movimientos (paginado)
+            const totalPag = Math.max(1, Math.ceil(MOVS.length / TAM));
+            if (pagMov > totalPag) pagMov = totalPag;
+            const ini = (pagMov - 1) * TAM, slice = MOVS.slice(ini, ini + TAM);
+            const tbm = $('tbodyMov');
+            if (MOVS.length === 0) { tbm.innerHTML = `<tr><td colspan="9" class="estado-box">Aún no hay movimientos. Registra la primera entrada arriba.</td></tr>`; $('pagMov').innerHTML = ''; }
+            else {
+                tbm.innerHTML = slice.map(m => {
+                    const f = m.fecha_registro ? new Date(m.fecha_registro).toLocaleString('es-VE', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+                    const ent = m.tipo !== 'salida';
+                    return `<tr>
+                        <td>${esc(f)}</td>
+                        <td><span class="badge ${ent?'e':'s'}">${ent?'ENTRADA':'SALIDA'}</span></td>
+                        <td>${esc(m.categoria||'—')}</td>
+                        <td><b>${esc(m.articulo||'—')}</b>${m.observacion?`<br><span style="font-size:11px;color:#64748b;">${esc(m.observacion)}</span>`:''}</td>
+                        <td class="num-cell">${nfmt(m.cantidad)}</td>
+                        <td>${esc(m.unidad||'—')}</td>
+                        <td>${esc(m.contraparte||'—')}</td>
+                        <td style="font-size:12px;color:#64748b;">${esc(m.registrado_por||'—')}</td>
+                        <td><button class="btn-del" data-id="${esc(m.id)}">Borrar</button></td>
+                    </tr>`;
+                }).join('');
+                tbm.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrarMov(b.dataset.id)));
+                const desde = ini + 1, hasta = Math.min(ini + TAM, MOVS.length);
+                $('pagMov').innerHTML = `<button id="mP" ${pagMov<=1?'disabled':''}>← Anterior</button><span class="info">${desde}–${hasta} de ${MOVS.length}</span><button id="mN" ${pagMov>=totalPag?'disabled':''}>Siguiente →</button>`;
+                const p = $('mP'), n = $('mN');
+                if (p) p.addEventListener('click', () => { if (pagMov>1){ pagMov--; render(); } });
+                if (n) n.addEventListener('click', () => { if (pagMov<totalPag){ pagMov++; render(); } });
+            }
+        }
+
+        ['fBuscar','fCategoria'].forEach(id => { $(id).addEventListener('input', render); $(id).addEventListener('change', render); });
+
+        function mostrarMsg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { if (m.textContent === t) m.className = 'msg'; }, 4000); }
+
+        $('btnRegistrar').addEventListener('click', async () => {
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            const categoria = $('mCategoria').value;
+            const articulo = $('mArticulo').value.trim();
+            const cantidad = Number($('mCantidad').value);
+            const unidad = $('mUnidad').value;
+            if (!articulo) { mostrarMsg('Escribe el nombre del artículo.', false); return; }
+            if (!(cantidad > 0)) { mostrarMsg('La cantidad debe ser mayor que 0.', false); return; }
+            const payload = {
+                tipo, categoria, articulo, cantidad, unidad,
+                contraparte: $('mContraparte').value.trim(),
+                observacion: $('mObs').value.trim(),
+                fecha_registro: Date.now(),
+                registrado_por: nombreUsuario,
+                registrado_uid: (auth.currentUser && auth.currentUser.uid) || ''
+            };
+            $('btnRegistrar').disabled = true;
+            try {
+                await set(push(ref(database, 'acopio')), payload);
+                $('mArticulo').value = ''; $('mCantidad').value = ''; $('mContraparte').value = ''; $('mObs').value = '';
+                mostrarMsg('✓ ' + (tipo === 'salida' ? 'Salida' : 'Entrada') + ' registrada.', true);
+                $('mArticulo').focus();
+            } catch (e) {
+                mostrarMsg('No se pudo registrar (' + (e.message || e.code || 'error') + ').', false);
+            } finally { $('btnRegistrar').disabled = false; }
+        });
+
+        async function borrarMov(id) {
+            const m = MOVS.find(x => x.id === id); if (!m) return;
+            if (!confirm(`¿Borrar este movimiento?\n${m.tipo === 'salida' ? 'SALIDA' : 'ENTRADA'} · ${m.articulo} · ${nfmt(m.cantidad)} ${m.unidad}`)) return;
+            try { await remove(ref(database, 'acopio/' + id)); } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
+        }
+
+        // ---- Exportar Excel (Inventario + Movimientos) ----
+        $('btnExcel').addEventListener('click', () => {
+            if (typeof XLSX === 'undefined') { alert('SheetJS no cargó.'); return; }
+            const ahora = new Date(); const fechaLarga = ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' });
+            const NAVY='0A2351', GRIS='64748B', ZEBRA='F1F5F9', TEXTO='0F172A';
+            const thin = { style:'thin', color:{rgb:'CBD5E1'} }, borde = { top:thin,bottom:thin,left:thin,right:thin };
+            const estB = { font:{bold:true,sz:15,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:NAVY}}, alignment:{horizontal:'center',vertical:'center'} };
+            const estS = { font:{italic:true,sz:10,color:{rgb:GRIS}}, alignment:{horizontal:'center',vertical:'center'} };
+            const estH = { font:{bold:true,sz:11,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:NAVY}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:borde };
+            const mkSheet = (titulo, header, filas, cols) => {
+                const data = [[titulo].concat(Array(header.length-1).fill('')), [`Generado ${fechaLarga} · ${filas.length} fila(s)`].concat(Array(header.length-1).fill('')), header, ...filas];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const setS=(r,c,s)=>{const a=XLSX.utils.encode_cell({r,c}); if(!ws[a])ws[a]={t:'s',v:''}; ws[a].s=s;};
+                for (let c=0;c<header.length;c++){ setS(0,c,estB); setS(1,c,estS); setS(2,c,estH); }
+                for (let r=3;r<data.length;r++){ const fondo=(r%2===0)?{fill:{fgColor:{rgb:ZEBRA}}}:{}; for(let c=0;c<header.length;c++) setS(r,c,{font:{sz:10,color:{rgb:TEXTO}},alignment:{vertical:'center',wrapText:true},border:borde,...fondo}); }
+                ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}},{s:{r:1,c:0},e:{r:1,c:header.length-1}}];
+                ws['!cols']=cols.map(w=>({wch:w}));
+                ws['!autofilter']={ref:`A3:${XLSX.utils.encode_col(header.length-1)}${data.length}`};
+                return ws;
+            };
+            const inv = inventario();
+            const fInv = inv.map(it => [it.categoria, it.articulo, it.unidad, it.entradas, it.salidas, it.stock]);
+            const fMov = MOVS.map(m => [
+                m.fecha_registro ? new Date(m.fecha_registro).toLocaleString('es-VE') : '',
+                m.tipo === 'salida' ? 'Salida' : 'Entrada', m.categoria||'', m.articulo||'', Number(m.cantidad)||0, m.unidad||'', m.contraparte||'', m.observacion||'', m.registrado_por||''
+            ]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, mkSheet('CENTRO DE ACOPIO — INVENTARIO', ['Categoría','Artículo','Unidad','Entradas','Salidas','Disponible'], fInv, [22,30,14,12,12,14]), 'Inventario');
+            XLSX.utils.book_append_sheet(wb, mkSheet('CENTRO DE ACOPIO — MOVIMIENTOS', ['Fecha','Tipo','Categoría','Artículo','Cantidad','Unidad','Donante/Destino','Observación','Registró'], fMov, [20,10,22,28,10,12,24,28,20]), 'Movimientos');
+            XLSX.writeFile(wb, `acopio_${ahora.toISOString().slice(0,10)}.xlsx`);
+        });
+
+        // ---- Sanitizador PDF ----
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s); try { t = t.normalize('NFC'); } catch (e) {}
+            let out = '';
+            for (const ch of t) {
+                const c = ch.codePointAt(0);
+                if (c === 0x201C || c === 0x201D || c === 0x2033) out += '"';
+                else if (c === 0x2018 || c === 0x2019 || c === 0x2032) out += "'";
+                else if (c === 0x2013 || c === 0x2014) out += '-';
+                else if (c === 0x2026) out += '...';
+                else if (c === 0x00A0) out += ' ';
+                else if (c < 32 || c === 127) out += ' ';
+                else if (c <= 255) out += ch;
+                else out += '';
+            }
+            return out.replace(/ {2,}/g, ' ').trim();
+        }
+
+        // ---- PDF del inventario ----
+        $('btnPdf').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const q = ($('fBuscar').value || '').trim().toLowerCase(), fc = $('fCategoria').value;
+            const inv = inventario().filter(it => (!fc || it.categoria === fc) && (!q || it.articulo.toLowerCase().includes(q)));
+            if (!inv.length) { alert('No hay artículos para exportar con estos filtros.'); return; }
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            jsPDF.API.autoTable.call(doc, {
+                head: [['Categoria', 'Articulo', 'Unidad', 'Entradas', 'Salidas', 'Disponible']],
+                body: inv.map(it => [_safePdf(it.categoria||'-'), _safePdf(it.articulo), _safePdf(it.unidad||'-'), nfmt(it.entradas), nfmt(it.salidas), nfmt(it.stock)]),
+                startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 }, theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.8, textColor: [15,23,42], lineColor: [203,213,225], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
+                headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9.5, halign: 'center' },
+                alternateRowStyles: { fillColor: [241,245,249] },
+                columnStyles: { 0:{cellWidth:40}, 1:{cellWidth:62}, 2:{cellWidth:26}, 3:{cellWidth:20,halign:'right'}, 4:{cellWidth:20,halign:'right'}, 5:{cellWidth:20,halign:'right',fontStyle:'bold'} },
+                didDrawPage: () => {
+                    dibujarHeaderPDF(doc, { titulo: 'Centro de Acopio — Inventario', subtitulo: _safePdf(inv.length + ' articulo(s)') });
+                    dibujarFooterPDF(doc);
+                }
+            });
+            doc.save('acopio_inventario_' + new Date().toISOString().slice(0,10) + '.pdf');
+        });
+    </script>
+</body>
+</html>

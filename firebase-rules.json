@@ -62,6 +62,13 @@
         ".validate": "newData.isString() && newData.val().length <= 800000"
       }
     },
+    "acopio": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      "$id": {
+        ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+        ".validate": "newData.hasChildren(['tipo','articulo','cantidad']) && newData.child('articulo').isString() && newData.child('articulo').val().length <= 200"
+      }
+    },
     "tickets": {
       ".read": "auth != null",
       "$ticketId": {
