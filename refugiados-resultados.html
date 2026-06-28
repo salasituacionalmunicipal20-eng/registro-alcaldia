@@ -98,6 +98,9 @@
                     <div class="stat b"><div class="num" id="stPersonas">—</div><div class="lbl">Personas (con grupo familiar)</div></div>
                     <div class="stat"><div class="num" id="stVuln">—</div><div class="lbl">Reportes con vulnerabilidad</div></div>
                     <div class="stat b"><div class="num" id="stAnon">—</div><div class="lbl">Reportes anónimos</div></div>
+                    <div class="stat"><div class="num" id="stNinos">—</div><div class="lbl">Niños/as (menores de 18)</div></div>
+                    <div class="stat b"><div class="num" id="stBebes">—</div><div class="lbl">Bebés / recién nacidos (0–1 año)</div></div>
+                    <div class="stat"><div class="num" id="stMayores">—</div><div class="lbl">Adultos mayores (60+)</div></div>
                 </div>
                 <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Cada reporte aparece aquí en tiempo real. Comparte el enlace de arriba (o el QR) para viralizar.</div>
             </div>
@@ -236,6 +239,18 @@
             $('stPersonas').textContent = REGS.reduce((s, r) => s + (Number(r.total_personas) || (1 + toArr(r.grupo_familiar).length)), 0);
             $('stVuln').textContent = REGS.filter(r => toArr(r.vulnerabilidad).length > 0).length;
             $('stAnon').textContent = REGS.filter(r => r.reporta_anonimo).length;
+            // Conteo por edades: refugiado principal (de su fecha de nacimiento) + cada acompañante del grupo familiar
+            let _ninos = 0, _bebes = 0, _mayores = 0;
+            REGS.forEach(r => {
+                const edades = [];
+                const eRef = edadDe(r.fecha_nacimiento);
+                if (eRef !== '') edades.push(eRef);
+                toArr(r.grupo_familiar).forEach(g => { const e = Number(g.edad); if (g.edad != null && g.edad !== '' && !isNaN(e)) edades.push(e); });
+                edades.forEach(e => { if (e <= 1) _bebes++; if (e < 18) _ninos++; if (e >= 60) _mayores++; });
+            });
+            $('stNinos').textContent = _ninos;
+            $('stBebes').textContent = _bebes;
+            $('stMayores').textContent = _mayores;
 
             const lista = filtrados();
             const total = lista.length, totalPag = Math.max(1, Math.ceil(total / TAM));
