@@ -308,6 +308,7 @@
                 ${fila('Comunidad', r.comunidad_nombre)}
                 ${fila('Vulnerabilidad', toArr(r.vulnerabilidad).join(', '))}
                 ${fila('Necesidades', toArr(r.necesidades).join(', '))}
+                ${fila('Patología / condición', r.patologia)}${fila('Observaciones', r.observacion)}
                 ${fila('Reportado por', reporta)}
                 <div style="margin-top:12px;font-weight:800;color:#7f1d1d;">Grupo familiar (${grupo.length})</div>
                 ${grupo.length ? grupo.map((g, i) => `<div class="fila"><span class="k">#${i+1} ${esc((g.nombres||'') + ' ' + (g.apellidos||''))}</span><span class="val">${esc(g.cedula||'s/c')}${g.edad?(' · '+g.edad+'a'):''}${g.sexo?(' · '+g.sexo):''}</span></div>`).join('') : '<div class="fila"><span class="k">Sin acompañantes</span></div>'}
@@ -365,13 +366,13 @@
                 ws['!autofilter']={ref:`A3:${XLSX.utils.encode_col(header.length-1)}${data.length}`};
                 return ws;
             };
-            const hdr1 = ['Fecha','Nombre','Apellidos','Cédula','Edad','Sexo','Teléfono','Procedencia','Dirección','Parroquia','Comuna','Comunidad','Personas','Vulnerabilidad','Necesidades','Reporta'];
+            const hdr1 = ['Fecha','Nombre','Apellidos','Cédula','Edad','Sexo','Teléfono','Procedencia','Dirección','Parroquia','Comuna','Comunidad','Personas','Vulnerabilidad','Necesidades','Patología','Observaciones','Reporta'];
             const f1 = REGS.map(r => [
                 r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '',
                 r.nombres||'', r.apellidos||'', String(r.cedula||''), String(edadDe(r.fecha_nacimiento)||''),
                 r.sexo||'', String(r.telefono||''), (r.procedencia||'') + (r.municipio_origen?(' / '+r.municipio_origen):''), r.direccion||'', r.parroquia||'', r.circuito||'', r.comunidad_nombre||'',
                 String(r.total_personas || (1 + toArr(r.grupo_familiar).length)),
-                toArr(r.vulnerabilidad).join(', '), toArr(r.necesidades).join(', '),
+                toArr(r.vulnerabilidad).join(', '), toArr(r.necesidades).join(', '), r.patologia||'', r.observacion||'',
                 (r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Anónimo' : ((r.reporta_tipo === 'familiar' ? ('Familiar' + (r.reporta_parentesco ? ' ('+r.reporta_parentesco+')' : '') + ': ') : '') + (r.reporta_nombre||'') + (r.reporta_ubch?(' / '+r.reporta_ubch):''))
             ]);
             const hdr2 = ['Rol','Nombre','Apellidos','Cédula','Edad','Sexo','Pertenece a','Procedencia','Dónde se queda'];
@@ -383,7 +384,7 @@
                 toArr(r.grupo_familiar).forEach(g => f2.push(['Acompañante', g.nombres||'', g.apellidos||'', String(g.cedula||''), String(g.edad||''), g.sexo||'', ref, (r.procedencia||'') + (r.municipio_origen?(' / '+r.municipio_origen):''), donde]));
             });
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — REPORTES', hdr1, f1, [20,18,18,12,7,7,14,22,30,16,16,18,9,24,24,24]), 'Reportes');
+            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — REPORTES', hdr1, f1, [20,18,18,12,7,7,14,22,30,16,16,18,9,24,24,24,30,24]), 'Reportes');
             XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — TODAS LAS PERSONAS', hdr2, f2, [13,18,18,12,7,7,24,18,34]), 'Todas las personas');
             XLSX.writeFile(wb, `refugiados_${ahora.toISOString().slice(0,10)}.xlsx`);
         });
@@ -421,6 +422,8 @@
                     ['Comuna / Comunidad', (r.circuito || '-') + ' / ' + (r.comunidad_nombre || '-')],
                     ['Vulnerabilidad', toArr(r.vulnerabilidad).join(', ') || '-'],
                     ['Necesidades', toArr(r.necesidades).join(', ') || '-'],
+                    ['Patología / condición', r.patologia || '-'],
+                    ['Observaciones', r.observacion || '-'],
                     ['Personas (con grupo familiar)', String(r.total_personas || (1 + toArr(r.grupo_familiar).length))],
                     ['Fecha del reporte', r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '-']
                 ].map(row => [_safePdf(row[0]), _safePdf(row[1])]);

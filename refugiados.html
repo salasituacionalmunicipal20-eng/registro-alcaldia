@@ -116,6 +116,10 @@
             <input id="ref_foto" type="file" accept="image/*" capture="environment" />
             <div class="hint" id="ref_foto_hint"></div>
             <div id="ref_foto_prev" class="hidden" style="margin-top:8px;"><img id="ref_foto_img" alt="" style="max-width:160px;border-radius:8px;border:1px solid #cbd5e1;" /></div>
+            <label>Patología / condición médica <span class="hint">(opcional)</span></label>
+            <input id="ref_patologia" type="text" placeholder="Ej: diabetes, hipertensión, asma, embarazo de riesgo…" autocomplete="off" />
+            <label>Observaciones <span class="hint">(opcional)</span></label>
+            <textarea id="ref_observacion" placeholder="Cualquier información adicional relevante…"></textarea>
         </div>
 
         <!-- VULNERABILIDAD -->
@@ -437,6 +441,8 @@
                 grupo_familiar: grupo,
                 total_personas: 1 + grupo.length,
                 tiene_foto: !!fotoDataUrl,
+                patologia: v('ref_patologia'),
+                observacion: v('ref_observacion'),
                 fecha_registro: Date.now(),
                 user_agent: (navigator.userAgent || '').slice(0, 300)
             };
