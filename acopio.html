@@ -91,6 +91,7 @@
                     <div><label id="lblContraparte">Donante (opcional)</label><input id="mContraparte" placeholder="Quién donó / a quién se entrega" autocomplete="off" /></div>
                     <div><label>Observación</label><input id="mObs" placeholder="Lote, vencimiento, estado…" autocomplete="off" /></div>
                 </div>
+                <div id="avisoExiste" style="display:none;margin-top:10px;padding:10px 13px;border-radius:8px;font-size:13.5px;font-weight:600;border:1px solid #e2e8f0;"></div>
                 <button class="btn btn-reg" id="btnRegistrar" type="button">Registrar entrada</button>
                 <div id="msg" class="msg"></div>
             </div>
@@ -162,6 +163,8 @@
         const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
         const toArr = (x) => Array.isArray(x) ? x : (x ? Object.values(x) : []);
         const nfmt = (n) => { const x = Math.round((Number(n) || 0) * 100) / 100; return (Number.isInteger(x) ? x.toString() : x.toFixed(2)); };
+        // Normaliza SOLO diferencias cosméticas (mayúsculas, espacios dobles, acentos). NO toca tamaños/dosis (3x3 ≠ 5x5, 100ml ≠ 240ml).
+        const norm = (s) => (s == null ? '' : String(s)).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
 
         const CATEGORIAS = ['Alimentos','Agua','Medicinas','Ropa','Calzado','Colchones / cobijas','Artículos de higiene','Productos de limpieza','Pañales','Útiles escolares','Otro'];
         const UNIDADES = ['Unidades','Kg','Gramos','Litros','Cajas','Paquetes','Bultos','Sacos','Pares','Bolsas','Otro'];
@@ -182,6 +185,7 @@
             $('lblContraparte').textContent = ent ? 'Donante (opcional)' : 'Destino / a quién se entrega';
             $('mContraparte').placeholder = ent ? 'Quién donó' : 'A quién / comunidad';
             $('btnRegistrar').textContent = ent ? 'Registrar entrada' : 'Registrar salida';
+            if (typeof updateAviso === 'function') updateAviso();
         }));
 
         onAuthStateChanged(auth, async (user) => {
@@ -219,7 +223,7 @@
             MOVS.forEach(m => {
                 const art = (m.articulo || '').trim();
                 if (!art) return;
-                const key = (m.categoria || '') + '||' + art.toLowerCase() + '||' + (m.unidad || '');
+                const key = norm(m.categoria) + '||' + norm(art) + '||' + norm(m.unidad);
                 if (!map.has(key)) map.set(key, { categoria: m.categoria || '', articulo: art, unidad: m.unidad || '', entradas: 0, salidas: 0 });
                 const it = map.get(key);
                 const cant = Number(m.cantidad) || 0;
@@ -283,11 +287,36 @@
                 if (p) p.addEventListener('click', () => { if (pagMov>1){ pagMov--; render(); } });
                 if (n) n.addEventListener('click', () => { if (pagMov<totalPag){ pagMov++; render(); } });
             }
+            if (typeof updateAviso === 'function') updateAviso();
         }
 
         ['fBuscar','fCategoria'].forEach(id => { $(id).addEventListener('input', render); $(id).addEventListener('change', render); });
 
         function mostrarMsg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { if (m.textContent === t) m.className = 'msg'; }, 4000); }
+
+        // Detecta si el artículo+unidad escrito YA existe (coincidencia exacta normalizada) y avisa que se sumará.
+        function buscarExacto() {
+            const art = $('mArticulo').value, uni = $('mUnidad').value;
+            if (!art.trim()) return null;
+            return inventario().find(it => norm(it.articulo) === norm(art) && norm(it.unidad) === norm(uni)) || null;
+        }
+        function updateAviso() {
+            const av = $('avisoExiste'); if (!av) return;
+            const ex = buscarExacto();
+            if (!ex) { av.style.display = 'none'; av.innerHTML = ''; return; }
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            const x = Number($('mCantidad').value) || 0;
+            av.style.display = 'block';
+            if (tipo === 'salida') {
+                av.style.background = '#fff7ed'; av.style.borderColor = '#fed7aa'; av.style.color = '#9a3412';
+                av.innerHTML = `📦 Ya existe <b>"${esc(ex.articulo)}"</b>: <b>${nfmt(ex.stock)} ${esc(ex.unidad)}</b> disponibles.` + (x ? ` Esta salida dejará <b>${nfmt(ex.stock - x)}</b>.` : '');
+            } else {
+                av.style.background = '#f0fdf4'; av.style.borderColor = '#bbf7d0'; av.style.color = '#166534';
+                av.innerHTML = `✓ <b>"${esc(ex.articulo)}"</b> ya está ingresado: <b>${nfmt(ex.stock)} ${esc(ex.unidad)}</b>. Al registrar se <b>SUMA</b> al existente${x ? ` (total quedaría <b>${nfmt(ex.stock + x)}</b>)` : ''} — no se duplica.`;
+            }
+        }
+        ['mArticulo', 'mCantidad'].forEach(id => $(id).addEventListener('input', updateAviso));
+        $('mUnidad').addEventListener('change', updateAviso);
 
         $('btnRegistrar').addEventListener('click', async () => {
             const tipo = document.querySelector('input[name="tipo"]:checked').value;
@@ -297,8 +326,21 @@
             const unidad = $('mUnidad').value;
             if (!articulo) { mostrarMsg('Escribe el nombre del artículo.', false); return; }
             if (!(cantidad > 0)) { mostrarMsg('La cantidad debe ser mayor que 0.', false); return; }
+
+            // ¿Ya existe (exacto)? -> sumar al existente en vez de duplicar
+            const ex = inventario().find(it => norm(it.articulo) === norm(articulo) && norm(it.unidad) === norm(unidad));
+            let artFinal = articulo, uniFinal = unidad;
+            if (ex) {
+                if (tipo === 'entrada') {
+                    if (!confirm(`Ya existe "${ex.articulo}" con ${nfmt(ex.stock)} ${ex.unidad}.\n\n¿SUMAR ${nfmt(cantidad)} y dejar el total en ${nfmt(ex.stock + cantidad)}?\n\n(Aceptar = sumar al existente · Cancelar = no registrar)`)) return;
+                } else if (cantidad > ex.stock) {
+                    if (!confirm(`Solo hay ${nfmt(ex.stock)} ${ex.unidad} de "${ex.articulo}". ¿Registrar la salida de todos modos?`)) return;
+                }
+                artFinal = ex.articulo; uniFinal = ex.unidad; // adoptar nombre/unidad existentes para que sume exacto
+            }
+
             const payload = {
-                tipo, categoria, articulo, cantidad, unidad,
+                tipo, categoria, articulo: artFinal, cantidad, unidad: uniFinal,
                 contraparte: $('mContraparte').value.trim(),
                 observacion: $('mObs').value.trim(),
                 fecha_registro: Date.now(),
@@ -309,7 +351,8 @@
             try {
                 await set(push(ref(database, 'acopio')), payload);
                 $('mArticulo').value = ''; $('mCantidad').value = ''; $('mContraparte').value = ''; $('mObs').value = '';
-                mostrarMsg('✓ ' + (tipo === 'salida' ? 'Salida' : 'Entrada') + ' registrada.', true);
+                updateAviso();
+                mostrarMsg(ex ? ('✓ Sumado a "' + artFinal + '".') : ('✓ ' + (tipo === 'salida' ? 'Salida' : 'Entrada') + ' registrada.'), true);
                 $('mArticulo').focus();
             } catch (e) {
                 mostrarMsg('No se pudo registrar (' + (e.message || e.code || 'error') + ').', false);
