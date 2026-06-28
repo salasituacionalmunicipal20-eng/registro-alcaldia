@@ -266,7 +266,7 @@
                 const donde = `${esc(r.direccion || '—')}${r.direccion_centro_medico ? '<br>🏥 ' + esc(r.direccion_centro_medico) : ''}${r.comunidad_nombre ? '<br><b>' + esc(r.comunidad_nombre) + '</b>' : ''}`;
                 const fecha = r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
                 return `<tr>
-                    <td><b>${esc((r.nombres||'') + ' ' + (r.apellidos||''))}</b></td>
+                    <td><b>${esc((r.nombres||'') + ' ' + (r.apellidos||''))}</b>${r.tiene_foto ? ' 📷' : ''}</td>
                     <td>${esc(r.cedula || '—')}</td>
                     <td>${esc(r.procedencia || '—')}${r.municipio_origen ? '<br><span style="font-size:11px;color:#64748b;">' + esc(r.municipio_origen) + '</span>' : ''}</td>
                     <td>${donde}</td>
@@ -298,6 +298,7 @@
                 : `${tipoTxt} · ${r.reporta_nombre || '—'}${r.reporta_ubch ? ' · UBCH: ' + r.reporta_ubch : ''}${r.reporta_telefono ? ' · Tel: ' + r.reporta_telefono : ''}`;
             $('modal').innerHTML = `
                 <h3>${esc((r.nombres||'') + ' ' + (r.apellidos||''))}</h3>
+                <div id="detFotoWrap" style="text-align:center;margin-bottom:10px;${r.tiene_foto ? '' : 'display:none;'}"><img id="detFoto" alt="Foto" style="max-width:220px;max-height:260px;border-radius:10px;border:1px solid #cbd5e1;" /></div>
                 ${fila('Cédula', r.cedula)}
                 ${fila('Edad', edadDe(r.fecha_nacimiento) || '—')}${fila('Sexo', r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '—')}
                 ${fila('Teléfono', r.telefono)}
@@ -313,6 +314,13 @@
                 <button class="btn-nav cerrar" style="background:#7f1d1d;" id="cerrarModal">Cerrar</button>`;
             $('modalBg').classList.add('show');
             $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+            if (r.tiene_foto) {
+                get(ref(database, 'refugiados_fotos/' + id)).then(snap => {
+                    const w = document.getElementById('detFotoWrap'), im = document.getElementById('detFoto');
+                    if (snap.exists() && im) { im.src = snap.val(); if (w) w.style.display = 'block'; }
+                    else if (w) { w.style.display = 'none'; }
+                }).catch(() => {});
+            }
         }
         $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
 
@@ -387,31 +395,57 @@
             if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
             const lista = filtrados();
             if (!lista.length) { alert('No hay reportes para exportar con estos filtros.'); return; }
-            const doc = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'landscape' });
-            const body = lista.map((r, i) => [
-                String(i + 1),
-                _safePdf((r.nombres||'') + ' ' + (r.apellidos||'')),
-                _safePdf(String(r.cedula || '-')),
-                _safePdf(String(r.total_personas || (1 + toArr(r.grupo_familiar).length))),
-                _safePdf((r.procedencia || '-') + (r.municipio_origen ? (' / ' + r.municipio_origen) : '')),
-                _safePdf((r.direccion || '-') + (r.comunidad_nombre ? (' / ' + r.comunidad_nombre) : '')),
-                _safePdf(toArr(r.vulnerabilidad).join(', ') || '-'),
-                _safePdf(r.telefono || '-')
-            ]);
-            jsPDF.API.autoTable.call(doc, {
-                head: [['#', 'Nombre y Apellido', 'Cedula', 'Pers.', 'Procedencia', 'Donde se queda', 'Vulnerabilidad', 'Telefono']],
-                body, startY: 55, margin: { top: 55, bottom: 16, left: 12, right: 12 },
-                theme: 'grid',
-                styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.8, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
-                headStyles: { fillColor: [127,29,29], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9, halign: 'center' },
-                alternateRowStyles: { fillColor: [254,242,242] },
-                columnStyles: { 0:{cellWidth:9,halign:'center'}, 1:{cellWidth:45}, 2:{cellWidth:22,halign:'center'}, 3:{cellWidth:12,halign:'center'}, 4:{cellWidth:34}, 5:{cellWidth:62}, 6:{cellWidth:40}, 7:{cellWidth:26,halign:'center'} },
-                didDrawPage: () => {
-                    dibujarHeaderPDF(doc, { titulo: 'Censo de Refugiados', subtitulo: _safePdf(`${lista.length} reporte(s)`) });
-                    dibujarFooterPDF(doc);
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => {
+                dibujarHeaderPDF(doc, { titulo: 'Censo de Refugiados — Detalle', subtitulo: _safePdf(lista.length + ' reporte(s)') });
+                dibujarFooterPDF(doc);
+            };
+            const baseStyles = { font: 'helvetica', fontSize: 9, cellPadding: 1.6, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' };
+            lista.forEach((r, idx) => {
+                let startY;
+                if (idx === 0) startY = 55;
+                else { startY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 55) + 7; if (startY > 250) { doc.addPage(); startY = 55; } }
+                const edad = edadDe(r.fecha_nacimiento);
+                const reporter = (r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Anónimo'
+                    : ('Familiar' + (r.reporta_parentesco ? ' (' + r.reporta_parentesco + ')' : '') + ': ' + (r.reporta_nombre || '-')
+                        + (r.reporta_telefono ? ' · Tel ' + r.reporta_telefono : '') + (r.reporta_cedula ? ' · CI ' + r.reporta_cedula : ''));
+                const filas = [
+                    ['Reportado por', reporter],
+                    ['Refugiado', (r.nombres || '') + ' ' + (r.apellidos || '')],
+                    ['Cédula', String(r.cedula || '-')],
+                    ['Edad / Sexo', (edad !== '' ? edad + ' años' : '-') + ' / ' + (r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '-')],
+                    ['Teléfono', r.telefono || '-'],
+                    ['Procedencia', (r.procedencia || '-') + (r.municipio_origen ? (' / ' + r.municipio_origen) : '')],
+                    ['Dirección', r.direccion || '-'],
+                    ['Centro médico / refugio', r.direccion_centro_medico || '-'],
+                    ['Comuna / Comunidad', (r.circuito || '-') + ' / ' + (r.comunidad_nombre || '-')],
+                    ['Vulnerabilidad', toArr(r.vulnerabilidad).join(', ') || '-'],
+                    ['Necesidades', toArr(r.necesidades).join(', ') || '-'],
+                    ['Personas (con grupo familiar)', String(r.total_personas || (1 + toArr(r.grupo_familiar).length))],
+                    ['Fecha del reporte', r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '-']
+                ].map(row => [_safePdf(row[0]), _safePdf(row[1])]);
+                jsPDF.API.autoTable.call(doc, {
+                    startY, margin: { top: 55, bottom: 16, left: 14, right: 14 }, showHead: 'firstPage',
+                    head: [[{ content: _safePdf('REPORTE ' + (idx + 1) + ' — ' + (r.nombres || '') + ' ' + (r.apellidos || '')), colSpan: 2 }]],
+                    body: filas, theme: 'grid', styles: baseStyles,
+                    headStyles: { fillColor: [127,29,29], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9.5 },
+                    columnStyles: { 0: { cellWidth: 46, fontStyle: 'bold', fillColor: [254,242,242] }, 1: { cellWidth: 140 } },
+                    didDrawPage: drawHF
+                });
+                const grupo = toArr(r.grupo_familiar);
+                if (grupo.length) {
+                    jsPDF.API.autoTable.call(doc, {
+                        startY: doc.lastAutoTable.finalY, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                        head: [['Grupo familiar #', 'Nombre y Apellido', 'Cédula', 'Edad', 'Sexo']],
+                        body: grupo.map((g, i) => [String(i + 1), _safePdf((g.nombres || '') + ' ' + (g.apellidos || '')), _safePdf(String(g.cedula || '-')), _safePdf(String(g.edad || '-')), _safePdf(g.sexo || '-')]),
+                        theme: 'grid', styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.4, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
+                        headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8.5 },
+                        columnStyles: { 0: { cellWidth: 26, halign: 'center' }, 1: { cellWidth: 96 }, 2: { cellWidth: 30, halign: 'center' }, 3: { cellWidth: 17, halign: 'center' }, 4: { cellWidth: 17, halign: 'center' } },
+                        didDrawPage: drawHF
+                    });
                 }
             });
-            doc.save(`refugiados_${new Date().toISOString().slice(0,10)}.pdf`);
+            doc.save('refugiados_detalle_' + new Date().toISOString().slice(0, 10) + '.pdf');
         });
     </script>
 </body>
