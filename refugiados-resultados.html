@@ -36,6 +36,7 @@
         tbody tr:hover { background: #fff7ed; }
         .btn-wa { background: #25D366; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; text-decoration: none; white-space: nowrap; }
         .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+        .btn-print { background: #b91c1c; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; margin-left: 4px; }
         .tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #fee2e2; color: #991b1b; margin: 1px 2px; }
         .tag.n { background: #dbeafe; color: #1e3a8a; }
         .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 10px 0; color: #fff; }
@@ -274,11 +275,12 @@
                     <td>${vuln}</td>
                     <td>${wa}</td>
                     <td>${esc(fecha)}</td>
-                    <td><button class="btn-ver" data-id="${esc(r.id)}">Ver</button></td>
+                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-print" data-id="${esc(r.id)}">🖨️ Imprimir</button></td>
                 </tr>`;
             }).join('');
 
             tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+            tb.querySelectorAll('button.btn-print').forEach(b => b.addEventListener('click', () => imprimirUno(b.dataset.id)));
 
             const desde = ini + 1, hasta = Math.min(ini + TAM, total);
             $('paginacion').innerHTML = `<button id="pgP" ${pagina<=1?'disabled':''}>← Anterior</button><span class="info">${desde}–${hasta} de ${total} · pág ${pagina}/${totalPag}</span><button id="pgN" ${pagina>=totalPag?'disabled':''}>Siguiente →</button>`;
@@ -390,6 +392,56 @@
         });
 
         // ---- PDF imprimible ----
+        // ---- PDF: helpers compartidos (usados por el masivo y por Imprimir individual) ----
+        const _baseStylesPDF = { font: 'helvetica', fontSize: 9, cellPadding: 1.6, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' };
+        function _filasReporte(r) {
+            const edad = edadDe(r.fecha_nacimiento);
+            const reporter = (r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Anónimo'
+                : ('Familiar' + (r.reporta_parentesco ? ' (' + r.reporta_parentesco + ')' : '') + ': ' + (r.reporta_nombre || '-')
+                    + (r.reporta_telefono ? ' · Tel ' + r.reporta_telefono : '') + (r.reporta_cedula ? ' · CI ' + r.reporta_cedula : ''));
+            return [
+                ['Reportado por', reporter],
+                ['Refugiado', (r.nombres || '') + ' ' + (r.apellidos || '')],
+                ['Cédula', String(r.cedula || '-')],
+                ['Edad / Sexo', (edad !== '' ? edad + ' años' : '-') + ' / ' + (r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '-')],
+                ['Teléfono', r.telefono || '-'],
+                ['Procedencia', (r.procedencia || '-') + (r.municipio_origen ? (' / ' + r.municipio_origen) : '')],
+                ['Dirección', r.direccion || '-'],
+                ['Centro médico / refugio', r.direccion_centro_medico || '-'],
+                ['Comuna / Comunidad', (r.circuito || '-') + ' / ' + (r.comunidad_nombre || '-')],
+                ['Vulnerabilidad', toArr(r.vulnerabilidad).join(', ') || '-'],
+                ['Necesidades', toArr(r.necesidades).join(', ') || '-'],
+                ['Patología / condición', r.patologia || '-'],
+                ['Observaciones', r.observacion || '-'],
+                ['Personas (con grupo familiar)', String(r.total_personas || (1 + toArr(r.grupo_familiar).length))],
+                ['Fecha del reporte', r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '-']
+            ].map(row => [_safePdf(row[0]), _safePdf(row[1])]);
+        }
+        function _dibujarReporte(doc, r, headTxt, startY, drawHF) {
+            const { jsPDF } = window.jspdf;
+            jsPDF.API.autoTable.call(doc, {
+                startY, margin: { top: 55, bottom: 16, left: 14, right: 14 }, showHead: 'firstPage',
+                head: [[{ content: _safePdf(headTxt), colSpan: 2 }]],
+                body: _filasReporte(r), theme: 'grid', styles: _baseStylesPDF,
+                headStyles: { fillColor: [127,29,29], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9.5 },
+                columnStyles: { 0: { cellWidth: 46, fontStyle: 'bold', fillColor: [254,242,242] }, 1: { cellWidth: 140 } },
+                didDrawPage: drawHF
+            });
+            const grupo = toArr(r.grupo_familiar);
+            if (grupo.length) {
+                jsPDF.API.autoTable.call(doc, {
+                    startY: doc.lastAutoTable.finalY, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                    head: [['Grupo familiar #', 'Nombre y Apellido', 'Cédula', 'Edad', 'Sexo']],
+                    body: grupo.map((g, i) => [String(i + 1), _safePdf((g.nombres || '') + ' ' + (g.apellidos || '')), _safePdf(String(g.cedula || '-')), _safePdf(String(g.edad || '-')), _safePdf(g.sexo || '-')]),
+                    theme: 'grid', styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.4, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
+                    headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8.5 },
+                    columnStyles: { 0: { cellWidth: 26, halign: 'center' }, 1: { cellWidth: 96 }, 2: { cellWidth: 30, halign: 'center' }, 3: { cellWidth: 17, halign: 'center' }, 4: { cellWidth: 17, halign: 'center' } },
+                    didDrawPage: drawHF
+                });
+            }
+        }
+
+        // ---- PDF masivo (todos los reportes filtrados) ----
         $('btnPdf').addEventListener('click', () => {
             if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
             const { jsPDF } = window.jspdf;
@@ -401,55 +453,41 @@
                 dibujarHeaderPDF(doc, { titulo: 'Censo de Refugiados — Detalle', subtitulo: _safePdf(lista.length + ' reporte(s)') });
                 dibujarFooterPDF(doc);
             };
-            const baseStyles = { font: 'helvetica', fontSize: 9, cellPadding: 1.6, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' };
             lista.forEach((r, idx) => {
                 let startY;
                 if (idx === 0) startY = 55;
                 else { startY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 55) + 7; if (startY > 250) { doc.addPage(); startY = 55; } }
-                const edad = edadDe(r.fecha_nacimiento);
-                const reporter = (r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Anónimo'
-                    : ('Familiar' + (r.reporta_parentesco ? ' (' + r.reporta_parentesco + ')' : '') + ': ' + (r.reporta_nombre || '-')
-                        + (r.reporta_telefono ? ' · Tel ' + r.reporta_telefono : '') + (r.reporta_cedula ? ' · CI ' + r.reporta_cedula : ''));
-                const filas = [
-                    ['Reportado por', reporter],
-                    ['Refugiado', (r.nombres || '') + ' ' + (r.apellidos || '')],
-                    ['Cédula', String(r.cedula || '-')],
-                    ['Edad / Sexo', (edad !== '' ? edad + ' años' : '-') + ' / ' + (r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '-')],
-                    ['Teléfono', r.telefono || '-'],
-                    ['Procedencia', (r.procedencia || '-') + (r.municipio_origen ? (' / ' + r.municipio_origen) : '')],
-                    ['Dirección', r.direccion || '-'],
-                    ['Centro médico / refugio', r.direccion_centro_medico || '-'],
-                    ['Comuna / Comunidad', (r.circuito || '-') + ' / ' + (r.comunidad_nombre || '-')],
-                    ['Vulnerabilidad', toArr(r.vulnerabilidad).join(', ') || '-'],
-                    ['Necesidades', toArr(r.necesidades).join(', ') || '-'],
-                    ['Patología / condición', r.patologia || '-'],
-                    ['Observaciones', r.observacion || '-'],
-                    ['Personas (con grupo familiar)', String(r.total_personas || (1 + toArr(r.grupo_familiar).length))],
-                    ['Fecha del reporte', r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '-']
-                ].map(row => [_safePdf(row[0]), _safePdf(row[1])]);
-                jsPDF.API.autoTable.call(doc, {
-                    startY, margin: { top: 55, bottom: 16, left: 14, right: 14 }, showHead: 'firstPage',
-                    head: [[{ content: _safePdf('REPORTE ' + (idx + 1) + ' — ' + (r.nombres || '') + ' ' + (r.apellidos || '')), colSpan: 2 }]],
-                    body: filas, theme: 'grid', styles: baseStyles,
-                    headStyles: { fillColor: [127,29,29], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9.5 },
-                    columnStyles: { 0: { cellWidth: 46, fontStyle: 'bold', fillColor: [254,242,242] }, 1: { cellWidth: 140 } },
-                    didDrawPage: drawHF
-                });
-                const grupo = toArr(r.grupo_familiar);
-                if (grupo.length) {
-                    jsPDF.API.autoTable.call(doc, {
-                        startY: doc.lastAutoTable.finalY, margin: { top: 55, bottom: 16, left: 14, right: 14 },
-                        head: [['Grupo familiar #', 'Nombre y Apellido', 'Cédula', 'Edad', 'Sexo']],
-                        body: grupo.map((g, i) => [String(i + 1), _safePdf((g.nombres || '') + ' ' + (g.apellidos || '')), _safePdf(String(g.cedula || '-')), _safePdf(String(g.edad || '-')), _safePdf(g.sexo || '-')]),
-                        theme: 'grid', styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.4, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
-                        headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8.5 },
-                        columnStyles: { 0: { cellWidth: 26, halign: 'center' }, 1: { cellWidth: 96 }, 2: { cellWidth: 30, halign: 'center' }, 3: { cellWidth: 17, halign: 'center' }, 4: { cellWidth: 17, halign: 'center' } },
-                        didDrawPage: drawHF
-                    });
-                }
+                _dibujarReporte(doc, r, 'REPORTE ' + (idx + 1) + ' — ' + (r.nombres || '') + ' ' + (r.apellidos || ''), startY, drawHF);
             });
             doc.save('refugiados_detalle_' + new Date().toISOString().slice(0, 10) + '.pdf');
         });
+
+        // ---- Imprimir un solo refugiado (incluye su foto si tiene) ----
+        async function imprimirUno(id) {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            let fotoUrl = '';
+            if (r.tiene_foto) { try { const s = await get(ref(database, 'refugiados_fotos/' + id)); if (s.exists()) fotoUrl = s.val(); } catch (e) { console.warn('No se pudo cargar la foto del refugiado', id, e); } }
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => {
+                dibujarHeaderPDF(doc, { titulo: 'Refugiado — Reporte individual', subtitulo: _safePdf((r.nombres || '') + ' ' + (r.apellidos || '')) });
+                dibujarFooterPDF(doc);
+            };
+            let startY = 55;
+            if (fotoUrl) {
+                try {
+                    const props = doc.getImageProperties(fotoUrl);
+                    const ratio = Math.min(45 / props.width, 45 / props.height);
+                    const w = props.width * ratio, h = props.height * ratio;
+                    doc.addImage(fotoUrl, 'JPEG', (215.9 - w) / 2, startY, w, h);
+                    startY += h + 4;
+                } catch (e) { console.warn('No se pudo incrustar la foto en el PDF', e); }
+            }
+            _dibujarReporte(doc, r, (r.nombres || '') + ' ' + (r.apellidos || ''), startY, drawHF);
+            doc.save('refugiado_' + (String(r.cedula || '').replace(/[^0-9A-Za-z]/g, '') || 'reporte') + '.pdf');
+        }
     </script>
 </body>
 </html>
