@@ -139,10 +139,31 @@
         </div>
     </div>
 
+    <!-- Modal editar movimiento -->
+    <div id="editBg" style="position:fixed;inset:0;background:rgba(15,23,42,0.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;">
+        <div style="background:#fff;border-radius:12px;max-width:540px;width:100%;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.3);">
+            <h3 style="color:#0a2351;margin-bottom:14px;font-size:17px;">✏️ Editar movimiento</h3>
+            <div class="grid">
+                <div><label>Tipo</label><select id="eTipo"><option value="entrada">Entrada</option><option value="salida">Salida</option></select></div>
+                <div><label>Categoría</label><select id="eCategoria"></select></div>
+                <div><label>Artículo</label><input id="eArticulo" autocomplete="off" /></div>
+                <div><label>Cantidad</label><input id="eCantidad" type="number" min="0" step="any" /></div>
+                <div><label>Unidad</label><select id="eUnidad"></select></div>
+                <div><label>Donante / Destino</label><input id="eContraparte" autocomplete="off" /></div>
+                <div style="grid-column:1/-1;"><label>Observación</label><input id="eObs" autocomplete="off" /></div>
+            </div>
+            <div id="eMsg" class="msg"></div>
+            <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+                <button id="eCancelar" class="btn" style="background:#e2e8f0;color:#0f172a;">Cancelar</button>
+                <button id="eGuardar" class="btn" style="background:#16a34a;">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, push, set, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue, get, child, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
 
         const firebaseConfig = {
@@ -277,10 +298,11 @@
                         <td>${esc(m.unidad||'—')}</td>
                         <td>${esc(m.contraparte||'—')}</td>
                         <td style="font-size:12px;color:#64748b;">${esc(m.registrado_por||'—')}</td>
-                        <td><button class="btn-del" data-id="${esc(m.id)}">Borrar</button></td>
+                        <td style="white-space:nowrap;"><button class="btn-edit" data-id="${esc(m.id)}" style="background:#dbeafe;color:#1e40af;border:none;border-radius:6px;padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer;margin-right:5px;">✏️ Editar</button><button class="btn-del" data-id="${esc(m.id)}">Borrar</button></td>
                     </tr>`;
                 }).join('');
                 tbm.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrarMov(b.dataset.id)));
+                tbm.querySelectorAll('button.btn-edit').forEach(b => b.addEventListener('click', () => editarMov(b.dataset.id)));
                 const desde = ini + 1, hasta = Math.min(ini + TAM, MOVS.length);
                 $('pagMov').innerHTML = `<button id="mP" ${pagMov<=1?'disabled':''}>← Anterior</button><span class="info">${desde}–${hasta} de ${MOVS.length}</span><button id="mN" ${pagMov>=totalPag?'disabled':''}>Siguiente →</button>`;
                 const p = $('mP'), n = $('mN');
@@ -364,6 +386,45 @@
             if (!confirm(`¿Borrar este movimiento?\n${m.tipo === 'salida' ? 'SALIDA' : 'ENTRADA'} · ${m.articulo} · ${nfmt(m.cantidad)} ${m.unidad}`)) return;
             try { await remove(ref(database, 'acopio/' + id)); } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
         }
+
+        // ---- Editar movimiento ----
+        CATEGORIAS.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; $('eCategoria').appendChild(o); });
+        UNIDADES.forEach(u => { const o = document.createElement('option'); o.value = u; o.textContent = u; $('eUnidad').appendChild(o); });
+        let editId = null;
+        function setSel(id, val) { const s = $(id); if (val && ![...s.options].some(o => o.value === val)) { const o = document.createElement('option'); o.value = val; o.textContent = val; s.appendChild(o); } s.value = val; }
+        function editarMov(id) {
+            const m = MOVS.find(x => x.id === id); if (!m) return;
+            editId = id;
+            $('eTipo').value = m.tipo === 'salida' ? 'salida' : 'entrada';
+            setSel('eCategoria', m.categoria || '');
+            $('eArticulo').value = m.articulo || '';
+            $('eCantidad').value = (m.cantidad != null ? m.cantidad : '');
+            setSel('eUnidad', m.unidad || '');
+            $('eContraparte').value = m.contraparte || '';
+            $('eObs').value = m.observacion || '';
+            $('eMsg').className = 'msg';
+            $('editBg').style.display = 'flex';
+        }
+        $('eCancelar').addEventListener('click', () => { $('editBg').style.display = 'none'; editId = null; });
+        $('editBg').addEventListener('click', (e) => { if (e.target === $('editBg')) { $('editBg').style.display = 'none'; editId = null; } });
+        $('eGuardar').addEventListener('click', async () => {
+            if (!editId) return;
+            const articulo = $('eArticulo').value.trim();
+            const cantidad = Number($('eCantidad').value);
+            if (!articulo) { $('eMsg').textContent = 'Escribe el artículo.'; $('eMsg').className = 'msg err'; return; }
+            if (!(cantidad >= 0)) { $('eMsg').textContent = 'Cantidad inválida.'; $('eMsg').className = 'msg err'; return; }
+            $('eGuardar').disabled = true;
+            try {
+                await update(ref(database, 'acopio/' + editId), {
+                    tipo: $('eTipo').value, categoria: $('eCategoria').value, articulo, cantidad,
+                    unidad: $('eUnidad').value, contraparte: $('eContraparte').value.trim(), observacion: $('eObs').value.trim(),
+                    editado_por: nombreUsuario, editado_en: Date.now()
+                });
+                $('editBg').style.display = 'none'; editId = null;
+            } catch (e) {
+                $('eMsg').textContent = 'No se pudo guardar: ' + (e.message || e.code); $('eMsg').className = 'msg err';
+            } finally { $('eGuardar').disabled = false; }
+        });
 
         // ---- Exportar Excel (Inventario + Movimientos) ----
         $('btnExcel').addEventListener('click', () => {
