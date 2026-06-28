@@ -110,6 +110,7 @@
             <div id="campoMunicipio" class="hidden">
                 <label>Municipio / localidad de origen</label>
                 <select id="ref_municipio"><option value="">Selecciona el municipio…</option></select>
+                <input id="ref_municipio_otro" type="text" class="hidden" placeholder="Escribe el municipio o localidad" autocomplete="off" style="margin-top:8px;" />
             </div>
         </div>
 
@@ -276,10 +277,14 @@
             const sel = $('ref_municipio');
             const lista = (window.MUNICIPIOS && window.MUNICIPIOS[est]) ? window.MUNICIPIOS[est] : null;
             if (!lista || !lista.length) { sel.innerHTML = '<option value="">Selecciona el municipio…</option>'; $('campoMunicipio').classList.add('hidden'); return; }
-            sel.innerHTML = '<option value="">Selecciona el municipio…</option>' + lista.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('') + '<option value="Otro / No sé">Otro / No sé</option>';
+            sel.innerHTML = '<option value="">Selecciona el municipio…</option>' + lista.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('') + '<option value="Otro">Otro (especificar)</option><option value="No sé">No sé</option>';
             $('campoMunicipio').classList.remove('hidden');
+            $('ref_municipio_otro').classList.add('hidden'); $('ref_municipio_otro').value = '';
         }
         $('ref_procedencia').addEventListener('change', poblarMunicipios);
+        $('ref_municipio').addEventListener('change', () => {
+            $('ref_municipio_otro').classList.toggle('hidden', $('ref_municipio').value !== 'Otro');
+        });
         poblarMunicipios();
 
         // ---- Cascada territorial (comuna/comunidad de DONDE SE QUEDA) ----
@@ -387,7 +392,7 @@
                 sexo: v('ref_sexo'),
                 fecha_nacimiento: v('ref_fecha'),
                 procedencia: v('ref_procedencia'),
-                municipio_origen: v('ref_municipio'),
+                municipio_origen: v('ref_municipio') === 'Otro' ? (v('ref_municipio_otro') || 'Otro') : v('ref_municipio'),
                 vulnerabilidad: chipsSeleccionados('chipsVuln'),
                 necesidades: chipsSeleccionados('chipsNec'),
                 direccion,
