@@ -248,12 +248,12 @@
                 const tel = normalizarTel(r.telefono);
                 const wa = tel.ok ? `<a class="btn-wa" target="_blank" rel="noopener" href="https://wa.me/${tel.e164}">💬 WA</a>` : (r.telefono ? esc(r.telefono) : '—');
                 const vuln = toArr(r.vulnerabilidad).map(x => `<span class="tag">${esc(x)}</span>`).join('') || '—';
-                const donde = `${esc(r.direccion || '—')}${r.comunidad_nombre ? '<br><b>' + esc(r.comunidad_nombre) + '</b>' : ''}`;
+                const donde = `${esc(r.direccion || '—')}${r.direccion_centro_medico ? '<br>🏥 ' + esc(r.direccion_centro_medico) : ''}${r.comunidad_nombre ? '<br><b>' + esc(r.comunidad_nombre) + '</b>' : ''}`;
                 const fecha = r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
                 return `<tr>
                     <td><b>${esc((r.nombres||'') + ' ' + (r.apellidos||''))}</b></td>
                     <td>${esc(r.cedula || '—')}</td>
-                    <td>${esc(r.procedencia || '—')}</td>
+                    <td>${esc(r.procedencia || '—')}${r.municipio_origen ? '<br><span style="font-size:11px;color:#64748b;">' + esc(r.municipio_origen) + '</span>' : ''}</td>
                     <td>${donde}</td>
                     <td style="text-align:center;font-weight:800;">${esc(r.total_personas || (1 + toArr(r.grupo_familiar).length))}</td>
                     <td>${vuln}</td>
@@ -286,10 +286,10 @@
                 ${fila('Cédula', r.cedula)}
                 ${fila('Edad', edadDe(r.fecha_nacimiento) || '—')}${fila('Sexo', r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '—')}
                 ${fila('Teléfono', r.telefono)}
-                ${fila('Procedencia', r.procedencia)}
-                ${fila('Dirección', r.direccion)}
+                ${fila('Procedencia (estado)', r.procedencia)}${fila('Municipio de origen', r.municipio_origen)}
+                ${fila('Dirección', r.direccion)}${fila('Centro médico / refugio', r.direccion_centro_medico)}
                 ${fila('Parroquia / Comuna', `${r.parroquia||'—'} / ${r.circuito||'—'}`)}
-                ${fila('Comunidad', r.comunidad_nombre)}${fila('Centro electoral', r.centro_electoral)}
+                ${fila('Comunidad', r.comunidad_nombre)}
                 ${fila('Vulnerabilidad', toArr(r.vulnerabilidad).join(', '))}
                 ${fila('Necesidades', toArr(r.necesidades).join(', '))}
                 ${fila('Reportado por', reporta)}
@@ -346,7 +346,7 @@
             const f1 = REGS.map(r => [
                 r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '',
                 r.nombres||'', r.apellidos||'', String(r.cedula||''), String(edadDe(r.fecha_nacimiento)||''),
-                r.sexo||'', String(r.telefono||''), r.procedencia||'', r.direccion||'', r.parroquia||'', r.circuito||'', r.comunidad_nombre||'',
+                r.sexo||'', String(r.telefono||''), (r.procedencia||'') + (r.municipio_origen?(' / '+r.municipio_origen):''), r.direccion||'', r.parroquia||'', r.circuito||'', r.comunidad_nombre||'',
                 String(r.total_personas || (1 + toArr(r.grupo_familiar).length)),
                 toArr(r.vulnerabilidad).join(', '), toArr(r.necesidades).join(', '),
                 (r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Anónimo' : ((r.reporta_tipo === 'familiar' ? ('Familiar' + (r.reporta_parentesco ? ' ('+r.reporta_parentesco+')' : '') + ': ') : '') + (r.reporta_nombre||'') + (r.reporta_ubch?(' / '+r.reporta_ubch):''))
@@ -356,8 +356,8 @@
             REGS.forEach(r => {
                 const ref = `${r.nombres||''} ${r.apellidos||''}`.trim();
                 const donde = `${r.direccion||''}${r.comunidad_nombre?(' ('+r.comunidad_nombre+')'):''}`;
-                f2.push(['Principal', r.nombres||'', r.apellidos||'', String(r.cedula||''), String(edadDe(r.fecha_nacimiento)||''), r.sexo||'', ref, r.procedencia||'', donde]);
-                toArr(r.grupo_familiar).forEach(g => f2.push(['Acompañante', g.nombres||'', g.apellidos||'', String(g.cedula||''), String(g.edad||''), g.sexo||'', ref, r.procedencia||'', donde]));
+                f2.push(['Principal', r.nombres||'', r.apellidos||'', String(r.cedula||''), String(edadDe(r.fecha_nacimiento)||''), r.sexo||'', ref, (r.procedencia||'') + (r.municipio_origen?(' / '+r.municipio_origen):''), donde]);
+                toArr(r.grupo_familiar).forEach(g => f2.push(['Acompañante', g.nombres||'', g.apellidos||'', String(g.cedula||''), String(g.edad||''), g.sexo||'', ref, (r.procedencia||'') + (r.municipio_origen?(' / '+r.municipio_origen):''), donde]));
             });
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — REPORTES', hdr1, f1, [20,18,18,12,7,7,14,22,30,16,16,18,9,24,24,24]), 'Reportes');
@@ -378,7 +378,7 @@
                 _safePdf((r.nombres||'') + ' ' + (r.apellidos||'')),
                 _safePdf(String(r.cedula || '-')),
                 _safePdf(String(r.total_personas || (1 + toArr(r.grupo_familiar).length))),
-                _safePdf(r.procedencia || '-'),
+                _safePdf((r.procedencia || '-') + (r.municipio_origen ? (' / ' + r.municipio_origen) : '')),
                 _safePdf((r.direccion || '-') + (r.comunidad_nombre ? (' / ' + r.comunidad_nombre) : '')),
                 _safePdf(toArr(r.vulnerabilidad).join(', ') || '-'),
                 _safePdf(r.telefono || '-')

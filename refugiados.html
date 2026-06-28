@@ -6,6 +6,7 @@
     <title>Registro de Refugiados — Alcaldía de Cristóbal Rojas</title>
     <meta name="description" content="Registro de personas que llegan al Municipio Cristóbal Rojas en calidad de refugiado tras el terremoto. Alcaldía de Cristóbal Rojas." />
     <script defer src="territorio-data.js"></script>
+    <script defer src="municipios-data.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #eef2f7; color: #0f172a; line-height: 1.5; padding-bottom: 40px; }
@@ -63,21 +64,10 @@
             <h2>¿Quién está reportando?</h2>
             <div class="sub">Para coordinar la ayuda. Puedes hacerlo de forma anónima.</div>
             <div class="radio-grp">
-                <label class="radio-card on" id="rc_resp"><input type="radio" name="reporta" value="responsable" checked style="width:auto;margin-right:6px;">Soy responsable / UBCH / parte del gobierno</label>
-                <label class="radio-card" id="rc_fam"><input type="radio" name="reporta" value="familiar" style="width:auto;margin-right:6px;">Lo agrega un familiar / allegado</label>
+                <label class="radio-card on" id="rc_fam"><input type="radio" name="reporta" value="familiar" checked style="width:auto;margin-right:6px;">Lo agrega un familiar / allegado</label>
                 <label class="radio-card" id="rc_anon"><input type="radio" name="reporta" value="anonimo" style="width:auto;margin-right:6px;">Prefiero reportar anónimo</label>
             </div>
-            <div id="bloqueResponsable">
-                <label>UBCH / Punto donde se recibe</label>
-                <input id="r_ubch" type="text" placeholder="Nombre de la UBCH o punto de recepción" autocomplete="off" />
-                <label>Tu nombre y apellido</label>
-                <input id="r_nombre" type="text" placeholder="Nombre del responsable" autocomplete="off" />
-                <div class="row2">
-                    <div><label>Tu cédula</label><input id="r_cedula" type="tel" inputmode="numeric" placeholder="12345678" maxlength="10" autocomplete="off" /></div>
-                    <div><label>Tu teléfono</label><input id="r_telefono" type="tel" inputmode="numeric" placeholder="04141234567" maxlength="11" autocomplete="off" /></div>
-                </div>
-            </div>
-            <div id="bloqueFamiliar" class="hidden">
+            <div id="bloqueFamiliar">
                 <label>Parentesco / relación con la persona refugiada</label>
                 <input id="f_parentesco" type="text" placeholder="Ej: hijo, hermana, vecino, amigo…" autocomplete="off" />
                 <label>Tu cédula <span class="hint">(buscamos tus datos en el CNE)</span></label>
@@ -112,10 +102,14 @@
                 <div><label>Sexo</label><select id="ref_sexo"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option></select></div>
             </div>
             <div class="row2">
-                <div><label>Fecha de nacimiento</label><input id="ref_fecha" type="date" /></div>
-                <div><label>¿De dónde viene? (procedencia)</label>
+                <div><label>Fecha de nacimiento</label><input id="ref_fecha" type="date" /><div class="hint" id="ref_edad" style="font-weight:700;color:#b91c1c;margin-top:5px;"></div></div>
+                <div><label>¿De dónde viene? (estado)</label>
                     <select id="ref_procedencia"></select>
                 </div>
+            </div>
+            <div id="campoMunicipio" class="hidden">
+                <label>Municipio / localidad de origen</label>
+                <select id="ref_municipio"><option value="">Selecciona el municipio…</option></select>
             </div>
         </div>
 
@@ -139,11 +133,12 @@
             <div class="sub">Dirección dentro del Municipio Cristóbal Rojas.</div>
             <label>Dirección completa <span class="req">*</span></label>
             <textarea id="ref_direccion" placeholder="Sector, calle, casa/edificio, punto de referencia…"></textarea>
+            <label>¿Llegó a un centro de salud / refugio? <span class="hint">(opcional)</span></label>
+            <input id="ref_centro_medico" type="text" placeholder="Nombre del centro médico, hospital o refugio (si aplica)" autocomplete="off" />
             <label>Parroquia</label>
             <select id="jefe_parroquia"><option value="">Selecciona la parroquia</option></select>
             <div id="campoCircuito" class="hidden"><label>Comuna</label><select id="jefe_circuito"><option value="">Selecciona la comuna</option></select></div>
             <div id="campoComunidad" class="hidden"><label>Comunidad</label><select id="jefe_comunidad"><option value="">Selecciona la comunidad</option></select></div>
-            <div id="panelCentro" class="hidden"></div>
         </div>
 
         <!-- GRUPO FAMILIAR -->
@@ -194,7 +189,7 @@
 
         const ESTADOS = ['La Guaira (Vargas)','Distrito Capital','Miranda','Aragua','Carabobo','Anzoátegui','Amazonas','Apure','Barinas','Bolívar','Cojedes','Delta Amacuro','Falcón','Guárico','Lara','Mérida','Monagas','Nueva Esparta','Portuguesa','Sucre','Táchira','Trujillo','Yaracuy','Zulia','Otro / No sé'];
         const VULN = ['Niños/as','Embarazadas','Adultos mayores','Personas con discapacidad','Enfermos crónicos'];
-        const NEC = ['Alimentos','Agua','Medicinas','Colchones / cobijas','Ropa','Artículos de higiene','Otro'];
+        const NEC = ['Alimentos','Agua','Medicinas','Atención médica','Colchones / cobijas','Ropa','Artículos de higiene','Otro'];
 
         // ---- Poblar procedencia, vulnerabilidad, necesidades ----
         (function init() {
@@ -220,9 +215,7 @@
         document.querySelectorAll('input[name="reporta"]').forEach(r => {
             r.addEventListener('change', () => {
                 const val = document.querySelector('input[name="reporta"]:checked').value;
-                $('bloqueResponsable').classList.toggle('hidden', val !== 'responsable');
                 $('bloqueFamiliar').classList.toggle('hidden', val !== 'familiar');
-                $('rc_resp').classList.toggle('on', val === 'responsable');
                 $('rc_fam').classList.toggle('on', val === 'familiar');
                 $('rc_anon').classList.toggle('on', val === 'anonimo');
             });
@@ -258,13 +251,36 @@
                     nom.value = ape ? _n : [_n, _a].filter(Boolean).join(' ').trim();
                 }
                 if (ape && !ape.value.trim()) ape.value = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
-                if (idFecha && $(idFecha) && !$(idFecha).value && fechaCneValida(d.fecha_nac)) $(idFecha).value = d.fecha_nac;
+                if (idFecha && $(idFecha) && !$(idFecha).value && fechaCneValida(d.fecha_nac)) { $(idFecha).value = d.fecha_nac; $(idFecha).dispatchEvent(new Event('change')); }
                 if (hintId) $(hintId).textContent = '✓ Datos encontrados en el CNE.';
             });
         }
         engancharCNE('ref_cedula', 'ref_nombres', 'ref_apellidos', 'ref_fecha', 'ref_nacionalidad', 'ref_cne_hint');
-        engancharCNE('r_cedula', 'r_nombre', null, null, null, null);
         engancharCNE('f_cedula', 'f_nombre', null, null, 'f_nacionalidad', 'f_cne_hint');
+
+        // Edad en vivo junto a la fecha de nacimiento del refugiado
+        function edadCalc(f) {
+            if (!f || !/^\d{4}-\d{2}-\d{2}$/.test(f)) return '';
+            const [a, m, d] = f.split('-').map(Number);
+            const h = new Date(); let e = h.getFullYear() - a;
+            if (h.getMonth() + 1 < m || (h.getMonth() + 1 === m && h.getDate() < d)) e--;
+            return (e >= 0 && e <= 120) ? e : '';
+        }
+        function actualizarEdadRef() { const e = edadCalc(v('ref_fecha')); $('ref_edad').textContent = (e !== '') ? ('Edad: ' + e + ' años') : ''; }
+        $('ref_fecha').addEventListener('input', actualizarEdadRef);
+        $('ref_fecha').addEventListener('change', actualizarEdadRef);
+
+        // Cascada estado -> municipio
+        function poblarMunicipios() {
+            const est = $('ref_procedencia').value;
+            const sel = $('ref_municipio');
+            const lista = (window.MUNICIPIOS && window.MUNICIPIOS[est]) ? window.MUNICIPIOS[est] : null;
+            if (!lista || !lista.length) { sel.innerHTML = '<option value="">Selecciona el municipio…</option>'; $('campoMunicipio').classList.add('hidden'); return; }
+            sel.innerHTML = '<option value="">Selecciona el municipio…</option>' + lista.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('') + '<option value="Otro / No sé">Otro / No sé</option>';
+            $('campoMunicipio').classList.remove('hidden');
+        }
+        $('ref_procedencia').addEventListener('change', poblarMunicipios);
+        poblarMunicipios();
 
         // ---- Cascada territorial (comuna/comunidad de DONDE SE QUEDA) ----
         function T() { return window.TERRITORIO && window.TERRITORIO.comunidades ? window.TERRITORIO.comunidades : {}; }
@@ -272,7 +288,7 @@
         function listarCircuitosDe(par) { const s = new Set(); Object.values(T()).forEach(c => { if (c.activo && c.parroquia === par) s.add(c.circuito_comunal); }); return [...s].sort(); }
         function listarComunidadesDe(par, circ) { const a = []; Object.entries(T()).forEach(([slug, c]) => { if (c.activo && c.parroquia === par && c.circuito_comunal === circ) a.push({ slug, nombre: c.nombre, centro_electoral: c.centro_electoral, mesas: c.mesas }); }); a.sort((x, y) => x.nombre.localeCompare(y.nombre, 'es')); return a; }
         function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
-        function panelOtro() { const p = $('panelCentro'); p.className = 'panel-centro'; p.innerHTML = '<div class="t">Centro Electoral</div><div>OTRO / No sé</div>'; p.classList.remove('hidden'); }
+        function panelOtro() { /* UBCH / centro electoral removido del registro de refugiados */ }
 
         window.addEventListener('DOMContentLoaded', () => {
             const sp = $('jefe_parroquia');
@@ -283,27 +299,19 @@
             const par = e.target.value, selC = $('jefe_circuito'), selCom = $('jefe_comunidad');
             selC.innerHTML = '<option value="">Selecciona la comuna</option>';
             selCom.innerHTML = '<option value="">Selecciona la comunidad</option>';
-            $('campoComunidad').classList.add('hidden'); $('panelCentro').classList.add('hidden');
+            $('campoComunidad').classList.add('hidden');
             if (par === 'OTRO') { selC.innerHTML = '<option value="OTRO">OTRO</option>'; selCom.innerHTML = '<option value="OTRO">OTRO</option>'; $('campoCircuito').classList.remove('hidden'); $('campoComunidad').classList.remove('hidden'); panelOtro(); return; }
             if (par) { listarCircuitosDe(par).forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; selC.appendChild(o); }); $('campoCircuito').classList.remove('hidden'); }
             else $('campoCircuito').classList.add('hidden');
         });
         $('jefe_circuito').addEventListener('change', (e) => {
             const par = v('jefe_parroquia'), circ = e.target.value, selCom = $('jefe_comunidad');
-            selCom.innerHTML = '<option value="">Selecciona la comunidad</option>'; $('panelCentro').classList.add('hidden');
-            if (par === 'OTRO' || circ === 'OTRO') { selCom.innerHTML = '<option value="OTRO">OTRO</option>'; $('campoComunidad').classList.remove('hidden'); panelOtro(); return; }
+            selCom.innerHTML = '<option value="">Selecciona la comunidad</option>';
+            if (par === 'OTRO' || circ === 'OTRO') { selCom.innerHTML = '<option value="OTRO">OTRO</option>'; $('campoComunidad').classList.remove('hidden'); return; }
             if (circ) { listarComunidadesDe(par, circ).forEach(c => { const o = document.createElement('option'); o.value = c.slug; o.textContent = c.nombre; o.dataset.centro = c.centro_electoral || ''; o.dataset.nombre = c.nombre; selCom.appendChild(o); }); $('campoComunidad').classList.remove('hidden'); }
             else $('campoComunidad').classList.add('hidden');
         });
-        $('jefe_comunidad').addEventListener('change', (e) => {
-            const slug = e.target.value, p = $('panelCentro');
-            if (!slug) { p.classList.add('hidden'); return; }
-            if (slug === 'OTRO') { panelOtro(); return; }
-            const opt = e.target.selectedOptions[0], centro = opt.dataset.centro || '';
-            p.className = 'panel-centro';
-            p.innerHTML = `<div class="t">Centro Electoral (UBCH)</div><div>${centro ? escapeHtml(centro) : 'Pendiente de asignar'}</div>`;
-            p.classList.remove('hidden');
-        });
+        // (Panel de Centro Electoral / UBCH removido del registro de refugiados.)
 
         // ---- Grupo familiar (acompañantes dinámicos) ----
         let acompId = 0;
@@ -365,18 +373,12 @@
             let comNombre = '';
             if (comSlug === 'OTRO') comNombre = 'OTRO';
             else if (comSlug && T()[comSlug]) comNombre = T()[comSlug].nombre;
-            let centro = '';
-            const comOpt = $('jefe_comunidad').selectedOptions[0];
-            if (comSlug === 'OTRO') centro = 'OTRO';
-            else if (comOpt) centro = comOpt.dataset.centro || '';
-
             const payload = {
                 reporta_tipo: tipo,
                 reporta_anonimo: tipo === 'anonimo',
-                reporta_ubch: tipo === 'responsable' ? v('r_ubch') : '',
-                reporta_nombre: tipo === 'responsable' ? v('r_nombre') : (tipo === 'familiar' ? v('f_nombre') : ''),
-                reporta_cedula: tipo === 'responsable' ? soloDig(v('r_cedula')) : (tipo === 'familiar' ? soloDig(v('f_cedula')) : ''),
-                reporta_telefono: tipo === 'responsable' ? soloDig(v('r_telefono')) : (tipo === 'familiar' ? soloDig(v('f_telefono')) : ''),
+                reporta_nombre: tipo === 'familiar' ? v('f_nombre') : '',
+                reporta_cedula: tipo === 'familiar' ? soloDig(v('f_cedula')) : '',
+                reporta_telefono: tipo === 'familiar' ? soloDig(v('f_telefono')) : '',
                 reporta_parentesco: tipo === 'familiar' ? v('f_parentesco') : '',
                 cedula: soloDig(v('ref_cedula')),
                 nacionalidad: v('ref_nacionalidad') || 'V',
@@ -385,14 +387,15 @@
                 sexo: v('ref_sexo'),
                 fecha_nacimiento: v('ref_fecha'),
                 procedencia: v('ref_procedencia'),
+                municipio_origen: v('ref_municipio'),
                 vulnerabilidad: chipsSeleccionados('chipsVuln'),
                 necesidades: chipsSeleccionados('chipsNec'),
                 direccion,
+                direccion_centro_medico: v('ref_centro_medico'),
                 parroquia: v('jefe_parroquia'),
                 circuito: v('jefe_circuito'),
                 comunidad_slug: comSlug,
                 comunidad_nombre: comNombre,
-                centro_electoral: centro,
                 grupo_familiar: grupo,
                 total_personas: 1 + grupo.length,
                 fecha_registro: Date.now(),
