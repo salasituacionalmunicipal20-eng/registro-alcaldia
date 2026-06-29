@@ -107,6 +107,28 @@
             </div>
 
             <div class="card">
+                <h2>Tabulación por edades</h2>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th>Grupo etario</th><th>Rango</th><th style="text-align:center;">Personas</th></tr></thead>
+                        <tbody id="tbodyEdades"><tr><td colspan="3" class="estado-box">—</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Cuenta al refugiado principal (según su fecha de nacimiento) y a cada acompañante del grupo familiar con edad registrada.</div>
+            </div>
+
+            <div class="card">
+                <h2>Necesidades clave por sexo</h2>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th>Necesidad</th><th style="text-align:center;">Total</th><th style="text-align:center;">Femenino</th><th style="text-align:center;">Masculino</th><th style="text-align:center;">Sin dato</th></tr></thead>
+                        <tbody id="tbodyNec"><tr><td colspan="5" class="estado-box">—</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Reportes cuyo refugiado principal marcó esa necesidad, según su sexo. Usa el filtro "Necesidad" en Reportes para ver quiénes.</div>
+            </div>
+
+            <div class="card">
                 <h2>Reportes</h2>
                 <div>
                     <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
@@ -116,14 +138,15 @@
                     <div><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, dirección…" autocomplete="off" /></div>
                     <div><label>Procedencia</label><select id="fProc"><option value="">Todas</option></select></div>
                     <div><label>Comuna (aquí)</label><select id="fComuna"><option value="">Todas</option></select></div>
+                    <div><label>Necesidad</label><select id="fNec"><option value="">Todas</option></select></div>
                 </div>
                 <div style="overflow-x:auto; margin-top:14px;">
                     <table>
                         <thead><tr>
-                            <th>Nombre</th><th>Cédula</th><th>Procedencia</th><th>Dónde se queda</th>
+                            <th>Nombre</th><th>Cédula</th><th style="text-align:center;">Sexo</th><th>Procedencia</th><th>Dónde se queda</th>
                             <th style="text-align:center;">Personas</th><th>Vulnerabilidad</th><th>Teléfono</th><th>Fecha</th><th></th>
                         </tr></thead>
-                        <tbody id="tbody"><tr><td colspan="9" class="estado-box">Cargando…</td></tr></tbody>
+                        <tbody id="tbody"><tr><td colspan="10" class="estado-box">Cargando…</td></tr></tbody>
                     </table>
                 </div>
                 <div class="paginacion" id="paginacion"></div>
@@ -158,6 +181,20 @@
         const soloDig = (s) => (s || '').replace(/\D/g, '');
         const toArr = (x) => Array.isArray(x) ? x : (x ? Object.values(x) : []);
         const primerNombre = (n) => (n || '').trim().split(/\s+/)[0] || 'persona';
+
+        // Grupos etarios para la tabulación por edades
+        const GRUPOS_EDAD = [
+            { label: 'Primera infancia (temprana)', rango: '0 a 2 años', test: e => e >= 0 && e <= 2 },
+            { label: 'Preescolar', rango: '3 a 5 años', test: e => e >= 3 && e <= 5 },
+            { label: 'Niños/as en edad escolar', rango: '6 a 12 años', test: e => e >= 6 && e <= 12 },
+            { label: 'Adolescentes (menores de edad)', rango: '13 a 17 años', test: e => e >= 13 && e <= 17 },
+            { label: 'Jóvenes / adultos jóvenes', rango: '18 a 29 años', test: e => e >= 18 && e <= 29 },
+            { label: 'Adulto contemporáneo', rango: '30 a 49 años', test: e => e >= 30 && e <= 49 },
+            { label: 'Adultos maduros', rango: '50 a 59 años', test: e => e >= 50 && e <= 59 },
+            { label: 'Tercera edad (adulto mayor)', rango: '60 años en adelante', test: e => e >= 60 },
+        ];
+        const NEC_CLAVE = ['Medicinas', 'Ropa'];
+        const NEC_FILTRO = ['Alimentos', 'Agua', 'Medicinas', 'Atención médica', 'Colchones / cobijas', 'Ropa', 'Artículos de higiene', 'Otro'];
 
         function edadDe(fecha) {
             if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return '';
@@ -225,10 +262,11 @@
 
         function filtrados() {
             const q = ($('fBuscar').value || '').trim().toLowerCase();
-            const fp = $('fProc').value, fc = $('fComuna').value;
+            const fp = $('fProc').value, fc = $('fComuna').value, fn = $('fNec').value;
             return REGS.filter(r => {
                 if (fp && r.procedencia !== fp) return false;
                 if (fc && r.comunidad_nombre !== fc) return false;
+                if (fn && !toArr(r.necesidades).includes(fn)) return false;
                 if (q) { const blob = `${r.nombres||''} ${r.apellidos||''} ${r.cedula||''} ${r.direccion||''} ${r.telefono||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
                 return true;
             });
@@ -240,25 +278,46 @@
             $('stPersonas').textContent = REGS.reduce((s, r) => s + (Number(r.total_personas) || (1 + toArr(r.grupo_familiar).length)), 0);
             $('stVuln').textContent = REGS.filter(r => toArr(r.vulnerabilidad).length > 0).length;
             $('stAnon').textContent = REGS.filter(r => r.reporta_anonimo).length;
-            // Conteo por edades: refugiado principal (de su fecha de nacimiento) + cada acompañante del grupo familiar
-            let _ninos = 0, _bebes = 0, _mayores = 0;
+            // Edades: refugiado principal (de su fecha) + cada acompañante (su edad). KPIs + tabulación por grupos.
+            let _ninos = 0, _bebes = 0, _mayores = 0, _sinEdad = 0;
+            const _tab = GRUPOS_EDAD.map(() => 0);
+            const edadValida = (x) => x != null && x !== '' && !isNaN(Number(x));
             REGS.forEach(r => {
                 const edades = [];
                 const eRef = edadDe(r.fecha_nacimiento);
-                if (eRef !== '') edades.push(eRef);
-                toArr(r.grupo_familiar).forEach(g => { const e = Number(g.edad); if (g.edad != null && g.edad !== '' && !isNaN(e)) edades.push(e); });
-                edades.forEach(e => { if (e <= 1) _bebes++; if (e < 18) _ninos++; if (e >= 60) _mayores++; });
+                if (eRef !== '') edades.push(eRef); else _sinEdad++;
+                toArr(r.grupo_familiar).forEach(g => { if (edadValida(g.edad)) edades.push(Number(g.edad)); else _sinEdad++; });
+                edades.forEach(e => {
+                    if (e <= 1) _bebes++; if (e < 18) _ninos++; if (e >= 60) _mayores++;
+                    const gi = GRUPOS_EDAD.findIndex(gr => gr.test(e));
+                    if (gi >= 0) _tab[gi]++;
+                });
             });
             $('stNinos').textContent = _ninos;
             $('stBebes').textContent = _bebes;
             $('stMayores').textContent = _mayores;
+            const totTab = _tab.reduce((a, b) => a + b, 0);
+            $('tbodyEdades').innerHTML = GRUPOS_EDAD.map((gr, i) => `<tr><td>${esc(gr.label)}</td><td style="color:#64748b;">${esc(gr.rango)}</td><td style="text-align:center;font-weight:800;color:#7f1d1d;">${_tab[i]}</td></tr>`).join('')
+                + `<tr style="background:#f8fafc;"><td colspan="2" style="font-weight:800;">Total con edad registrada</td><td style="text-align:center;font-weight:800;">${totTab}</td></tr>`
+                + (_sinEdad ? `<tr><td colspan="2" style="color:#94a3b8;">Sin edad registrada</td><td style="text-align:center;color:#94a3b8;">${_sinEdad}</td></tr>` : '');
+
+            // Necesidades clave (Medicinas, Ropa) por sexo del refugiado principal
+            const _nec = {}; NEC_CLAVE.forEach(n => _nec[n] = { t: 0, F: 0, M: 0, X: 0 });
+            REGS.forEach(r => {
+                const necs = toArr(r.necesidades);
+                NEC_CLAVE.forEach(n => { if (necs.includes(n)) { _nec[n].t++; if (r.sexo === 'F') _nec[n].F++; else if (r.sexo === 'M') _nec[n].M++; else _nec[n].X++; } });
+            });
+            $('tbodyNec').innerHTML = NEC_CLAVE.map(n => {
+                const x = _nec[n], label = (n === 'Medicinas') ? 'Medicamentos / Medicinas' : n;
+                return `<tr><td><b>${esc(label)}</b></td><td style="text-align:center;font-weight:800;">${x.t}</td><td style="text-align:center;font-weight:700;color:#be185d;">${x.F}</td><td style="text-align:center;font-weight:700;color:#1d4ed8;">${x.M}</td><td style="text-align:center;color:#94a3b8;">${x.X}</td></tr>`;
+            }).join('');
 
             const lista = filtrados();
             const total = lista.length, totalPag = Math.max(1, Math.ceil(total / TAM));
             if (pagina > totalPag) pagina = totalPag;
             const ini = (pagina - 1) * TAM, slice = lista.slice(ini, ini + TAM);
             const tb = $('tbody');
-            if (total === 0) { tb.innerHTML = `<tr><td colspan="9" class="estado-box">Sin reportes con estos filtros.</td></tr>`; $('paginacion').innerHTML = ''; return; }
+            if (total === 0) { tb.innerHTML = `<tr><td colspan="10" class="estado-box">Sin reportes con estos filtros.</td></tr>`; $('paginacion').innerHTML = ''; return; }
 
             tb.innerHTML = slice.map(r => {
                 const tel = normalizarTel(r.telefono);
@@ -269,6 +328,7 @@
                 return `<tr>
                     <td><b>${esc((r.nombres||'') + ' ' + (r.apellidos||''))}</b>${r.tiene_foto ? ' 📷' : ''}</td>
                     <td>${esc(r.cedula || '—')}</td>
+                    <td style="text-align:center;font-weight:800;color:${r.sexo==='F'?'#be185d':r.sexo==='M'?'#1d4ed8':'#94a3b8'};">${r.sexo==='F'?'F':r.sexo==='M'?'M':'—'}</td>
                     <td>${esc(r.procedencia || '—')}${r.municipio_origen ? '<br><span style="font-size:11px;color:#64748b;">' + esc(r.municipio_origen) + '</span>' : ''}</td>
                     <td>${donde}</td>
                     <td style="text-align:center;font-weight:800;">${esc(r.total_personas || (1 + toArr(r.grupo_familiar).length))}</td>
@@ -327,7 +387,8 @@
         }
         $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
 
-        ['fBuscar','fProc','fComuna'].forEach(id => { $(id).addEventListener('input', () => { pagina = 1; render(); }); $(id).addEventListener('change', () => { pagina = 1; render(); }); });
+        $('fNec').innerHTML = '<option value="">Todas</option>' + NEC_FILTRO.map(n => `<option value="${esc(n)}">${n === 'Medicinas' ? 'Medicamentos / Medicinas' : esc(n)}</option>`).join('');
+        ['fBuscar','fProc','fComuna','fNec'].forEach(id => { $(id).addEventListener('input', () => { pagina = 1; render(); }); $(id).addEventListener('change', () => { pagina = 1; render(); }); });
 
         // ---- Sanitizador PDF (sin escapes unicode problemáticos) ----
         function _safePdf(s) {
@@ -417,13 +478,18 @@
                 ['Fecha del reporte', r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '-']
             ].map(row => [_safePdf(row[0]), _safePdf(row[1])]);
         }
-        function _dibujarReporte(doc, r, headTxt, startY, drawHF) {
+        function _dibujarReporte(doc, r, headTxt, startY, drawHF, opts) {
             const { jsPDF } = window.jspdf;
+            const cmp = !!(opts && opts.compact);
+            const stMain = cmp
+                ? { font: 'helvetica', fontSize: 8, cellPadding: 1.05, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' }
+                : _baseStylesPDF;
+            const stFam = { font: 'helvetica', fontSize: cmp ? 7.5 : 8.5, cellPadding: cmp ? 0.9 : 1.4, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' };
             jsPDF.API.autoTable.call(doc, {
                 startY, margin: { top: 55, bottom: 16, left: 14, right: 14 }, showHead: 'firstPage',
                 head: [[{ content: _safePdf(headTxt), colSpan: 2 }]],
-                body: _filasReporte(r), theme: 'grid', styles: _baseStylesPDF,
-                headStyles: { fillColor: [127,29,29], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9.5 },
+                body: _filasReporte(r), theme: 'grid', styles: stMain,
+                headStyles: { fillColor: [127,29,29], textColor: [255,255,255], fontStyle: 'bold', fontSize: cmp ? 8.5 : 9.5 },
                 columnStyles: { 0: { cellWidth: 46, fontStyle: 'bold', fillColor: [254,242,242] }, 1: { cellWidth: 140 } },
                 didDrawPage: drawHF
             });
@@ -433,8 +499,8 @@
                     startY: doc.lastAutoTable.finalY, margin: { top: 55, bottom: 16, left: 14, right: 14 },
                     head: [['Grupo familiar #', 'Nombre y Apellido', 'Cédula', 'Edad', 'Sexo']],
                     body: grupo.map((g, i) => [String(i + 1), _safePdf((g.nombres || '') + ' ' + (g.apellidos || '')), _safePdf(String(g.cedula || '-')), _safePdf(String(g.edad || '-')), _safePdf(g.sexo || '-')]),
-                    theme: 'grid', styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.4, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
-                    headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8.5 },
+                    theme: 'grid', styles: stFam,
+                    headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: cmp ? 7.5 : 8.5 },
                     columnStyles: { 0: { cellWidth: 26, halign: 'center' }, 1: { cellWidth: 96 }, 2: { cellWidth: 30, halign: 'center' }, 3: { cellWidth: 17, halign: 'center' }, 4: { cellWidth: 17, halign: 'center' } },
                     didDrawPage: drawHF
                 });
@@ -479,13 +545,13 @@
             if (fotoUrl) {
                 try {
                     const props = doc.getImageProperties(fotoUrl);
-                    const ratio = Math.min(45 / props.width, 45 / props.height);
+                    const ratio = Math.min(30 / props.width, 30 / props.height);
                     const w = props.width * ratio, h = props.height * ratio;
                     doc.addImage(fotoUrl, 'JPEG', (215.9 - w) / 2, startY, w, h);
-                    startY += h + 4;
+                    startY += h + 3;
                 } catch (e) { console.warn('No se pudo incrustar la foto en el PDF', e); }
             }
-            _dibujarReporte(doc, r, (r.nombres || '') + ' ' + (r.apellidos || ''), startY, drawHF);
+            _dibujarReporte(doc, r, (r.nombres || '') + ' ' + (r.apellidos || ''), startY, drawHF, { compact: true });
             doc.save('refugiado_' + (String(r.cedula || '').replace(/[^0-9A-Za-z]/g, '') || 'reporte') + '.pdf');
         }
     </script>

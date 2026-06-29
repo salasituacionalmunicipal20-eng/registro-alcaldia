@@ -188,7 +188,7 @@
         const norm = (s) => (s == null ? '' : String(s)).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
 
         const CATEGORIAS = ['Alimentos','Agua','Medicinas','Ropa','Calzado','Colchones / cobijas','Artículos de higiene','Productos de limpieza','Pañales','Útiles escolares','Otro'];
-        const UNIDADES = ['Unidades','Kg','Gramos','Litros','Cajas','Paquetes','Bultos','Sacos','Pares','Bolsas','Otro'];
+        const UNIDADES = ['Unidades','Tabletas','Cápsulas','Ampollas','Blísters','Sobres','Frascos','Cajas','Paquetes','Mililitros','Litros','Miligramos','Gramos','Kg','Rollos','Bolsas','Bultos','Sacos','Pares','Otro'];
 
         let MOVS = [];               // [{id, tipo, categoria, articulo, cantidad, unidad, contraparte, observacion, fecha_registro, registrado_por}]
         let nombreUsuario = '';
