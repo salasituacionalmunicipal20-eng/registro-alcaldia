@@ -85,7 +85,7 @@
                 </div>
                 <div class="grid" style="margin-top:10px;">
                     <div><label>Categoría</label><select id="mCategoria"></select></div>
-                    <div><label>Artículo</label><input id="mArticulo" list="dlArticulos" placeholder="Ej: Arroz, Paracetamol, Cobijas…" autocomplete="off" /><datalist id="dlArticulos"></datalist></div>
+                    <div><label>Artículo</label><input id="mArticulo" list="dlArticulos" placeholder="Ej: Arroz, Paracetamol, Cobijas…" autocomplete="off" /><datalist id="dlArticulos"></datalist><select id="mSalidaSel" class="hidden"><option value="">— Selecciona del inventario —</option></select></div>
                     <div><label>Cantidad</label><input id="mCantidad" type="number" min="0" step="any" inputmode="decimal" placeholder="0" /></div>
                     <div><label>Unidad</label><select id="mUnidad"></select></div>
                     <div><label>Presentación / dosis <span style="font-weight:400;color:#94a3b8;">(mg, ml…)</span></label><input id="mPresentacion" placeholder="Ej: 500mg, 240ml, 5%" autocomplete="off" /></div>
@@ -208,6 +208,11 @@
             $('lblContraparte').textContent = ent ? 'Donante (opcional)' : 'Destino / a quién se entrega';
             $('mContraparte').placeholder = ent ? 'Quién donó' : 'A quién / comunidad';
             $('btnRegistrar').textContent = ent ? 'Registrar entrada' : 'Registrar salida';
+            $('mArticulo').classList.toggle('hidden', !ent);
+            $('mSalidaSel').classList.toggle('hidden', ent);
+            [$('mCategoria'), $('mUnidad'), $('mPresentacion')].forEach(el => el.disabled = !ent);
+            if (ent) { $('mCantidad').removeAttribute('max'); }
+            else { salidaItem = null; $('mSalidaSel').value = ''; $('mArticulo').value = ''; $('mCantidad').value = ''; $('mPresentacion').value = ''; poblarSalida(); }
             if (typeof updateAviso === 'function') updateAviso();
         }));
 
@@ -312,6 +317,8 @@
                 if (n) n.addEventListener('click', () => { if (pagMov<totalPag){ pagMov++; render(); } });
             }
             if (typeof updateAviso === 'function') updateAviso();
+            const _tk = document.querySelector('input[name="tipo"]:checked');
+            if (_tk && _tk.value === 'salida' && typeof poblarSalida === 'function') poblarSalida();
         }
 
         ['fBuscar','fCategoria'].forEach(id => { $(id).addEventListener('input', render); $(id).addEventListener('change', render); });
@@ -342,26 +349,59 @@
         ['mArticulo', 'mCantidad', 'mPresentacion'].forEach(id => $(id).addEventListener('input', updateAviso));
         $('mUnidad').addEventListener('change', updateAviso);
 
+        // ---- Salida: solo se puede sacar lo que existe en el inventario ----
+        let INV_SALIDA = [], salidaItem = null;
+        function setSelVal(sel, val) { if (val && ![...sel.options].some(o => o.value === val)) { const o = document.createElement('option'); o.value = val; o.textContent = val; sel.appendChild(o); } sel.value = val || ''; }
+        function poblarSalida() {
+            INV_SALIDA = inventario().filter(it => it.stock > 0);
+            const sel = $('mSalidaSel');
+            if (!INV_SALIDA.length) { sel.innerHTML = '<option value="">(No hay artículos con stock disponible)</option>'; salidaItem = null; return; }
+            sel.innerHTML = '<option value="">— Selecciona del inventario —</option>' + INV_SALIDA.map((it, i) => `<option value="${i}">${esc(it.articulo)}${it.presentacion ? ' · ' + esc(it.presentacion) : ''} — ${nfmt(it.stock)} ${esc(it.unidad)} (${esc(it.categoria)})</option>`).join('');
+            if (salidaItem) {
+                const idx = INV_SALIDA.findIndex(it => norm(it.articulo) === norm(salidaItem.articulo) && norm(it.presentacion) === norm(salidaItem.presentacion) && norm(it.unidad) === norm(salidaItem.unidad) && norm(it.categoria) === norm(salidaItem.categoria));
+                if (idx >= 0) { sel.value = String(idx); salidaItem = INV_SALIDA[idx]; } else { salidaItem = null; }
+            }
+        }
+        $('mSalidaSel').addEventListener('change', () => {
+            const idx = $('mSalidaSel').value;
+            salidaItem = (idx !== '' && INV_SALIDA[idx]) ? INV_SALIDA[idx] : null;
+            if (salidaItem) {
+                setSelVal($('mCategoria'), salidaItem.categoria);
+                $('mArticulo').value = salidaItem.articulo;
+                setSelVal($('mUnidad'), salidaItem.unidad);
+                $('mPresentacion').value = salidaItem.presentacion || '';
+                $('mCantidad').setAttribute('max', salidaItem.stock);
+            }
+            updateAviso();
+        });
+
         $('btnRegistrar').addEventListener('click', async () => {
             const tipo = document.querySelector('input[name="tipo"]:checked').value;
-            const categoria = $('mCategoria').value;
-            const articulo = $('mArticulo').value.trim();
             const cantidad = Number($('mCantidad').value);
-            const unidad = $('mUnidad').value;
-            const presentacion = $('mPresentacion').value.trim();
-            if (!articulo) { mostrarMsg('Escribe el nombre del artículo.', false); return; }
             if (!(cantidad > 0)) { mostrarMsg('La cantidad debe ser mayor que 0.', false); return; }
 
-            // ¿Ya existe (exacto: artículo + presentación + unidad)? -> sumar al existente en vez de duplicar
-            const ex = inventario().find(it => norm(it.articulo) === norm(articulo) && norm(it.presentacion) === norm(presentacion) && norm(it.unidad) === norm(unidad));
-            let artFinal = articulo, uniFinal = unidad, presFinal = presentacion;
-            if (ex) {
-                if (tipo === 'entrada') {
+            let categoria, artFinal, uniFinal, presFinal, ex = null;
+
+            if (tipo === 'salida') {
+                // SOLO se puede sacar lo que existe en el inventario
+                if (!salidaItem) { mostrarMsg('Para una SALIDA elige un artículo del inventario (solo se puede sacar lo que existe).', false); return; }
+                ex = inventario().find(it => norm(it.articulo) === norm(salidaItem.articulo) && norm(it.presentacion) === norm(salidaItem.presentacion) && norm(it.unidad) === norm(salidaItem.unidad) && norm(it.categoria) === norm(salidaItem.categoria));
+                const stock = ex ? ex.stock : 0;
+                if (stock <= 0) { mostrarMsg('Ese artículo ya no tiene stock disponible.', false); poblarSalida(); return; }
+                if (cantidad > stock) { mostrarMsg(`No hay suficiente: solo hay ${nfmt(stock)} ${salidaItem.unidad} de "${salidaItem.articulo}".`, false); return; }
+                categoria = salidaItem.categoria; artFinal = salidaItem.articulo; uniFinal = salidaItem.unidad; presFinal = salidaItem.presentacion || '';
+            } else {
+                categoria = $('mCategoria').value;
+                const articulo = $('mArticulo').value.trim();
+                const unidad = $('mUnidad').value;
+                const presentacion = $('mPresentacion').value.trim();
+                if (!articulo) { mostrarMsg('Escribe el nombre del artículo.', false); return; }
+                ex = inventario().find(it => norm(it.articulo) === norm(articulo) && norm(it.presentacion) === norm(presentacion) && norm(it.unidad) === norm(unidad));
+                artFinal = articulo; uniFinal = unidad; presFinal = presentacion;
+                if (ex) {
                     if (!confirm(`Ya existe "${ex.articulo}${ex.presentacion ? ' · ' + ex.presentacion : ''}" con ${nfmt(ex.stock)} ${ex.unidad}.\n\n¿SUMAR ${nfmt(cantidad)} y dejar el total en ${nfmt(ex.stock + cantidad)}?\n\n(Aceptar = sumar al existente · Cancelar = no registrar)`)) return;
-                } else if (cantidad > ex.stock) {
-                    if (!confirm(`Solo hay ${nfmt(ex.stock)} ${ex.unidad} de "${ex.articulo}". ¿Registrar la salida de todos modos?`)) return;
+                    artFinal = ex.articulo; uniFinal = ex.unidad; presFinal = ex.presentacion;
                 }
-                artFinal = ex.articulo; uniFinal = ex.unidad; presFinal = ex.presentacion; // adoptar existentes para que sume exacto
             }
 
             const payload = {
@@ -376,9 +416,10 @@
             try {
                 await set(push(ref(database, 'acopio')), payload);
                 $('mArticulo').value = ''; $('mCantidad').value = ''; $('mPresentacion').value = ''; $('mContraparte').value = ''; $('mObs').value = '';
+                if (tipo === 'salida') { salidaItem = null; $('mSalidaSel').value = ''; }
                 updateAviso();
-                mostrarMsg(ex ? ('✓ Sumado a "' + artFinal + '".') : ('✓ ' + (tipo === 'salida' ? 'Salida' : 'Entrada') + ' registrada.'), true);
-                $('mArticulo').focus();
+                mostrarMsg(tipo === 'salida' ? ('✓ Salida registrada de "' + artFinal + '".') : (ex ? ('✓ Sumado a "' + artFinal + '".') : '✓ Entrada registrada.'), true);
+                if (tipo === 'entrada') $('mArticulo').focus();
             } catch (e) {
                 mostrarMsg('No se pudo registrar (' + (e.message || e.code || 'error') + ').', false);
             } finally { $('btnRegistrar').disabled = false; }
