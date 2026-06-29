@@ -72,8 +72,8 @@
     "informes_empleados": {
       ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
       "$id": {
-        ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
-        ".validate": "newData.hasChildren(['nombres'])"
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "newData.hasChildren(['nombres']) && newData.child('nombres').isString() && newData.child('nombres').val().length <= 200"
       }
     },
     "tickets": {
