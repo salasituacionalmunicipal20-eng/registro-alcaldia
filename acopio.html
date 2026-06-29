@@ -29,7 +29,7 @@
         input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
         .filtros { display: grid; grid-template-columns: 2fr 1.4fr; gap: 12px; }
-        .filtros-mov { display: grid; grid-template-columns: 2fr 1fr 1.4fr; gap: 12px; margin-bottom: 12px; }
+        .filtros-mov { display: grid; grid-template-columns: 2fr 1fr 1.3fr 1.5fr; gap: 12px; margin-bottom: 12px; }
         @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } .filtros-mov { grid-template-columns: 1fr; } }
         table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
         th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
@@ -134,6 +134,7 @@
                     <div><label>Buscar movimiento</label><input id="mfBuscar" type="search" placeholder="Artículo, categoría, destino, quién registró…" autocomplete="off" /></div>
                     <div><label>Tipo</label><select id="mfTipo"><option value="">Todos</option><option value="entrada">Entradas</option><option value="salida">Salidas</option></select></div>
                     <div><label>Categoría</label><select id="mfCat"><option value="">Todas</option></select></div>
+                    <div><label>Artículo</label><select id="mfArt"><option value="">Todos</option></select></div>
                 </div>
                 <div style="overflow-x:auto;">
                     <table>
@@ -249,7 +250,7 @@
             onValue(ref(database, 'acopio'), (snap) => {
                 const v = snap.val() || {};
                 MOVS = Object.entries(v).map(([id, m]) => ({ id, ...m })).sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
-                render();
+                poblarMfArt(); render();
             }, () => { MOVS = []; render(); });
         }
 
@@ -333,18 +334,27 @@
         ['fBuscar','fCategoria'].forEach(id => { $(id).addEventListener('input', render); $(id).addEventListener('change', render); });
 
         // Filtro inteligente de movimientos recientes
+        function poblarMfArt() {
+            const cat = $('mfCat').value;
+            const arts = [...new Set(MOVS.filter(m => !cat || m.categoria === cat).map(m => (m.articulo || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+            const prev = $('mfArt').value;
+            $('mfArt').innerHTML = '<option value="">Todos</option>' + arts.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
+            $('mfArt').value = (prev && arts.includes(prev)) ? prev : '';
+        }
         function movsFiltrados() {
             const q = ($('mfBuscar').value || '').trim().toLowerCase();
-            const t = $('mfTipo').value, c = $('mfCat').value;
+            const t = $('mfTipo').value, c = $('mfCat').value, a = $('mfArt').value;
             return MOVS.filter(m => {
                 if (t === 'salida' && m.tipo !== 'salida') return false;
                 if (t === 'entrada' && m.tipo === 'salida') return false;
                 if (c && m.categoria !== c) return false;
+                if (a && (m.articulo || '').trim() !== a) return false;
                 if (q) { const blob = `${m.articulo||''} ${m.presentacion||''} ${m.categoria||''} ${m.unidad||''} ${m.contraparte||''} ${m.registrado_por||''} ${m.observacion||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
                 return true;
             });
         }
-        ['mfBuscar','mfTipo','mfCat'].forEach(id => { $(id).addEventListener('input', () => { pagMov = 1; render(); }); $(id).addEventListener('change', () => { pagMov = 1; render(); }); });
+        ['mfBuscar','mfTipo','mfArt'].forEach(id => { $(id).addEventListener('input', () => { pagMov = 1; render(); }); $(id).addEventListener('change', () => { pagMov = 1; render(); }); });
+        $('mfCat').addEventListener('change', () => { poblarMfArt(); pagMov = 1; render(); });
 
         function mostrarMsg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { if (m.textContent === t) m.className = 'msg'; }, 4000); }
 
