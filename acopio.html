@@ -85,7 +85,7 @@
                 </div>
                 <div class="grid" style="margin-top:10px;">
                     <div><label>Categoría</label><select id="mCategoria"></select></div>
-                    <div><label>Artículo</label><input id="mArticulo" list="dlArticulos" placeholder="Ej: Arroz, Paracetamol, Cobijas…" autocomplete="off" /><datalist id="dlArticulos"></datalist><select id="mSalidaSel" class="hidden"><option value="">— Selecciona del inventario —</option></select></div>
+                    <div><label>Artículo</label><input id="mArticulo" list="dlArticulos" placeholder="Ej: Arroz, Paracetamol, Cobijas…" autocomplete="off" /><datalist id="dlArticulos"></datalist><input id="mSalidaBuscar" class="hidden" placeholder="🔎 Buscar artículo…" autocomplete="off" style="margin-bottom:6px;" /><select id="mSalidaSel" class="hidden"><option value="">— Selecciona del inventario —</option></select></div>
                     <div><label>Cantidad</label><input id="mCantidad" type="number" min="0" step="any" inputmode="decimal" placeholder="0" /></div>
                     <div><label>Unidad</label><select id="mUnidad"></select></div>
                     <div><label>Presentación / dosis <span style="font-weight:400;color:#94a3b8;">(mg, ml…)</span></label><input id="mPresentacion" placeholder="Ej: 500mg, 240ml, 5%" autocomplete="off" /></div>
@@ -209,10 +209,12 @@
             $('mContraparte').placeholder = ent ? 'Quién donó' : 'A quién / comunidad';
             $('btnRegistrar').textContent = ent ? 'Registrar entrada' : 'Registrar salida';
             $('mArticulo').classList.toggle('hidden', !ent);
+            $('mSalidaBuscar').classList.toggle('hidden', ent);
             $('mSalidaSel').classList.toggle('hidden', ent);
-            [$('mCategoria'), $('mUnidad'), $('mPresentacion')].forEach(el => el.disabled = !ent);
+            $('mUnidad').disabled = !ent; $('mPresentacion').disabled = !ent;
+            setCategoriaOpts(ent);
             if (ent) { $('mCantidad').removeAttribute('max'); }
-            else { salidaItem = null; $('mSalidaSel').value = ''; $('mArticulo').value = ''; $('mCantidad').value = ''; $('mPresentacion').value = ''; poblarSalida(); }
+            else { salidaItem = null; $('mSalidaSel').value = ''; $('mSalidaBuscar').value = ''; $('mArticulo').value = ''; $('mCantidad').value = ''; $('mPresentacion').value = ''; poblarSalida(); }
             if (typeof updateAviso === 'function') updateAviso();
         }));
 
@@ -349,24 +351,36 @@
         ['mArticulo', 'mCantidad', 'mPresentacion'].forEach(id => $(id).addEventListener('input', updateAviso));
         $('mUnidad').addEventListener('change', updateAviso);
 
-        // ---- Salida: solo se puede sacar lo que existe en el inventario ----
+        // ---- Salida: solo se puede sacar lo que existe; con filtro por categoría + búsqueda ----
         let INV_SALIDA = [], salidaItem = null;
+        const inSalida = () => { const tk = document.querySelector('input[name="tipo"]:checked'); return !!(tk && tk.value === 'salida'); };
         function setSelVal(sel, val) { if (val && ![...sel.options].some(o => o.value === val)) { const o = document.createElement('option'); o.value = val; o.textContent = val; sel.appendChild(o); } sel.value = val || ''; }
+        function setCategoriaOpts(entrada) {
+            const cur = $('mCategoria').value;
+            $('mCategoria').innerHTML = (entrada ? '' : '<option value="">Todas las categorías</option>') + CATEGORIAS.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+            if (!entrada) $('mCategoria').value = '';
+            else if (cur && CATEGORIAS.includes(cur)) $('mCategoria').value = cur;
+        }
         function poblarSalida() {
-            INV_SALIDA = inventario().filter(it => it.stock > 0);
+            const todos = inventario().filter(it => it.stock > 0);
+            const cat = inSalida() ? $('mCategoria').value : '';
+            const q = ($('mSalidaBuscar').value || '').trim().toLowerCase();
+            INV_SALIDA = todos.filter(it => (!cat || it.categoria === cat) && (!q || (it.articulo + ' ' + (it.presentacion || '')).toLowerCase().includes(q)));
             const sel = $('mSalidaSel');
-            if (!INV_SALIDA.length) { sel.innerHTML = '<option value="">(No hay artículos con stock disponible)</option>'; salidaItem = null; return; }
+            if (!todos.length) { sel.innerHTML = '<option value="">(No hay artículos con stock disponible)</option>'; salidaItem = null; return; }
+            if (!INV_SALIDA.length) { sel.innerHTML = '<option value="">(Sin artículos con ese filtro)</option>'; return; }
             sel.innerHTML = '<option value="">— Selecciona del inventario —</option>' + INV_SALIDA.map((it, i) => `<option value="${i}">${esc(it.articulo)}${it.presentacion ? ' · ' + esc(it.presentacion) : ''} — ${nfmt(it.stock)} ${esc(it.unidad)} (${esc(it.categoria)})</option>`).join('');
             if (salidaItem) {
                 const idx = INV_SALIDA.findIndex(it => norm(it.articulo) === norm(salidaItem.articulo) && norm(it.presentacion) === norm(salidaItem.presentacion) && norm(it.unidad) === norm(salidaItem.unidad) && norm(it.categoria) === norm(salidaItem.categoria));
                 if (idx >= 0) { sel.value = String(idx); salidaItem = INV_SALIDA[idx]; } else { salidaItem = null; }
             }
         }
+        $('mCategoria').addEventListener('change', () => { if (inSalida()) poblarSalida(); });
+        $('mSalidaBuscar').addEventListener('input', () => poblarSalida());
         $('mSalidaSel').addEventListener('change', () => {
             const idx = $('mSalidaSel').value;
             salidaItem = (idx !== '' && INV_SALIDA[idx]) ? INV_SALIDA[idx] : null;
             if (salidaItem) {
-                setSelVal($('mCategoria'), salidaItem.categoria);
                 $('mArticulo').value = salidaItem.articulo;
                 setSelVal($('mUnidad'), salidaItem.unidad);
                 $('mPresentacion').value = salidaItem.presentacion || '';
