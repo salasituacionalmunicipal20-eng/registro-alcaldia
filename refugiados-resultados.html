@@ -125,7 +125,8 @@
                         <tbody id="tbodyNec"><tr><td colspan="5" class="estado-box">—</td></tr></tbody>
                     </table>
                 </div>
-                <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Reportes cuyo refugiado principal marcó esa necesidad, según su sexo. Usa el filtro "Necesidad" en Reportes para ver quiénes.</div>
+                <button id="btnVerNec" class="btn-exp" style="background:#7f1d1d;margin-top:12px;">👥 Ver quiénes y qué pidieron</button>
+                <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Reportes cuyo refugiado principal marcó esa necesidad, según su sexo. El botón muestra quiénes son y el detalle de lo que pidieron.</div>
             </div>
 
             <div class="card">
@@ -370,6 +371,7 @@
                 ${fila('Comunidad', r.comunidad_nombre)}
                 ${fila('Vulnerabilidad', toArr(r.vulnerabilidad).join(', '))}
                 ${fila('Necesidades', toArr(r.necesidades).join(', '))}
+                ${fila('Detalle de necesidades', r.necesidades_detalle)}
                 ${fila('Patología / condición', r.patologia)}${fila('Observaciones', r.observacion)}
                 ${fila('Reportado por', reporta)}
                 <div style="margin-top:12px;font-weight:800;color:#7f1d1d;">Grupo familiar (${grupo.length})</div>
@@ -386,6 +388,39 @@
             }
         }
         $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        function verNecesidades() {
+            const sexoTxt = r => r.sexo === 'F' ? 'F' : r.sexo === 'M' ? 'M' : '—';
+            const persona = r => {
+                const tel = normalizarTel(r.telefono);
+                const wa = tel.ok ? ` · <a href="https://wa.me/${tel.e164}" target="_blank" rel="noopener" style="color:#16a34a;font-weight:700;">WhatsApp</a>` : (r.telefono ? ' · ' + esc(r.telefono) : '');
+                const det = [
+                    r.necesidades_detalle ? '📝 ' + esc(r.necesidades_detalle) : '',
+                    r.patologia ? '🩺 ' + esc(r.patologia) : '',
+                    r.observacion ? '🗒️ ' + esc(r.observacion) : ''
+                ].filter(Boolean).join('<br>');
+                return `<div style="padding:8px 0;border-bottom:1px solid #eef2f7;">
+                    <b>${esc((r.nombres||'') + ' ' + (r.apellidos||''))}</b> <span style="color:${r.sexo==='F'?'#be185d':r.sexo==='M'?'#1d4ed8':'#94a3b8'};font-weight:800;">(${sexoTxt(r)})</span>
+                    <span style="color:#64748b;font-size:13px;"> · CI ${esc(r.cedula||'s/c')}${wa}</span>
+                    ${det ? `<div style="font-size:12.5px;color:#475569;margin-top:3px;">${det}</div>` : '<div style="font-size:12px;color:#94a3b8;margin-top:3px;">(sin detalle especificado)</div>'}
+                </div>`;
+            };
+            const seccion = (titulo, n, color) => {
+                const lista = REGS.filter(r => toArr(r.necesidades).includes(n));
+                return `<div style="margin-bottom:18px;">
+                    <div style="font-weight:800;color:${color};font-size:15px;margin-bottom:4px;border-bottom:2px solid ${color};padding-bottom:3px;">${titulo} (${lista.length})</div>
+                    ${lista.length ? lista.map(persona).join('') : '<div style="color:#94a3b8;padding:6px 0;">Nadie por ahora.</div>'}
+                </div>`;
+            };
+            $('modal').innerHTML = `
+                <h3>Quiénes pidieron Medicinas y Ropa</h3>
+                ${seccion('💊 Medicamentos / Medicinas', 'Medicinas', '#7f1d1d')}
+                ${seccion('👕 Ropa', 'Ropa', '#0a2351')}
+                <button class="btn-nav cerrar" style="background:#7f1d1d;" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+        }
+        $('btnVerNec').addEventListener('click', verNecesidades);
 
         $('fNec').innerHTML = '<option value="">Todas</option>' + NEC_FILTRO.map(n => `<option value="${esc(n)}">${n === 'Medicinas' ? 'Medicamentos / Medicinas' : esc(n)}</option>`).join('');
         ['fBuscar','fProc','fComuna','fNec'].forEach(id => { $(id).addEventListener('input', () => { pagina = 1; render(); }); $(id).addEventListener('change', () => { pagina = 1; render(); }); });
@@ -472,6 +507,7 @@
                 ['Comuna / Comunidad', (r.circuito || '-') + ' / ' + (r.comunidad_nombre || '-')],
                 ['Vulnerabilidad', toArr(r.vulnerabilidad).join(', ') || '-'],
                 ['Necesidades', toArr(r.necesidades).join(', ') || '-'],
+                ['Detalle de necesidades', r.necesidades_detalle || '-'],
                 ['Patología / condición', r.patologia || '-'],
                 ['Observaciones', r.observacion || '-'],
                 ['Personas (con grupo familiar)', String(r.total_personas || (1 + toArr(r.grupo_familiar).length))],

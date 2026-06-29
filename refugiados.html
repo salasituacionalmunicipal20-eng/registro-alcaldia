@@ -134,6 +134,8 @@
             <h2>Necesidades urgentes</h2>
             <div class="sub">¿Qué necesitan con más urgencia?</div>
             <div class="chips" id="chipsNec"></div>
+            <label style="margin-top:12px;">¿Qué necesita en concreto? <span class="hint">(opcional)</span></label>
+            <textarea id="ref_nec_detalle" placeholder="Ej: medicinas para la tensión, talla de ropa M para niño, pañales talla G…"></textarea>
         </div>
 
         <!-- DÓNDE SE QUEDA -->
@@ -432,6 +434,7 @@
                 municipio_origen: v('ref_municipio') === 'Otro' ? (v('ref_municipio_otro') || 'Otro') : v('ref_municipio'),
                 vulnerabilidad: chipsSeleccionados('chipsVuln'),
                 necesidades: chipsSeleccionados('chipsNec'),
+                necesidades_detalle: v('ref_nec_detalle'),
                 direccion,
                 direccion_centro_medico: v('ref_centro_medico'),
                 parroquia: v('jefe_parroquia'),
