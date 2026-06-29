@@ -552,7 +552,13 @@
                 } catch (e) { console.warn('No se pudo incrustar la foto en el PDF', e); }
             }
             _dibujarReporte(doc, r, (r.nombres || '') + ' ' + (r.apellidos || ''), startY, drawHF, { compact: true });
-            doc.save('refugiado_' + (String(r.cedula || '').replace(/[^0-9A-Za-z]/g, '') || 'reporte') + '.pdf');
+            // Mandar a imprimir directamente (no descargar)
+            const archivo = 'refugiado_' + (String(r.cedula || '').replace(/[^0-9A-Za-z]/g, '') || 'reporte') + '.pdf';
+            try {
+                doc.autoPrint();
+                const w = window.open(doc.output('bloburl'), '_blank');
+                if (!w) { doc.save(archivo); alert('El navegador bloqueó la ventana de impresión; se descargó el PDF. Permite ventanas emergentes para imprimir directo.'); }
+            } catch (e) { doc.save(archivo); }
         }
     </script>
 </body>

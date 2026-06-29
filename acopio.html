@@ -88,6 +88,7 @@
                     <div><label>Artículo</label><input id="mArticulo" list="dlArticulos" placeholder="Ej: Arroz, Paracetamol, Cobijas…" autocomplete="off" /><datalist id="dlArticulos"></datalist></div>
                     <div><label>Cantidad</label><input id="mCantidad" type="number" min="0" step="any" inputmode="decimal" placeholder="0" /></div>
                     <div><label>Unidad</label><select id="mUnidad"></select></div>
+                    <div><label>Presentación / dosis <span style="font-weight:400;color:#94a3b8;">(mg, ml…)</span></label><input id="mPresentacion" placeholder="Ej: 500mg, 240ml, 5%" autocomplete="off" /></div>
                     <div><label id="lblContraparte">Donante (opcional)</label><input id="mContraparte" placeholder="Quién donó / a quién se entrega" autocomplete="off" /></div>
                     <div><label>Observación</label><input id="mObs" placeholder="Lote, vencimiento, estado…" autocomplete="off" /></div>
                 </div>
@@ -149,6 +150,7 @@
                 <div><label>Artículo</label><input id="eArticulo" autocomplete="off" /></div>
                 <div><label>Cantidad</label><input id="eCantidad" type="number" min="0" step="any" /></div>
                 <div><label>Unidad</label><select id="eUnidad"></select></div>
+                <div><label>Presentación / dosis</label><input id="ePresentacion" placeholder="Ej: 500mg, 240ml" autocomplete="off" /></div>
                 <div><label>Donante / Destino</label><input id="eContraparte" autocomplete="off" /></div>
                 <div style="grid-column:1/-1;"><label>Observación</label><input id="eObs" autocomplete="off" /></div>
             </div>
@@ -188,7 +190,7 @@
         const norm = (s) => (s == null ? '' : String(s)).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
 
         const CATEGORIAS = ['Alimentos','Agua','Medicinas','Ropa','Calzado','Colchones / cobijas','Artículos de higiene','Productos de limpieza','Pañales','Útiles escolares','Otro'];
-        const UNIDADES = ['Unidades','Tabletas','Cápsulas','Ampollas','Blísters','Sobres','Frascos','Cajas','Paquetes','Mililitros','Litros','Miligramos','Gramos','Kg','Rollos','Bolsas','Bultos','Sacos','Pares','Otro'];
+        const UNIDADES = ['Unidades','Tabletas','Cápsulas','Ampollas','Blísters','Sobres','Frascos','Cajas','Paquetes','Litros','Gramos','Kg','Rollos','Bolsas','Bultos','Sacos','Pares','Otro'];
 
         let MOVS = [];               // [{id, tipo, categoria, articulo, cantidad, unidad, contraparte, observacion, fecha_registro, registrado_por}]
         let nombreUsuario = '';
@@ -244,8 +246,8 @@
             MOVS.forEach(m => {
                 const art = (m.articulo || '').trim();
                 if (!art) return;
-                const key = norm(m.categoria) + '||' + norm(art) + '||' + norm(m.unidad);
-                if (!map.has(key)) map.set(key, { categoria: m.categoria || '', articulo: art, unidad: m.unidad || '', entradas: 0, salidas: 0 });
+                const key = norm(m.categoria) + '||' + norm(art) + '||' + norm(m.presentacion) + '||' + norm(m.unidad);
+                if (!map.has(key)) map.set(key, { categoria: m.categoria || '', articulo: art, presentacion: m.presentacion || '', unidad: m.unidad || '', entradas: 0, salidas: 0 });
                 const it = map.get(key);
                 const cant = Number(m.cantidad) || 0;
                 if (m.tipo === 'salida') it.salidas += cant; else it.entradas += cant;
@@ -272,7 +274,7 @@
             if (lista.length === 0) { tbi.innerHTML = `<tr><td colspan="6" class="estado-box">Sin artículos${q||fc?' con ese filtro':''}.</td></tr>`; }
             else tbi.innerHTML = lista.map(it => `<tr>
                 <td>${esc(it.categoria||'—')}</td>
-                <td><b>${esc(it.articulo)}</b></td>
+                <td><b>${esc(it.articulo)}</b>${it.presentacion?` <span style="color:#64748b;font-size:12px;">· ${esc(it.presentacion)}</span>`:''}</td>
                 <td>${esc(it.unidad||'—')}</td>
                 <td class="num-cell">${nfmt(it.entradas)}</td>
                 <td class="num-cell">${nfmt(it.salidas)}</td>
@@ -293,7 +295,7 @@
                         <td>${esc(f)}</td>
                         <td><span class="badge ${ent?'e':'s'}">${ent?'ENTRADA':'SALIDA'}</span></td>
                         <td>${esc(m.categoria||'—')}</td>
-                        <td><b>${esc(m.articulo||'—')}</b>${m.observacion?`<br><span style="font-size:11px;color:#64748b;">${esc(m.observacion)}</span>`:''}</td>
+                        <td><b>${esc(m.articulo||'—')}</b>${m.presentacion?` <span style="color:#64748b;font-size:11px;">· ${esc(m.presentacion)}</span>`:''}${m.observacion?`<br><span style="font-size:11px;color:#64748b;">${esc(m.observacion)}</span>`:''}</td>
                         <td class="num-cell">${nfmt(m.cantidad)}</td>
                         <td>${esc(m.unidad||'—')}</td>
                         <td>${esc(m.contraparte||'—')}</td>
@@ -318,9 +320,9 @@
 
         // Detecta si el artículo+unidad escrito YA existe (coincidencia exacta normalizada) y avisa que se sumará.
         function buscarExacto() {
-            const art = $('mArticulo').value, uni = $('mUnidad').value;
+            const art = $('mArticulo').value, uni = $('mUnidad').value, pres = $('mPresentacion').value;
             if (!art.trim()) return null;
-            return inventario().find(it => norm(it.articulo) === norm(art) && norm(it.unidad) === norm(uni)) || null;
+            return inventario().find(it => norm(it.articulo) === norm(art) && norm(it.presentacion) === norm(pres) && norm(it.unidad) === norm(uni)) || null;
         }
         function updateAviso() {
             const av = $('avisoExiste'); if (!av) return;
@@ -337,7 +339,7 @@
                 av.innerHTML = `✓ <b>"${esc(ex.articulo)}"</b> ya está ingresado: <b>${nfmt(ex.stock)} ${esc(ex.unidad)}</b>. Al registrar se <b>SUMA</b> al existente${x ? ` (total quedaría <b>${nfmt(ex.stock + x)}</b>)` : ''} — no se duplica.`;
             }
         }
-        ['mArticulo', 'mCantidad'].forEach(id => $(id).addEventListener('input', updateAviso));
+        ['mArticulo', 'mCantidad', 'mPresentacion'].forEach(id => $(id).addEventListener('input', updateAviso));
         $('mUnidad').addEventListener('change', updateAviso);
 
         $('btnRegistrar').addEventListener('click', async () => {
@@ -346,23 +348,24 @@
             const articulo = $('mArticulo').value.trim();
             const cantidad = Number($('mCantidad').value);
             const unidad = $('mUnidad').value;
+            const presentacion = $('mPresentacion').value.trim();
             if (!articulo) { mostrarMsg('Escribe el nombre del artículo.', false); return; }
             if (!(cantidad > 0)) { mostrarMsg('La cantidad debe ser mayor que 0.', false); return; }
 
-            // ¿Ya existe (exacto)? -> sumar al existente en vez de duplicar
-            const ex = inventario().find(it => norm(it.articulo) === norm(articulo) && norm(it.unidad) === norm(unidad));
-            let artFinal = articulo, uniFinal = unidad;
+            // ¿Ya existe (exacto: artículo + presentación + unidad)? -> sumar al existente en vez de duplicar
+            const ex = inventario().find(it => norm(it.articulo) === norm(articulo) && norm(it.presentacion) === norm(presentacion) && norm(it.unidad) === norm(unidad));
+            let artFinal = articulo, uniFinal = unidad, presFinal = presentacion;
             if (ex) {
                 if (tipo === 'entrada') {
-                    if (!confirm(`Ya existe "${ex.articulo}" con ${nfmt(ex.stock)} ${ex.unidad}.\n\n¿SUMAR ${nfmt(cantidad)} y dejar el total en ${nfmt(ex.stock + cantidad)}?\n\n(Aceptar = sumar al existente · Cancelar = no registrar)`)) return;
+                    if (!confirm(`Ya existe "${ex.articulo}${ex.presentacion ? ' · ' + ex.presentacion : ''}" con ${nfmt(ex.stock)} ${ex.unidad}.\n\n¿SUMAR ${nfmt(cantidad)} y dejar el total en ${nfmt(ex.stock + cantidad)}?\n\n(Aceptar = sumar al existente · Cancelar = no registrar)`)) return;
                 } else if (cantidad > ex.stock) {
                     if (!confirm(`Solo hay ${nfmt(ex.stock)} ${ex.unidad} de "${ex.articulo}". ¿Registrar la salida de todos modos?`)) return;
                 }
-                artFinal = ex.articulo; uniFinal = ex.unidad; // adoptar nombre/unidad existentes para que sume exacto
+                artFinal = ex.articulo; uniFinal = ex.unidad; presFinal = ex.presentacion; // adoptar existentes para que sume exacto
             }
 
             const payload = {
-                tipo, categoria, articulo: artFinal, cantidad, unidad: uniFinal,
+                tipo, categoria, articulo: artFinal, presentacion: presFinal, cantidad, unidad: uniFinal,
                 contraparte: $('mContraparte').value.trim(),
                 observacion: $('mObs').value.trim(),
                 fecha_registro: Date.now(),
@@ -372,7 +375,7 @@
             $('btnRegistrar').disabled = true;
             try {
                 await set(push(ref(database, 'acopio')), payload);
-                $('mArticulo').value = ''; $('mCantidad').value = ''; $('mContraparte').value = ''; $('mObs').value = '';
+                $('mArticulo').value = ''; $('mCantidad').value = ''; $('mPresentacion').value = ''; $('mContraparte').value = ''; $('mObs').value = '';
                 updateAviso();
                 mostrarMsg(ex ? ('✓ Sumado a "' + artFinal + '".') : ('✓ ' + (tipo === 'salida' ? 'Salida' : 'Entrada') + ' registrada.'), true);
                 $('mArticulo').focus();
@@ -400,6 +403,7 @@
             $('eArticulo').value = m.articulo || '';
             $('eCantidad').value = (m.cantidad != null ? m.cantidad : '');
             setSel('eUnidad', m.unidad || '');
+            $('ePresentacion').value = m.presentacion || '';
             $('eContraparte').value = m.contraparte || '';
             $('eObs').value = m.observacion || '';
             $('eMsg').className = 'msg';
@@ -417,7 +421,7 @@
             try {
                 await update(ref(database, 'acopio/' + editId), {
                     tipo: $('eTipo').value, categoria: $('eCategoria').value, articulo, cantidad,
-                    unidad: $('eUnidad').value, contraparte: $('eContraparte').value.trim(), observacion: $('eObs').value.trim(),
+                    unidad: $('eUnidad').value, presentacion: $('ePresentacion').value.trim(), contraparte: $('eContraparte').value.trim(), observacion: $('eObs').value.trim(),
                     editado_por: nombreUsuario, editado_en: Date.now()
                 });
                 $('editBg').style.display = 'none'; editId = null;
@@ -447,14 +451,14 @@
                 return ws;
             };
             const inv = inventario();
-            const fInv = inv.map(it => [it.categoria, it.articulo, it.unidad, it.entradas, it.salidas, it.stock]);
+            const fInv = inv.map(it => [it.categoria, it.articulo, it.presentacion || '', it.unidad, it.entradas, it.salidas, it.stock]);
             const fMov = MOVS.map(m => [
                 m.fecha_registro ? new Date(m.fecha_registro).toLocaleString('es-VE') : '',
-                m.tipo === 'salida' ? 'Salida' : 'Entrada', m.categoria||'', m.articulo||'', Number(m.cantidad)||0, m.unidad||'', m.contraparte||'', m.observacion||'', m.registrado_por||''
+                m.tipo === 'salida' ? 'Salida' : 'Entrada', m.categoria||'', m.articulo||'', m.presentacion||'', Number(m.cantidad)||0, m.unidad||'', m.contraparte||'', m.observacion||'', m.registrado_por||''
             ]);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, mkSheet('CENTRO DE ACOPIO — INVENTARIO', ['Categoría','Artículo','Unidad','Entradas','Salidas','Disponible'], fInv, [22,30,14,12,12,14]), 'Inventario');
-            XLSX.utils.book_append_sheet(wb, mkSheet('CENTRO DE ACOPIO — MOVIMIENTOS', ['Fecha','Tipo','Categoría','Artículo','Cantidad','Unidad','Donante/Destino','Observación','Registró'], fMov, [20,10,22,28,10,12,24,28,20]), 'Movimientos');
+            XLSX.utils.book_append_sheet(wb, mkSheet('CENTRO DE ACOPIO — INVENTARIO', ['Categoría','Artículo','Presentación','Unidad','Entradas','Salidas','Disponible'], fInv, [22,28,16,12,11,11,12]), 'Inventario');
+            XLSX.utils.book_append_sheet(wb, mkSheet('CENTRO DE ACOPIO — MOVIMIENTOS', ['Fecha','Tipo','Categoría','Artículo','Presentación','Cantidad','Unidad','Donante/Destino','Observación','Registró'], fMov, [20,10,20,26,14,10,12,22,26,18]), 'Movimientos');
             XLSX.writeFile(wb, `acopio_${ahora.toISOString().slice(0,10)}.xlsx`);
         });
 
@@ -488,7 +492,7 @@
             const doc = new jsPDF({ unit: 'mm', format: 'letter' });
             jsPDF.API.autoTable.call(doc, {
                 head: [['Categoria', 'Articulo', 'Unidad', 'Entradas', 'Salidas', 'Disponible']],
-                body: inv.map(it => [_safePdf(it.categoria||'-'), _safePdf(it.articulo), _safePdf(it.unidad||'-'), nfmt(it.entradas), nfmt(it.salidas), nfmt(it.stock)]),
+                body: inv.map(it => [_safePdf(it.categoria||'-'), _safePdf(it.articulo + (it.presentacion ? ' (' + it.presentacion + ')' : '')), _safePdf(it.unidad||'-'), nfmt(it.entradas), nfmt(it.salidas), nfmt(it.stock)]),
                 startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 }, theme: 'grid',
                 styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.8, textColor: [15,23,42], lineColor: [203,213,225], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
                 headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9.5, halign: 'center' },
