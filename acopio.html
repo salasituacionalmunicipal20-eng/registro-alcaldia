@@ -29,7 +29,8 @@
         input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
         .filtros { display: grid; grid-template-columns: 2fr 1.4fr; gap: 12px; }
-        @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } }
+        .filtros-mov { display: grid; grid-template-columns: 2fr 1fr 1.4fr; gap: 12px; margin-bottom: 12px; }
+        @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } .filtros-mov { grid-template-columns: 1fr; } }
         table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
         th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
         th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; position: sticky; top: 0; }
@@ -129,6 +130,11 @@
             <!-- MOVIMIENTOS -->
             <div class="card">
                 <h2>Movimientos recientes</h2>
+                <div class="filtros-mov">
+                    <div><label>Buscar movimiento</label><input id="mfBuscar" type="search" placeholder="Artículo, categoría, destino, quién registró…" autocomplete="off" /></div>
+                    <div><label>Tipo</label><select id="mfTipo"><option value="">Todos</option><option value="entrada">Entradas</option><option value="salida">Salidas</option></select></div>
+                    <div><label>Categoría</label><select id="mfCat"><option value="">Todas</option></select></div>
+                </div>
                 <div style="overflow-x:auto;">
                     <table>
                         <thead><tr><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Artículo</th><th class="num-cell">Cantidad</th><th>Unidad</th><th>Donante / Destino</th><th>Registró</th><th></th></tr></thead>
@@ -197,7 +203,7 @@
         let pagMov = 1; const TAM = 60;
 
         // Poblar selects
-        CATEGORIAS.forEach(c => { [$('mCategoria'), $('fCategoria')].forEach(sel => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); }); });
+        CATEGORIAS.forEach(c => { [$('mCategoria'), $('fCategoria'), $('mfCat')].forEach(sel => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); }); });
         UNIDADES.forEach(u => { const o = document.createElement('option'); o.value = u; o.textContent = u; $('mUnidad').appendChild(o); });
 
         // Tipo entrada/salida
@@ -288,12 +294,13 @@
                 <td class="num-cell ${it.stock > 0 ? 'stock-ok' : 'stock-bajo'}">${nfmt(it.stock)}</td>
             </tr>`).join('');
 
-            // movimientos (paginado)
-            const totalPag = Math.max(1, Math.ceil(MOVS.length / TAM));
+            // movimientos (con filtro inteligente + paginado)
+            const movs = movsFiltrados();
+            const totalPag = Math.max(1, Math.ceil(movs.length / TAM));
             if (pagMov > totalPag) pagMov = totalPag;
-            const ini = (pagMov - 1) * TAM, slice = MOVS.slice(ini, ini + TAM);
+            const ini = (pagMov - 1) * TAM, slice = movs.slice(ini, ini + TAM);
             const tbm = $('tbodyMov');
-            if (MOVS.length === 0) { tbm.innerHTML = `<tr><td colspan="9" class="estado-box">Aún no hay movimientos. Registra la primera entrada arriba.</td></tr>`; $('pagMov').innerHTML = ''; }
+            if (movs.length === 0) { tbm.innerHTML = `<tr><td colspan="9" class="estado-box">${MOVS.length ? 'Sin movimientos con ese filtro.' : 'Aún no hay movimientos. Registra la primera entrada arriba.'}</td></tr>`; $('pagMov').innerHTML = ''; }
             else {
                 tbm.innerHTML = slice.map(m => {
                     const f = m.fecha_registro ? new Date(m.fecha_registro).toLocaleString('es-VE', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
@@ -312,8 +319,8 @@
                 }).join('');
                 tbm.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrarMov(b.dataset.id)));
                 tbm.querySelectorAll('button.btn-edit').forEach(b => b.addEventListener('click', () => editarMov(b.dataset.id)));
-                const desde = ini + 1, hasta = Math.min(ini + TAM, MOVS.length);
-                $('pagMov').innerHTML = `<button id="mP" ${pagMov<=1?'disabled':''}>← Anterior</button><span class="info">${desde}–${hasta} de ${MOVS.length}</span><button id="mN" ${pagMov>=totalPag?'disabled':''}>Siguiente →</button>`;
+                const desde = ini + 1, hasta = Math.min(ini + TAM, movs.length);
+                $('pagMov').innerHTML = `<button id="mP" ${pagMov<=1?'disabled':''}>← Anterior</button><span class="info">${desde}–${hasta} de ${movs.length}</span><button id="mN" ${pagMov>=totalPag?'disabled':''}>Siguiente →</button>`;
                 const p = $('mP'), n = $('mN');
                 if (p) p.addEventListener('click', () => { if (pagMov>1){ pagMov--; render(); } });
                 if (n) n.addEventListener('click', () => { if (pagMov<totalPag){ pagMov++; render(); } });
@@ -324,6 +331,20 @@
         }
 
         ['fBuscar','fCategoria'].forEach(id => { $(id).addEventListener('input', render); $(id).addEventListener('change', render); });
+
+        // Filtro inteligente de movimientos recientes
+        function movsFiltrados() {
+            const q = ($('mfBuscar').value || '').trim().toLowerCase();
+            const t = $('mfTipo').value, c = $('mfCat').value;
+            return MOVS.filter(m => {
+                if (t === 'salida' && m.tipo !== 'salida') return false;
+                if (t === 'entrada' && m.tipo === 'salida') return false;
+                if (c && m.categoria !== c) return false;
+                if (q) { const blob = `${m.articulo||''} ${m.presentacion||''} ${m.categoria||''} ${m.unidad||''} ${m.contraparte||''} ${m.registrado_por||''} ${m.observacion||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
+                return true;
+            });
+        }
+        ['mfBuscar','mfTipo','mfCat'].forEach(id => { $(id).addEventListener('input', () => { pagMov = 1; render(); }); $(id).addEventListener('change', () => { pagMov = 1; render(); }); });
 
         function mostrarMsg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { if (m.textContent === t) m.className = 'msg'; }, 4000); }
 
