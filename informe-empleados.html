@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Informe de Empleados — Terremoto</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #0a2351; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-nav:hover { background: rgba(255,255,255,0.25); }
+        .wrap { max-width: 1200px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        textarea { min-height: 64px; resize: vertical; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+        .grid .full { grid-column: 1 / -1; }
+        .btn { border: none; border-radius: 8px; padding: 12px 16px; font-size: 14px; font-weight: 800; cursor: pointer; color: #fff; }
+        .btn-reg { background: #0a6cb0; width: 100%; margin-top: 12px; }
+        .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 10px 0; color: #fff; }
+        .filtros { display: grid; grid-template-columns: 2fr 1.4fr; gap: 12px; }
+        @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
+        tbody tr:hover { background: #f8fafc; }
+        .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-edit { background: #dbeafe; color: #1e40af; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .msg { padding: 10px 13px; border-radius: 8px; font-size: 13.5px; font-weight: 600; margin-top: 10px; display: none; }
+        .msg.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; display: block; }
+        .msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
+        .stat { display: inline-block; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; }
+        .stat .num { font-size: 22px; font-weight: 800; color: #0a2351; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #0a2351; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #fff; border-radius: 12px; max-width: 640px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+        .modal h3 { color: #0a2351; font-size: 18px; margin-bottom: 12px; }
+        .fila { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid #eef2f7; font-size: 14px; }
+        .fila .k { font-weight: 700; color: #475569; min-width: 180px; }
+        .fila .val { color: #0f172a; white-space: pre-wrap; }
+        .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>📋 Informe de Empleados — Terremoto</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden"><h2 style="color:#b91c1c;">Acceso restringido</h2><p>Solo para administradores.</p></div>
+
+        <div id="contenido" class="hidden">
+            <div class="card">
+                <h2>Registrar informe del empleado</h2>
+                <div class="grid">
+                    <div class="full"><label>Secretaría / dirección</label><input id="f_secretaria" placeholder="Nombre de la Secretaría o dirección" autocomplete="off" /></div>
+                    <div><label>Nombre y apellido del empleado</label><input id="f_nombres" placeholder="Nombre completo" autocomplete="off" /></div>
+                    <div><label>Cédula</label><input id="f_cedula" placeholder="V-12345678" autocomplete="off" /></div>
+                    <div><label>Teléfono</label><input id="f_telefono" placeholder="0414-0000000" autocomplete="off" /></div>
+                    <div><label>Edad</label><input id="f_edad" type="number" min="0" max="120" placeholder="Años" /></div>
+                    <div><label>Cargo</label><input id="f_cargo" placeholder="Cargo del empleado" autocomplete="off" /></div>
+                    <div class="full"><label>Situación de salud</label><textarea id="f_salud" placeholder="Estado de salud actual…"></textarea></div>
+                    <div class="full"><label>Afectación por el terremoto en la vivienda</label><textarea id="f_vivienda" placeholder="Daños / afectación en la vivienda…"></textarea></div>
+                    <div class="full"><label>Situación física</label><textarea id="f_fisica" placeholder="Situación física…"></textarea></div>
+                    <div class="full"><label>Situación psicológica</label><textarea id="f_psicologica" placeholder="Situación psicológica / emocional…"></textarea></div>
+                    <div class="full"><label>Situación del informe</label><textarea id="f_informe" placeholder="Resumen / situación del informe…"></textarea></div>
+                    <div class="full"><label>Recomendaciones</label><textarea id="f_recomendaciones" placeholder="Recomendaciones…"></textarea></div>
+                </div>
+                <button class="btn btn-reg" id="btnRegistrar" type="button">Guardar informe</button>
+                <div id="msg" class="msg"></div>
+            </div>
+
+            <div class="card">
+                <h2>Informes registrados <span class="stat" style="margin-left:10px;"><span class="num" id="stTotal">—</span> total</span></h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
+                </div>
+                <div class="filtros">
+                    <div><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, secretaría, cargo…" autocomplete="off" /></div>
+                    <div><label>Secretaría</label><select id="fSec"><option value="">Todas</option></select></div>
+                </div>
+                <div style="overflow-x:auto; margin-top:14px;">
+                    <table>
+                        <thead><tr><th>Empleado</th><th>Cédula</th><th>Secretaría</th><th>Cargo</th><th>Teléfono</th><th>Fecha</th><th></th></tr></thead>
+                        <tbody id="tbody"><tr><td colspan="7" class="estado-box">Cargando…</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
+    <!-- Modal editar -->
+    <div class="modal-bg" id="editBg"><div class="modal">
+        <h3>✏️ Editar informe</h3>
+        <div class="grid">
+            <div class="full"><label>Secretaría / dirección</label><input id="e_secretaria" /></div>
+            <div><label>Nombre y apellido</label><input id="e_nombres" /></div>
+            <div><label>Cédula</label><input id="e_cedula" /></div>
+            <div><label>Teléfono</label><input id="e_telefono" /></div>
+            <div><label>Edad</label><input id="e_edad" type="number" min="0" max="120" /></div>
+            <div><label>Cargo</label><input id="e_cargo" /></div>
+            <div class="full"><label>Situación de salud</label><textarea id="e_salud"></textarea></div>
+            <div class="full"><label>Afectación en la vivienda</label><textarea id="e_vivienda"></textarea></div>
+            <div class="full"><label>Situación física</label><textarea id="e_fisica"></textarea></div>
+            <div class="full"><label>Situación psicológica</label><textarea id="e_psicologica"></textarea></div>
+            <div class="full"><label>Situación del informe</label><textarea id="e_informe"></textarea></div>
+            <div class="full"><label>Recomendaciones</label><textarea id="e_recomendaciones"></textarea></div>
+        </div>
+        <div id="eMsg" class="msg"></div>
+        <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
+            <button id="eCancelar" class="btn" style="background:#e2e8f0;color:#0f172a;">Cancelar</button>
+            <button id="eGuardar" class="btn" style="background:#16a34a;">Guardar cambios</button>
+        </div>
+    </div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, push, set, onValue, get, child, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        const v = (id) => ($(id).value || '').trim();
+
+        const NODO = 'informes_empleados';
+        const CAMPOS = [
+            ['secretaria', 'Secretaría / dirección'],
+            ['nombres', 'Nombre y apellido'],
+            ['cedula', 'Cédula'],
+            ['telefono', 'Teléfono'],
+            ['edad', 'Edad'],
+            ['cargo', 'Cargo'],
+            ['salud', 'Situación de salud'],
+            ['vivienda', 'Afectación por el terremoto en la vivienda'],
+            ['fisica', 'Situación física'],
+            ['psicologica', 'Situación psicológica'],
+            ['informe', 'Situación del informe'],
+            ['recomendaciones', 'Recomendaciones'],
+        ];
+
+        let REGS = [], nombreUsuario = '', pagina = 1; const TAM = 40;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuper;
+            nombreUsuario = esSuper ? 'CARLOS ADMIN' : (user.email || '');
+            if (!esSuper) {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    if (snap.exists() && snap.val().rol === 'admin') { permitido = true; const p = snap.val(); nombreUsuario = `${(p.nombre||'').trim()} ${(p.apellido||'').trim()}`.trim() || user.email; }
+                } catch (e) { permitido = false; }
+            }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            onValue(ref(database, NODO), (snap) => {
+                const val = snap.val() || {};
+                REGS = Object.entries(val).map(([id, m]) => ({ id, ...m })).sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
+                poblarSec(); render();
+            }, () => { REGS = []; render(); });
+        });
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch(e){} location.href = 'index.html'; });
+
+        function poblarSec() {
+            const secs = [...new Set(REGS.map(r => (r.secretaria||'').trim()).filter(Boolean))].sort();
+            const prev = $('fSec').value;
+            $('fSec').innerHTML = '<option value="">Todas</option>' + secs.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+            if (prev) $('fSec').value = prev;
+        }
+        function filtrados() {
+            const q = ($('fBuscar').value || '').trim().toLowerCase(), fs = $('fSec').value;
+            return REGS.filter(r => {
+                if (fs && r.secretaria !== fs) return false;
+                if (q) { const blob = `${r.nombres||''} ${r.cedula||''} ${r.secretaria||''} ${r.cargo||''} ${r.telefono||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
+                return true;
+            });
+        }
+        function render() {
+            $('stTotal').textContent = REGS.length;
+            const lista = filtrados();
+            const total = lista.length, totalPag = Math.max(1, Math.ceil(total / TAM));
+            if (pagina > totalPag) pagina = totalPag;
+            const ini = (pagina - 1) * TAM, slice = lista.slice(ini, ini + TAM);
+            const tb = $('tbody');
+            if (total === 0) { tb.innerHTML = `<tr><td colspan="7" class="estado-box">Sin informes${($('fBuscar').value||$('fSec').value)?' con ese filtro':''}.</td></tr>`; $('paginacion').innerHTML = ''; return; }
+            tb.innerHTML = slice.map(r => {
+                const fecha = r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+                return `<tr>
+                    <td><b>${esc(r.nombres||'—')}</b>${r.edad?` <span style="color:#64748b;font-size:12px;">· ${esc(r.edad)} años</span>`:''}</td>
+                    <td>${esc(r.cedula||'—')}</td>
+                    <td>${esc(r.secretaria||'—')}</td>
+                    <td>${esc(r.cargo||'—')}</td>
+                    <td>${esc(r.telefono||'—')}</td>
+                    <td>${esc(fecha)}</td>
+                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-edit" data-id="${esc(r.id)}">✏️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
+                </tr>`;
+            }).join('');
+            tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+            tb.querySelectorAll('button.btn-edit').forEach(b => b.addEventListener('click', () => editar(b.dataset.id)));
+            tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.id)));
+            const desde = ini + 1, hasta = Math.min(ini + TAM, total);
+            $('paginacion').innerHTML = `<button id="pgP" ${pagina<=1?'disabled':''}>← Anterior</button><span style="font-size:13px;color:#64748b;">${desde}–${hasta} de ${total}</span><button id="pgN" ${pagina>=totalPag?'disabled':''}>Siguiente →</button>`;
+            const p = $('pgP'), n = $('pgN');
+            if (p) p.addEventListener('click', () => { if (pagina>1){ pagina--; render(); } });
+            if (n) n.addEventListener('click', () => { if (pagina<totalPag){ pagina++; render(); } });
+        }
+        ['fBuscar','fSec'].forEach(id => { $(id).addEventListener('input', () => { pagina=1; render(); }); $(id).addEventListener('change', () => { pagina=1; render(); }); });
+
+        function verDetalle(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val || '—')}</span></div>`;
+            const fecha = r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '—';
+            $('modal').innerHTML = `<h3>${esc(r.nombres || 'Informe')}</h3>`
+                + CAMPOS.map(c => fila(c[1], r[c[0]])).join('')
+                + fila('Registrado por', r.registrado_por) + fila('Fecha', fecha)
+                + `<button class="cerrar" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+        }
+        $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        function leerForm(pref) {
+            return {
+                secretaria: v(pref + 'secretaria'), nombres: v(pref + 'nombres'), cedula: v(pref + 'cedula'),
+                telefono: v(pref + 'telefono'), edad: v(pref + 'edad'), cargo: v(pref + 'cargo'),
+                salud: v(pref + 'salud'), vivienda: v(pref + 'vivienda'), fisica: v(pref + 'fisica'),
+                psicologica: v(pref + 'psicologica'), informe: v(pref + 'informe'), recomendaciones: v(pref + 'recomendaciones')
+            };
+        }
+        function mostrarMsg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { if (m.textContent === t) m.className = 'msg'; }, 4000); }
+
+        $('btnRegistrar').addEventListener('click', async () => {
+            const d = leerForm('f_');
+            if (!d.nombres) { mostrarMsg('Escribe el nombre del empleado.', false); return; }
+            $('btnRegistrar').disabled = true;
+            try {
+                await set(push(ref(database, NODO)), { ...d, fecha_registro: Date.now(), registrado_por: nombreUsuario, registrado_uid: (auth.currentUser && auth.currentUser.uid) || '' });
+                ['f_secretaria','f_nombres','f_cedula','f_telefono','f_edad','f_cargo','f_salud','f_vivienda','f_fisica','f_psicologica','f_informe','f_recomendaciones'].forEach(id => $(id).value = '');
+                mostrarMsg('✓ Informe guardado.', true); $('f_nombres').focus();
+            } catch (e) { mostrarMsg('No se pudo guardar (' + (e.message || e.code || 'error') + ').', false); }
+            finally { $('btnRegistrar').disabled = false; }
+        });
+
+        let editId = null;
+        function editar(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            editId = id;
+            ['secretaria','nombres','cedula','telefono','edad','cargo','salud','vivienda','fisica','psicologica','informe','recomendaciones'].forEach(k => $('e_' + k).value = r[k] || '');
+            $('eMsg').className = 'msg'; $('editBg').classList.add('show');
+        }
+        $('eCancelar').addEventListener('click', () => { $('editBg').classList.remove('show'); editId = null; });
+        $('editBg').addEventListener('click', (e) => { if (e.target === $('editBg')) { $('editBg').classList.remove('show'); editId = null; } });
+        $('eGuardar').addEventListener('click', async () => {
+            if (!editId) return;
+            const d = leerForm('e_');
+            if (!d.nombres) { $('eMsg').textContent = 'Escribe el nombre.'; $('eMsg').className = 'msg err'; return; }
+            $('eGuardar').disabled = true;
+            try {
+                await update(ref(database, NODO + '/' + editId), { ...d, editado_por: nombreUsuario, editado_en: Date.now() });
+                $('editBg').classList.remove('show'); editId = null;
+            } catch (e) { $('eMsg').textContent = 'No se pudo guardar: ' + (e.message || e.code); $('eMsg').className = 'msg err'; }
+            finally { $('eGuardar').disabled = false; }
+        });
+        async function borrar(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            if (!confirm(`¿Borrar el informe de "${r.nombres || ''}"?`)) return;
+            try { await remove(ref(database, NODO + '/' + id)); } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
+        }
+
+        // ---- Excel ----
+        $('btnExcel').addEventListener('click', () => {
+            if (typeof XLSX === 'undefined') { alert('SheetJS no cargó.'); return; }
+            const ahora = new Date(); const fechaLarga = ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' });
+            const NAVY='0A2351', GRIS='64748B', ZEBRA='F1F5F9', TEXTO='0F172A';
+            const thin = { style:'thin', color:{rgb:'CBD5E1'} }, borde = { top:thin,bottom:thin,left:thin,right:thin };
+            const estB = { font:{bold:true,sz:15,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:NAVY}}, alignment:{horizontal:'center',vertical:'center'} };
+            const estS = { font:{italic:true,sz:10,color:{rgb:GRIS}}, alignment:{horizontal:'center',vertical:'center'} };
+            const estH = { font:{bold:true,sz:11,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:NAVY}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:borde };
+            const header = ['Fecha'].concat(CAMPOS.map(c => c[1])).concat(['Registró']);
+            const filas = filtrados().map(r => [r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : ''].concat(CAMPOS.map(c => String(r[c[0]] || ''))).concat([r.registrado_por || '']));
+            const data = [['INFORME DE EMPLEADOS — TERREMOTO'].concat(Array(header.length-1).fill('')), [`Generado ${fechaLarga} · ${filas.length} fila(s)`].concat(Array(header.length-1).fill('')), header, ...filas];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const setS=(r,c,s)=>{const a=XLSX.utils.encode_cell({r,c}); if(!ws[a])ws[a]={t:'s',v:''}; ws[a].s=s;};
+            for (let c=0;c<header.length;c++){ setS(0,c,estB); setS(1,c,estS); setS(2,c,estH); }
+            for (let r=3;r<data.length;r++){ const fondo=(r%2===0)?{fill:{fgColor:{rgb:ZEBRA}}}:{}; for(let c=0;c<header.length;c++) setS(r,c,{font:{sz:10,color:{rgb:TEXTO}},alignment:{vertical:'top',wrapText:true},border:borde,...fondo}); }
+            ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}},{s:{r:1,c:0},e:{r:1,c:header.length-1}}];
+            ws['!cols']=[20,24,22,12,14,7,18,30,30,26,26,30,30,18].map(w=>({wch:w}));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Informes');
+            XLSX.writeFile(wb, `informes_empleados_${ahora.toISOString().slice(0,10)}.xlsx`);
+        });
+
+        // ---- Sanitizador PDF ----
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s); try { t = t.normalize('NFC'); } catch (e) {}
+            let out = '';
+            for (const ch of t) {
+                const c = ch.codePointAt(0);
+                if (c === 0x201C || c === 0x201D || c === 0x2033) out += '"';
+                else if (c === 0x2018 || c === 0x2019 || c === 0x2032) out += "'";
+                else if (c === 0x2013 || c === 0x2014) out += '-';
+                else if (c === 0x2026) out += '...';
+                else if (c === 0x00A0) out += ' ';
+                else if (c < 32 || c === 127) out += ' ';
+                else if (c <= 255) out += ch;
+                else out += '';
+            }
+            return out.replace(/ {2,}/g, ' ').trim();
+        }
+
+        // ---- PDF: un informe por sección (detallado) ----
+        $('btnPdf').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay informes para exportar.'); return; }
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Informe de Empleados — Terremoto', subtitulo: _safePdf(lista.length + ' informe(s)') }); dibujarFooterPDF(doc); };
+            lista.forEach((r, idx) => {
+                let startY;
+                if (idx === 0) startY = 55;
+                else { startY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 55) + 7; if (startY > 235) { doc.addPage(); startY = 55; } }
+                const filas = CAMPOS.map(c => [_safePdf(c[1]), _safePdf(r[c[0]] || '-')]);
+                filas.push([_safePdf('Registrado por'), _safePdf(r.registrado_por || '-')]);
+                filas.push([_safePdf('Fecha'), _safePdf(r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '-')]);
+                jsPDF.API.autoTable.call(doc, {
+                    startY, margin: { top: 55, bottom: 16, left: 14, right: 14 }, showHead: 'firstPage',
+                    head: [[{ content: _safePdf('INFORME ' + (idx + 1) + ' — ' + (r.nombres || '')), colSpan: 2 }]],
+                    body: filas, theme: 'grid',
+                    styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.6, textColor: [15,23,42], lineColor: [203,213,225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
+                    headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9.5 },
+                    columnStyles: { 0: { cellWidth: 56, fontStyle: 'bold', fillColor: [241,245,249] }, 1: { cellWidth: 130 } },
+                    didDrawPage: drawHF
+                });
+            });
+            doc.save('informes_empleados_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        });
+    </script>
+</body>
+</html>
