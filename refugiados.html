@@ -178,7 +178,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -399,6 +399,18 @@
             if (!nombres || !apellidos) { mostrarMsg('Escribe los nombres y apellidos de la persona refugiada.'); return; }
             if (!direccion) { mostrarMsg('Escribe la dirección donde se está quedando.'); return; }
 
+            // Evitar cédulas repetidas: revisa el índice público de cédulas ya registradas
+            const cedRef = soloDig(v('ref_cedula'));
+            const cedKey = cedRef ? ((v('ref_nacionalidad') || 'V') + cedRef) : '';
+            if (cedKey) {
+                const btnC = $('btnEnviar'); const prevTxt = btnC.textContent; btnC.disabled = true; btnC.textContent = 'Verificando cédula…';
+                try {
+                    const snapCed = await get(ref(database, 'refugiados_cedulas/' + cedKey));
+                    if (snapCed.exists()) { btnC.disabled = false; btnC.textContent = prevTxt; mostrarMsg('Ya existe un registro con la cédula ' + cedRef + ' — esa persona ya fue reportada, no se puede repetir.'); return; }
+                } catch (e) { /* si no se puede verificar, no bloquear el registro */ }
+                btnC.disabled = false; btnC.textContent = prevTxt;
+            }
+
             // Grupo familiar
             const grupo = [];
             Array.from($('acompanantes').children).forEach(d => {
@@ -454,6 +466,7 @@
             try {
                 const nuevoRef = push(ref(database, 'refugiados'));
                 await set(nuevoRef, payload);
+                if (cedKey) { try { await set(ref(database, 'refugiados_cedulas/' + cedKey), payload.fecha_registro); } catch (e) {} }
                 if (fotoDataUrl) { try { await set(ref(database, 'refugiados_fotos/' + nuevoRef.key), fotoDataUrl); } catch (e) {} }
                 $('formWrap').classList.add('hidden');
                 $('exitoWrap').classList.remove('hidden');

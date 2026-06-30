@@ -76,6 +76,13 @@
         ".validate": "newData.hasChildren(['nombres']) && newData.child('nombres').isString() && newData.child('nombres').val().length <= 200"
       }
     },
+    "refugiados_cedulas": {
+      "$cedula": {
+        ".read": true,
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "newData.isNumber()"
+      }
+    },
     "tickets": {
       ".read": "auth != null",
       "$ticketId": {
