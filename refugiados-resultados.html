@@ -95,15 +95,19 @@
             <div class="card">
                 <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
                 <div class="stats">
-                    <div class="stat"><div class="num" id="stReportes">—</div><div class="lbl">Reportes</div></div>
-                    <div class="stat b"><div class="num" id="stPersonas">—</div><div class="lbl">Personas (con grupo familiar)</div></div>
+                    <div class="stat"><div class="num" id="stReportes">—</div><div class="lbl">Familias registradas</div></div>
+                    <div class="stat b"><div class="num" id="stFamiliasUnicas">—</div><div class="lbl">Familias únicas (por cédula)</div></div>
+                    <div class="stat"><div class="num" id="stPersonas">—</div><div class="lbl">Personas (con grupo familiar)</div></div>
+                    <div class="stat b"><div class="num" id="stTitulares">—</div><div class="lbl">Titulares (1 por familia)</div></div>
+                    <div class="stat"><div class="num" id="stAcomp">—</div><div class="lbl">Acompañantes (grupo familiar)</div></div>
                     <div class="stat"><div class="num" id="stVuln">—</div><div class="lbl">Reportes con vulnerabilidad</div></div>
                     <div class="stat b"><div class="num" id="stAnon">—</div><div class="lbl">Reportes anónimos</div></div>
                     <div class="stat"><div class="num" id="stNinos">—</div><div class="lbl">Niños/as (menores de 18)</div></div>
                     <div class="stat b"><div class="num" id="stBebes">—</div><div class="lbl">Bebés / recién nacidos (0–1 año)</div></div>
                     <div class="stat"><div class="num" id="stMayores">—</div><div class="lbl">Adultos mayores (60+)</div></div>
                 </div>
-                <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Cada reporte aparece aquí en tiempo real. Comparte el enlace de arriba (o el QR) para viralizar.</div>
+                <button id="btnReporte" class="btn-exp" style="background:#7f1d1d;margin-top:12px;">📄 Generar reporte general (PDF)</button>
+                <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Cada reporte aparece aquí en tiempo real. El botón genera un PDF con todos los totales (familias, personas, edades, necesidades y procedencia).</div>
             </div>
 
             <div class="card">
@@ -276,7 +280,13 @@
         function render() {
             // KPIs
             $('stReportes').textContent = REGS.length;
-            $('stPersonas').textContent = REGS.reduce((s, r) => s + (Number(r.total_personas) || (1 + toArr(r.grupo_familiar).length)), 0);
+            const _personas = REGS.reduce((s, r) => s + (Number(r.total_personas) || (1 + toArr(r.grupo_familiar).length)), 0);
+            $('stPersonas').textContent = _personas;
+            const _cedSet = new Set();
+            REGS.forEach(r => { const c = soloDig(r.cedula); if (c) _cedSet.add((r.nacionalidad || 'V') + c); });
+            $('stFamiliasUnicas').textContent = _cedSet.size;
+            $('stTitulares').textContent = REGS.length;
+            $('stAcomp').textContent = _personas - REGS.length;
             $('stVuln').textContent = REGS.filter(r => toArr(r.vulnerabilidad).length > 0).length;
             $('stAnon').textContent = REGS.filter(r => r.reporta_anonimo).length;
             // Edades: refugiado principal (de su fecha) + cada acompañante (su edad). KPIs + tabulación por grupos.
@@ -562,6 +572,85 @@
                 _dibujarReporte(doc, r, 'REPORTE ' + (idx + 1) + ' — ' + (r.nombres || '') + ' ' + (r.apellidos || ''), startY, drawHF);
             });
             doc.save('refugiados_detalle_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        });
+
+        // ---- Reporte general (PDF con todos los totales) ----
+        $('btnReporte').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            if (!REGS.length) { alert('No hay reportes aún.'); return; }
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Censo de Refugiados — Reporte general', subtitulo: _safePdf('Generado ' + new Date().toLocaleString('es-VE')) }); dibujarFooterPDF(doc); };
+            const _s = (x) => _safePdf(String(x));
+            const personas = REGS.reduce((s, r) => s + (Number(r.total_personas) || (1 + toArr(r.grupo_familiar).length)), 0);
+            const cedSet = new Set();
+            REGS.forEach(r => { const c = soloDig(r.cedula); if (c) cedSet.add((r.nacionalidad || 'V') + c); });
+            const vuln = REGS.filter(r => toArr(r.vulnerabilidad).length > 0).length;
+            const anon = REGS.filter(r => r.reporta_anonimo).length;
+            let ninos = 0, bebes = 0, mayores = 0, sinEdad = 0;
+            const tab = GRUPOS_EDAD.map(() => 0);
+            const edv = (x) => x != null && x !== '' && !isNaN(Number(x));
+            REGS.forEach(r => {
+                const edades = [];
+                const eRef = edadDe(r.fecha_nacimiento);
+                if (eRef !== '') edades.push(eRef); else sinEdad++;
+                toArr(r.grupo_familiar).forEach(g => { if (edv(g.edad)) edades.push(Number(g.edad)); else sinEdad++; });
+                edades.forEach(e => { if (e <= 1) bebes++; if (e < 18) ninos++; if (e >= 60) mayores++; const gi = GRUPOS_EDAD.findIndex(gr => gr.test(e)); if (gi >= 0) tab[gi]++; });
+            });
+            const nec = {}; NEC_CLAVE.forEach(n => nec[n] = { t: 0, F: 0, M: 0, X: 0 });
+            REGS.forEach(r => { const ns = toArr(r.necesidades); NEC_CLAVE.forEach(n => { if (ns.includes(n)) { nec[n].t++; if (r.sexo === 'F') nec[n].F++; else if (r.sexo === 'M') nec[n].M++; else nec[n].X++; } }); });
+            const proc = {}; REGS.forEach(r => { const p = (r.procedencia || 'Sin especificar'); proc[p] = (proc[p] || 0) + 1; });
+            const baseSty = { font: 'helvetica', fontSize: 9.5, cellPadding: 1.7, textColor: [15,23,42], lineColor: [220,200,200], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' };
+
+            jsPDF.API.autoTable.call(doc, {
+                startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                head: [[{ content: _s('RESUMEN GENERAL'), colSpan: 2 }]],
+                body: [
+                    ['Familias registradas (reportes)', String(REGS.length)],
+                    ['Familias únicas (por cédula)', String(cedSet.size) + ((REGS.length - cedSet.size) ? '   (' + (REGS.length - cedSet.size) + ' duplicadas)' : '')],
+                    ['Personas totales (con grupo familiar)', String(personas)],
+                    ['   - Titulares (1 por familia)', String(REGS.length)],
+                    ['   - Acompañantes (grupo familiar)', String(personas - REGS.length)],
+                    ['Reportes con vulnerabilidad', String(vuln)],
+                    ['Reportes anónimos', String(anon)],
+                    ['Niños/as (menores de 18)', String(ninos)],
+                    ['Bebés / recién nacidos (0-1 año)', String(bebes)],
+                    ['Adultos mayores (60+)', String(mayores)],
+                ].map(row => [_s(row[0]), _s(row[1])]),
+                theme: 'grid', styles: { ...baseSty, fontSize: 10, cellPadding: 2 },
+                headStyles: { fillColor: [127,29,29], textColor: [255,255,255], fontStyle: 'bold', fontSize: 11 },
+                columnStyles: { 0: { cellWidth: 122, fontStyle: 'bold', fillColor: [254,242,242] }, 1: { cellWidth: 62, halign: 'right' } },
+                didDrawPage: drawHF
+            });
+            jsPDF.API.autoTable.call(doc, {
+                startY: doc.lastAutoTable.finalY + 6, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                head: [[_s('Grupo etario'), _s('Rango'), _s('Personas')]],
+                body: GRUPOS_EDAD.map((gr, i) => [_s(gr.label), _s(gr.rango), String(tab[i])]).concat([[_s('Total con edad registrada'), '', String(tab.reduce((a, b) => a + b, 0))], [_s('Sin edad registrada'), '', String(sinEdad)]]),
+                theme: 'grid', styles: baseSty,
+                headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold' },
+                columnStyles: { 0: { cellWidth: 112 }, 1: { cellWidth: 46 }, 2: { cellWidth: 26, halign: 'right', fontStyle: 'bold' } },
+                didDrawPage: drawHF
+            });
+            jsPDF.API.autoTable.call(doc, {
+                startY: doc.lastAutoTable.finalY + 6, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                head: [[_s('Necesidad'), _s('Total'), _s('Femenino'), _s('Masculino'), _s('Sin dato')]],
+                body: NEC_CLAVE.map(n => [_s(n === 'Medicinas' ? 'Medicamentos / Medicinas' : n), String(nec[n].t), String(nec[n].F), String(nec[n].M), String(nec[n].X)]),
+                theme: 'grid', styles: baseSty,
+                headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold' },
+                columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 26, halign: 'center' }, 2: { cellWidth: 28, halign: 'center' }, 3: { cellWidth: 28, halign: 'center' }, 4: { cellWidth: 22, halign: 'center' } },
+                didDrawPage: drawHF
+            });
+            jsPDF.API.autoTable.call(doc, {
+                startY: doc.lastAutoTable.finalY + 6, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                head: [[_s('Procedencia (estado)'), _s('Familias')]],
+                body: Object.entries(proc).sort((a, b) => b[1] - a[1]).map(([p, c]) => [_s(p), String(c)]),
+                theme: 'grid', styles: baseSty,
+                headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold' },
+                columnStyles: { 0: { cellWidth: 140 }, 1: { cellWidth: 44, halign: 'right', fontStyle: 'bold' } },
+                didDrawPage: drawHF
+            });
+            doc.save('reporte_general_refugiados_' + new Date().toISOString().slice(0, 10) + '.pdf');
         });
 
         // ---- Imprimir un solo refugiado (incluye su foto si tiene) ----
