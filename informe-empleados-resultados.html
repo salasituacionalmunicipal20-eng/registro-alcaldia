@@ -253,10 +253,11 @@
                     <td>${esc(r.cargo||'—')}</td>
                     <td>${esc(r.telefono||'—')}</td>
                     <td>${esc(fecha)}</td>
-                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-edit" data-id="${esc(r.id)}">✏️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
+                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-print" data-id="${esc(r.id)}" style="background:#0a6cb0;color:#fff;border:none;border-radius:6px;padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer;margin-left:4px;">🖨️</button><button class="btn-edit" data-id="${esc(r.id)}">✏️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
                 </tr>`;
             }).join('');
             tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+            tb.querySelectorAll('button.btn-print').forEach(b => b.addEventListener('click', () => imprimirUno(b.dataset.id)));
             tb.querySelectorAll('button.btn-edit').forEach(b => b.addEventListener('click', () => editar(b.dataset.id)));
             tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.id)));
             const desde = ini + 1, hasta = Math.min(ini + TAM, total);
@@ -279,6 +280,34 @@
             $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
         }
         $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        // Imprimir un solo informe (una página) y mandar directo a imprimir
+        function imprimirUno(id) {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Informe de Empleado — Terremoto', subtitulo: _safePdf(r.nombres || '') }); dibujarFooterPDF(doc); };
+            const filas = CAMPOS.map(c => [_safePdf(c[1]), _safePdf(r[c[0]] || '-')]);
+            filas.push([_safePdf('Registrado por'), _safePdf(r.registrado_por || '-')]);
+            filas.push([_safePdf('Fecha'), _safePdf(r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '-')]);
+            jsPDF.API.autoTable.call(doc, {
+                startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                head: [[{ content: _safePdf('INFORME — ' + (r.nombres || '')), colSpan: 2 }]],
+                body: filas, theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 9.5, cellPadding: 1.8, textColor: [15,23,42], lineColor: [203,213,225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
+                headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 10 },
+                columnStyles: { 0: { cellWidth: 56, fontStyle: 'bold', fillColor: [241,245,249] }, 1: { cellWidth: 130 } },
+                didDrawPage: drawHF
+            });
+            const archivo = 'informe_' + (String(r.cedula || '').replace(/[^0-9A-Za-z]/g, '') || 'empleado') + '.pdf';
+            try {
+                doc.autoPrint();
+                const w = window.open(doc.output('bloburl'), '_blank');
+                if (!w) { doc.save(archivo); alert('El navegador bloqueó la ventana de impresión; se descargó el PDF. Permite ventanas emergentes para imprimir directo.'); }
+            } catch (e) { doc.save(archivo); }
+        }
 
         function leerForm(pref) {
             return {
