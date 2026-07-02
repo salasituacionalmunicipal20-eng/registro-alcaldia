@@ -380,9 +380,8 @@
             const doc = new jsPDF({ unit: 'mm', format: 'letter' });
             const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Informe de Empleados — Terremoto', subtitulo: _safePdf(lista.length + ' informe(s)') }); dibujarFooterPDF(doc); };
             lista.forEach((r, idx) => {
-                let startY;
-                if (idx === 0) startY = 55;
-                else { startY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 55) + 7; if (startY > 235) { doc.addPage(); startY = 55; } }
+                if (idx > 0) doc.addPage();   // un empleado por página
+                const startY = 55;
                 const filas = CAMPOS.map(c => [_safePdf(c[1]), _safePdf(r[c[0]] || '-')]);
                 filas.push([_safePdf('Registrado por'), _safePdf(r.registrado_por || '-')]);
                 filas.push([_safePdf('Fecha'), _safePdf(r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '-')]);
