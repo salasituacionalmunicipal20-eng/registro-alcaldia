@@ -26,6 +26,9 @@
         .filtros .full { grid-column: 1 / -1; }
         .stats { display: flex; gap: 14px; flex-wrap: wrap; }
         .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 130px; }
+        .stat-btn { cursor: pointer; transition: background .15s, border-color .15s; }
+        .stat-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+        .stat-btn.activo { background: #eef2ff; border-color: #6366f1; box-shadow: 0 0 0 2px #c7d2fe inset; }
         .stat .num { font-size: 24px; font-weight: 800; color: #0a2351; }
         .stat .lbl { font-size: 12px; color: #64748b; font-weight: 600; }
         .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #16a34a; font-weight: 700; }
@@ -98,8 +101,8 @@
                     <div class="stat"><div class="num" id="stPersonas">—</div><div class="lbl">Personas totales</div></div>
                     <div class="stat"><div class="num" id="stJefes">—</div><div class="lbl">Jefes de familia</div></div>
                     <div class="stat"><div class="num" id="stIntegrantes">—</div><div class="lbl">Integrantes (grupo familiar)</div></div>
-                    <div class="stat"><div class="num" id="stPsico" style="color:#7c3aed;">—</div><div class="lbl">🧠 Requieren ayuda psicológica</div></div>
-                    <div class="stat"><div class="num" id="stVivienda" style="color:#b45309;">—</div><div class="lbl">🏠 Requieren ayuda con vivienda</div></div>
+                    <div class="stat stat-btn" id="tilePsico" title="Clic para ver solo los que requieren ayuda psicológica"><div class="num" id="stPsico" style="color:#7c3aed;">—</div><div class="lbl">🧠 Requieren ayuda psicológica</div></div>
+                    <div class="stat stat-btn" id="tileVivienda" title="Clic para ver solo los que requieren ayuda con vivienda"><div class="num" id="stVivienda" style="color:#b45309;">—</div><div class="lbl">🏠 Requieren ayuda con vivienda</div></div>
                 </div>
             </div>
 
@@ -236,6 +239,8 @@
             $('stIntegrantes').textContent = personas - REGS.length;
             $('stPsico').textContent = REGS.filter(necesitaPsico).length;
             $('stVivienda').textContent = REGS.filter(necesitaVivienda).length;
+            $('tilePsico').classList.toggle('activo', $('fPsico').value === 'si');
+            $('tileVivienda').classList.toggle('activo', $('fVivienda').value === 'si');
 
             const lista = filtrados();
             const fInfo = $('filtroInfo');
@@ -275,6 +280,9 @@
         const FILTROS = ['fBuscar','fEstado','fMunicipio','fGenero','fPsico','fVivienda','fSalud','fFoto','fDesde','fHasta'];
         FILTROS.forEach(id => { const el = $(id); if (!el) return; el.addEventListener('input', () => { pagina=1; render(); }); el.addEventListener('change', () => { pagina=1; render(); }); });
         $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => { const el = $(id); if (el) el.value = ''; }); pagina=1; render(); });
+        function toggleTile(selId, val){ const el = $(selId); if (!el) return; el.value = (el.value === val) ? '' : val; pagina = 1; render(); const tabla = document.querySelector('table'); if (tabla) tabla.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        $('tilePsico').addEventListener('click', () => toggleTile('fPsico', 'si'));
+        $('tileVivienda').addEventListener('click', () => toggleTile('fVivienda', 'si'));
 
         const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val || '—')}</span></div>`;
         function verDetalle(id) {
