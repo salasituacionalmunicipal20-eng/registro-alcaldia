@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Refugio Zamurera — Ingreso | Cristóbal Rojas</title>
+    <script defer src="municipios-data.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #eef2f7; color: #0f172a; line-height: 1.5; }
+        .top { background: linear-gradient(135deg, #0a2351 0%, #16a34a 100%); color: #fff; padding: 22px 18px; text-align: center; }
+        .top h1 { font-size: 21px; font-weight: 800; }
+        .top p { font-size: 13.5px; opacity: .92; margin-top: 4px; }
+        .wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 14px; }
+        .card h2 { font-size: 14px; font-weight: 800; color: #0a2351; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        .card .sub { font-size: 12.5px; color: #64748b; margin-bottom: 10px; }
+        label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin: 11px 0 4px; }
+        .hint { font-weight: 400; color: #94a3b8; font-size: 11.5px; }
+        input, select, textarea { width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        input:focus, textarea:focus, select:focus { border-color: #16a34a; background: #fff; }
+        textarea { min-height: 58px; resize: vertical; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        @media (max-width: 560px) { .row3 { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 420px) { .row2, .row3 { grid-template-columns: 1fr; } }
+        .miembro { border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin-top: 12px; background: #f8fafc; }
+        .mb-head { display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #0a2351; font-size: 14px; margin-bottom: 6px; }
+        .mb-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-add { width: 100%; background: #e0e7ff; color: #3730a3; border: 1px dashed #6366f1; border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 12px; }
+        .btn-enviar { width: 100%; background: #16a34a; color: #fff; border: none; border-radius: 10px; padding: 16px; font-size: 17px; font-weight: 800; cursor: pointer; margin-top: 6px; }
+        .btn-enviar:disabled { opacity: .6; }
+        .msg { padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-top: 12px; display: none; }
+        .msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
+        .prev { max-width: 120px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 6px; display: none; }
+        .ok-screen { display: none; text-align: center; padding: 40px 20px; }
+        .ok-screen .check { font-size: 60px; }
+        .ok-screen h2 { color: #16a34a; font-size: 24px; margin: 10px 0; }
+        .ok-screen p { color: #475569; font-size: 15px; }
+        .ok-screen button { margin-top: 22px; background: #0a2351; color: #fff; border: none; border-radius: 10px; padding: 14px 22px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 16px; }
+    </style>
+</head>
+<body>
+    <div class="top">
+        <h1>🏕️ Refugio Zamurera — Ingreso</h1>
+        <p>Registro de personas que ingresan al refugio · Municipio Cristóbal Rojas</p>
+    </div>
+
+    <div class="wrap">
+        <div id="formWrap">
+            <!-- RECEPCIÓN -->
+            <div class="card">
+                <h2>Datos de recepción</h2>
+                <div class="row2">
+                    <div><label>Nº de registro</label><input id="n_registro" placeholder="Ej: 001" autocomplete="off" /></div>
+                    <div><label>Persona receptor</label><input id="persona_receptor" placeholder="Quién recibe" autocomplete="off" /></div>
+                </div>
+                <div class="row2">
+                    <div><label>Fecha de ingreso</label><input id="fecha_ingreso" type="date" /></div>
+                    <div><label>Hora</label><input id="hora" type="time" /></div>
+                </div>
+                <label>¿De dónde vienen?</label>
+                <input id="de_donde_vienen" placeholder="Lugar de procedencia" autocomplete="off" />
+                <div class="row2">
+                    <div><label>Estado</label><select id="estado"><option value="">Selecciona…</option></select></div>
+                    <div><label>Municipio</label><select id="municipio"><option value="">Selecciona…</option></select></div>
+                </div>
+                <label>Comunidad / sector de procedencia</label>
+                <input id="comunidad_sector" placeholder="Comunidad o sector" autocomplete="off" />
+            </div>
+
+            <!-- JEFE DE FAMILIA -->
+            <div class="card">
+                <h2>Jefe de familia</h2>
+                <div class="sub">Persona de referencia principal del grupo familiar.</div>
+                <label>Nombre y apellido *</label>
+                <input id="j_nombre" placeholder="Nombre completo" autocomplete="off" />
+                <div class="row3">
+                    <div><label>Nacionalidad</label><select id="j_nacionalidad"><option value="V">V</option><option value="E">E</option></select></div>
+                    <div><label>Nº de cédula</label><input id="j_cedula" inputmode="numeric" autocomplete="off" /></div>
+                    <div><label>Teléfono</label><input id="j_telefono" inputmode="tel" autocomplete="off" /></div>
+                </div>
+                <div class="row3">
+                    <div><label>Fecha de nacimiento</label><input id="j_fecha_nac" type="date" /></div>
+                    <div><label>Edad</label><input id="j_edad" type="number" min="0" max="120" placeholder="Años" /></div>
+                    <div><label>Género</label><select id="j_genero"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="Otro">Otro</option></select></div>
+                </div>
+                <div class="row2">
+                    <div><label>Tipo de sangre</label><select id="j_tipo_sangre"></select></div>
+                    <div><label>Profesión / ocupación</label><input id="j_profesion" autocomplete="off" /></div>
+                </div>
+                <label>Patología</label><input id="j_patologia" autocomplete="off" />
+                <label>Medicamento que toma</label><input id="j_medicamento" autocomplete="off" />
+                <label>Situación de salud</label><textarea id="j_situacion_salud"></textarea>
+                <label>Situación psicológica</label><textarea id="j_situacion_psicologica"></textarea>
+                <label>Afectación por el terremoto</label><textarea id="j_afectacion" placeholder="Daños / afectación sufrida"></textarea>
+                <label>Foto <span class="hint">(opcional)</span></label>
+                <input id="j_foto" type="file" accept="image/*" capture="environment" />
+                <img id="j_foto_prev" class="prev" alt="" />
+            </div>
+
+            <!-- GRUPO FAMILIAR -->
+            <div class="card">
+                <h2>Composición del grupo familiar</h2>
+                <div class="sub">Personas que ingresan junto al jefe de familia (sin incluirlo a él). <b>Carga familiar: <span id="cargaFam">0</span></b></div>
+                <div id="miembros"></div>
+                <button type="button" class="btn-add" id="btnAddMiembro">+ Agregar integrante</button>
+            </div>
+
+            <button class="btn-enviar" id="btnEnviar" type="button">Guardar ingreso</button>
+            <div id="msg" class="msg"></div>
+        </div>
+
+        <div class="ok-screen" id="okScreen">
+            <div class="check">✅</div>
+            <h2>¡Ingreso registrado!</h2>
+            <p>La información fue guardada correctamente.</p>
+            <button id="btnOtro" type="button">Registrar otro ingreso</button>
+        </div>
+    </div>
+
+    <div class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional · Refugio Zamurera</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const $ = (id) => document.getElementById(id);
+        const v = (id) => ($(id).value || '').trim();
+        const soloDig = (s) => (s || '').replace(/\D/g, '');
+        const SANGRE = ['', 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'No sabe'];
+        const sangreOpts = () => SANGRE.map(s => `<option value="${s}">${s || '—'}</option>`).join('');
+
+        // Prellenar fecha/hora + tipo de sangre
+        (function () {
+            const d = new Date();
+            const p = n => String(n).padStart(2, '0');
+            $('fecha_ingreso').value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+            $('hora').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
+            $('j_tipo_sangre').innerHTML = sangreOpts();
+        })();
+
+        // Estado -> Municipio
+        function poblarEstados() {
+            const M = window.MUNICIPIOS || {};
+            $('estado').innerHTML = '<option value="">Selecciona…</option>' + Object.keys(M).map(e => `<option value="${e}">${e}</option>`).join('');
+        }
+        function poblarMunicipios() {
+            const M = window.MUNICIPIOS || {};
+            const lista = M[$('estado').value] || [];
+            $('municipio').innerHTML = '<option value="">Selecciona…</option>' + lista.map(m => `<option value="${m}">${m}</option>`).join('') + '<option value="Otro">Otro</option>';
+        }
+        window.addEventListener('DOMContentLoaded', poblarEstados);
+        if (window.MUNICIPIOS) poblarEstados();
+        $('estado').addEventListener('change', poblarMunicipios);
+
+        // Edad automática desde fecha de nacimiento
+        function edadDeFecha(fecha) {
+            if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return '';
+            const [a, m, d] = fecha.split('-').map(Number);
+            const h = new Date(); let e = h.getFullYear() - a;
+            if (h.getMonth() + 1 < m || (h.getMonth() + 1 === m && h.getDate() < d)) e--;
+            return (e >= 0 && e <= 120) ? e : '';
+        }
+        $('j_fecha_nac').addEventListener('change', () => { const e = edadDeFecha($('j_fecha_nac').value); if (e !== '') $('j_edad').value = e; });
+
+        // Compresión de foto -> dataURL JPEG (máx 900px)
+        function comprimir(file) {
+            return new Promise((resolve) => {
+                if (!file || !file.type || file.type.indexOf('image/') !== 0) { resolve(''); return; }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const MAX = 900; let w = img.width, h = img.height;
+                        if (w >= h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+                        else if (h > w && h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+                        const c = document.createElement('canvas'); c.width = w; c.height = h;
+                        c.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(c.toDataURL('image/jpeg', 0.6));
+                    };
+                    img.onerror = () => resolve('');
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        let fotoJefe = '';
+        $('j_foto').addEventListener('change', async () => { fotoJefe = await comprimir($('j_foto').files[0]); if (fotoJefe) { $('j_foto_prev').src = fotoJefe; $('j_foto_prev').style.display = 'block'; } else { $('j_foto_prev').style.display = 'none'; } });
+
+        // Miembros del grupo familiar (dinámico)
+        const fotosMiembros = {};
+        let mbSeq = 0;
+        function actualizarCarga() {
+            const list = document.querySelectorAll('#miembros .miembro');
+            $('cargaFam').textContent = list.length;
+            list.forEach((el, i) => { el.querySelector('.mb-num').textContent = '#' + (i + 1); });
+        }
+        function agregarMiembro() {
+            const id = 'mb_' + (++mbSeq);
+            const div = document.createElement('div');
+            div.className = 'miembro'; div.dataset.id = id;
+            div.innerHTML = `
+                <div class="mb-head">Integrante <span class="mb-num"></span> <button type="button" class="mb-del">✕ Quitar</button></div>
+                <div class="row2">
+                    <div><label>Nombre y apellido</label><input data-f="nombre" autocomplete="off" /></div>
+                    <div><label>Parentesco</label><input data-f="parentesco" placeholder="Hijo/a, esposo/a…" autocomplete="off" /></div>
+                </div>
+                <div class="row3">
+                    <div><label>Nacionalidad</label><select data-f="nacionalidad"><option value="V">V</option><option value="E">E</option></select></div>
+                    <div><label>Cédula</label><input data-f="cedula" inputmode="numeric" autocomplete="off" /></div>
+                    <div><label>Teléfono</label><input data-f="telefono" inputmode="tel" autocomplete="off" /></div>
+                </div>
+                <div class="row3">
+                    <div><label>Fecha nacimiento</label><input type="date" data-f="fecha_nac" class="fnac" /></div>
+                    <div><label>Edad</label><input type="number" data-f="edad" class="edad" min="0" max="120" /></div>
+                    <div><label>Género</label><select data-f="genero"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="Otro">Otro</option></select></div>
+                </div>
+                <div class="row3">
+                    <div><label>Tipo de sangre</label><select data-f="tipo_sangre">${sangreOpts()}</select></div>
+                    <div><label>¿Estudia?</label><select data-f="estudia"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+                    <div><label>Profesión/ocupación</label><input data-f="profesion" autocomplete="off" /></div>
+                </div>
+                <label>Patología</label><input data-f="patologia" autocomplete="off" />
+                <label>Medicamento que toma</label><input data-f="medicamento" autocomplete="off" />
+                <label>Situación de salud</label><input data-f="situacion_salud" autocomplete="off" />
+                <label>Situación psicológica</label><input data-f="situacion_psicologica" autocomplete="off" />
+                <label>Foto <span class="hint">(opcional)</span></label>
+                <input type="file" accept="image/*" capture="environment" class="mb-foto" />
+                <img class="prev mb-prev" alt="" />`;
+            $('miembros').appendChild(div);
+            div.querySelector('.mb-del').addEventListener('click', () => { delete fotosMiembros[id]; div.remove(); actualizarCarga(); });
+            div.querySelector('.fnac').addEventListener('change', (e) => { const ed = edadDeFecha(e.target.value); if (ed !== '') div.querySelector('.edad').value = ed; });
+            div.querySelector('.mb-foto').addEventListener('change', async (e) => { const u = await comprimir(e.target.files[0]); fotosMiembros[id] = u; const pv = div.querySelector('.mb-prev'); if (u) { pv.src = u; pv.style.display = 'block'; } else { pv.style.display = 'none'; } });
+            actualizarCarga();
+        }
+        $('btnAddMiembro').addEventListener('click', agregarMiembro);
+
+        function mostrarMsg(t) { const m = $('msg'); m.textContent = t; m.className = 'msg err'; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+        $('btnEnviar').addEventListener('click', async () => {
+            $('msg').className = 'msg';
+            if (!v('j_nombre')) { mostrarMsg('Escribe el nombre y apellido del jefe de familia.'); return; }
+
+            const miembros = [];
+            const fotos = {};
+            if (fotoJefe) fotos.jefe = fotoJefe;
+            document.querySelectorAll('#miembros .miembro').forEach((el, i) => {
+                const g = (f) => { const n = el.querySelector('[data-f="' + f + '"]'); return n ? (n.value || '').trim() : ''; };
+                if (!g('nombre') && !g('cedula')) return; // saltar integrantes vacíos
+                miembros.push({
+                    nombre: g('nombre'), parentesco: g('parentesco'), nacionalidad: g('nacionalidad'),
+                    cedula: soloDig(g('cedula')), telefono: soloDig(g('telefono')), fecha_nac: g('fecha_nac'),
+                    edad: g('edad'), genero: g('genero'), tipo_sangre: g('tipo_sangre'), estudia: g('estudia'),
+                    profesion: g('profesion'), patologia: g('patologia'), medicamento: g('medicamento'),
+                    situacion_salud: g('situacion_salud'), situacion_psicologica: g('situacion_psicologica')
+                });
+                const fu = fotosMiembros[el.dataset.id];
+                if (fu) fotos['m' + (miembros.length - 1)] = fu;
+            });
+
+            const payload = {
+                n_registro: v('n_registro'), fecha_ingreso: v('fecha_ingreso'), hora: v('hora'),
+                persona_receptor: v('persona_receptor'), de_donde_vienen: v('de_donde_vienen'),
+                estado: v('estado'), municipio: v('municipio'), comunidad_sector: v('comunidad_sector'),
+                jefe: {
+                    nombre: v('j_nombre'), nacionalidad: v('j_nacionalidad'), cedula: soloDig(v('j_cedula')),
+                    telefono: soloDig(v('j_telefono')), fecha_nac: v('j_fecha_nac'), edad: v('j_edad'),
+                    genero: v('j_genero'), tipo_sangre: v('j_tipo_sangre'), profesion: v('j_profesion'),
+                    patologia: v('j_patologia'), medicamento: v('j_medicamento'),
+                    situacion_salud: v('j_situacion_salud'), situacion_psicologica: v('j_situacion_psicologica'),
+                    afectacion: v('j_afectacion'), tiene_foto: !!fotoJefe
+                },
+                miembros: miembros,
+                carga_familiar: miembros.length,
+                total_personas: 1 + miembros.length,
+                fecha_registro: Date.now()
+            };
+
+            const btn = $('btnEnviar'); btn.disabled = true; btn.textContent = 'Enviando…';
+            try {
+                const nuevo = push(ref(database, 'zamurera'));
+                await set(nuevo, payload);
+                if (Object.keys(fotos).length) { try { await set(ref(database, 'zamurera_fotos/' + nuevo.key), fotos); } catch (e) {} }
+                $('formWrap').style.display = 'none';
+                $('okScreen').style.display = 'block';
+                window.scrollTo(0, 0);
+            } catch (e) {
+                mostrarMsg('No se pudo enviar (' + (e.message || e.code || 'error') + '). Revisa tu internet e intenta de nuevo.');
+                btn.disabled = false; btn.textContent = 'Guardar ingreso';
+            }
+        });
+        $('btnOtro').addEventListener('click', () => location.reload());
+    </script>
+</body>
+</html>

@@ -83,6 +83,19 @@
         ".validate": "newData.isNumber()"
       }
     },
+    "zamurera": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      "$id": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "newData.hasChildren(['jefe']) && newData.child('jefe').child('nombre').isString() && newData.child('jefe').child('nombre').val().length <= 200"
+      }
+    },
+    "zamurera_fotos": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      "$id": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'"
+      }
+    },
     "tickets": {
       ".read": "auth != null",
       "$ticketId": {

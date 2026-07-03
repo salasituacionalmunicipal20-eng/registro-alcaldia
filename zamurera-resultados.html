@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Refugio Zamurera — Resultados</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #0a2351; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-nav:hover { background: rgba(255,255,255,0.25); }
+        .wrap { max-width: 1240px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card.share { border-top: 5px solid #16a34a; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 8px 0; color: #fff; }
+        .filtros { display: grid; grid-template-columns: 2fr 1.4fr; gap: 12px; }
+        @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } }
+        .stats { display: flex; gap: 14px; flex-wrap: wrap; }
+        .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 130px; }
+        .stat .num { font-size: 24px; font-weight: 800; color: #0a2351; }
+        .stat .lbl { font-size: 12px; color: #64748b; font-weight: 600; }
+        .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #16a34a; font-weight: 700; }
+        .live .dot { width: 9px; height: 9px; border-radius: 50%; background: #16a34a; animation: pulso 1.4s infinite; }
+        @keyframes pulso { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
+        tbody tr:hover { background: #f8fafc; }
+        .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-print { background: #16a34a; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #0a2351; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #fff; border-radius: 12px; max-width: 720px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+        .modal h3 { color: #0a2351; font-size: 18px; margin-bottom: 4px; }
+        .modal h4 { color: #16a34a; font-size: 14px; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: .3px; border-bottom: 2px solid #dcfce7; padding-bottom: 3px; }
+        .fila { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #eef2f7; font-size: 13.5px; }
+        .fila .k { font-weight: 700; color: #475569; min-width: 170px; }
+        .fila .val { color: #0f172a; white-space: pre-wrap; }
+        .foto-p { max-width: 140px; max-height: 160px; border-radius: 8px; border: 1px solid #cbd5e1; margin: 6px 0; }
+        .mini { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-top: 8px; }
+        .mini b { color: #0a2351; }
+        .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>🏕️ Refugio Zamurera — Resultados</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden"><h2 style="color:#b91c1c;">Acceso restringido</h2><p>Solo para administradores.</p></div>
+
+        <div id="contenido" class="hidden">
+            <div class="card share">
+                <h2>📣 Compartir / viralizar</h2>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
+                    <img id="qr" width="150" height="150" style="border:1px solid #e2e8f0;border-radius:8px;" alt="QR" />
+                    <div style="flex:1;min-width:240px;">
+                        <p style="color:#475569;font-size:14px;margin-bottom:8px;">Comparte este enlace o el QR para registrar ingresos al refugio:</p>
+                        <div style="font-size:22px;font-weight:800;color:#16a34a;margin-bottom:10px;" id="shortTxt">da.gd/a3e6a</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button id="btnCopiar" class="btn-exp" style="background:#0a2351;">📋 Copiar enlace</button>
+                            <a id="btnWa" class="btn-exp" style="background:#16a34a;text-decoration:none;display:inline-block;" target="_blank" rel="noopener">💬 WhatsApp</a>
+                            <a id="btnQrDl" class="btn-exp" style="background:#0a6cb0;text-decoration:none;display:inline-block;" download="qr-refugio-zamurera.png">⬇️ Descargar QR</a>
+                        </div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Enlace completo: <span id="fullTxt"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
+                <div class="stats">
+                    <div class="stat"><div class="num" id="stFamilias">—</div><div class="lbl">Familias / ingresos</div></div>
+                    <div class="stat"><div class="num" id="stPersonas">—</div><div class="lbl">Personas totales</div></div>
+                    <div class="stat"><div class="num" id="stJefes">—</div><div class="lbl">Jefes de familia</div></div>
+                    <div class="stat"><div class="num" id="stIntegrantes">—</div><div class="lbl">Integrantes (grupo familiar)</div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Ingresos registrados</h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
+                </div>
+                <div class="filtros">
+                    <div><label>Buscar</label><input id="fBuscar" type="search" placeholder="Jefe, cédula, receptor, procedencia…" autocomplete="off" /></div>
+                    <div><label>Estado de procedencia</label><select id="fEstado"><option value="">Todos</option></select></div>
+                </div>
+                <div style="overflow-x:auto; margin-top:14px;">
+                    <table>
+                        <thead><tr><th>Nº reg.</th><th>Jefe de familia</th><th>Cédula</th><th>Procedencia</th><th style="text-align:center;">Personas</th><th>Ingreso</th><th></th></tr></thead>
+                        <tbody id="tbody"><tr><td colspan="7" class="estado-box">Cargando…</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+        const toArr = (x) => Array.isArray(x) ? x : (x ? Object.values(x) : []);
+        const gen = (g) => g === 'F' ? 'Femenino' : g === 'M' ? 'Masculino' : (g || '—');
+
+        const NODO = 'zamurera';
+        const URL_FORM = 'https://salasituacionalmunicipal20-eng.github.io/registro-alcaldia/zamurera.html';
+        const URL_CORTO = 'https://da.gd/a3e6a';
+        const RECEP = [['n_registro', 'Nº de registro'], ['fecha_ingreso', 'Fecha de ingreso'], ['hora', 'Hora'], ['persona_receptor', 'Persona receptor'], ['de_donde_vienen', 'De dónde vienen'], ['estado', 'Estado'], ['municipio', 'Municipio'], ['comunidad_sector', 'Comunidad / sector']];
+        const JEFE = [['nombre', 'Nombre y apellido'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['profesion', 'Profesión / ocupación'], ['patologia', 'Patología'], ['medicamento', 'Medicamento que toma'], ['situacion_salud', 'Situación de salud'], ['situacion_psicologica', 'Situación psicológica'], ['afectacion', 'Afectación por el terremoto']];
+        const MIEMBRO = [['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['estudia', '¿Estudia?'], ['profesion', 'Profesión / ocupación'], ['patologia', 'Patología'], ['medicamento', 'Medicamento que toma'], ['situacion_salud', 'Situación de salud'], ['situacion_psicologica', 'Situación psicológica']];
+
+        let REGS = [], pagina = 1; const TAM = 30;
+
+        // ---- Compartir ----
+        $('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(URL_CORTO)}`;
+        $('shortTxt').textContent = URL_CORTO.replace('https://', '');
+        $('fullTxt').textContent = URL_FORM;
+        $('btnWa').href = `https://wa.me/?text=${encodeURIComponent('Registro de ingreso al Refugio Zamurera - Cristóbal Rojas: ' + URL_CORTO)}`;
+        $('btnQrDl').href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&download=1&data=${encodeURIComponent(URL_CORTO)}`;
+        $('btnCopiar').addEventListener('click', async () => { try { await navigator.clipboard.writeText(URL_CORTO); $('btnCopiar').textContent = '✓ Copiado'; setTimeout(() => $('btnCopiar').textContent = '📋 Copiar enlace', 1800); } catch (e) { prompt('Copia el enlace:', URL_CORTO); } });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuper;
+            if (!esSuper) { try { const snap = await get(child(ref(database), `operadores/${user.uid}`)); if (snap.exists() && snap.val().rol === 'admin') permitido = true; } catch (e) { permitido = false; } }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            onValue(ref(database, NODO), (snap) => {
+                const val = snap.val() || {};
+                REGS = Object.entries(val).map(([id, m]) => ({ id, ...m })).sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
+                poblarEstados(); render();
+            }, () => { REGS = []; render(); });
+        });
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch(e){} location.href = 'index.html'; });
+
+        function personasDe(r) { return Number(r.total_personas) || (1 + toArr(r.miembros).length); }
+        function poblarEstados() {
+            const est = [...new Set(REGS.map(r => (r.estado || '').trim()).filter(Boolean))].sort();
+            const prev = $('fEstado').value;
+            $('fEstado').innerHTML = '<option value="">Todos</option>' + est.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
+            if (prev) $('fEstado').value = prev;
+        }
+        function filtrados() {
+            const q = ($('fBuscar').value || '').trim().toLowerCase(), fe = $('fEstado').value;
+            return REGS.filter(r => {
+                if (fe && r.estado !== fe) return false;
+                if (q) { const j = r.jefe || {}; const blob = `${j.nombre||''} ${j.cedula||''} ${r.persona_receptor||''} ${r.estado||''} ${r.municipio||''} ${r.comunidad_sector||''} ${r.de_donde_vienen||''} ${r.n_registro||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
+                return true;
+            });
+        }
+        function render() {
+            $('stFamilias').textContent = REGS.length;
+            const personas = REGS.reduce((s, r) => s + personasDe(r), 0);
+            $('stPersonas').textContent = personas;
+            $('stJefes').textContent = REGS.length;
+            $('stIntegrantes').textContent = personas - REGS.length;
+
+            const lista = filtrados();
+            const total = lista.length, totalPag = Math.max(1, Math.ceil(total / TAM));
+            if (pagina > totalPag) pagina = totalPag;
+            const ini = (pagina - 1) * TAM, slice = lista.slice(ini, ini + TAM);
+            const tb = $('tbody');
+            if (total === 0) { tb.innerHTML = `<tr><td colspan="7" class="estado-box">${REGS.length ? 'Sin ingresos con ese filtro.' : 'Aún no hay ingresos. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
+            tb.innerHTML = slice.map(r => {
+                const j = r.jefe || {};
+                const fecha = (r.fecha_ingreso || '') + (r.hora ? ' ' + r.hora : '') || (r.fecha_registro ? new Date(r.fecha_registro).toLocaleDateString('es-VE') : '—');
+                const proc = [r.estado, r.municipio, r.comunidad_sector].filter(Boolean).join(' · ') || '—';
+                return `<tr>
+                    <td>${esc(r.n_registro || '—')}</td>
+                    <td><b>${esc(j.nombre || '—')}</b>${j.tiene_foto ? ' 📷' : ''}</td>
+                    <td>${esc(j.cedula || '—')}</td>
+                    <td>${esc(proc)}</td>
+                    <td style="text-align:center;font-weight:800;">${personasDe(r)}</td>
+                    <td>${esc(fecha)}</td>
+                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
+                </tr>`;
+            }).join('');
+            tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+            tb.querySelectorAll('button.btn-print').forEach(b => b.addEventListener('click', () => imprimirUno(b.dataset.id)));
+            tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.id)));
+            const desde = ini + 1, hasta = Math.min(ini + TAM, total);
+            $('paginacion').innerHTML = `<button id="pgP" ${pagina<=1?'disabled':''}>← Anterior</button><span style="font-size:13px;color:#64748b;">${desde}–${hasta} de ${total}</span><button id="pgN" ${pagina>=totalPag?'disabled':''}>Siguiente →</button>`;
+            const p = $('pgP'), n = $('pgN');
+            if (p) p.addEventListener('click', () => { if (pagina>1){ pagina--; render(); } });
+            if (n) n.addEventListener('click', () => { if (pagina<totalPag){ pagina++; render(); } });
+        }
+        ['fBuscar','fEstado'].forEach(id => { $(id).addEventListener('input', () => { pagina=1; render(); }); $(id).addEventListener('change', () => { pagina=1; render(); }); });
+
+        const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val || '—')}</span></div>`;
+        function verDetalle(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const j = r.jefe || {}, miembros = toArr(r.miembros);
+            const jefeFilas = JEFE.map(c => fila(c[1], c[0] === 'genero' ? gen(j[c[0]]) : j[c[0]])).join('');
+            const miembrosHtml = miembros.length ? miembros.map((m, i) => `<div class="mini"><b>Integrante #${i + 1}: ${esc(m.nombre || '—')}</b><div id="mfoto_${i}"></div>${MIEMBRO.map(c => fila(c[1], c[0] === 'genero' ? gen(m[c[0]]) : m[c[0]])).join('')}</div>`).join('') : '<div class="fila"><span class="k">Sin integrantes adicionales</span></div>';
+            $('modal').innerHTML = `
+                <h3>${esc(j.nombre || 'Ingreso')} <span style="font-size:13px;color:#64748b;">· ${personasDe(r)} persona(s)</span></h3>
+                <h4>Recepción</h4>${RECEP.map(c => fila(c[1], r[c[0]])).join('')}
+                <h4>Jefe de familia</h4><div id="jfoto"></div>${jefeFilas}
+                <h4>Grupo familiar (${miembros.length})</h4>${miembrosHtml}
+                <button class="cerrar" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+            // cargar fotos bajo demanda
+            get(ref(database, 'zamurera_fotos/' + id)).then(snap => {
+                if (!snap.exists()) return; const f = snap.val() || {};
+                if (f.jefe && $('jfoto')) $('jfoto').innerHTML = `<img class="foto-p" src="${f.jefe}" alt="jefe">`;
+                miembros.forEach((m, i) => { const el = $('mfoto_' + i); if (el && f['m' + i]) el.innerHTML = `<img class="foto-p" src="${f['m' + i]}" alt="">`; });
+            }).catch(() => {});
+        }
+        $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        async function borrar(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            if (!confirm(`¿Borrar el ingreso de "${(r.jefe && r.jefe.nombre) || ''}" y su grupo familiar?`)) return;
+            try { await remove(ref(database, NODO + '/' + id)); await remove(ref(database, 'zamurera_fotos/' + id)); } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
+        }
+
+        // ---- Excel (2 hojas) ----
+        $('btnExcel').addEventListener('click', () => {
+            if (typeof XLSX === 'undefined') { alert('SheetJS no cargó.'); return; }
+            const ahora = new Date(); const fechaLarga = ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' });
+            const NAVY='0A2351', GRIS='64748B', ZEBRA='F1F5F9', TEXTO='0F172A';
+            const thin = { style:'thin', color:{rgb:'CBD5E1'} }, borde = { top:thin,bottom:thin,left:thin,right:thin };
+            const estB = { font:{bold:true,sz:15,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:NAVY}}, alignment:{horizontal:'center',vertical:'center'} };
+            const estS = { font:{italic:true,sz:10,color:{rgb:GRIS}}, alignment:{horizontal:'center',vertical:'center'} };
+            const estH = { font:{bold:true,sz:11,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:NAVY}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:borde };
+            const mkSheet = (titulo, header, filas, cols) => {
+                const data = [[titulo].concat(Array(header.length-1).fill('')), [`Generado ${fechaLarga} · ${filas.length} fila(s)`].concat(Array(header.length-1).fill('')), header, ...filas];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const setS=(r,c,s)=>{const a=XLSX.utils.encode_cell({r,c}); if(!ws[a])ws[a]={t:'s',v:''}; ws[a].s=s;};
+                for (let c=0;c<header.length;c++){ setS(0,c,estB); setS(1,c,estS); setS(2,c,estH); }
+                for (let r=3;r<data.length;r++){ const fondo=(r%2===0)?{fill:{fgColor:{rgb:ZEBRA}}}:{}; for(let c=0;c<header.length;c++) setS(r,c,{font:{sz:10,color:{rgb:TEXTO}},alignment:{vertical:'top',wrapText:true},border:borde,...fondo}); }
+                ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}},{s:{r:1,c:0},e:{r:1,c:header.length-1}}];
+                ws['!cols']=cols.map(w=>({wch:w}));
+                return ws;
+            };
+            const hdr1 = ['Nº registro','Fecha ingreso','Hora','Receptor','De dónde vienen','Estado','Municipio','Comunidad/sector','Jefe (nombre)','Cédula','Teléfono','Edad','Género','Tipo sangre','Profesión','Patología','Medicamento','Situación salud','Situación psicológica','Afectación','Carga familiar','Personas'];
+            const f1 = REGS.map(r => { const j = r.jefe || {}; return [r.n_registro||'', r.fecha_ingreso||'', r.hora||'', r.persona_receptor||'', r.de_donde_vienen||'', r.estado||'', r.municipio||'', r.comunidad_sector||'', j.nombre||'', String(j.cedula||''), String(j.telefono||''), String(j.edad||''), gen(j.genero), j.tipo_sangre||'', j.profesion||'', j.patologia||'', j.medicamento||'', j.situacion_salud||'', j.situacion_psicologica||'', j.afectacion||'', String(r.carga_familiar!=null?r.carga_familiar:toArr(r.miembros).length), String(personasDe(r))]; });
+            const hdr2 = ['Nº registro','Jefe de familia','Rol','Nombre','Parentesco','Cédula','Teléfono','Edad','Género','Tipo sangre','Estudia','Profesión','Patología','Medicamento','Situación salud','Situación psicológica'];
+            const f2 = [];
+            REGS.forEach(r => {
+                const j = r.jefe || {};
+                f2.push([r.n_registro||'', j.nombre||'', 'Jefe de familia', j.nombre||'', '', String(j.cedula||''), String(j.telefono||''), String(j.edad||''), gen(j.genero), j.tipo_sangre||'', '', j.profesion||'', j.patologia||'', j.medicamento||'', j.situacion_salud||'', j.situacion_psicologica||'']);
+                toArr(r.miembros).forEach(m => f2.push([r.n_registro||'', j.nombre||'', 'Integrante', m.nombre||'', m.parentesco||'', String(m.cedula||''), String(m.telefono||''), String(m.edad||''), gen(m.genero), m.tipo_sangre||'', m.estudia||'', m.profesion||'', m.patologia||'', m.medicamento||'', m.situacion_salud||'', m.situacion_psicologica||'']));
+            });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — INGRESOS (JEFES)', hdr1, f1, [10,14,8,18,18,14,16,20,22,12,14,7,10,10,18,22,22,26,26,26,10,9]), 'Ingresos');
+            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — TODAS LAS PERSONAS', hdr2, f2, [10,22,14,22,16,12,14,7,10,10,8,18,22,22,26,26]), 'Personas');
+            XLSX.writeFile(wb, `refugio_zamurera_${ahora.toISOString().slice(0,10)}.xlsx`);
+        });
+
+        // ---- Sanitizador PDF ----
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s); try { t = t.normalize('NFC'); } catch (e) {}
+            let out = '';
+            for (const ch of t) {
+                const c = ch.codePointAt(0);
+                if (c === 0x201C || c === 0x201D || c === 0x2033) out += '"';
+                else if (c === 0x2018 || c === 0x2019 || c === 0x2032) out += "'";
+                else if (c === 0x2013 || c === 0x2014) out += '-';
+                else if (c === 0x2026) out += '...';
+                else if (c === 0x00A0) out += ' ';
+                else if (c < 32 || c === 127) out += ' ';
+                else if (c <= 255) out += ch;
+                else out += '';
+            }
+            return out.replace(/ {2,}/g, ' ').trim();
+        }
+
+        function dibujarFamilia(doc, r, drawHF) {
+            const { jsPDF } = window.jspdf;
+            const j = r.jefe || {}, miembros = toArr(r.miembros);
+            const st = { font: 'helvetica', fontSize: 9, cellPadding: 1.4, textColor: [15,23,42], lineColor: [203,213,225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' };
+            const kv = (arr, obj) => arr.map(c => [_safePdf(c[1]), _safePdf(c[0] === 'genero' ? gen(obj[c[0]]) : (obj[c[0]] || '-'))]);
+            jsPDF.API.autoTable.call(doc, {
+                startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 }, showHead: 'firstPage',
+                head: [[{ content: _safePdf('INGRESO Nº ' + (r.n_registro || '-') + '  ·  ' + (j.nombre || '') + '  (' + personasDe(r) + ' persona/s)'), colSpan: 2 }]],
+                body: kv(RECEP, r).concat([['', '']]).concat([[{ content: 'JEFE DE FAMILIA', colSpan: 2, styles: { fillColor: [22,163,74], textColor: [255,255,255], fontStyle: 'bold' } }]]).concat(kv(JEFE, j)),
+                theme: 'grid', styles: st,
+                headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9.5 },
+                columnStyles: { 0: { cellWidth: 56, fontStyle: 'bold', fillColor: [241,245,249] }, 1: { cellWidth: 130 } },
+                didDrawPage: drawHF
+            });
+            if (miembros.length) {
+                jsPDF.API.autoTable.call(doc, {
+                    startY: doc.lastAutoTable.finalY + 4, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                    head: [['#', 'Nombre', 'Parent.', 'Cédula', 'Edad', 'Gén.', 'Sangre', 'Estudia', 'Patología / medicamento']],
+                    body: miembros.map((m, i) => [String(i + 1), _safePdf(m.nombre || '-'), _safePdf(m.parentesco || '-'), _safePdf(String(m.cedula || '-')), _safePdf(String(m.edad || '-')), _safePdf(gen(m.genero)), _safePdf(m.tipo_sangre || '-'), _safePdf(m.estudia || '-'), _safePdf([m.patologia, m.medicamento].filter(Boolean).join(' / ') || '-')]),
+                    theme: 'grid', styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.2, lineColor: [203,213,225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
+                    headStyles: { fillColor: [22,163,74], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8 },
+                    columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 42 }, 2: { cellWidth: 22 }, 3: { cellWidth: 24 }, 4: { cellWidth: 12, halign: 'center' }, 5: { cellWidth: 18 }, 6: { cellWidth: 16, halign: 'center' }, 7: { cellWidth: 16, halign: 'center' }, 8: { cellWidth: 28 } },
+                    didDrawPage: drawHF
+                });
+            }
+        }
+
+        $('btnPdf').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay ingresos para exportar.'); return; }
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Refugio Zamurera — Ingresos', subtitulo: _safePdf(lista.length + ' familia(s)') }); dibujarFooterPDF(doc); };
+            lista.forEach((r, idx) => { if (idx > 0) doc.addPage(); dibujarFamilia(doc, r, drawHF); });
+            doc.save('refugio_zamurera_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        });
+
+        function imprimirUno(id) {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Refugio Zamurera — Ingreso', subtitulo: _safePdf(((r.jefe || {}).nombre) || '') }); dibujarFooterPDF(doc); };
+            dibujarFamilia(doc, r, drawHF);
+            const archivo = 'ingreso_' + (String((r.jefe || {}).cedula || r.n_registro || 'zamurera').replace(/[^0-9A-Za-z]/g, '') || 'zamurera') + '.pdf';
+            try { doc.autoPrint(); const w = window.open(doc.output('bloburl'), '_blank'); if (!w) { doc.save(archivo); alert('El navegador bloqueó la ventana de impresión; se descargó el PDF.'); } }
+            catch (e) { doc.save(archivo); }
+        }
+    </script>
+</body>
+</html>
