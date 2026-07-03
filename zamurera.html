@@ -95,6 +95,10 @@
                 <label>Situación de salud</label><textarea id="j_situacion_salud"></textarea>
                 <label>Situación psicológica</label><textarea id="j_situacion_psicologica"></textarea>
                 <label>Afectación por el terremoto</label><textarea id="j_afectacion" placeholder="Daños / afectación sufrida"></textarea>
+                <div class="row2">
+                    <div><label>¿Necesita ayuda psicológica?</label><select id="j_necesita_psico"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+                    <div><label>¿Necesita ayuda con su vivienda?</label><select id="j_necesita_vivienda"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+                </div>
                 <label>Foto <span class="hint">(opcional)</span></label>
                 <input id="j_foto" type="file" accept="image/*" capture="environment" />
                 <img id="j_foto_prev" class="prev" alt="" />
@@ -270,6 +274,8 @@
                 <label>Medicamento que toma</label><input data-f="medicamento" autocomplete="off" />
                 <label>Situación de salud</label><input data-f="situacion_salud" autocomplete="off" />
                 <label>Situación psicológica</label><input data-f="situacion_psicologica" autocomplete="off" />
+                <label>¿Necesita ayuda psicológica?</label><select data-f="necesita_ayuda_psicologica"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
+                <label>¿Necesita ayuda con su vivienda?</label><select data-f="necesita_ayuda_vivienda"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
                 <label>Foto <span class="hint">(opcional)</span></label>
                 <input type="file" accept="image/*" capture="environment" class="mb-foto" />
                 <img class="prev mb-prev" alt="" />`;
@@ -299,7 +305,8 @@
                     cedula: soloDig(g('cedula')), telefono: soloDig(g('telefono')), fecha_nac: g('fecha_nac'),
                     edad: g('edad'), genero: g('genero'), tipo_sangre: g('tipo_sangre'), estudia: g('estudia'),
                     profesion: g('profesion'), patologia: g('patologia'), medicamento: g('medicamento'),
-                    situacion_salud: g('situacion_salud'), situacion_psicologica: g('situacion_psicologica')
+                    situacion_salud: g('situacion_salud'), situacion_psicologica: g('situacion_psicologica'),
+                    necesita_ayuda_psicologica: g('necesita_ayuda_psicologica'), necesita_ayuda_vivienda: g('necesita_ayuda_vivienda')
                 });
                 const fu = fotosMiembros[el.dataset.id];
                 if (fu) fotos['m' + (miembros.length - 1)] = fu;
@@ -315,7 +322,9 @@
                     genero: v('j_genero'), tipo_sangre: v('j_tipo_sangre'), profesion: v('j_profesion'),
                     patologia: v('j_patologia'), medicamento: v('j_medicamento'),
                     situacion_salud: v('j_situacion_salud'), situacion_psicologica: v('j_situacion_psicologica'),
-                    afectacion: v('j_afectacion'), tiene_foto: !!fotoJefe
+                    afectacion: v('j_afectacion'),
+                    necesita_ayuda_psicologica: v('j_necesita_psico'), necesita_ayuda_vivienda: v('j_necesita_vivienda'),
+                    tiene_foto: !!fotoJefe
                 },
                 miembros: miembros,
                 carga_familiar: miembros.length,

@@ -22,8 +22,8 @@
         label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
         input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
         .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 8px 0; color: #fff; }
-        .filtros { display: grid; grid-template-columns: 2fr 1.4fr; gap: 12px; }
-        @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } }
+        .filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; align-items: end; }
+        .filtros .full { grid-column: 1 / -1; }
         .stats { display: flex; gap: 14px; flex-wrap: wrap; }
         .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 130px; }
         .stat .num { font-size: 24px; font-weight: 800; color: #0a2351; }
@@ -98,6 +98,8 @@
                     <div class="stat"><div class="num" id="stPersonas">—</div><div class="lbl">Personas totales</div></div>
                     <div class="stat"><div class="num" id="stJefes">—</div><div class="lbl">Jefes de familia</div></div>
                     <div class="stat"><div class="num" id="stIntegrantes">—</div><div class="lbl">Integrantes (grupo familiar)</div></div>
+                    <div class="stat"><div class="num" id="stPsico" style="color:#7c3aed;">—</div><div class="lbl">🧠 Requieren ayuda psicológica</div></div>
+                    <div class="stat"><div class="num" id="stVivienda" style="color:#b45309;">—</div><div class="lbl">🏠 Requieren ayuda con vivienda</div></div>
                 </div>
             </div>
 
@@ -108,13 +110,23 @@
                     <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
                 </div>
                 <div class="filtros">
-                    <div><label>Buscar</label><input id="fBuscar" type="search" placeholder="Jefe, cédula, receptor, procedencia…" autocomplete="off" /></div>
+                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Jefe, cédula, receptor, procedencia, Nº registro…" autocomplete="off" /></div>
                     <div><label>Estado de procedencia</label><select id="fEstado"><option value="">Todos</option></select></div>
+                    <div><label>Municipio de procedencia</label><select id="fMunicipio"><option value="">Todos</option></select></div>
+                    <div><label>Género (jefe)</label><select id="fGenero"><option value="">Todos</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="Otro">Otro</option></select></div>
+                    <div><label>Ayuda psicológica</label><select id="fPsico"><option value="">Todos</option><option value="si">Necesitan</option><option value="no">No necesitan</option></select></div>
+                    <div><label>Ayuda con vivienda</label><select id="fVivienda"><option value="">Todos</option><option value="si">Necesitan</option><option value="no">No necesitan</option></select></div>
+                    <div><label>Condición de salud</label><select id="fSalud"><option value="">Todos</option><option value="si">Con patología / medicamento</option><option value="no">Sin condición</option></select></div>
+                    <div><label>Con foto</label><select id="fFoto"><option value="">Todos</option><option value="si">Con foto</option><option value="no">Sin foto</option></select></div>
+                    <div><label>Desde (ingreso)</label><input id="fDesde" type="date" /></div>
+                    <div><label>Hasta (ingreso)</label><input id="fHasta" type="date" /></div>
+                    <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
                 </div>
+                <div style="font-size:12.5px;color:#64748b;margin-top:8px;" id="filtroInfo"></div>
                 <div style="overflow-x:auto; margin-top:14px;">
                     <table>
-                        <thead><tr><th>Nº reg.</th><th>Jefe de familia</th><th>Cédula</th><th>Procedencia</th><th style="text-align:center;">Personas</th><th>Ingreso</th><th></th></tr></thead>
-                        <tbody id="tbody"><tr><td colspan="7" class="estado-box">Cargando…</td></tr></tbody>
+                        <thead><tr><th>Nº reg.</th><th>Jefe de familia</th><th>Cédula</th><th>Procedencia</th><th style="text-align:center;">Personas</th><th>Ingreso</th><th>Necesita</th><th></th></tr></thead>
+                        <tbody id="tbody"><tr><td colspan="8" class="estado-box">Cargando…</td></tr></tbody>
                     </table>
                 </div>
                 <div class="paginacion" id="paginacion"></div>
@@ -153,8 +165,11 @@
         const URL_FORM = 'https://salasituacionalmunicipal20-eng.github.io/registro-alcaldia/zamurera.html';
         const URL_CORTO = 'https://da.gd/a3e6a';
         const RECEP = [['n_registro', 'Nº de registro'], ['fecha_ingreso', 'Fecha de ingreso'], ['hora', 'Hora'], ['persona_receptor', 'Persona receptor'], ['de_donde_vienen', 'De dónde vienen'], ['estado', 'Estado'], ['municipio', 'Municipio'], ['comunidad_sector', 'Comunidad / sector']];
-        const JEFE = [['nombre', 'Nombre y apellido'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['profesion', 'Profesión / ocupación'], ['patologia', 'Patología'], ['medicamento', 'Medicamento que toma'], ['situacion_salud', 'Situación de salud'], ['situacion_psicologica', 'Situación psicológica'], ['afectacion', 'Afectación por el terremoto']];
-        const MIEMBRO = [['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['estudia', '¿Estudia?'], ['profesion', 'Profesión / ocupación'], ['patologia', 'Patología'], ['medicamento', 'Medicamento que toma'], ['situacion_salud', 'Situación de salud'], ['situacion_psicologica', 'Situación psicológica']];
+        const JEFE = [['nombre', 'Nombre y apellido'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['profesion', 'Profesión / ocupación'], ['patologia', 'Patología'], ['medicamento', 'Medicamento que toma'], ['situacion_salud', 'Situación de salud'], ['situacion_psicologica', 'Situación psicológica'], ['afectacion', 'Afectación por el terremoto'], ['necesita_ayuda_psicologica', '¿Necesita ayuda psicológica?'], ['necesita_ayuda_vivienda', '¿Necesita ayuda con su vivienda?']];
+        const MIEMBRO = [['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['estudia', '¿Estudia?'], ['profesion', 'Profesión / ocupación'], ['patologia', 'Patología'], ['medicamento', 'Medicamento que toma'], ['situacion_salud', 'Situación de salud'], ['situacion_psicologica', 'Situación psicológica'], ['necesita_ayuda_psicologica', '¿Necesita ayuda psicológica?'], ['necesita_ayuda_vivienda', '¿Necesita ayuda con su vivienda?']];
+        const necesitaPsico = (r) => { const j = r.jefe || {}; return j.necesita_ayuda_psicologica === 'Sí' || toArr(r.miembros).some(m => m.necesita_ayuda_psicologica === 'Sí'); };
+        const necesitaVivienda = (r) => { const j = r.jefe || {}; return j.necesita_ayuda_vivienda === 'Sí' || toArr(r.miembros).some(m => m.necesita_ayuda_vivienda === 'Sí'); };
+        const tieneSalud = (r) => { const chk = (o) => !!((o.patologia && String(o.patologia).trim()) || (o.medicamento && String(o.medicamento).trim())); return chk(r.jefe || {}) || toArr(r.miembros).some(chk); };
 
         let REGS = [], pagina = 1; const TAM = 30;
 
@@ -185,15 +200,31 @@
         function personasDe(r) { return Number(r.total_personas) || (1 + toArr(r.miembros).length); }
         function poblarEstados() {
             const est = [...new Set(REGS.map(r => (r.estado || '').trim()).filter(Boolean))].sort();
-            const prev = $('fEstado').value;
+            const prevE = $('fEstado').value;
             $('fEstado').innerHTML = '<option value="">Todos</option>' + est.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
-            if (prev) $('fEstado').value = prev;
+            if (prevE) $('fEstado').value = prevE;
+            const mun = [...new Set(REGS.map(r => (r.municipio || '').trim()).filter(Boolean))].sort();
+            const prevM = $('fMunicipio').value;
+            $('fMunicipio').innerHTML = '<option value="">Todos</option>' + mun.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+            if (prevM) $('fMunicipio').value = prevM;
         }
         function filtrados() {
-            const q = ($('fBuscar').value || '').trim().toLowerCase(), fe = $('fEstado').value;
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const fe = $('fEstado').value, fm = $('fMunicipio').value, fg = $('fGenero').value;
+            const fp = $('fPsico').value, fv = $('fVivienda').value, fs = $('fSalud').value, ff = $('fFoto').value;
+            const fd = $('fDesde').value, fh = $('fHasta').value;
             return REGS.filter(r => {
+                const j = r.jefe || {};
                 if (fe && r.estado !== fe) return false;
-                if (q) { const j = r.jefe || {}; const blob = `${j.nombre||''} ${j.cedula||''} ${r.persona_receptor||''} ${r.estado||''} ${r.municipio||''} ${r.comunidad_sector||''} ${r.de_donde_vienen||''} ${r.n_registro||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
+                if (fm && r.municipio !== fm) return false;
+                if (fg && (j.genero || '') !== fg) return false;
+                if (fp) { const nec = necesitaPsico(r); if (fp === 'si' && !nec) return false; if (fp === 'no' && nec) return false; }
+                if (fv) { const nec = necesitaVivienda(r); if (fv === 'si' && !nec) return false; if (fv === 'no' && nec) return false; }
+                if (fs) { const nec = tieneSalud(r); if (fs === 'si' && !nec) return false; if (fs === 'no' && nec) return false; }
+                if (ff) { const tf = !!j.tiene_foto; if (ff === 'si' && !tf) return false; if (ff === 'no' && tf) return false; }
+                if (fd && (r.fecha_ingreso || '') < fd) return false;
+                if (fh && (r.fecha_ingreso || '') > fh) return false;
+                if (q) { const blob = `${j.nombre||''} ${j.cedula||''} ${r.persona_receptor||''} ${r.estado||''} ${r.municipio||''} ${r.comunidad_sector||''} ${r.de_donde_vienen||''} ${r.n_registro||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
                 return true;
             });
         }
@@ -203,17 +234,24 @@
             $('stPersonas').textContent = personas;
             $('stJefes').textContent = REGS.length;
             $('stIntegrantes').textContent = personas - REGS.length;
+            $('stPsico').textContent = REGS.filter(necesitaPsico).length;
+            $('stVivienda').textContent = REGS.filter(necesitaVivienda).length;
 
             const lista = filtrados();
+            const fInfo = $('filtroInfo');
+            if (fInfo) fInfo.textContent = (lista.length === REGS.length) ? `Mostrando los ${REGS.length} ingreso(s).` : `Mostrando ${lista.length} de ${REGS.length} ingreso(s) con los filtros aplicados.`;
             const total = lista.length, totalPag = Math.max(1, Math.ceil(total / TAM));
             if (pagina > totalPag) pagina = totalPag;
             const ini = (pagina - 1) * TAM, slice = lista.slice(ini, ini + TAM);
             const tb = $('tbody');
-            if (total === 0) { tb.innerHTML = `<tr><td colspan="7" class="estado-box">${REGS.length ? 'Sin ingresos con ese filtro.' : 'Aún no hay ingresos. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
+            if (total === 0) { tb.innerHTML = `<tr><td colspan="8" class="estado-box">${REGS.length ? 'Sin ingresos con ese filtro.' : 'Aún no hay ingresos. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
             tb.innerHTML = slice.map(r => {
                 const j = r.jefe || {};
                 const fecha = (r.fecha_ingreso || '') + (r.hora ? ' ' + r.hora : '') || (r.fecha_registro ? new Date(r.fecha_registro).toLocaleDateString('es-VE') : '—');
                 const proc = [r.estado, r.municipio, r.comunidad_sector].filter(Boolean).join(' · ') || '—';
+                const nec = [];
+                if (necesitaPsico(r)) nec.push('<span title="Necesita ayuda psicológica" style="display:inline-block;background:#ede9fe;color:#6d28d9;border-radius:5px;padding:1px 6px;font-size:11.5px;font-weight:700;margin:1px 0;">🧠 Psico</span>');
+                if (necesitaVivienda(r)) nec.push('<span title="Necesita ayuda con vivienda" style="display:inline-block;background:#ffedd5;color:#b45309;border-radius:5px;padding:1px 6px;font-size:11.5px;font-weight:700;margin:1px 0;">🏠 Vivienda</span>');
                 return `<tr>
                     <td>${esc(r.n_registro || '—')}</td>
                     <td><b>${esc(j.nombre || '—')}</b>${j.tiene_foto ? ' 📷' : ''}</td>
@@ -221,6 +259,7 @@
                     <td>${esc(proc)}</td>
                     <td style="text-align:center;font-weight:800;">${personasDe(r)}</td>
                     <td>${esc(fecha)}</td>
+                    <td>${nec.join('<br>') || '—'}</td>
                     <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
                 </tr>`;
             }).join('');
@@ -233,7 +272,9 @@
             if (p) p.addEventListener('click', () => { if (pagina>1){ pagina--; render(); } });
             if (n) n.addEventListener('click', () => { if (pagina<totalPag){ pagina++; render(); } });
         }
-        ['fBuscar','fEstado'].forEach(id => { $(id).addEventListener('input', () => { pagina=1; render(); }); $(id).addEventListener('change', () => { pagina=1; render(); }); });
+        const FILTROS = ['fBuscar','fEstado','fMunicipio','fGenero','fPsico','fVivienda','fSalud','fFoto','fDesde','fHasta'];
+        FILTROS.forEach(id => { const el = $(id); if (!el) return; el.addEventListener('input', () => { pagina=1; render(); }); el.addEventListener('change', () => { pagina=1; render(); }); });
+        $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => { const el = $(id); if (el) el.value = ''; }); pagina=1; render(); });
 
         const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val || '—')}</span></div>`;
         function verDetalle(id) {
@@ -283,18 +324,18 @@
                 ws['!cols']=cols.map(w=>({wch:w}));
                 return ws;
             };
-            const hdr1 = ['Nº registro','Fecha ingreso','Hora','Receptor','De dónde vienen','Estado','Municipio','Comunidad/sector','Jefe (nombre)','Cédula','Teléfono','Edad','Género','Tipo sangre','Profesión','Patología','Medicamento','Situación salud','Situación psicológica','Afectación','Carga familiar','Personas'];
-            const f1 = REGS.map(r => { const j = r.jefe || {}; return [r.n_registro||'', r.fecha_ingreso||'', r.hora||'', r.persona_receptor||'', r.de_donde_vienen||'', r.estado||'', r.municipio||'', r.comunidad_sector||'', j.nombre||'', String(j.cedula||''), String(j.telefono||''), String(j.edad||''), gen(j.genero), j.tipo_sangre||'', j.profesion||'', j.patologia||'', j.medicamento||'', j.situacion_salud||'', j.situacion_psicologica||'', j.afectacion||'', String(r.carga_familiar!=null?r.carga_familiar:toArr(r.miembros).length), String(personasDe(r))]; });
-            const hdr2 = ['Nº registro','Jefe de familia','Rol','Nombre','Parentesco','Cédula','Teléfono','Edad','Género','Tipo sangre','Estudia','Profesión','Patología','Medicamento','Situación salud','Situación psicológica'];
+            const hdr1 = ['Nº registro','Fecha ingreso','Hora','Receptor','De dónde vienen','Estado','Municipio','Comunidad/sector','Jefe (nombre)','Cédula','Teléfono','Edad','Género','Tipo sangre','Profesión','Patología','Medicamento','Situación salud','Situación psicológica','Afectación','Necesita ayuda psicológica','Necesita ayuda vivienda','Carga familiar','Personas'];
+            const f1 = REGS.map(r => { const j = r.jefe || {}; return [r.n_registro||'', r.fecha_ingreso||'', r.hora||'', r.persona_receptor||'', r.de_donde_vienen||'', r.estado||'', r.municipio||'', r.comunidad_sector||'', j.nombre||'', String(j.cedula||''), String(j.telefono||''), String(j.edad||''), gen(j.genero), j.tipo_sangre||'', j.profesion||'', j.patologia||'', j.medicamento||'', j.situacion_salud||'', j.situacion_psicologica||'', j.afectacion||'', j.necesita_ayuda_psicologica||'', j.necesita_ayuda_vivienda||'', String(r.carga_familiar!=null?r.carga_familiar:toArr(r.miembros).length), String(personasDe(r))]; });
+            const hdr2 = ['Nº registro','Jefe de familia','Rol','Nombre','Parentesco','Cédula','Teléfono','Edad','Género','Tipo sangre','Estudia','Profesión','Patología','Medicamento','Situación salud','Situación psicológica','Necesita ayuda psicológica','Necesita ayuda vivienda'];
             const f2 = [];
             REGS.forEach(r => {
                 const j = r.jefe || {};
-                f2.push([r.n_registro||'', j.nombre||'', 'Jefe de familia', j.nombre||'', '', String(j.cedula||''), String(j.telefono||''), String(j.edad||''), gen(j.genero), j.tipo_sangre||'', '', j.profesion||'', j.patologia||'', j.medicamento||'', j.situacion_salud||'', j.situacion_psicologica||'']);
-                toArr(r.miembros).forEach(m => f2.push([r.n_registro||'', j.nombre||'', 'Integrante', m.nombre||'', m.parentesco||'', String(m.cedula||''), String(m.telefono||''), String(m.edad||''), gen(m.genero), m.tipo_sangre||'', m.estudia||'', m.profesion||'', m.patologia||'', m.medicamento||'', m.situacion_salud||'', m.situacion_psicologica||'']));
+                f2.push([r.n_registro||'', j.nombre||'', 'Jefe de familia', j.nombre||'', '', String(j.cedula||''), String(j.telefono||''), String(j.edad||''), gen(j.genero), j.tipo_sangre||'', '', j.profesion||'', j.patologia||'', j.medicamento||'', j.situacion_salud||'', j.situacion_psicologica||'', j.necesita_ayuda_psicologica||'', j.necesita_ayuda_vivienda||'']);
+                toArr(r.miembros).forEach(m => f2.push([r.n_registro||'', j.nombre||'', 'Integrante', m.nombre||'', m.parentesco||'', String(m.cedula||''), String(m.telefono||''), String(m.edad||''), gen(m.genero), m.tipo_sangre||'', m.estudia||'', m.profesion||'', m.patologia||'', m.medicamento||'', m.situacion_salud||'', m.situacion_psicologica||'', m.necesita_ayuda_psicologica||'', m.necesita_ayuda_vivienda||'']));
             });
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — INGRESOS (JEFES)', hdr1, f1, [10,14,8,18,18,14,16,20,22,12,14,7,10,10,18,22,22,26,26,26,10,9]), 'Ingresos');
-            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — TODAS LAS PERSONAS', hdr2, f2, [10,22,14,22,16,12,14,7,10,10,8,18,22,22,26,26]), 'Personas');
+            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — INGRESOS (JEFES)', hdr1, f1, [10,14,8,18,18,14,16,20,22,12,14,7,10,10,18,22,22,26,26,26,20,20,10,9]), 'Ingresos');
+            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — TODAS LAS PERSONAS', hdr2, f2, [10,22,14,22,16,12,14,7,10,10,8,18,22,22,26,26,20,20]), 'Personas');
             XLSX.writeFile(wb, `refugio_zamurera_${ahora.toISOString().slice(0,10)}.xlsx`);
         });
 
