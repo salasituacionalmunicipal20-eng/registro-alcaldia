@@ -69,6 +69,10 @@
                 <textarea id="f_fisica" placeholder="Lesiones, condición física…"></textarea>
                 <label>Situación psicológica</label>
                 <textarea id="f_psicologica" placeholder="Estado emocional / psicológico…"></textarea>
+                <div class="row2">
+                    <div><label>¿Necesita ayuda psicológica?</label><select id="f_necesita_ayuda_psicologica"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+                    <div><label>¿Necesita ayuda con su vivienda?</label><select id="f_necesita_ayuda_vivienda"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+                </div>
             </div>
 
             <div class="card">
@@ -119,6 +123,7 @@
                 edad: v('f_edad'), cargo: v('f_cargo'), salud: v('f_salud'), vivienda: v('f_vivienda'),
                 fisica: v('f_fisica'), psicologica: v('f_psicologica'), informe: v('f_informe'),
                 recomendaciones: v('f_recomendaciones'),
+                necesita_ayuda_psicologica: v('f_necesita_ayuda_psicologica'), necesita_ayuda_vivienda: v('f_necesita_ayuda_vivienda'),
                 fecha_registro: Date.now(), registrado_por: 'Formulario público'
             };
             $('btnEnviar').disabled = true; $('btnEnviar').textContent = 'Enviando…';

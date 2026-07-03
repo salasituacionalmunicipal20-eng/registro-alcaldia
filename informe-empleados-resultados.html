@@ -27,8 +27,12 @@
         .btn { border: none; border-radius: 8px; padding: 12px 16px; font-size: 14px; font-weight: 800; cursor: pointer; color: #fff; }
         .btn-reg { background: #0a6cb0; width: 100%; margin-top: 12px; }
         .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 8px 0; color: #fff; }
-        .filtros { display: grid; grid-template-columns: 2fr 1.4fr; gap: 12px; }
-        @media (max-width: 700px) { .filtros { grid-template-columns: 1fr; } }
+        .filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; align-items: end; }
+        .filtros .full { grid-column: 1 / -1; }
+        .stats-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .stat-btn { cursor: pointer; transition: background .15s, border-color .15s; }
+        .stat-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+        .stat-btn.activo { background: #eef2ff; border-color: #6366f1; box-shadow: 0 0 0 2px #c7d2fe inset; }
         table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
         th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
         th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
@@ -103,6 +107,8 @@
                     <div class="full"><label>Afectación por el terremoto en la vivienda</label><textarea id="f_vivienda"></textarea></div>
                     <div class="full"><label>Situación física</label><textarea id="f_fisica"></textarea></div>
                     <div class="full"><label>Situación psicológica</label><textarea id="f_psicologica"></textarea></div>
+                    <div><label>¿Necesita ayuda psicológica?</label><select id="f_necesita_ayuda_psicologica"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+                    <div><label>¿Necesita ayuda con su vivienda?</label><select id="f_necesita_ayuda_vivienda"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
                     <div class="full"><label>Situación del informe</label><textarea id="f_informe"></textarea></div>
                     <div class="full"><label>Recomendaciones</label><textarea id="f_recomendaciones"></textarea></div>
                 </div>
@@ -111,19 +117,34 @@
             </div>
 
             <div class="card">
-                <h2>Informes registrados <span class="stat" style="margin-left:10px;"><span class="num" id="stTotal">—</span> total</span></h2>
+                <h2>Informes registrados</h2>
+                <div class="stats-row">
+                    <div class="stat"><span class="num" id="stTotal">—</span> <span style="color:#64748b;font-size:12px;">informes</span></div>
+                    <div class="stat stat-btn" id="tilePsico" title="Clic para ver solo los que requieren ayuda psicológica"><span class="num" id="stPsico" style="color:#7c3aed;">—</span> <span style="color:#64748b;font-size:12px;">🧠 requieren psicológica</span></div>
+                    <div class="stat stat-btn" id="tileVivienda" title="Clic para ver solo los que requieren ayuda con vivienda"><span class="num" id="stVivienda" style="color:#b45309;">—</span> <span style="color:#64748b;font-size:12px;">🏠 requieren vivienda</span></div>
+                </div>
                 <div>
                     <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
                     <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
                 </div>
                 <div class="filtros">
-                    <div><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, secretaría, cargo…" autocomplete="off" /></div>
+                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, secretaría, cargo, teléfono…" autocomplete="off" /></div>
                     <div><label>Secretaría</label><select id="fSec"><option value="">Todas</option></select></div>
+                    <div><label>Cargo</label><select id="fCargo"><option value="">Todos</option></select></div>
+                    <div><label>Ayuda psicológica</label><select id="fPsico"><option value="">Todos</option><option value="si">Necesitan</option><option value="no">No necesitan</option></select></div>
+                    <div><label>Ayuda con vivienda</label><select id="fVivienda"><option value="">Todos</option><option value="si">Necesitan</option><option value="no">No necesitan</option></select></div>
+                    <div><label>Afectación en vivienda</label><select id="fAfectViv"><option value="">Todos</option><option value="con">Con afectación</option><option value="sin">Sin afectación</option></select></div>
+                    <div><label>Situación de salud</label><select id="fSalud"><option value="">Todos</option><option value="con">Reportada</option><option value="sin">Sin reportar</option></select></div>
+                    <div><label>Situación física</label><select id="fFisica"><option value="">Todos</option><option value="con">Reportada</option><option value="sin">Sin reportar</option></select></div>
+                    <div><label>Desde</label><input id="fDesde" type="date" /></div>
+                    <div><label>Hasta</label><input id="fHasta" type="date" /></div>
+                    <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
                 </div>
+                <div style="font-size:12.5px;color:#64748b;margin-top:8px;" id="filtroInfo"></div>
                 <div style="overflow-x:auto; margin-top:14px;">
                     <table>
-                        <thead><tr><th>Empleado</th><th>Cédula</th><th>Secretaría</th><th>Cargo</th><th>Teléfono</th><th>Fecha</th><th></th></tr></thead>
-                        <tbody id="tbody"><tr><td colspan="7" class="estado-box">Cargando…</td></tr></tbody>
+                        <thead><tr><th>Empleado</th><th>Cédula</th><th>Secretaría</th><th>Cargo</th><th>Teléfono</th><th>Fecha</th><th>Necesita</th><th></th></tr></thead>
+                        <tbody id="tbody"><tr><td colspan="8" class="estado-box">Cargando…</td></tr></tbody>
                     </table>
                 </div>
                 <div class="paginacion" id="paginacion"></div>
@@ -146,6 +167,8 @@
             <div class="full"><label>Afectación en la vivienda</label><textarea id="e_vivienda"></textarea></div>
             <div class="full"><label>Situación física</label><textarea id="e_fisica"></textarea></div>
             <div class="full"><label>Situación psicológica</label><textarea id="e_psicologica"></textarea></div>
+            <div><label>¿Necesita ayuda psicológica?</label><select id="e_necesita_ayuda_psicologica"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+            <div><label>¿Necesita ayuda con su vivienda?</label><select id="e_necesita_ayuda_vivienda"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
             <div class="full"><label>Situación del informe</label><textarea id="e_informe"></textarea></div>
             <div class="full"><label>Recomendaciones</label><textarea id="e_recomendaciones"></textarea></div>
         </div>
@@ -186,9 +209,15 @@
         const CAMPOS = [
             ['secretaria', 'Secretaría / dirección'], ['nombres', 'Nombre y apellido'], ['cedula', 'Cédula'],
             ['telefono', 'Teléfono'], ['edad', 'Edad'], ['cargo', 'Cargo'], ['salud', 'Situación de salud'],
-            ['vivienda', 'Afectación por el terremoto en la vivienda'], ['fisica', 'Situación física'],
-            ['psicologica', 'Situación psicológica'], ['informe', 'Situación del informe'], ['recomendaciones', 'Recomendaciones'],
+            ['vivienda', 'Afectación por el terremoto en la vivienda'], ['necesita_ayuda_vivienda', '¿Necesita ayuda con su vivienda?'],
+            ['fisica', 'Situación física'],
+            ['psicologica', 'Situación psicológica'], ['necesita_ayuda_psicologica', '¿Necesita ayuda psicológica?'],
+            ['informe', 'Situación del informe'], ['recomendaciones', 'Recomendaciones'],
         ];
+        const necesitaPsico = (r) => r.necesita_ayuda_psicologica === 'Sí';
+        const necesitaVivienda = (r) => r.necesita_ayuda_vivienda === 'Sí';
+        const tieneTexto = (r, k) => !!(r[k] && String(r[k]).trim());
+        const dLocal = (ts) => { if (!ts) return ''; const d = new Date(ts); const p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
 
         let REGS = [], nombreUsuario = '', pagina = 1; const TAM = 40;
 
@@ -227,25 +256,49 @@
             const prev = $('fSec').value;
             $('fSec').innerHTML = '<option value="">Todas</option>' + secs.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
             if (prev) $('fSec').value = prev;
+            const cargos = [...new Set(REGS.map(r => (r.cargo||'').trim()).filter(Boolean))].sort();
+            const prevC = $('fCargo').value;
+            $('fCargo').innerHTML = '<option value="">Todos</option>' + cargos.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+            if (prevC) $('fCargo').value = prevC;
         }
         function filtrados() {
-            const q = ($('fBuscar').value || '').trim().toLowerCase(), fs = $('fSec').value;
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const fs = $('fSec').value, fc = $('fCargo').value, fp = $('fPsico').value, fv = $('fVivienda').value;
+            const fav = $('fAfectViv').value, fsal = $('fSalud').value, ffis = $('fFisica').value;
+            const fd = $('fDesde').value, fh = $('fHasta').value;
+            const presencia = (val, tiene) => (val === 'con' && !tiene) ? false : (val === 'sin' && tiene) ? false : true;
             return REGS.filter(r => {
                 if (fs && r.secretaria !== fs) return false;
+                if (fc && r.cargo !== fc) return false;
+                if (fp) { const nec = necesitaPsico(r); if (fp === 'si' && !nec) return false; if (fp === 'no' && nec) return false; }
+                if (fv) { const nec = necesitaVivienda(r); if (fv === 'si' && !nec) return false; if (fv === 'no' && nec) return false; }
+                if (fav && !presencia(fav, tieneTexto(r, 'vivienda'))) return false;
+                if (fsal && !presencia(fsal, tieneTexto(r, 'salud'))) return false;
+                if (ffis && !presencia(ffis, tieneTexto(r, 'fisica'))) return false;
+                if (fd || fh) { const d = dLocal(r.fecha_registro); if (fd && (!d || d < fd)) return false; if (fh && (!d || d > fh)) return false; }
                 if (q) { const blob = `${r.nombres||''} ${r.cedula||''} ${r.secretaria||''} ${r.cargo||''} ${r.telefono||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
                 return true;
             });
         }
         function render() {
             $('stTotal').textContent = REGS.length;
+            $('stPsico').textContent = REGS.filter(necesitaPsico).length;
+            $('stVivienda').textContent = REGS.filter(necesitaVivienda).length;
+            $('tilePsico').classList.toggle('activo', $('fPsico').value === 'si');
+            $('tileVivienda').classList.toggle('activo', $('fVivienda').value === 'si');
             const lista = filtrados();
+            const fInfo = $('filtroInfo');
+            if (fInfo) fInfo.textContent = (lista.length === REGS.length) ? `Mostrando los ${REGS.length} informe(s).` : `Mostrando ${lista.length} de ${REGS.length} informe(s) con los filtros aplicados.`;
             const total = lista.length, totalPag = Math.max(1, Math.ceil(total / TAM));
             if (pagina > totalPag) pagina = totalPag;
             const ini = (pagina - 1) * TAM, slice = lista.slice(ini, ini + TAM);
             const tb = $('tbody');
-            if (total === 0) { tb.innerHTML = `<tr><td colspan="7" class="estado-box">Sin informes${($('fBuscar').value||$('fSec').value)?' con ese filtro':' aún. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
+            if (total === 0) { tb.innerHTML = `<tr><td colspan="8" class="estado-box">${REGS.length ? 'Sin informes con ese filtro.' : 'Sin informes aún. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
             tb.innerHTML = slice.map(r => {
                 const fecha = r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+                const nec = [];
+                if (necesitaPsico(r)) nec.push('<span title="Necesita ayuda psicológica" style="display:inline-block;background:#ede9fe;color:#6d28d9;border-radius:5px;padding:1px 6px;font-size:11.5px;font-weight:700;margin:1px 0;">🧠 Psico</span>');
+                if (necesitaVivienda(r)) nec.push('<span title="Necesita ayuda con vivienda" style="display:inline-block;background:#ffedd5;color:#b45309;border-radius:5px;padding:1px 6px;font-size:11.5px;font-weight:700;margin:1px 0;">🏠 Vivienda</span>');
                 return `<tr>
                     <td><b>${esc(r.nombres||'—')}</b>${r.edad?` <span style="color:#64748b;font-size:12px;">· ${esc(r.edad)} años</span>`:''}</td>
                     <td>${esc(r.cedula||'—')}</td>
@@ -253,6 +306,7 @@
                     <td>${esc(r.cargo||'—')}</td>
                     <td>${esc(r.telefono||'—')}</td>
                     <td>${esc(fecha)}</td>
+                    <td>${nec.join('<br>') || '—'}</td>
                     <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-print" data-id="${esc(r.id)}" style="background:#0a6cb0;color:#fff;border:none;border-radius:6px;padding:5px 9px;font-size:12px;font-weight:700;cursor:pointer;margin-left:4px;">🖨️</button><button class="btn-edit" data-id="${esc(r.id)}">✏️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
                 </tr>`;
             }).join('');
@@ -266,7 +320,12 @@
             if (p) p.addEventListener('click', () => { if (pagina>1){ pagina--; render(); } });
             if (n) n.addEventListener('click', () => { if (pagina<totalPag){ pagina++; render(); } });
         }
-        ['fBuscar','fSec'].forEach(id => { $(id).addEventListener('input', () => { pagina=1; render(); }); $(id).addEventListener('change', () => { pagina=1; render(); }); });
+        const FILTROS = ['fBuscar','fSec','fCargo','fPsico','fVivienda','fAfectViv','fSalud','fFisica','fDesde','fHasta'];
+        FILTROS.forEach(id => { const el = $(id); if (!el) return; el.addEventListener('input', () => { pagina=1; render(); }); el.addEventListener('change', () => { pagina=1; render(); }); });
+        $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => { const el = $(id); if (el) el.value = ''; }); pagina=1; render(); });
+        function toggleTile(selId, val){ const el = $(selId); if (!el) return; el.value = (el.value === val) ? '' : val; pagina = 1; render(); const tabla = document.querySelector('table'); if (tabla) tabla.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        $('tilePsico').addEventListener('click', () => toggleTile('fPsico', 'si'));
+        $('tileVivienda').addEventListener('click', () => toggleTile('fVivienda', 'si'));
 
         function verDetalle(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
@@ -314,7 +373,8 @@
                 secretaria: v(pref + 'secretaria'), nombres: v(pref + 'nombres'), cedula: v(pref + 'cedula'),
                 telefono: v(pref + 'telefono'), edad: v(pref + 'edad'), cargo: v(pref + 'cargo'),
                 salud: v(pref + 'salud'), vivienda: v(pref + 'vivienda'), fisica: v(pref + 'fisica'),
-                psicologica: v(pref + 'psicologica'), informe: v(pref + 'informe'), recomendaciones: v(pref + 'recomendaciones')
+                psicologica: v(pref + 'psicologica'), informe: v(pref + 'informe'), recomendaciones: v(pref + 'recomendaciones'),
+                necesita_ayuda_psicologica: v(pref + 'necesita_ayuda_psicologica'), necesita_ayuda_vivienda: v(pref + 'necesita_ayuda_vivienda')
             };
         }
         function mostrarMsg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'msg ' + (ok ? 'ok' : 'err'); setTimeout(() => { if (m.textContent === t) m.className = 'msg'; }, 4000); }
@@ -325,7 +385,7 @@
             $('btnRegistrar').disabled = true;
             try {
                 await set(push(ref(database, NODO)), { ...d, fecha_registro: Date.now(), registrado_por: nombreUsuario, registrado_uid: (auth.currentUser && auth.currentUser.uid) || '' });
-                ['f_secretaria','f_nombres','f_cedula','f_telefono','f_edad','f_cargo','f_salud','f_vivienda','f_fisica','f_psicologica','f_informe','f_recomendaciones'].forEach(id => $(id).value = '');
+                ['f_secretaria','f_nombres','f_cedula','f_telefono','f_edad','f_cargo','f_salud','f_vivienda','f_fisica','f_psicologica','f_informe','f_recomendaciones','f_necesita_ayuda_psicologica','f_necesita_ayuda_vivienda'].forEach(id => $(id).value = '');
                 mostrarMsg('✓ Informe guardado.', true); $('f_nombres').focus();
             } catch (e) { mostrarMsg('No se pudo guardar (' + (e.message || e.code || 'error') + ').', false); }
             finally { $('btnRegistrar').disabled = false; }
@@ -335,7 +395,7 @@
         function editar(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
             editId = id;
-            ['secretaria','nombres','cedula','telefono','edad','cargo','salud','vivienda','fisica','psicologica','informe','recomendaciones'].forEach(k => $('e_' + k).value = r[k] || '');
+            ['secretaria','nombres','cedula','telefono','edad','cargo','salud','vivienda','fisica','psicologica','informe','recomendaciones','necesita_ayuda_psicologica','necesita_ayuda_vivienda'].forEach(k => $('e_' + k).value = r[k] || '');
             $('eMsg').className = 'msg'; $('editBg').classList.add('show');
         }
         $('eCancelar').addEventListener('click', () => { $('editBg').classList.remove('show'); editId = null; });
@@ -374,7 +434,7 @@
             for (let c=0;c<header.length;c++){ setS(0,c,estB); setS(1,c,estS); setS(2,c,estH); }
             for (let r=3;r<data.length;r++){ const fondo=(r%2===0)?{fill:{fgColor:{rgb:ZEBRA}}}:{}; for(let c=0;c<header.length;c++) setS(r,c,{font:{sz:10,color:{rgb:TEXTO}},alignment:{vertical:'top',wrapText:true},border:borde,...fondo}); }
             ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}},{s:{r:1,c:0},e:{r:1,c:header.length-1}}];
-            ws['!cols']=[20,24,22,12,14,7,18,30,30,26,26,30,30,18].map(w=>({wch:w}));
+            ws['!cols']=[20,24,22,12,14,7,18,30,30,16,26,26,16,30,30,18].map(w=>({wch:w}));
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Informes');
             XLSX.writeFile(wb, `informes_empleados_${ahora.toISOString().slice(0,10)}.xlsx`);
