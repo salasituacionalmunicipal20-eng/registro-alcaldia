@@ -53,7 +53,7 @@
             <div class="card">
                 <h2>Datos de recepción</h2>
                 <div class="row2">
-                    <div><label>Nº de registro</label><input id="n_registro" placeholder="Ej: 001" autocomplete="off" /></div>
+                    <div><label>Nº de registro</label><input id="n_registro" placeholder="Automático (0001, 0002…)" readonly style="background:#eef2f7;color:#64748b;" /></div>
                     <div><label>Persona receptor</label><input id="persona_receptor" placeholder="Quién recibe" autocomplete="off" /></div>
                 </div>
                 <div class="row2">
@@ -116,6 +116,7 @@
             <div class="check">✅</div>
             <h2>¡Ingreso registrado!</h2>
             <p>La información fue guardada correctamente.</p>
+            <p style="font-size:18px;margin-top:6px;">Nº de registro: <b id="okNum" style="color:#0a2351;">—</b></p>
             <button id="btnOtro" type="button">Registrar otro ingreso</button>
         </div>
     </div>
@@ -124,7 +125,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -176,6 +177,37 @@
             return (e >= 0 && e <= 120) ? e : '';
         }
         $('j_fecha_nac').addEventListener('change', () => { const e = edadDeFecha($('j_fecha_nac').value); if (e !== '') $('j_edad').value = e; });
+
+        // ---- Validación CNE (autocompleta nombre + fecha; si no aparece, se llena a mano) ----
+        const CNE_ENDPOINT = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co/functions/v1/consultar-cedula';
+        function fechaCneValida(f) { if (!f || !/^\d{4}-\d{2}-\d{2}$/.test(f) || f === '0000-00-00') return false; const a = parseInt(f.slice(0, 4), 10); return a >= 1900 && a <= 2030; }
+        function engancharCNE(cedulaEl, nombreEl, fechaEl, nacEl) {
+            if (!cedulaEl) return;
+            cedulaEl.addEventListener('blur', async () => {
+                const num = (cedulaEl.value || '').replace(/\D/g, '');
+                if (num.length < 4 || num.length > 10) return;
+                if (nombreEl && nombreEl.value.trim()) return; // respetar lo escrito a mano
+                const nac = (nacEl && (nacEl.value || '').toUpperCase() === 'E') ? 'E' : 'V';
+                const bg = cedulaEl.style.background, ph = cedulaEl.placeholder;
+                cedulaEl.style.background = '#fef3c7'; cedulaEl.placeholder = 'Consultando CNE…';
+                let ok = false;
+                try {
+                    const resp = await fetch(CNE_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cedula: num, nacionalidad: nac }) });
+                    if (resp.ok) {
+                        const json = await resp.json();
+                        const d = json && json.data;
+                        if (d && !json.error) {
+                            if (nombreEl && !nombreEl.value.trim()) { nombreEl.value = [d.primer_nombre, d.segundo_nombre, d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim(); nombreEl.dispatchEvent(new Event('input', { bubbles: true })); }
+                            if (fechaEl && fechaCneValida(d.fecha_nac) && !fechaEl.value) { fechaEl.value = d.fecha_nac; fechaEl.dispatchEvent(new Event('change', { bubbles: true })); }
+                            ok = true; cedulaEl.style.background = '#dcfce7'; setTimeout(() => { cedulaEl.style.background = bg; }, 1500);
+                        }
+                    }
+                } catch (e) { /* CNE caído / no encontrado: se llena a mano */ }
+                cedulaEl.placeholder = ph;
+                if (!ok) cedulaEl.style.background = bg;
+            });
+        }
+        engancharCNE($('j_cedula'), $('j_nombre'), $('j_fecha_nac'), $('j_nacionalidad'));
 
         // Compresión de foto -> dataURL JPEG (máx 900px)
         function comprimir(file) {
@@ -245,6 +277,7 @@
             div.querySelector('.mb-del').addEventListener('click', () => { delete fotosMiembros[id]; div.remove(); actualizarCarga(); });
             div.querySelector('.fnac').addEventListener('change', (e) => { const ed = edadDeFecha(e.target.value); if (ed !== '') div.querySelector('.edad').value = ed; });
             div.querySelector('.mb-foto').addEventListener('change', async (e) => { const u = await comprimir(e.target.files[0]); fotosMiembros[id] = u; const pv = div.querySelector('.mb-prev'); if (u) { pv.src = u; pv.style.display = 'block'; } else { pv.style.display = 'none'; } });
+            engancharCNE(div.querySelector('[data-f="cedula"]'), div.querySelector('[data-f="nombre"]'), div.querySelector('[data-f="fecha_nac"]'), div.querySelector('[data-f="nacionalidad"]'));
             actualizarCarga();
         }
         $('btnAddMiembro').addEventListener('click', agregarMiembro);
@@ -292,9 +325,14 @@
 
             const btn = $('btnEnviar'); btn.disabled = true; btn.textContent = 'Enviando…';
             try {
+                // Nº de registro automático y secuencial (contador atómico)
+                let numRegistro = '';
+                try { const res = await runTransaction(ref(database, 'zamurera_contador'), (cur) => (Number(cur) || 0) + 1); if (res.committed && res.snapshot.exists()) numRegistro = String(res.snapshot.val()).padStart(4, '0'); } catch (e) {}
+                payload.n_registro = numRegistro;
                 const nuevo = push(ref(database, 'zamurera'));
                 await set(nuevo, payload);
                 if (Object.keys(fotos).length) { try { await set(ref(database, 'zamurera_fotos/' + nuevo.key), fotos); } catch (e) {} }
+                if ($('okNum')) $('okNum').textContent = numRegistro || '—';
                 $('formWrap').style.display = 'none';
                 $('okScreen').style.display = 'block';
                 window.scrollTo(0, 0);
