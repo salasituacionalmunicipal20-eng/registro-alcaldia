@@ -43,8 +43,8 @@
 </head>
 <body>
     <div class="top">
-        <h1>🏕️ Refugio Zamurera — Ingreso</h1>
-        <p>Registro de personas que ingresan al refugio · Municipio Cristóbal Rojas</p>
+        <h1>🏕️ Campamento Temporal — Ingreso</h1>
+        <p>Registro de personas que ingresan al Campamento · Municipio Cristóbal Rojas</p>
     </div>
 
     <div class="wrap">
@@ -95,10 +95,7 @@
                 <label>Situación de salud</label><textarea id="j_situacion_salud"></textarea>
                 <label>Situación psicológica</label><textarea id="j_situacion_psicologica"></textarea>
                 <label>Afectación por el terremoto</label><textarea id="j_afectacion" placeholder="Daños / afectación sufrida"></textarea>
-                <div class="row2">
-                    <div><label>¿Necesita ayuda psicológica?</label><select id="j_necesita_psico"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
-                    <div><label>¿Necesita ayuda con su vivienda?</label><select id="j_necesita_vivienda"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
-                </div>
+                <label>¿Necesita ayuda psicológica?</label><select id="j_necesita_psico"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
                 <label style="color:#0a2351;margin-top:14px;">📍 Ubicación en el refugio (cama asignada)</label>
                 <div class="row3">
                     <div><label>Módulo</label><select id="j_modulo"></select></div>
@@ -306,7 +303,6 @@
                 <label>Situación de salud</label><input data-f="situacion_salud" autocomplete="off" />
                 <label>Situación psicológica</label><input data-f="situacion_psicologica" autocomplete="off" />
                 <label>¿Necesita ayuda psicológica?</label><select data-f="necesita_ayuda_psicologica"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
-                <label>¿Necesita ayuda con su vivienda?</label><select data-f="necesita_ayuda_vivienda"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
                 <label style="color:#0a2351;margin-top:8px;">📍 Ubicación en el refugio</label>
                 <div class="row3">
                     <div><label>Módulo</label><select data-f="modulo"></select></div>
@@ -353,7 +349,7 @@
                     edad: g('edad'), genero: g('genero'), tipo_sangre: g('tipo_sangre'), estudia: g('estudia'),
                     profesion: g('profesion'), patologia: g('patologia'), medicamento: g('medicamento'),
                     situacion_salud: g('situacion_salud'), situacion_psicologica: g('situacion_psicologica'),
-                    necesita_ayuda_psicologica: g('necesita_ayuda_psicologica'), necesita_ayuda_vivienda: g('necesita_ayuda_vivienda'),
+                    necesita_ayuda_psicologica: g('necesita_ayuda_psicologica'),
                     modulo: g('modulo'), cubiculo: g('cubiculo'), cama: g('cama'),
                     talla_zapatos: g('talla_zapatos'), talla_camisa: g('talla_camisa'), talla_pantalon: g('talla_pantalon'),
                     observaciones: g('observaciones')
@@ -373,7 +369,7 @@
                     patologia: v('j_patologia'), medicamento: v('j_medicamento'),
                     situacion_salud: v('j_situacion_salud'), situacion_psicologica: v('j_situacion_psicologica'),
                     afectacion: v('j_afectacion'),
-                    necesita_ayuda_psicologica: v('j_necesita_psico'), necesita_ayuda_vivienda: v('j_necesita_vivienda'),
+                    necesita_ayuda_psicologica: v('j_necesita_psico'),
                     modulo: v('j_modulo'), cubiculo: v('j_cubiculo'), cama: v('j_cama'),
                     talla_zapatos: v('j_talla_zapatos'), talla_camisa: v('j_talla_camisa'), talla_pantalon: v('j_talla_pantalon'),
                     observaciones: v('j_observaciones'),
