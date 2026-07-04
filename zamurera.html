@@ -99,6 +99,12 @@
                     <div><label>¿Necesita ayuda psicológica?</label><select id="j_necesita_psico"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
                     <div><label>¿Necesita ayuda con su vivienda?</label><select id="j_necesita_vivienda"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
                 </div>
+                <label style="color:#0a2351;margin-top:14px;">📍 Ubicación en el refugio (cama asignada)</label>
+                <div class="row3">
+                    <div><label>Módulo</label><select id="j_modulo"></select></div>
+                    <div><label>Cubículo</label><select id="j_cubiculo"><option value="">—</option></select></div>
+                    <div><label>Cama</label><input id="j_cama" placeholder="Nº de cama" autocomplete="off" /></div>
+                </div>
                 <label>Foto <span class="hint">(opcional)</span></label>
                 <input id="j_foto" type="file" accept="image/*" capture="environment" />
                 <img id="j_foto_prev" class="prev" alt="" />
@@ -148,6 +154,10 @@
         const soloDig = (s) => (s || '').replace(/\D/g, '');
         const SANGRE = ['', 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'No sabe'];
         const sangreOpts = () => SANGRE.map(s => `<option value="${s}">${s || '—'}</option>`).join('');
+        // Módulos 1..18; cubículos SIEMPRE fijos: 1a, 1b, 1c; cama = texto libre
+        const MODULOS = Array.from({ length: 18 }, (_, i) => String(i + 1));
+        const moduloOpts = () => '<option value="">—</option>' + MODULOS.map(m => `<option value="${m}">Módulo ${m}</option>`).join('');
+        const cubiculoOpts = () => '<option value="">—</option><option value="1a">1a</option><option value="1b">1b</option><option value="1c">1c</option>';
 
         // Prellenar fecha/hora + tipo de sangre
         (function () {
@@ -156,6 +166,8 @@
             $('fecha_ingreso').value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
             $('hora').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
             $('j_tipo_sangre').innerHTML = sangreOpts();
+            $('j_modulo').innerHTML = moduloOpts();
+            $('j_cubiculo').innerHTML = cubiculoOpts();
         })();
 
         // Estado -> Municipio
@@ -276,6 +288,12 @@
                 <label>Situación psicológica</label><input data-f="situacion_psicologica" autocomplete="off" />
                 <label>¿Necesita ayuda psicológica?</label><select data-f="necesita_ayuda_psicologica"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
                 <label>¿Necesita ayuda con su vivienda?</label><select data-f="necesita_ayuda_vivienda"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
+                <label style="color:#0a2351;margin-top:8px;">📍 Ubicación en el refugio</label>
+                <div class="row3">
+                    <div><label>Módulo</label><select data-f="modulo"></select></div>
+                    <div><label>Cubículo</label><select data-f="cubiculo"></select></div>
+                    <div><label>Cama</label><input data-f="cama" placeholder="Nº de cama" autocomplete="off" /></div>
+                </div>
                 <label>Foto <span class="hint">(opcional)</span></label>
                 <input type="file" accept="image/*" capture="environment" class="mb-foto" />
                 <img class="prev mb-prev" alt="" />`;
@@ -284,6 +302,8 @@
             div.querySelector('.fnac').addEventListener('change', (e) => { const ed = edadDeFecha(e.target.value); if (ed !== '') div.querySelector('.edad').value = ed; });
             div.querySelector('.mb-foto').addEventListener('change', async (e) => { const u = await comprimir(e.target.files[0]); fotosMiembros[id] = u; const pv = div.querySelector('.mb-prev'); if (u) { pv.src = u; pv.style.display = 'block'; } else { pv.style.display = 'none'; } });
             engancharCNE(div.querySelector('[data-f="cedula"]'), div.querySelector('[data-f="nombre"]'), div.querySelector('[data-f="fecha_nac"]'), div.querySelector('[data-f="nacionalidad"]'));
+            div.querySelector('[data-f="modulo"]').innerHTML = moduloOpts();
+            div.querySelector('[data-f="cubiculo"]').innerHTML = cubiculoOpts();
             actualizarCarga();
         }
         $('btnAddMiembro').addEventListener('click', agregarMiembro);
@@ -306,7 +326,8 @@
                     edad: g('edad'), genero: g('genero'), tipo_sangre: g('tipo_sangre'), estudia: g('estudia'),
                     profesion: g('profesion'), patologia: g('patologia'), medicamento: g('medicamento'),
                     situacion_salud: g('situacion_salud'), situacion_psicologica: g('situacion_psicologica'),
-                    necesita_ayuda_psicologica: g('necesita_ayuda_psicologica'), necesita_ayuda_vivienda: g('necesita_ayuda_vivienda')
+                    necesita_ayuda_psicologica: g('necesita_ayuda_psicologica'), necesita_ayuda_vivienda: g('necesita_ayuda_vivienda'),
+                    modulo: g('modulo'), cubiculo: g('cubiculo'), cama: g('cama')
                 });
                 const fu = fotosMiembros[el.dataset.id];
                 if (fu) fotos['m' + (miembros.length - 1)] = fu;
@@ -324,6 +345,7 @@
                     situacion_salud: v('j_situacion_salud'), situacion_psicologica: v('j_situacion_psicologica'),
                     afectacion: v('j_afectacion'),
                     necesita_ayuda_psicologica: v('j_necesita_psico'), necesita_ayuda_vivienda: v('j_necesita_vivienda'),
+                    modulo: v('j_modulo'), cubiculo: v('j_cubiculo'), cama: v('j_cama'),
                     tiene_foto: !!fotoJefe
                 },
                 miembros: miembros,
