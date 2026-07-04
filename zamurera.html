@@ -164,10 +164,14 @@
         const sangreOpts = () => SANGRE.map(s => `<option value="${s}">${s || '—'}</option>`).join('');
         // Módulos: 1-10 y 14-18 seleccionables; 11-13 reservados. Cubículo en cascada = módulo + a/b/c.
         const MODULOS_RESERVADOS = ['11', '12', '13'];
-        const moduloOpts = () => '<option value="">—</option>' + Array.from({ length: 18 }, (_, i) => {
-            const n = String(i + 1);
-            return MODULOS_RESERVADOS.includes(n) ? `<option value="" disabled>Módulo ${n} (reservado)</option>` : `<option value="${n}">Módulo ${n}</option>`;
-        }).join('');
+        const moduloOpts = () => {
+            const reg = Array.from({ length: 18 }, (_, i) => {
+                const n = String(i + 1);
+                return MODULOS_RESERVADOS.includes(n) ? `<option value="" disabled>Módulo ${n} (reservado)</option>` : `<option value="${n}">Módulo ${n}</option>`;
+            }).join('');
+            const fn = Array.from({ length: 10 }, (_, i) => `<option value="FN${i + 1}">Módulo ${i + 1} — Familia numerosa</option>`).join('');
+            return '<option value="">—</option><optgroup label="Módulos">' + reg + '</optgroup><optgroup label="Familias numerosas (1-10)">' + fn + '</optgroup>';
+        };
         function poblarCubiculos(modEl, cubEl) {
             const m = modEl.value, prev = cubEl.value;
             cubEl.innerHTML = '<option value="">—</option>' + (m ? ['a', 'b', 'c'].map(L => `<option value="${m}${L}">${m}${L}</option>`).join('') : '');

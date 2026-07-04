@@ -212,7 +212,10 @@
             const prevM = $('fMunicipio').value;
             $('fMunicipio').innerHTML = '<option value="">Todos</option>' + mun.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
             if (prevM) $('fMunicipio').value = prevM;
-            if ($('fModulo') && $('fModulo').options.length <= 1) { $('fModulo').innerHTML = '<option value="">Todos</option>' + Array.from({ length: 18 }, (_, i) => `<option value="${i + 1}">Módulo ${i + 1}</option>`).join(''); }
+            const mods = [...new Set(REGS.flatMap(r => [r.jefe || {}].concat(toArr(r.miembros)).map(p => (p.modulo || '').trim())).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+            const prevMod = $('fModulo').value;
+            $('fModulo').innerHTML = '<option value="">Todos</option>' + mods.map(m => `<option value="${esc(m)}">${m.startsWith('FN') ? 'Módulo ' + esc(m.slice(2)) + ' (Fam. numerosa)' : 'Módulo ' + esc(m)}</option>`).join('');
+            if (prevMod) $('fModulo').value = prevMod;
             const cubs = [...new Set(REGS.flatMap(r => [r.jefe || {}].concat(toArr(r.miembros)).map(p => (p.cubiculo || '').trim())).filter(Boolean))].sort();
             const prevC = $('fCubiculo').value;
             $('fCubiculo').innerHTML = '<option value="">Todos</option>' + cubs.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
@@ -269,7 +272,7 @@
                 if (necesitaVivienda(r)) nec.push('<span title="Necesita ayuda con vivienda" style="display:inline-block;background:#ffedd5;color:#b45309;border-radius:5px;padding:1px 6px;font-size:11.5px;font-weight:700;margin:1px 0;">🏠 Vivienda</span>');
                 return `<tr>
                     <td>${esc(r.n_registro || '—')}</td>
-                    <td><b>${esc(j.nombre || '—')}</b>${j.tiene_foto ? ' 📷' : ''}${(j.modulo||j.cubiculo||j.cama)?`<br><span style="font-size:11px;color:#64748b;">📍 ${[j.modulo?'Mód '+esc(j.modulo):'',esc(j.cubiculo||''),j.cama?'Cama '+esc(j.cama):''].filter(Boolean).join(' · ')}</span>`:''}</td>
+                    <td><b>${esc(j.nombre || '—')}</b>${j.tiene_foto ? ' 📷' : ''}${(j.modulo||j.cubiculo||j.cama)?`<br><span style="font-size:11px;color:#64748b;">📍 ${[j.modulo?'Mód '+(String(j.modulo).startsWith('FN')?esc(String(j.modulo).slice(2))+' (F.N.)':esc(j.modulo)):'',esc(j.cubiculo||''),j.cama?'Cama '+esc(j.cama):''].filter(Boolean).join(' · ')}</span>`:''}</td>
                     <td>${esc(j.cedula || '—')}</td>
                     <td>${esc(proc)}</td>
                     <td style="text-align:center;font-weight:800;">${personasDe(r)}</td>
