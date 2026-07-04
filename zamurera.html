@@ -105,6 +105,14 @@
                     <div><label>Cubículo</label><select id="j_cubiculo"><option value="">—</option></select></div>
                     <div><label>Cama</label><input id="j_cama" placeholder="Nº de cama" autocomplete="off" /></div>
                 </div>
+                <label style="color:#0a2351;margin-top:14px;">👕 Ropa que necesita (indica la talla)</label>
+                <div class="row3">
+                    <div><label>Zapatos (talla)</label><input id="j_talla_zapatos" placeholder="Ej: 40" autocomplete="off" /></div>
+                    <div><label>Camisa (talla)</label><input id="j_talla_camisa" placeholder="Ej: M" autocomplete="off" /></div>
+                    <div><label>Pantalón (talla)</label><input id="j_talla_pantalon" placeholder="Ej: 32" autocomplete="off" /></div>
+                </div>
+                <label>Observaciones</label>
+                <textarea id="j_observaciones" placeholder="Notas / observaciones"></textarea>
                 <label>Foto <span class="hint">(opcional)</span></label>
                 <input id="j_foto" type="file" accept="image/*" capture="environment" />
                 <img id="j_foto_prev" class="prev" alt="" />
@@ -154,10 +162,17 @@
         const soloDig = (s) => (s || '').replace(/\D/g, '');
         const SANGRE = ['', 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'No sabe'];
         const sangreOpts = () => SANGRE.map(s => `<option value="${s}">${s || '—'}</option>`).join('');
-        // Módulos 1..18; cubículos SIEMPRE fijos: 1a, 1b, 1c; cama = texto libre
-        const MODULOS = Array.from({ length: 18 }, (_, i) => String(i + 1));
-        const moduloOpts = () => '<option value="">—</option>' + MODULOS.map(m => `<option value="${m}">Módulo ${m}</option>`).join('');
-        const cubiculoOpts = () => '<option value="">—</option><option value="1a">1a</option><option value="1b">1b</option><option value="1c">1c</option>';
+        // Módulos: 1-10 y 14-18 seleccionables; 11-13 reservados. Cubículo en cascada = módulo + a/b/c.
+        const MODULOS_RESERVADOS = ['11', '12', '13'];
+        const moduloOpts = () => '<option value="">—</option>' + Array.from({ length: 18 }, (_, i) => {
+            const n = String(i + 1);
+            return MODULOS_RESERVADOS.includes(n) ? `<option value="" disabled>Módulo ${n} (reservado)</option>` : `<option value="${n}">Módulo ${n}</option>`;
+        }).join('');
+        function poblarCubiculos(modEl, cubEl) {
+            const m = modEl.value, prev = cubEl.value;
+            cubEl.innerHTML = '<option value="">—</option>' + (m ? ['a', 'b', 'c'].map(L => `<option value="${m}${L}">${m}${L}</option>`).join('') : '');
+            cubEl.value = (prev && m && [m + 'a', m + 'b', m + 'c'].includes(prev)) ? prev : '';
+        }
 
         // Prellenar fecha/hora + tipo de sangre
         (function () {
@@ -167,8 +182,8 @@
             $('hora').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
             $('j_tipo_sangre').innerHTML = sangreOpts();
             $('j_modulo').innerHTML = moduloOpts();
-            $('j_cubiculo').innerHTML = cubiculoOpts();
         })();
+        $('j_modulo').addEventListener('change', () => poblarCubiculos($('j_modulo'), $('j_cubiculo')));
 
         // Estado -> Municipio
         function poblarEstados() {
@@ -294,6 +309,13 @@
                     <div><label>Cubículo</label><select data-f="cubiculo"></select></div>
                     <div><label>Cama</label><input data-f="cama" placeholder="Nº de cama" autocomplete="off" /></div>
                 </div>
+                <label style="color:#0a2351;margin-top:8px;">👕 Ropa que necesita (talla)</label>
+                <div class="row3">
+                    <div><label>Zapatos</label><input data-f="talla_zapatos" placeholder="Talla" autocomplete="off" /></div>
+                    <div><label>Camisa</label><input data-f="talla_camisa" placeholder="Talla" autocomplete="off" /></div>
+                    <div><label>Pantalón</label><input data-f="talla_pantalon" placeholder="Talla" autocomplete="off" /></div>
+                </div>
+                <label>Observaciones</label><input data-f="observaciones" placeholder="Notas" autocomplete="off" />
                 <label>Foto <span class="hint">(opcional)</span></label>
                 <input type="file" accept="image/*" capture="environment" class="mb-foto" />
                 <img class="prev mb-prev" alt="" />`;
@@ -302,8 +324,9 @@
             div.querySelector('.fnac').addEventListener('change', (e) => { const ed = edadDeFecha(e.target.value); if (ed !== '') div.querySelector('.edad').value = ed; });
             div.querySelector('.mb-foto').addEventListener('change', async (e) => { const u = await comprimir(e.target.files[0]); fotosMiembros[id] = u; const pv = div.querySelector('.mb-prev'); if (u) { pv.src = u; pv.style.display = 'block'; } else { pv.style.display = 'none'; } });
             engancharCNE(div.querySelector('[data-f="cedula"]'), div.querySelector('[data-f="nombre"]'), div.querySelector('[data-f="fecha_nac"]'), div.querySelector('[data-f="nacionalidad"]'));
-            div.querySelector('[data-f="modulo"]').innerHTML = moduloOpts();
-            div.querySelector('[data-f="cubiculo"]').innerHTML = cubiculoOpts();
+            const modEl = div.querySelector('[data-f="modulo"]'), cubEl = div.querySelector('[data-f="cubiculo"]');
+            modEl.innerHTML = moduloOpts();
+            modEl.addEventListener('change', () => poblarCubiculos(modEl, cubEl));
             actualizarCarga();
         }
         $('btnAddMiembro').addEventListener('click', agregarMiembro);
@@ -327,7 +350,9 @@
                     profesion: g('profesion'), patologia: g('patologia'), medicamento: g('medicamento'),
                     situacion_salud: g('situacion_salud'), situacion_psicologica: g('situacion_psicologica'),
                     necesita_ayuda_psicologica: g('necesita_ayuda_psicologica'), necesita_ayuda_vivienda: g('necesita_ayuda_vivienda'),
-                    modulo: g('modulo'), cubiculo: g('cubiculo'), cama: g('cama')
+                    modulo: g('modulo'), cubiculo: g('cubiculo'), cama: g('cama'),
+                    talla_zapatos: g('talla_zapatos'), talla_camisa: g('talla_camisa'), talla_pantalon: g('talla_pantalon'),
+                    observaciones: g('observaciones')
                 });
                 const fu = fotosMiembros[el.dataset.id];
                 if (fu) fotos['m' + (miembros.length - 1)] = fu;
@@ -346,6 +371,8 @@
                     afectacion: v('j_afectacion'),
                     necesita_ayuda_psicologica: v('j_necesita_psico'), necesita_ayuda_vivienda: v('j_necesita_vivienda'),
                     modulo: v('j_modulo'), cubiculo: v('j_cubiculo'), cama: v('j_cama'),
+                    talla_zapatos: v('j_talla_zapatos'), talla_camisa: v('j_talla_camisa'), talla_pantalon: v('j_talla_pantalon'),
+                    observaciones: v('j_observaciones'),
                     tiene_foto: !!fotoJefe
                 },
                 miembros: miembros,
