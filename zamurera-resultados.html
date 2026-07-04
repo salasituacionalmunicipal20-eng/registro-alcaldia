@@ -123,6 +123,8 @@
                     <div><label>Con foto</label><select id="fFoto"><option value="">Todos</option><option value="si">Con foto</option><option value="no">Sin foto</option></select></div>
                     <div><label>Desde (ingreso)</label><input id="fDesde" type="date" /></div>
                     <div><label>Hasta (ingreso)</label><input id="fHasta" type="date" /></div>
+                    <div><label>Módulo</label><select id="fModulo"><option value="">Todos</option></select></div>
+                    <div><label>Cubículo</label><select id="fCubiculo"><option value="">Todos</option><option value="1a">1a</option><option value="1b">1b</option><option value="1c">1c</option></select></div>
                     <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
                 </div>
                 <div style="font-size:12.5px;color:#64748b;margin-top:8px;" id="filtroInfo"></div>
@@ -210,14 +212,18 @@
             const prevM = $('fMunicipio').value;
             $('fMunicipio').innerHTML = '<option value="">Todos</option>' + mun.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
             if (prevM) $('fMunicipio').value = prevM;
+            if ($('fModulo') && $('fModulo').options.length <= 1) { $('fModulo').innerHTML = '<option value="">Todos</option>' + Array.from({ length: 18 }, (_, i) => `<option value="${i + 1}">Módulo ${i + 1}</option>`).join(''); }
         }
         function filtrados() {
             const q = ($('fBuscar').value || '').trim().toLowerCase();
             const fe = $('fEstado').value, fm = $('fMunicipio').value, fg = $('fGenero').value;
             const fp = $('fPsico').value, fv = $('fVivienda').value, fs = $('fSalud').value, ff = $('fFoto').value;
-            const fd = $('fDesde').value, fh = $('fHasta').value;
+            const fd = $('fDesde').value, fh = $('fHasta').value, fmod = $('fModulo').value, fcub = $('fCubiculo').value;
             return REGS.filter(r => {
                 const j = r.jefe || {};
+                const personas = [j].concat(toArr(r.miembros));
+                if (fmod && !personas.some(p => String(p.modulo || '') === fmod)) return false;
+                if (fcub && !personas.some(p => (p.cubiculo || '') === fcub)) return false;
                 if (fe && r.estado !== fe) return false;
                 if (fm && r.municipio !== fm) return false;
                 if (fg && (j.genero || '') !== fg) return false;
@@ -227,7 +233,7 @@
                 if (ff) { const tf = !!j.tiene_foto; if (ff === 'si' && !tf) return false; if (ff === 'no' && tf) return false; }
                 if (fd && (r.fecha_ingreso || '') < fd) return false;
                 if (fh && (r.fecha_ingreso || '') > fh) return false;
-                if (q) { const blob = `${j.nombre||''} ${j.cedula||''} ${r.persona_receptor||''} ${r.estado||''} ${r.municipio||''} ${r.comunidad_sector||''} ${r.de_donde_vienen||''} ${r.n_registro||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
+                if (q) { const mb = toArr(r.miembros).map(m => `${m.nombre||''} ${m.cedula||''} ${m.modulo||''} ${m.cubiculo||''} ${m.cama||''}`).join(' '); const blob = `${j.nombre||''} ${j.cedula||''} ${j.modulo||''} ${j.cubiculo||''} ${j.cama||''} ${r.persona_receptor||''} ${r.estado||''} ${r.municipio||''} ${r.comunidad_sector||''} ${r.de_donde_vienen||''} ${r.n_registro||''} ${mb}`.toLowerCase(); if (!blob.includes(q)) return false; }
                 return true;
             });
         }
@@ -259,7 +265,7 @@
                 if (necesitaVivienda(r)) nec.push('<span title="Necesita ayuda con vivienda" style="display:inline-block;background:#ffedd5;color:#b45309;border-radius:5px;padding:1px 6px;font-size:11.5px;font-weight:700;margin:1px 0;">🏠 Vivienda</span>');
                 return `<tr>
                     <td>${esc(r.n_registro || '—')}</td>
-                    <td><b>${esc(j.nombre || '—')}</b>${j.tiene_foto ? ' 📷' : ''}</td>
+                    <td><b>${esc(j.nombre || '—')}</b>${j.tiene_foto ? ' 📷' : ''}${(j.modulo||j.cubiculo||j.cama)?`<br><span style="font-size:11px;color:#64748b;">📍 ${[j.modulo?'Mód '+esc(j.modulo):'',esc(j.cubiculo||''),j.cama?'Cama '+esc(j.cama):''].filter(Boolean).join(' · ')}</span>`:''}</td>
                     <td>${esc(j.cedula || '—')}</td>
                     <td>${esc(proc)}</td>
                     <td style="text-align:center;font-weight:800;">${personasDe(r)}</td>
@@ -277,7 +283,7 @@
             if (p) p.addEventListener('click', () => { if (pagina>1){ pagina--; render(); } });
             if (n) n.addEventListener('click', () => { if (pagina<totalPag){ pagina++; render(); } });
         }
-        const FILTROS = ['fBuscar','fEstado','fMunicipio','fGenero','fPsico','fVivienda','fSalud','fFoto','fDesde','fHasta'];
+        const FILTROS = ['fBuscar','fEstado','fMunicipio','fGenero','fPsico','fVivienda','fSalud','fFoto','fDesde','fHasta','fModulo','fCubiculo'];
         FILTROS.forEach(id => { const el = $(id); if (!el) return; el.addEventListener('input', () => { pagina=1; render(); }); el.addEventListener('change', () => { pagina=1; render(); }); });
         $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => { const el = $(id); if (el) el.value = ''; }); pagina=1; render(); });
         function toggleTile(selId, val){ const el = $(selId); if (!el) return; el.value = (el.value === val) ? '' : val; pagina = 1; render(); const tabla = document.querySelector('table'); if (tabla) tabla.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
