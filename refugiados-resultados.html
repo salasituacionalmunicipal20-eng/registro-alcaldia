@@ -97,6 +97,7 @@
                 <div class="stats">
                     <div class="stat"><div class="num" id="stReportes">—</div><div class="lbl">Familias registradas</div></div>
                     <div class="stat b"><div class="num" id="stFamiliasUnicas">—</div><div class="lbl">Familias únicas (por cédula)</div></div>
+                    <div class="stat"><div class="num" id="stJefesRep">—</div><div class="lbl">Jefes repetidos (misma cédula)</div></div>
                     <div class="stat"><div class="num" id="stPersonas">—</div><div class="lbl">Personas (con grupo familiar)</div></div>
                     <div class="stat b"><div class="num" id="stTitulares">—</div><div class="lbl">Titulares (1 por familia)</div></div>
                     <div class="stat"><div class="num" id="stAcomp">—</div><div class="lbl">Acompañantes (grupo familiar)</div></div>
@@ -107,6 +108,7 @@
                     <div class="stat"><div class="num" id="stMayores">—</div><div class="lbl">Adultos mayores (60+)</div></div>
                 </div>
                 <button id="btnReporte" class="btn-exp" style="background:#7f1d1d;margin-top:12px;">📄 Generar reporte general (PDF)</button>
+                <button id="btnVerRep" class="btn-exp" style="background:#b91c1c;margin-top:12px;display:none;">🔁 Ver jefes repetidos (por cédula)</button>
                 <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Cada reporte aparece aquí en tiempo real. El botón genera un PDF con todos los totales (familias, personas, edades, necesidades y procedencia).</div>
             </div>
 
@@ -277,6 +279,7 @@
             });
         }
 
+        let _jefesRep = [];
         function render() {
             // KPIs
             $('stReportes').textContent = REGS.length;
@@ -285,6 +288,13 @@
             const _cedSet = new Set();
             REGS.forEach(r => { const c = soloDig(r.cedula); if (c) _cedSet.add((r.nacionalidad || 'V') + c); });
             $('stFamiliasUnicas').textContent = _cedSet.size;
+            // Jefes de familia con cédula repetida (misma cédula usada en 2+ familias)
+            const _cedMap = new Map();
+            REGS.forEach(r => { const c = soloDig(r.cedula); if (!c) return; const k = (r.nacionalidad || 'V') + c; if (!_cedMap.has(k)) _cedMap.set(k, []); _cedMap.get(k).push(r); });
+            _jefesRep = [..._cedMap.entries()].filter(([, arr]) => arr.length > 1).sort((a, b) => b[1].length - a[1].length);
+            $('stJefesRep').textContent = _jefesRep.length;
+            $('stJefesRep').style.color = _jefesRep.length ? '#b91c1c' : '';
+            const _btnRep = $('btnVerRep'); if (_btnRep) _btnRep.style.display = _jefesRep.length ? '' : 'none';
             $('stTitulares').textContent = REGS.length;
             $('stAcomp').textContent = _personas - REGS.length;
             $('stVuln').textContent = REGS.filter(r => toArr(r.vulnerabilidad).length > 0).length;
@@ -431,6 +441,36 @@
             $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
         }
         $('btnVerNec').addEventListener('click', verNecesidades);
+
+        function verRepetidos() {
+            const totalDup = _jefesRep.reduce((s, [, arr]) => s + (arr.length - 1), 0);
+            const bloque = _jefesRep.map(([, arr]) => {
+                const nac = arr[0].nacionalidad || 'V';
+                const ced = soloDig(arr[0].cedula);
+                const items = arr.slice().sort((a, b) => (a.fecha_registro || 0) - (b.fecha_registro || 0)).map((r, i) => {
+                    const tel = normalizarTel(r.telefono);
+                    const wa = tel.ok ? ` · <a href="https://wa.me/${tel.e164}" target="_blank" rel="noopener" style="color:#16a34a;font-weight:700;">WhatsApp</a>` : (r.telefono ? ' · ' + esc(r.telefono) : '');
+                    const fecha = r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+                    return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9;">
+                        <div><b>#${i + 1}</b> ${esc((r.nombres || '') + ' ' + (r.apellidos || ''))}<span style="color:#64748b;font-size:12.5px;"> · ${esc(fecha)}${wa}</span></div>
+                        <button class="btn-ver" data-verid="${esc(r.id)}" style="flex:none;">Ver ficha</button>
+                    </div>`;
+                }).join('');
+                return `<div style="margin-bottom:16px;border:1px solid #fecaca;border-radius:10px;padding:12px;background:#fef2f2;">
+                    <div style="font-weight:800;color:#b91c1c;font-size:15px;margin-bottom:4px;">🪪 ${nac}-${esc(ced)} <span style="font-weight:600;color:#7f1d1d;">— aparece ${arr.length} veces</span></div>
+                    ${items}
+                </div>`;
+            }).join('');
+            $('modal').innerHTML = `
+                <h3>Jefes de familia repetidos (misma cédula)</h3>
+                <div style="font-size:13.5px;color:#475569;margin-bottom:12px;">Hay <b>${_jefesRep.length}</b> cédula(s) usada(s) por más de una familia, con <b>${totalDup}</b> registro(s) duplicado(s) en total. Revisa cada grupo y corrige o elimina los repetidos desde su ficha.</div>
+                ${_jefesRep.length ? bloque : '<div style="color:#16a34a;font-weight:700;padding:8px 0;">✅ No hay jefes de familia repetidos por cédula.</div>'}
+                <button class="btn-nav cerrar" style="background:#7f1d1d;" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+            $('modal').querySelectorAll('button.btn-ver[data-verid]').forEach(b => b.addEventListener('click', () => { $('modalBg').classList.remove('show'); verDetalle(b.dataset.verid); }));
+        }
+        $('btnVerRep').addEventListener('click', verRepetidos);
 
         $('fNec').innerHTML = '<option value="">Todas</option>' + NEC_FILTRO.map(n => `<option value="${esc(n)}">${n === 'Medicinas' ? 'Medicamentos / Medicinas' : esc(n)}</option>`).join('');
         ['fBuscar','fProc','fComuna','fNec'].forEach(id => { $(id).addEventListener('input', () => { pagina = 1; render(); }); $(id).addEventListener('change', () => { pagina = 1; render(); }); });
