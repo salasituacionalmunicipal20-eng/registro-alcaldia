@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Refugio Zamurera — Ingreso | Cristóbal Rojas</title>
+    <title>Campamento Temporal — Ingreso | Cristóbal Rojas</title>
     <script defer src="municipios-data.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,7 +96,7 @@
                 <label>Situación psicológica</label><textarea id="j_situacion_psicologica"></textarea>
                 <label>Afectación por el terremoto</label><textarea id="j_afectacion" placeholder="Daños / afectación sufrida"></textarea>
                 <label>¿Necesita ayuda psicológica?</label><select id="j_necesita_psico"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
-                <label style="color:#0a2351;margin-top:14px;">📍 Ubicación en el refugio (cama asignada)</label>
+                <label style="color:#0a2351;margin-top:14px;">📍 Ubicación en el Campamento (cama asignada)</label>
                 <div class="row3">
                     <div><label>Módulo</label><select id="j_modulo"></select></div>
                     <div><label>Cubículo</label><select id="j_cubiculo"><option value="">—</option></select></div>
@@ -136,7 +136,7 @@
         </div>
     </div>
 
-    <div class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional · Refugio Zamurera</div>
+    <div class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional · Campamento Temporal</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -303,7 +303,7 @@
                 <label>Situación de salud</label><input data-f="situacion_salud" autocomplete="off" />
                 <label>Situación psicológica</label><input data-f="situacion_psicologica" autocomplete="off" />
                 <label>¿Necesita ayuda psicológica?</label><select data-f="necesita_ayuda_psicologica"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
-                <label style="color:#0a2351;margin-top:8px;">📍 Ubicación en el refugio</label>
+                <label style="color:#0a2351;margin-top:8px;">📍 Ubicación en el Campamento</label>
                 <div class="row3">
                     <div><label>Módulo</label><select data-f="modulo"></select></div>
                     <div><label>Cubículo</label><select data-f="cubiculo"></select></div>

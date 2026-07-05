@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Refugio Zamurera — Resultados</title>
+    <title>Campamento Temporal — Resultados</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -65,7 +65,7 @@
 </head>
 <body>
     <div class="topbar">
-        <h1>🏕️ Refugio Zamurera — Resultados</h1>
+        <h1>🏕️ Campamento Temporal — Resultados</h1>
         <div class="acciones">
             <a class="btn-nav" href="admin.html">← Panel Admin</a>
             <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
@@ -82,12 +82,12 @@
                 <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
                     <img id="qr" width="150" height="150" style="border:1px solid #e2e8f0;border-radius:8px;" alt="QR" />
                     <div style="flex:1;min-width:240px;">
-                        <p style="color:#475569;font-size:14px;margin-bottom:8px;">Comparte este enlace o el QR para registrar ingresos al refugio:</p>
+                        <p style="color:#475569;font-size:14px;margin-bottom:8px;">Comparte este enlace o el QR para registrar ingresos al Campamento:</p>
                         <div style="font-size:22px;font-weight:800;color:#16a34a;margin-bottom:10px;" id="shortTxt">da.gd/a3e6a</div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             <button id="btnCopiar" class="btn-exp" style="background:#0a2351;">📋 Copiar enlace</button>
                             <a id="btnWa" class="btn-exp" style="background:#16a34a;text-decoration:none;display:inline-block;" target="_blank" rel="noopener">💬 WhatsApp</a>
-                            <a id="btnQrDl" class="btn-exp" style="background:#0a6cb0;text-decoration:none;display:inline-block;" download="qr-refugio-zamurera.png">⬇️ Descargar QR</a>
+                            <a id="btnQrDl" class="btn-exp" style="background:#0a6cb0;text-decoration:none;display:inline-block;" download="qr-campamento-temporal.png">⬇️ Descargar QR</a>
                         </div>
                         <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Enlace completo: <span id="fullTxt"></span></div>
                     </div>
@@ -182,7 +182,7 @@
         $('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(URL_CORTO)}`;
         $('shortTxt').textContent = URL_CORTO.replace('https://', '');
         $('fullTxt').textContent = URL_FORM;
-        $('btnWa').href = `https://wa.me/?text=${encodeURIComponent('Registro de ingreso al Refugio Zamurera - Cristóbal Rojas: ' + URL_CORTO)}`;
+        $('btnWa').href = `https://wa.me/?text=${encodeURIComponent('Registro de ingreso al Campamento Temporal - Cristóbal Rojas: ' + URL_CORTO)}`;
         $('btnQrDl').href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&download=1&data=${encodeURIComponent(URL_CORTO)}`;
         $('btnCopiar').addEventListener('click', async () => { try { await navigator.clipboard.writeText(URL_CORTO); $('btnCopiar').textContent = '✓ Copiado'; setTimeout(() => $('btnCopiar').textContent = '📋 Copiar enlace', 1800); } catch (e) { prompt('Copia el enlace:', URL_CORTO); } });
 
@@ -357,7 +357,7 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — INGRESOS (JEFES)', hdr1, f1, [10,14,8,18,18,14,16,20,22,12,14,7,10,10,18,22,22,26,26,26,20,20,8,10,12,12,12,12,26,10,9]), 'Ingresos');
             XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — TODAS LAS PERSONAS', hdr2, f2, [10,22,14,22,16,12,14,7,10,10,8,18,22,22,26,26,20,20,8,10,12,12,12,12,26]), 'Personas');
-            XLSX.writeFile(wb, `refugio_zamurera_${ahora.toISOString().slice(0,10)}.xlsx`);
+            XLSX.writeFile(wb, `campamento_temporal_${ahora.toISOString().slice(0,10)}.xlsx`);
         });
 
         // ---- Sanitizador PDF ----
@@ -413,9 +413,9 @@
             const lista = filtrados();
             if (!lista.length) { alert('No hay ingresos para exportar.'); return; }
             const doc = new jsPDF({ unit: 'mm', format: 'letter' });
-            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Refugio Zamurera — Ingresos', subtitulo: _safePdf(lista.length + ' familia(s)') }); dibujarFooterPDF(doc); };
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Campamento Temporal — Ingresos', subtitulo: _safePdf(lista.length + ' familia(s)') }); dibujarFooterPDF(doc); };
             lista.forEach((r, idx) => { if (idx > 0) doc.addPage(); dibujarFamilia(doc, r, drawHF); });
-            doc.save('refugio_zamurera_' + new Date().toISOString().slice(0, 10) + '.pdf');
+            doc.save('campamento_temporal_' + new Date().toISOString().slice(0, 10) + '.pdf');
         });
 
         function imprimirUno(id) {
@@ -424,9 +424,9 @@
             if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
             const r = REGS.find(x => x.id === id); if (!r) return;
             const doc = new jsPDF({ unit: 'mm', format: 'letter' });
-            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Refugio Zamurera — Ingreso', subtitulo: _safePdf(((r.jefe || {}).nombre) || '') }); dibujarFooterPDF(doc); };
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Campamento Temporal — Ingreso', subtitulo: _safePdf(((r.jefe || {}).nombre) || '') }); dibujarFooterPDF(doc); };
             dibujarFamilia(doc, r, drawHF);
-            const archivo = 'ingreso_' + (String((r.jefe || {}).cedula || r.n_registro || 'zamurera').replace(/[^0-9A-Za-z]/g, '') || 'zamurera') + '.pdf';
+            const archivo = 'ingreso_' + (String((r.jefe || {}).cedula || r.n_registro || 'campamento').replace(/[^0-9A-Za-z]/g, '') || 'campamento') + '.pdf';
             try { doc.autoPrint(); const w = window.open(doc.output('bloburl'), '_blank'); if (!w) { doc.save(archivo); alert('El navegador bloqueó la ventana de impresión; se descargó el PDF.'); } }
             catch (e) { doc.save(archivo); }
         }
