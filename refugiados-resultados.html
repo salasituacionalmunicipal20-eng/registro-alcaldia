@@ -103,7 +103,7 @@
                     <div class="stat"><div class="num" id="stAcomp">—</div><div class="lbl">Acompañantes (grupo familiar)</div></div>
                     <div class="stat"><div class="num" id="stVuln">—</div><div class="lbl">Reportes con vulnerabilidad</div></div>
                     <div class="stat b"><div class="num" id="stAnon">—</div><div class="lbl">Reportes anónimos</div></div>
-                    <div class="stat"><div class="num" id="stNinos">—</div><div class="lbl">Niños/as (menores de 18)</div></div>
+                    <div class="stat"><div class="num" id="stNinos">—</div><div class="lbl">Niños/as (menores de 18)</div><div id="stNinosSexo" class="lbl" style="margin-top:3px;font-weight:800;">—</div></div>
                     <div class="stat b"><div class="num" id="stBebes">—</div><div class="lbl">Bebés / recién nacidos (0–1 año)</div></div>
                     <div class="stat"><div class="num" id="stMayores">—</div><div class="lbl">Adultos mayores (60+)</div></div>
                 </div>
@@ -301,20 +301,24 @@
             $('stAnon').textContent = REGS.filter(r => r.reporta_anonimo).length;
             // Edades: refugiado principal (de su fecha) + cada acompañante (su edad). KPIs + tabulación por grupos.
             let _ninos = 0, _bebes = 0, _mayores = 0, _sinEdad = 0;
+            let _ninasF = 0, _ninosM = 0, _ninosX = 0; // desglose de menores de 18 por sexo
             const _tab = GRUPOS_EDAD.map(() => 0);
             const edadValida = (x) => x != null && x !== '' && !isNaN(Number(x));
             REGS.forEach(r => {
-                const edades = [];
+                const personas = [];
                 const eRef = edadDe(r.fecha_nacimiento);
-                if (eRef !== '') edades.push(eRef); else _sinEdad++;
-                toArr(r.grupo_familiar).forEach(g => { if (edadValida(g.edad)) edades.push(Number(g.edad)); else _sinEdad++; });
-                edades.forEach(e => {
-                    if (e <= 1) _bebes++; if (e < 18) _ninos++; if (e >= 60) _mayores++;
+                if (eRef !== '') personas.push({ e: eRef, sx: r.sexo }); else _sinEdad++;
+                toArr(r.grupo_familiar).forEach(g => { if (edadValida(g.edad)) personas.push({ e: Number(g.edad), sx: g.sexo }); else _sinEdad++; });
+                personas.forEach(({ e, sx }) => {
+                    if (e <= 1) _bebes++;
+                    if (e < 18) { _ninos++; if (sx === 'F') _ninasF++; else if (sx === 'M') _ninosM++; else _ninosX++; }
+                    if (e >= 60) _mayores++;
                     const gi = GRUPOS_EDAD.findIndex(gr => gr.test(e));
                     if (gi >= 0) _tab[gi]++;
                 });
             });
             $('stNinos').textContent = _ninos;
+            $('stNinosSexo').innerHTML = `<span style="color:#be185d;">♀ ${_ninasF} niña(s)</span> · <span style="color:#1d4ed8;">♂ ${_ninosM} niño(s)</span>` + (_ninosX ? ` · <span style="color:#94a3b8;">${_ninosX} sin sexo</span>` : '');
             $('stBebes').textContent = _bebes;
             $('stMayores').textContent = _mayores;
             const totTab = _tab.reduce((a, b) => a + b, 0);
