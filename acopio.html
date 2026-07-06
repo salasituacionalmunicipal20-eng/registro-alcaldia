@@ -114,6 +114,7 @@
                 <div>
                     <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
                     <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
+                    <button id="btnPdfCat" class="btn-exp" style="background:#7c3aed;">📑 PDF por categoría</button>
                 </div>
                 <div class="filtros">
                     <div><label>Buscar artículo</label><input id="fBuscar" type="search" placeholder="Nombre del artículo…" autocomplete="off" /></div>
@@ -590,6 +591,67 @@
                 }
             });
             doc.save('acopio_inventario_' + new Date().toISOString().slice(0,10) + '.pdf');
+        });
+
+        // ---- PDF DETALLADO POR CATEGORIA (una categoria por pagina) ----
+        $('btnPdfCat').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const inv = inventario(); // TODO el inventario, sin filtros (reporte completo)
+            if (!inv.length) { alert('Aún no hay inventario para exportar.'); return; }
+
+            // Agrupar por categoría y ordenar categorías (primero el orden oficial, luego cualquier extra)
+            const grupos = {};
+            inv.forEach(it => { const c = (it.categoria || '').trim() || 'Sin categoría'; (grupos[c] = grupos[c] || []).push(it); });
+            const orden = [...CATEGORIAS, ...Object.keys(grupos).filter(c => !CATEGORIAS.includes(c))];
+            const cats = orden.filter(c => grupos[c] && grupos[c].length);
+
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const totalGenX = inv.reduce((s, it) => s + it.stock, 0);
+
+            cats.forEach((cat, ci) => {
+                if (ci > 0) doc.addPage();
+                const items = grupos[cat].slice().sort((a, b) => a.articulo.localeCompare(b.articulo, 'es'));
+                const totE = items.reduce((s, it) => s + it.entradas, 0);
+                const totS = items.reduce((s, it) => s + it.salidas, 0);
+                const totX = items.reduce((s, it) => s + it.stock, 0);
+
+                jsPDF.API.autoTable.call(doc, {
+                    head: [['Articulo', 'Presentacion', 'Unidad', 'Entradas', 'Salidas', 'Existencia']],
+                    body: items.map(it => [
+                        _safePdf(it.articulo), _safePdf(it.presentacion || '-'), _safePdf(it.unidad || '-'),
+                        nfmt(it.entradas), nfmt(it.salidas),
+                        { content: nfmt(it.stock), styles: { fontStyle: 'bold', textColor: it.stock > 0 ? [22, 163, 74] : [185, 28, 28] } }
+                    ]),
+                    foot: [[
+                        { content: 'TOTAL DE LA CATEGORIA (suma de cantidades)', colSpan: 3, styles: { halign: 'right' } },
+                        nfmt(totE), nfmt(totS),
+                        { content: nfmt(totX), styles: { textColor: totX > 0 ? [22, 163, 74] : [185, 28, 28] } }
+                    ]],
+                    startY: 69, margin: { top: 69, bottom: 16, left: 14, right: 14 }, theme: 'grid', showFoot: 'lastPage',
+                    styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.8, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'middle', overflow: 'linebreak' },
+                    headStyles: { fillColor: [10, 35, 81], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9.5, halign: 'center' },
+                    footStyles: { fillColor: [224, 231, 245], textColor: [10, 35, 81], fontStyle: 'bold', fontSize: 9.5, halign: 'right' },
+                    alternateRowStyles: { fillColor: [248, 250, 252] },
+                    columnStyles: { 0: { cellWidth: 60 }, 1: { cellWidth: 34 }, 2: { cellWidth: 23 }, 3: { cellWidth: 22, halign: 'right' }, 4: { cellWidth: 22, halign: 'right' }, 5: { cellWidth: 25, halign: 'right', fontStyle: 'bold' } },
+                    didDrawPage: () => {
+                        dibujarHeaderPDF(doc, { titulo: 'Centro de Acopio — Inventario por categoría', subtitulo: _safePdf('Desglose de entradas, salidas y existencia') });
+                        dibujarFooterPDF(doc);
+                        // Banner de la categoría
+                        const pw = doc.internal.pageSize.getWidth();
+                        doc.setFillColor(22, 53, 107);
+                        doc.roundedRect(14, 55, pw - 28, 11, 1.5, 1.5, 'F');
+                        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+                        doc.text(_safePdf('CATEGORIA: ' + cat.toUpperCase()), 18, 62.5);
+                        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(244, 194, 13);
+                        doc.text(_safePdf(items.length + ' articulo(s)  ·  Entradas ' + nfmt(totE) + '  ·  Salidas ' + nfmt(totS) + '  ·  Existencia ' + nfmt(totX)), pw - 18, 62.5, { align: 'right' });
+                        doc.setTextColor(0, 0, 0); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+                    }
+                });
+            });
+
+            doc.save('acopio_por_categoria_' + new Date().toISOString().slice(0, 10) + '.pdf');
         });
     </script>
 </body>
