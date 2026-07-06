@@ -116,8 +116,8 @@
                 <h2>Tabulación por edades</h2>
                 <div style="overflow-x:auto;">
                     <table>
-                        <thead><tr><th>Grupo etario</th><th>Rango</th><th style="text-align:center;">Personas</th></tr></thead>
-                        <tbody id="tbodyEdades"><tr><td colspan="3" class="estado-box">—</td></tr></tbody>
+                        <thead><tr><th>Grupo etario</th><th>Rango</th><th style="text-align:center;color:#be185d;">♀ Fem.</th><th style="text-align:center;color:#1d4ed8;">♂ Masc.</th><th style="text-align:center;">Sin dato</th><th style="text-align:center;">Personas</th></tr></thead>
+                        <tbody id="tbodyEdades"><tr><td colspan="6" class="estado-box">—</td></tr></tbody>
                     </table>
                 </div>
                 <div class="hint" style="font-size:12px;color:#64748b;margin-top:8px;">Cuenta al refugiado principal (según su fecha de nacimiento) y a cada acompañante del grupo familiar con edad registrada.</div>
@@ -302,7 +302,7 @@
             // Edades: refugiado principal (de su fecha) + cada acompañante (su edad). KPIs + tabulación por grupos.
             let _ninos = 0, _bebes = 0, _mayores = 0, _sinEdad = 0;
             let _ninasF = 0, _ninosM = 0, _ninosX = 0; // desglose de menores de 18 por sexo
-            const _tab = GRUPOS_EDAD.map(() => 0);
+            const _tab = GRUPOS_EDAD.map(() => 0), _tabF = GRUPOS_EDAD.map(() => 0), _tabM = GRUPOS_EDAD.map(() => 0), _tabX = GRUPOS_EDAD.map(() => 0);
             const edadValida = (x) => x != null && x !== '' && !isNaN(Number(x));
             REGS.forEach(r => {
                 const personas = [];
@@ -314,7 +314,7 @@
                     if (e < 18) { _ninos++; if (sx === 'F') _ninasF++; else if (sx === 'M') _ninosM++; else _ninosX++; }
                     if (e >= 60) _mayores++;
                     const gi = GRUPOS_EDAD.findIndex(gr => gr.test(e));
-                    if (gi >= 0) _tab[gi]++;
+                    if (gi >= 0) { _tab[gi]++; if (sx === 'F') _tabF[gi]++; else if (sx === 'M') _tabM[gi]++; else _tabX[gi]++; }
                 });
             });
             $('stNinos').textContent = _ninos;
@@ -322,9 +322,10 @@
             $('stBebes').textContent = _bebes;
             $('stMayores').textContent = _mayores;
             const totTab = _tab.reduce((a, b) => a + b, 0);
-            $('tbodyEdades').innerHTML = GRUPOS_EDAD.map((gr, i) => `<tr><td>${esc(gr.label)}</td><td style="color:#64748b;">${esc(gr.rango)}</td><td style="text-align:center;font-weight:800;color:#7f1d1d;">${_tab[i]}</td></tr>`).join('')
-                + `<tr style="background:#f8fafc;"><td colspan="2" style="font-weight:800;">Total con edad registrada</td><td style="text-align:center;font-weight:800;">${totTab}</td></tr>`
-                + (_sinEdad ? `<tr><td colspan="2" style="color:#94a3b8;">Sin edad registrada</td><td style="text-align:center;color:#94a3b8;">${_sinEdad}</td></tr>` : '');
+            const totF = _tabF.reduce((a, b) => a + b, 0), totM = _tabM.reduce((a, b) => a + b, 0), totX = _tabX.reduce((a, b) => a + b, 0);
+            $('tbodyEdades').innerHTML = GRUPOS_EDAD.map((gr, i) => `<tr><td>${esc(gr.label)}</td><td style="color:#64748b;">${esc(gr.rango)}</td><td style="text-align:center;font-weight:700;color:#be185d;">${_tabF[i]}</td><td style="text-align:center;font-weight:700;color:#1d4ed8;">${_tabM[i]}</td><td style="text-align:center;color:#94a3b8;">${_tabX[i]}</td><td style="text-align:center;font-weight:800;color:#7f1d1d;">${_tab[i]}</td></tr>`).join('')
+                + `<tr style="background:#f8fafc;"><td colspan="2" style="font-weight:800;">Total con edad registrada</td><td style="text-align:center;font-weight:800;color:#be185d;">${totF}</td><td style="text-align:center;font-weight:800;color:#1d4ed8;">${totM}</td><td style="text-align:center;font-weight:800;color:#94a3b8;">${totX}</td><td style="text-align:center;font-weight:800;">${totTab}</td></tr>`
+                + (_sinEdad ? `<tr><td colspan="5" style="color:#94a3b8;">Sin edad registrada</td><td style="text-align:center;color:#94a3b8;">${_sinEdad}</td></tr>` : '');
 
             // Necesidades clave (Medicinas, Ropa) por sexo del refugiado principal
             const _nec = {}; NEC_CLAVE.forEach(n => _nec[n] = { t: 0, F: 0, M: 0, X: 0 });
@@ -633,14 +634,14 @@
             const vuln = REGS.filter(r => toArr(r.vulnerabilidad).length > 0).length;
             const anon = REGS.filter(r => r.reporta_anonimo).length;
             let ninos = 0, bebes = 0, mayores = 0, sinEdad = 0;
-            const tab = GRUPOS_EDAD.map(() => 0);
+            const tab = GRUPOS_EDAD.map(() => 0), tabF = GRUPOS_EDAD.map(() => 0), tabM = GRUPOS_EDAD.map(() => 0), tabX = GRUPOS_EDAD.map(() => 0);
             const edv = (x) => x != null && x !== '' && !isNaN(Number(x));
             REGS.forEach(r => {
-                const edades = [];
+                const ps = [];
                 const eRef = edadDe(r.fecha_nacimiento);
-                if (eRef !== '') edades.push(eRef); else sinEdad++;
-                toArr(r.grupo_familiar).forEach(g => { if (edv(g.edad)) edades.push(Number(g.edad)); else sinEdad++; });
-                edades.forEach(e => { if (e <= 1) bebes++; if (e < 18) ninos++; if (e >= 60) mayores++; const gi = GRUPOS_EDAD.findIndex(gr => gr.test(e)); if (gi >= 0) tab[gi]++; });
+                if (eRef !== '') ps.push({ e: eRef, sx: r.sexo }); else sinEdad++;
+                toArr(r.grupo_familiar).forEach(g => { if (edv(g.edad)) ps.push({ e: Number(g.edad), sx: g.sexo }); else sinEdad++; });
+                ps.forEach(({ e, sx }) => { if (e <= 1) bebes++; if (e < 18) ninos++; if (e >= 60) mayores++; const gi = GRUPOS_EDAD.findIndex(gr => gr.test(e)); if (gi >= 0) { tab[gi]++; if (sx === 'F') tabF[gi]++; else if (sx === 'M') tabM[gi]++; else tabX[gi]++; } });
             });
             const nec = {}; NEC_CLAVE.forEach(n => nec[n] = { t: 0, F: 0, M: 0, X: 0 });
             REGS.forEach(r => { const ns = toArr(r.necesidades); NEC_CLAVE.forEach(n => { if (ns.includes(n)) { nec[n].t++; if (r.sexo === 'F') nec[n].F++; else if (r.sexo === 'M') nec[n].M++; else nec[n].X++; } }); });
@@ -669,11 +670,11 @@
             });
             jsPDF.API.autoTable.call(doc, {
                 startY: doc.lastAutoTable.finalY + 6, margin: { top: 55, bottom: 16, left: 14, right: 14 },
-                head: [[_s('Grupo etario'), _s('Rango'), _s('Personas')]],
-                body: GRUPOS_EDAD.map((gr, i) => [_s(gr.label), _s(gr.rango), String(tab[i])]).concat([[_s('Total con edad registrada'), '', String(tab.reduce((a, b) => a + b, 0))], [_s('Sin edad registrada'), '', String(sinEdad)]]),
+                head: [[_s('Grupo etario'), _s('Rango'), _s('Fem.'), _s('Masc.'), _s('Sin dato'), _s('Personas')]],
+                body: GRUPOS_EDAD.map((gr, i) => [_s(gr.label), _s(gr.rango), String(tabF[i]), String(tabM[i]), String(tabX[i]), String(tab[i])]).concat([[_s('Total con edad registrada'), '', String(tabF.reduce((a, b) => a + b, 0)), String(tabM.reduce((a, b) => a + b, 0)), String(tabX.reduce((a, b) => a + b, 0)), String(tab.reduce((a, b) => a + b, 0))], [_s('Sin edad registrada'), '', '', '', '', String(sinEdad)]]),
                 theme: 'grid', styles: baseSty,
-                headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold' },
-                columnStyles: { 0: { cellWidth: 112 }, 1: { cellWidth: 46 }, 2: { cellWidth: 26, halign: 'right', fontStyle: 'bold' } },
+                headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', halign: 'center' },
+                columnStyles: { 0: { cellWidth: 68 }, 1: { cellWidth: 32 }, 2: { cellWidth: 22, halign: 'center' }, 3: { cellWidth: 22, halign: 'center' }, 4: { cellWidth: 20, halign: 'center' }, 5: { cellWidth: 20, halign: 'right', fontStyle: 'bold' } },
                 didDrawPage: drawHF
             });
             jsPDF.API.autoTable.call(doc, {
