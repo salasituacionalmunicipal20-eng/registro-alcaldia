@@ -28,7 +28,7 @@
         @keyframes pulso { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
         label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
         input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
-        .filtros { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; }
+        .filtros { display: grid; grid-template-columns: minmax(160px, 2fr) repeat(4, minmax(120px, 1fr)); gap: 12px; }
         @media (max-width: 760px) { .filtros { grid-template-columns: 1fr; } }
         table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
         th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
@@ -37,6 +37,10 @@
         .btn-wa { background: #25D366; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; text-decoration: none; white-space: nowrap; }
         .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
         .btn-print { background: #b91c1c; color: #fff; border: none; border-radius: 6px; padding: 6px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .check-atencion { display: inline-flex; align-items: center; gap: 6px; margin: 0; text-transform: none; letter-spacing: 0; font-size: 12.5px; font-weight: 800; color: #475569; white-space: nowrap; }
+        .check-atencion input { width: auto; accent-color: #16a34a; }
+        .check-atencion .ok { color: #166534; }
+        .check-atencion .warn { color: #92400e; }
         .tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #fee2e2; color: #991b1b; margin: 1px 2px; }
         .tag.n { background: #dbeafe; color: #1e3a8a; }
         .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 10px 0; color: #fff; }
@@ -97,6 +101,8 @@
                 <div class="stats">
                     <div class="stat"><div class="num" id="stReportes">—</div><div class="lbl">Familias registradas</div></div>
                     <div class="stat b"><div class="num" id="stFamiliasUnicas">—</div><div class="lbl">Familias únicas (por cédula)</div></div>
+                    <div class="stat b"><div class="num" id="stAtendidas">—</div><div class="lbl">Familias atendidas</div></div>
+                    <div class="stat"><div class="num" id="stPendientes">—</div><div class="lbl">Familias no atendidas</div></div>
                     <div class="stat"><div class="num" id="stJefesRep">—</div><div class="lbl">Jefes repetidos (misma cédula)</div></div>
                     <div class="stat"><div class="num" id="stPersonas">—</div><div class="lbl">Personas (con grupo familiar)</div></div>
                     <div class="stat b"><div class="num" id="stTitulares">—</div><div class="lbl">Titulares (1 por familia)</div></div>
@@ -146,14 +152,15 @@
                     <div><label>Procedencia</label><select id="fProc"><option value="">Todas</option></select></div>
                     <div><label>Comuna (aquí)</label><select id="fComuna"><option value="">Todas</option></select></div>
                     <div><label>Necesidad</label><select id="fNec"><option value="">Todas</option></select></div>
+                    <div><label>Atención</label><select id="fAtencion"><option value="">Todas</option><option value="atendidas">Atendidas</option><option value="no_atendidas">No atendidas</option></select></div>
                 </div>
                 <div style="overflow-x:auto; margin-top:14px;">
                     <table>
                         <thead><tr>
                             <th>Nombre</th><th>Cédula</th><th style="text-align:center;">Sexo</th><th>Procedencia</th><th>Dónde se queda</th>
-                            <th style="text-align:center;">Personas</th><th>Vulnerabilidad</th><th>Teléfono</th><th>Fecha</th><th></th>
+                            <th style="text-align:center;">Personas</th><th>Vulnerabilidad</th><th>Atención</th><th>Teléfono</th><th>Fecha</th><th></th>
                         </tr></thead>
-                        <tbody id="tbody"><tr><td colspan="10" class="estado-box">Cargando…</td></tr></tbody>
+                        <tbody id="tbody"><tr><td colspan="11" class="estado-box">Cargando…</td></tr></tbody>
                     </table>
                 </div>
                 <div class="paginacion" id="paginacion"></div>
@@ -166,7 +173,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, onValue, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, child, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
 
         const firebaseConfig = {
@@ -216,6 +223,12 @@
             if (d.length === 11 && d.startsWith('0')) return { e164: '58' + d.slice(1), ok: true };
             if (d.length === 10 && d.startsWith('4')) return { e164: '58' + d, ok: true };
             return { e164: d, ok: false };
+        }
+        function estaAtendida(r) { return !!(r && r.atendido === true); }
+        function estadoAtencionTxt(r) { return estaAtendida(r) ? 'Atendido' : 'No atendido'; }
+        function htmlAtencion(r) {
+            const atendida = estaAtendida(r);
+            return `<label class="check-atencion"><input class="chk-atencion" type="checkbox" data-id="${esc(r.id)}" ${atendida ? 'checked' : ''} /><span class="${atendida ? 'ok' : 'warn'}">${atendida ? 'Atendido' : 'No atendido'}</span></label>`;
         }
 
         let REGS = [];        // [{id, ...}]
@@ -269,11 +282,13 @@
 
         function filtrados() {
             const q = ($('fBuscar').value || '').trim().toLowerCase();
-            const fp = $('fProc').value, fc = $('fComuna').value, fn = $('fNec').value;
+            const fp = $('fProc').value, fc = $('fComuna').value, fn = $('fNec').value, fa = $('fAtencion').value;
             return REGS.filter(r => {
                 if (fp && r.procedencia !== fp) return false;
                 if (fc && r.comunidad_nombre !== fc) return false;
                 if (fn && !toArr(r.necesidades).includes(fn)) return false;
+                if (fa === 'atendidas' && !estaAtendida(r)) return false;
+                if (fa === 'no_atendidas' && estaAtendida(r)) return false;
                 if (q) { const blob = `${r.nombres||''} ${r.apellidos||''} ${r.cedula||''} ${r.direccion||''} ${r.telefono||''}`.toLowerCase(); if (!blob.includes(q)) return false; }
                 return true;
             });
@@ -288,6 +303,9 @@
             const _cedSet = new Set();
             REGS.forEach(r => { const c = soloDig(r.cedula); if (c) _cedSet.add((r.nacionalidad || 'V') + c); });
             $('stFamiliasUnicas').textContent = _cedSet.size;
+            const _atendidas = REGS.filter(estaAtendida).length;
+            $('stAtendidas').textContent = _atendidas;
+            $('stPendientes').textContent = REGS.length - _atendidas;
             // Jefes de familia con cédula repetida (misma cédula usada en 2+ familias)
             const _cedMap = new Map();
             REGS.forEach(r => { const c = soloDig(r.cedula); if (!c) return; const k = (r.nacionalidad || 'V') + c; if (!_cedMap.has(k)) _cedMap.set(k, []); _cedMap.get(k).push(r); });
@@ -343,7 +361,7 @@
             if (pagina > totalPag) pagina = totalPag;
             const ini = (pagina - 1) * TAM, slice = lista.slice(ini, ini + TAM);
             const tb = $('tbody');
-            if (total === 0) { tb.innerHTML = `<tr><td colspan="10" class="estado-box">Sin reportes con estos filtros.</td></tr>`; $('paginacion').innerHTML = ''; return; }
+            if (total === 0) { tb.innerHTML = `<tr><td colspan="11" class="estado-box">Sin reportes con estos filtros.</td></tr>`; $('paginacion').innerHTML = ''; return; }
 
             tb.innerHTML = slice.map(r => {
                 const tel = normalizarTel(r.telefono);
@@ -359,6 +377,7 @@
                     <td>${donde}</td>
                     <td style="text-align:center;font-weight:800;">${esc(r.total_personas || (1 + toArr(r.grupo_familiar).length))}</td>
                     <td>${vuln}</td>
+                    <td>${htmlAtencion(r)}</td>
                     <td>${wa}</td>
                     <td>${esc(fecha)}</td>
                     <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-print" data-id="${esc(r.id)}">🖨️ Imprimir</button></td>
@@ -366,6 +385,7 @@
             }).join('');
 
             tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+            tb.querySelectorAll('input.chk-atencion').forEach(chk => chk.addEventListener('change', () => cambiarAtencion(chk.dataset.id, chk.checked, chk)));
             tb.querySelectorAll('button.btn-print').forEach(b => b.addEventListener('click', () => imprimirUno(b.dataset.id)));
 
             const desde = ini + 1, hasta = Math.min(ini + TAM, total);
@@ -373,6 +393,18 @@
             const p = $('pgP'), n = $('pgN');
             if (p) p.addEventListener('click', () => { if (pagina > 1) { pagina--; render(); } });
             if (n) n.addEventListener('click', () => { if (pagina < totalPag) { pagina++; render(); } });
+        }
+
+        async function cambiarAtencion(id, atendido, ctrl) {
+            if (ctrl) ctrl.disabled = true;
+            try {
+                await update(ref(database, 'refugiados/' + id), { atendido });
+            } catch (e) {
+                alert('No se pudo guardar el estado de atención. Verifica la conexión y que las reglas de Firebase estén desplegadas.');
+                if (ctrl) ctrl.checked = !atendido;
+            } finally {
+                if (ctrl) ctrl.disabled = false;
+            }
         }
 
         function fila(k, val) { return `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val || '—')}</span></div>`; }
@@ -390,6 +422,7 @@
                 ${fila('Cédula', r.cedula)}
                 ${fila('Edad', edadDe(r.fecha_nacimiento) || '—')}${fila('Sexo', r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '—')}
                 ${fila('Teléfono', r.telefono)}
+                ${fila('Atención', estadoAtencionTxt(r))}
                 ${fila('Procedencia (estado)', r.procedencia)}${fila('Municipio de origen', r.municipio_origen)}
                 ${fila('Dirección', r.direccion)}${fila('Centro médico / refugio', r.direccion_centro_medico)}
                 ${fila('Parroquia / Comuna', `${r.parroquia||'—'} / ${r.circuito||'—'}`)}
@@ -478,7 +511,7 @@
         $('btnVerRep').addEventListener('click', verRepetidos);
 
         $('fNec').innerHTML = '<option value="">Todas</option>' + NEC_FILTRO.map(n => `<option value="${esc(n)}">${n === 'Medicinas' ? 'Medicamentos / Medicinas' : esc(n)}</option>`).join('');
-        ['fBuscar','fProc','fComuna','fNec'].forEach(id => { $(id).addEventListener('input', () => { pagina = 1; render(); }); $(id).addEventListener('change', () => { pagina = 1; render(); }); });
+        ['fBuscar','fProc','fComuna','fNec','fAtencion'].forEach(id => { $(id).addEventListener('input', () => { pagina = 1; render(); }); $(id).addEventListener('change', () => { pagina = 1; render(); }); });
 
         // ---- Sanitizador PDF (sin escapes unicode problemáticos) ----
         function _safePdf(s) {
@@ -502,6 +535,8 @@
         // ---- Excel: 2 hojas (Reportes + Todas las personas) ----
         $('btnExcel').addEventListener('click', () => {
             if (typeof XLSX === 'undefined') { alert('SheetJS no cargó.'); return; }
+            const listaExcel = filtrados();
+            if (!listaExcel.length) { alert('No hay reportes para exportar con estos filtros.'); return; }
             const ahora = new Date(); const fechaLarga = ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' });
             const NAVY='0A2351', ROJO='B91C1C', ZEBRA='FEF2F2', TEXTO='0F172A', GRIS='64748B';
             const thin = { style:'thin', color:{rgb:'E5C5C5'} }, borde = { top:thin,bottom:thin,left:thin,right:thin };
@@ -519,25 +554,26 @@
                 ws['!autofilter']={ref:`A3:${XLSX.utils.encode_col(header.length-1)}${data.length}`};
                 return ws;
             };
-            const hdr1 = ['Fecha','Nombre','Apellidos','Cédula','Edad','Sexo','Teléfono','Procedencia','Dirección','Parroquia','Comuna','Comunidad','Personas','Vulnerabilidad','Necesidades','Patología','Observaciones','Reporta'];
-            const f1 = REGS.map(r => [
+            const hdr1 = ['Fecha','Nombre','Apellidos','Cédula','Edad','Sexo','Teléfono','Procedencia','Dirección','Parroquia','Comuna','Comunidad','Personas','Atención','Vulnerabilidad','Necesidades','Patología','Observaciones','Reporta'];
+            const f1 = listaExcel.map(r => [
                 r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '',
                 r.nombres||'', r.apellidos||'', String(r.cedula||''), String(edadDe(r.fecha_nacimiento)||''),
                 r.sexo||'', String(r.telefono||''), (r.procedencia||'') + (r.municipio_origen?(' / '+r.municipio_origen):''), r.direccion||'', r.parroquia||'', r.circuito||'', r.comunidad_nombre||'',
                 String(r.total_personas || (1 + toArr(r.grupo_familiar).length)),
+                estadoAtencionTxt(r),
                 toArr(r.vulnerabilidad).join(', '), toArr(r.necesidades).join(', '), r.patologia||'', r.observacion||'',
                 (r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Anónimo' : ((r.reporta_tipo === 'familiar' ? ('Familiar' + (r.reporta_parentesco ? ' ('+r.reporta_parentesco+')' : '') + ': ') : '') + (r.reporta_nombre||'') + (r.reporta_ubch?(' / '+r.reporta_ubch):''))
             ]);
             const hdr2 = ['Rol','Nombre','Apellidos','Cédula','Edad','Sexo','Pertenece a','Procedencia','Dónde se queda'];
             const f2 = [];
-            REGS.forEach(r => {
+            listaExcel.forEach(r => {
                 const ref = `${r.nombres||''} ${r.apellidos||''}`.trim();
                 const donde = `${r.direccion||''}${r.comunidad_nombre?(' ('+r.comunidad_nombre+')'):''}`;
                 f2.push(['Principal', r.nombres||'', r.apellidos||'', String(r.cedula||''), String(edadDe(r.fecha_nacimiento)||''), r.sexo||'', ref, (r.procedencia||'') + (r.municipio_origen?(' / '+r.municipio_origen):''), donde]);
                 toArr(r.grupo_familiar).forEach(g => f2.push(['Acompañante', g.nombres||'', g.apellidos||'', String(g.cedula||''), String(g.edad||''), g.sexo||'', ref, (r.procedencia||'') + (r.municipio_origen?(' / '+r.municipio_origen):''), donde]));
             });
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — REPORTES', hdr1, f1, [20,18,18,12,7,7,14,22,30,16,16,18,9,24,24,24,30,24]), 'Reportes');
+            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — REPORTES', hdr1, f1, [20,18,18,12,7,7,14,22,30,16,16,18,9,14,24,24,24,30,24]), 'Reportes');
             XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — TODAS LAS PERSONAS', hdr2, f2, [13,18,18,12,7,7,24,18,34]), 'Todas las personas');
             XLSX.writeFile(wb, `refugiados_${ahora.toISOString().slice(0,10)}.xlsx`);
         });
@@ -556,6 +592,7 @@
                 ['Cédula', String(r.cedula || '-')],
                 ['Edad / Sexo', (edad !== '' ? edad + ' años' : '-') + ' / ' + (r.sexo === 'F' ? 'Femenino' : r.sexo === 'M' ? 'Masculino' : '-')],
                 ['Teléfono', r.telefono || '-'],
+                ['Estado de atención', estadoAtencionTxt(r)],
                 ['Procedencia', (r.procedencia || '-') + (r.municipio_origen ? (' / ' + r.municipio_origen) : '')],
                 ['Dirección', r.direccion || '-'],
                 ['Centro médico / refugio', r.direccion_centro_medico || '-'],
@@ -631,6 +668,7 @@
             const personas = REGS.reduce((s, r) => s + (Number(r.total_personas) || (1 + toArr(r.grupo_familiar).length)), 0);
             const cedSet = new Set();
             REGS.forEach(r => { const c = soloDig(r.cedula); if (c) cedSet.add((r.nacionalidad || 'V') + c); });
+            const atendidas = REGS.filter(estaAtendida).length;
             const vuln = REGS.filter(r => toArr(r.vulnerabilidad).length > 0).length;
             const anon = REGS.filter(r => r.reporta_anonimo).length;
             let ninos = 0, bebes = 0, mayores = 0, sinEdad = 0;
@@ -657,6 +695,8 @@
                     ['Personas totales (con grupo familiar)', String(personas)],
                     ['   - Titulares (1 por familia)', String(REGS.length)],
                     ['   - Acompañantes (grupo familiar)', String(personas - REGS.length)],
+                    ['Familias atendidas', String(atendidas)],
+                    ['Familias no atendidas', String(REGS.length - atendidas)],
                     ['Reportes con vulnerabilidad', String(vuln)],
                     ['Reportes anónimos', String(anon)],
                     ['Niños/as (menores de 18)', String(ninos)],
