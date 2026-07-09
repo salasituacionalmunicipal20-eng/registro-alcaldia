@@ -101,6 +101,7 @@
                     <div class="stat"><div class="num" id="stPersonas">—</div><div class="lbl">Personas totales</div></div>
                     <div class="stat"><div class="num" id="stRelacion">—</div><div class="lbl">Relación con el afectado</div><div class="sub" id="stRelacionSub">—</div></div>
                     <div class="stat"><div class="num" id="stPrioritaria" style="color:#b45309;">—</div><div class="lbl">⭐ Atención prioritaria</div><div class="sub" id="stPrioritariaSub">—</div></div>
+                    <div class="stat"><div class="num" id="stAtendidas" style="color:#15803d;">—</div><div class="lbl">✅ Familias atendidas</div><div class="sub" id="stAtendidasSub">—</div></div>
                 </div>
             </div>
 
@@ -118,6 +119,7 @@
                     <div><label>Tipo de vivienda</label><select id="fTipoViv"><option value="">Todas</option><option>Casa</option><option>Edificio</option></select></div>
                     <div><label>Situación vivienda origen</label><select id="fVivienda"><option value="">Todas</option><option>COLAPSO ESTRUCTURAL</option><option>PELIGRO ALEDAÑO</option><option>ESPERA INSPECCIÓN</option><option>OTROS</option></select></div>
                     <div><label>Estado de procedencia</label><select id="fEstadoProc"><option value="">Todos</option></select></div>
+                    <div><label>Atención de la familia</label><select id="fAtendida"><option value="">Todas</option><option value="no">⏳ No atendidas</option><option value="si">✅ Atendidas</option></select></div>
                     <div><label>Atención prioritaria</label><select id="fPrioritaria"><option value="">Todos</option><option value="si">Con caso prioritario</option><option value="no">Sin caso prioritario</option></select></div>
                     <div><label>Estado de atención</label><select id="fEstadoAtencion"><option value="">Todos</option><option>Pendiente</option><option>En atención</option><option>Atendido</option></select></div>
                     <div><label>Necesidad</label><select id="fNecesidad"><option value="">Todas</option><option>Alimentos</option><option>Agua</option><option>Medicinas</option><option>Atención médica</option><option>Colchones / cobijas</option><option>Ropa</option><option>Artículos de higiene</option><option>Otro</option></select></div>
@@ -128,8 +130,8 @@
                 <div style="font-size:12.5px;color:#64748b;margin-top:8px;" id="filtroInfo"></div>
                 <div style="overflow-x:auto; margin-top:14px;">
                     <table>
-                        <thead><tr><th>Nº</th><th>Responsable / hogar</th><th>Relación</th><th>Ubicación (Charallave)</th><th>Tipo</th><th>Procedencia</th><th style="text-align:center;">Jefes</th><th style="text-align:center;">Miemb.</th><th style="text-align:center;">Personas</th><th>Fecha</th><th></th></tr></thead>
-                        <tbody id="tbody"><tr><td colspan="11" class="estado-box">Cargando…</td></tr></tbody>
+                        <thead><tr><th>Nº</th><th>Responsable / hogar</th><th>Relación</th><th>Ubicación (Charallave)</th><th>Tipo</th><th>Procedencia</th><th style="text-align:center;">Jefes</th><th style="text-align:center;">Miemb.</th><th style="text-align:center;">Personas</th><th>Atención</th><th>Fecha</th><th></th></tr></thead>
+                        <tbody id="tbody"><tr><td colspan="12" class="estado-box">Cargando…</td></tr></tbody>
                     </table>
                 </div>
                 <div class="paginacion" id="paginacion"></div>
@@ -142,7 +144,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, child, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
 
         const firebaseConfig = {
@@ -228,10 +230,12 @@
             const q = ($('fBuscar').value || '').trim().toLowerCase();
             const fr = $('fRelacion').value, fp = $('fParroquia').value, fc = $('fComuna').value, ftv = $('fTipoViv').value;
             const fv = $('fVivienda').value, fe = $('fEstadoProc').value, fpr = $('fPrioritaria').value;
-            const fea = $('fEstadoAtencion').value, fnec = $('fNecesidad').value;
+            const fea = $('fEstadoAtencion').value, fnec = $('fNecesidad').value, fat = $('fAtendida').value;
             const fd = $('fDesde').value, fh = $('fHasta').value;
             return REGS.filter(r => {
                 const h = r.hogar || {}, resp = r.responsable || {}, js = jefesDe(r);
+                if (fat === 'si' && !r.atendida) return false;
+                if (fat === 'no' && r.atendida) return false;
                 if (fr && r.relacion !== fr) return false;
                 if (fp && h.parroquia !== fp) return false;
                 if (fc && h.comuna !== fc) return false;
@@ -266,13 +270,16 @@
             REGS.forEach(r => miembrosDe(r).forEach(m => { const t = (m.tipo || ''); if (t === 'Persona con Discapacidad') disc++; else if (t === 'Mujer Embarazada') emb++; else if (t === 'Adulto Mayor') may++; }));
             $('stPrioritaria').textContent = disc + emb + may;
             $('stPrioritariaSub').innerHTML = `♿ ${disc} · 🤰 ${emb} · 👵 ${may}`;
+            const atendidas = REGS.filter(r => r.atendida).length;
+            $('stAtendidas').textContent = atendidas;
+            $('stAtendidasSub').textContent = (REGS.length - atendidas) + ' no atendidas';
 
             const lista = filtrados();
             const totalPag = Math.max(1, Math.ceil(lista.length / TAM));
             if (pagina > totalPag) pagina = totalPag;
             $('filtroInfo').textContent = `${lista.length} de ${REGS.length} hogares solidarios` + (lista.length !== REGS.length ? ' (filtrados)' : '');
             const tb = $('tbody');
-            if (!lista.length) { tb.innerHTML = `<tr><td colspan="11" class="estado-box">${REGS.length ? 'Sin resultados con ese filtro.' : 'Aún no hay registros. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
+            if (!lista.length) { tb.innerHTML = `<tr><td colspan="12" class="estado-box">${REGS.length ? 'Sin resultados con ese filtro.' : 'Aún no hay registros. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
             const desde = (pagina - 1) * TAM;
             tb.innerHTML = lista.slice(desde, desde + TAM).map(r => {
                 const h = r.hogar || {}, resp = r.responsable || {}, js = jefesDe(r);
@@ -289,6 +296,9 @@
                     <td style="text-align:center;font-weight:800;">${js.length}</td>
                     <td style="text-align:center;font-weight:800;">${miembrosDe(r).length}</td>
                     <td style="text-align:center;font-weight:800;color:#0a6cb0;">${personasDe(r)}</td>
+                    <td style="white-space:nowrap;">${r.atendida
+                        ? '<span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;">✅ Atendida</span>'
+                        : '<span style="background:#fee2e2;color:#b91c1c;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;">⏳ No atendida</span>'}<br><button class="btn-atender" data-id="${esc(r.id)}" style="margin-top:5px;background:${r.atendida ? '#fef9c3' : '#16a34a'};color:${r.atendida ? '#854d0e' : '#fff'};border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">${r.atendida ? '↩️ Marcar no atendida' : '✅ Marcar atendida'}</button></td>
                     <td>${esc(fmtFecha(r.fecha_registro))}</td>
                     <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
                 </tr>`;
@@ -296,6 +306,7 @@
             tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
             tb.querySelectorAll('button.btn-print').forEach(b => b.addEventListener('click', () => imprimirUno(b.dataset.id)));
             tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.id)));
+            tb.querySelectorAll('button.btn-atender').forEach(b => b.addEventListener('click', () => toggleAtendida(b.dataset.id)));
 
             let botones = '';
             botones += `<button ${pagina <= 1 ? 'disabled' : ''} id="pgPrev">‹ Anterior</button>`;
@@ -307,8 +318,8 @@
             if (n) n.addEventListener('click', () => { if (pagina < totalPag) { pagina++; render(); } });
         }
 
-        ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fEstadoAtencion', 'fNecesidad', 'fDesde', 'fHasta'].forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
-        $('btnLimpiar').addEventListener('click', () => { ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fEstadoAtencion', 'fNecesidad', 'fDesde', 'fHasta'].forEach(id => $(id).value = ''); pagina = 1; render(); });
+        ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fEstadoAtencion', 'fNecesidad', 'fAtendida', 'fDesde', 'fHasta'].forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
+        $('btnLimpiar').addEventListener('click', () => { ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fEstadoAtencion', 'fNecesidad', 'fAtendida', 'fDesde', 'fHasta'].forEach(id => $(id).value = ''); pagina = 1; render(); });
 
         // ---- Detalle ----
         function fila(k, val) { return val != null && String(val).trim() !== '' && String(val) !== '—' ? `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val)}</span></div>` : ''; }
@@ -333,7 +344,7 @@
                 <br><span style="font-size:12.5px;color:#475569;">Situación actual: ${esc(j.situacion_actual || '—')} · Vivienda de origen: <b>${esc(vivTxt(j))}</b></span>${j.telefono ? '<br><span style="font-size:12.5px;color:#475569;">Tel: ' + esc(j.telefono) + '</span>' : ''}${lineasPersona(j)}</div>`).join('') || '<div class="fila"><span class="k">Sin jefes</span></div>';
             const miembros = miembrosDe(r).map((m, i) => `<div class="mini"><b>${i + 1}. ${esc(nombreResp(m))}</b> · ${m.cedula ? esc(cedDe(m)) : 'sin documento'} · ${esc(gen(m.sexo))}${m.fecha_nacimiento ? ' · ' + edadDe(m.fecha_nacimiento) + ' años' : ''}${m.tipo ? ' · <span style="color:#b45309;font-weight:700;">⭐ ' + esc(m.tipo) + '</span>' : ''}${lineasPersona(m)}</div>`).join('') || '<div class="fila"><span class="k">Sin miembros adicionales</span></div>';
             $('modal').innerHTML = `
-                <h3>🏠 Hogar Solidario ${esc(r.n_registro ? 'Nº ' + r.n_registro : '')}</h3>
+                <h3>🏠 Hogar Solidario ${esc(r.n_registro ? 'Nº ' + r.n_registro : '')} ${r.atendida ? '<span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:2px 10px;font-size:13px;font-weight:800;">✅ Atendida</span>' : '<span style="background:#fee2e2;color:#b91c1c;border-radius:20px;padding:2px 10px;font-size:13px;font-weight:800;">⏳ No atendida</span>'}</h3>
                 <div style="color:#64748b;font-size:13px;">Registrado el ${esc(fmtFecha(r.fecha_registro))} · ${personasDe(r)} persona(s)</div>
                 <h4>Relación y responsable</h4>
                 ${fila('Tipo de relación', r.relacion === 'Familiar' ? 'Familiar' + (r.que_familiar ? ' (' + r.que_familiar + ')' : '') : r.relacion)}
@@ -367,6 +378,13 @@
             try { await remove(ref(database, NODO + '/' + id)); } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
         }
 
+        async function toggleAtendida(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const nuevo = !r.atendida;
+            try { await update(ref(database, NODO + '/' + id), { atendida: nuevo, fecha_atendida: nuevo ? Date.now() : null }); }
+            catch (e) { alert('No se pudo actualizar el estado: ' + (e.message || e.code)); }
+        }
+
         // ---- Excel (3 hojas) ----
         function mkSheet(hdr, filas, anchos) {
             const ws = XLSX.utils.aoa_to_sheet([hdr, ...filas]);
@@ -378,9 +396,9 @@
         $('btnExcel').addEventListener('click', () => {
             const lista = filtrados();
             const wb = XLSX.utils.book_new();
-            const h1 = ['Nº', 'Fecha', 'Relación', 'Qué familiar', 'Responsable', 'Cédula resp.', 'Sexo resp.', 'Teléfono', 'Parroquia', 'Comuna', 'Consejo/comunidad', 'Dirección', 'Tipo vivienda', 'Lat', 'Lng', 'Jefes', 'Miembros', 'Personas'];
-            const f1 = lista.map(r => { const h = r.hogar || {}, o = r.responsable || {}; return [r.n_registro || '', fmtFecha(r.fecha_registro), r.relacion || '', r.que_familiar || '', nombreResp(o), cedDe(o), gen(o.sexo), o.telefono || '', h.parroquia || '', h.comuna || '', h.consejo_comunal || '', h.direccion || '', h.tipo_vivienda || '', h.lat || '', h.lng || '', jefesDe(r).length, miembrosDe(r).length, personasDe(r)]; });
-            XLSX.utils.book_append_sheet(wb, mkSheet(h1, f1, [6, 14, 16, 14, 26, 12, 10, 13, 16, 20, 22, 30, 12, 11, 11, 7, 8, 9]), 'Hogares solidarios');
+            const h1 = ['Nº', 'Atención', 'Fecha', 'Relación', 'Qué familiar', 'Responsable', 'Cédula resp.', 'Sexo resp.', 'Teléfono', 'Parroquia', 'Comuna', 'Consejo/comunidad', 'Dirección', 'Tipo vivienda', 'Lat', 'Lng', 'Jefes', 'Miembros', 'Personas'];
+            const f1 = lista.map(r => { const h = r.hogar || {}, o = r.responsable || {}; return [r.n_registro || '', r.atendida ? 'Atendida' : 'No atendida', fmtFecha(r.fecha_registro), r.relacion || '', r.que_familiar || '', nombreResp(o), cedDe(o), gen(o.sexo), o.telefono || '', h.parroquia || '', h.comuna || '', h.consejo_comunal || '', h.direccion || '', h.tipo_vivienda || '', h.lat || '', h.lng || '', jefesDe(r).length, miembrosDe(r).length, personasDe(r)]; });
+            XLSX.utils.book_append_sheet(wb, mkSheet(h1, f1, [6, 13, 14, 16, 14, 26, 12, 10, 13, 16, 20, 22, 30, 12, 11, 11, 7, 8, 9]), 'Hogares solidarios');
 
             const h2 = ['Nº hogar', 'Responsable', 'Jefe de familia', 'Cédula', 'Sexo', 'Edad', 'Teléfono', 'Procedencia estado', 'Procedencia municipio', 'Procedencia parroquia', 'Comuna procedencia', 'Situación actual', 'Situación vivienda origen', 'Estado de atención', 'Vulnerabilidad', 'Necesidades', 'Detalle necesidades', 'Patología / condición', 'Medicamentos', 'Talla camisa', 'Talla pantalón', 'Talla zapatos', 'Observaciones'];
             const f2 = [];
