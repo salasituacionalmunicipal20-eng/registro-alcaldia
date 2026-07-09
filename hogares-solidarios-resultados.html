@@ -366,7 +366,7 @@
 
             const h2 = ['Nº hogar', 'Responsable', 'Jefe de familia', 'Cédula', 'Sexo', 'Edad', 'Teléfono', 'Procedencia estado', 'Procedencia municipio', 'Procedencia parroquia', 'Comuna procedencia', 'Situación actual', 'Situación vivienda origen'];
             const f2 = [];
-            lista.forEach(r => { const o = r.responsable || {}; jefesDe(r).forEach(j => f2.push([r.n_registro || '', nombreResp(o), nombreResp(j), cedDe(j), gen(j.sexo), edadDe(j.fecha_nacimiento), j.telefono || '', j.proc_estado || '', j.proc_municipio || '', j.proc_parroquia || '', j.proc_comuna || '', j.situacion_actual || '', vivTxt(j)]); });
+            lista.forEach(r => { const o = r.responsable || {}; jefesDe(r).forEach(j => f2.push([r.n_registro || '', nombreResp(o), nombreResp(j), cedDe(j), gen(j.sexo), edadDe(j.fecha_nacimiento), j.telefono || '', j.proc_estado || '', j.proc_municipio || '', j.proc_parroquia || '', j.proc_comuna || '', j.situacion_actual || '', vivTxt(j)])); });
             XLSX.utils.book_append_sheet(wb, mkSheet(h2, f2, [8, 24, 24, 12, 10, 6, 13, 16, 18, 16, 16, 22, 22]), 'Jefes de familia');
 
             const h3 = ['Nº hogar', 'Responsable', 'Miembro', 'Cédula', 'Sexo', 'Edad', 'Atención prioritaria'];
