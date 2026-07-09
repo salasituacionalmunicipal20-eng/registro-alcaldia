@@ -335,7 +335,26 @@
             } catch (e) { return null; }
         }
         function fechaCneOk(f) { return /^\d{4}-\d{2}-\d{2}$/.test(f || '') && f !== '0000-00-00' && +f.slice(0, 4) >= 1900 && +f.slice(0, 4) <= 2030; }
-        function engancharCNE(cedId, nacId, nomId, apeId, ape2Id, fnacId, btnId) {
+        // ---- Sexo por nombre (el CNE NO da el sexo; lo deducimos del primer nombre) ----
+        const NOMBRES_F = new Set(('MARIA ANA CARMEN ROSA LUISA JOSEFINA ISABEL TERESA GLADYS YOLANDA MARISOL MARGARITA JUANA FRANCISCA PETRA MERCEDES ELENA BEATRIZ RAQUEL ESTHER RUTH NOEMI ABIGAIL DAMARIS MAGALY MILAGROS MILAGRO CONSUELO SOLEDAD PILAR DOLORES AMPARO ROSARIO SOCORRO ROCIO CIELO ASUNCION INMACULADA NIEVES REMEDIOS ADRIANA ALEJANDRA ANDREA ANGELA ANGELICA ARACELIS AURA AURORA BARBARA BLANCA CAROLINA CATALINA CECILIA CLARA CLAUDIA CRISTINA DAISY DALIA DANIELA DELIA DIANA DILIA DORIS EDITH ELIANA ELIZABETH ELSA EMILIA ERIKA ERICKA EUNICE EVA EVELYN FABIOLA FANNY FLOR GABRIELA GENESIS GEORGINA GERALDINE GISELA GLENDA GLORIA GRACIELA GREISY GREICY HAYDEE HILDA INES INGRID IRENE IRIS IRMA JACKELINE JAQUELINE JENNIFER JESSICA JOHANA JOHANNA JOSELIN JOSELYN JUDITH JULIA KARINA KARLA KATHERINE KATIUSKA KEILA LAURA LEIDY LEIDA LETICIA LILIA LILIANA LISBETH LISETH LISMARY LORENA LUCIA LUCILA LUZ MABEL MAGDA MAIRA MAYRA MANUELA MARBELIS MARBELLA MARIANA MARIANELA MARIBEL MARIELA MARILYN MARITZA MARLENE MARTA MARTHA MAYERLIN MERY MIRIAM MIRNA MONICA NANCY NAIRE NATALIA NATIVIDAD NELIDA NELLY NEREIDA NEYDA NIDIA NORA NORELYS NORKA NORMA OLGA OMAIRA ORIANA PAOLA PATRICIA PAULA RAMONA REBECA REINA ROSALBA ROSALIA ROSMERY ROXANA SANDRA SARA SILVIA SOFIA SONIA SUSANA TAMARA THAIS VALENTINA VALERIA VANESSA VERONICA VICTORIA VILMA VIRGINIA WENDY XIOMARA YADIRA YAJAIRA YAMILET YANETH YARITZA YELITZA YENNY JHENNY YESENIA YESSICA YOLIMAR YONEILY YOSMARY YULEIDY YULEYDIS YURBI YURIMAR ZAIDA ZORAIDA ZULAY ZULEIMA ZULEMA').split(' '));
+        const NOMBRES_M = new Set(('JOSE JUAN CARLOS LUIS PEDRO JESUS MIGUEL RAFAEL GABRIEL DANIEL MANUEL FRANCISCO ANTONIO ANGEL VICTOR JORGE ALEJANDRO ANDRES FERNANDO RICARDO ROBERTO EDUARDO ENRIQUE RAMON SIMON HECTOR OSCAR JAVIER DIEGO IVAN ABRAHAM ADAN ADRIAN AGUSTIN ALBERTO ALBERT ALCIDES ALEXANDER ALEXIS ALFONSO ALFREDO ALIRIO ALVARO AMILCAR ANIBAL ARGENIS ARMANDO ARNALDO ARTURO AUGUSTO AURELIO BENITO CESAR CLAUDIO CRISTOBAL DARIO DARWIN DAVID DEIBIS DEIVIS DENNIS DOMINGO EDGAR EDGARDO EDINSON EDISON EDWIN EFRAIN ELADIO ELEAZAR ELIAS ELIECER ELIEZER EMILIO ENDER ENDERSON ERICK ERIK ERNESTO ESTEBAN EZEQUIEL FABIAN FELIPE FELIX FIDEL FRANKLIN FRANK FREDDY GERARDO GERMAN GILBERTO GONZALO GREGORIO GREGORY GUILLERMO GUSTAVO HENRY HERIBERTO HERNAN HORACIO HUGO HUMBERTO IGNACIO ISAAC ISAIAS ISMAEL ISRAEL JACINTO JACKSON JAIME JAIRO JEAN JEFFERSON JEFERSON JEREMIAS JHON JHONNY JOHNNY JOEL JOHAN JONAS JONATHAN JORDAN JOSUE JOAQUIN JOSHUA JULIAN JULIO JUNIOR KEVIN LAZARO LEANDRO LENIN LEONARDO LEONEL LEOPOLDO LORENZO LUCAS LUCIANO MARCELO MARCO MARCOS MARIANO MARIO MARTIN MATIAS MAURICIO MAXIMO MOISES NELSON NESTOR NICOLAS NOE NORBERTO OMAR ORLANDO OSMAN OSWALDO OSVALDO PABLO PASCUAL PATRICIO PLACIDO RAUL REINALDO RENE REYNALDO RIGOBERTO ROBINSON RODOLFO RODRIGO ROGELIO ROLANDO ROMAN ROMULO RONALD RONNY RUBEN SALOMON SALVADOR SAMUEL SANTIAGO SANTOS SAUL SEBASTIAN SEGUNDO SERGIO SILVESTRE TEODORO TOMAS TOBIAS ULISES VALENTIN VICENTE VIRGILIO WILFREDO WILLIAM WILLIAMS WILMER WILSON WINSTON YEFERSON YERSON YOEL YONATHAN YOSMER ZACARIAS').split(' '));
+        function sexoPorNombre(nombre) {
+            const limpio = String(nombre || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+            const primero = limpio.split(/\s+/)[0];
+            if (!primero) return '';
+            if (NOMBRES_F.has(primero)) return 'F';
+            if (NOMBRES_M.has(primero)) return 'M';
+            if (/A$/.test(primero)) return 'F';   // terminación típica femenina
+            if (/O$/.test(primero)) return 'M';   // terminación típica masculina
+            return '';                            // ambiguo: lo elige el operador
+        }
+        function aplicarSexo(nomId, sexoId) {
+            const sx = $(sexoId); if (!sx || sx.value) return;   // no pisar la selección manual
+            const g = sexoPorNombre(v(nomId));
+            if (g) { sx.value = g; sx.style.background = '#dcfce7'; setTimeout(() => sx.style.background = '', 1400); }
+        }
+
+        function engancharCNE(cedId, nacId, nomId, apeId, ape2Id, fnacId, sexoId, btnId) {
             const run = async () => {
                 const ced = $(cedId); ced.style.background = '#fef3c7';
                 const d = await consultarCNE($(nacId).value, ced.value);
@@ -345,14 +364,16 @@
                 if (apeId && !v(apeId)) $(apeId).value = d.primer_apellido || '';
                 if (ape2Id && !v(ape2Id)) $(ape2Id).value = d.segundo_apellido || '';
                 if (fnacId && !v(fnacId) && fechaCneOk(d.fecha_nac)) $(fnacId).value = d.fecha_nac;
+                if (sexoId) aplicarSexo(nomId, sexoId);   // deducir sexo del nombre del CNE
                 ced.style.background = '#dcfce7'; setTimeout(() => ced.style.background = '', 1200);
             };
             $(cedId).addEventListener('blur', run);
             if (btnId) $(btnId).addEventListener('click', run);
+            if (nomId && sexoId) $(nomId).addEventListener('blur', () => aplicarSexo(nomId, sexoId));   // también al escribir el nombre a mano
         }
-        engancharCNE('r_cedula', 'r_nac', 'r_nombre', 'r_apellido', 'r_apellido2', 'r_fnac', 'r_buscar');
-        engancharCNE('j_cedula', 'j_nac', 'j_nombre', 'j_apellido', 'j_apellido2', 'j_fnac', 'j_buscar');
-        engancharCNE('m_cedula', 'm_nac', 'm_nombre', 'm_apellido', 'm_apellido2', 'm_fnac', 'm_buscar');
+        engancharCNE('r_cedula', 'r_nac', 'r_nombre', 'r_apellido', 'r_apellido2', 'r_fnac', 'r_sexo', 'r_buscar');
+        engancharCNE('j_cedula', 'j_nac', 'j_nombre', 'j_apellido', 'j_apellido2', 'j_fnac', 'j_sexo', 'j_buscar');
+        engancharCNE('m_cedula', 'm_nac', 'm_nombre', 'm_apellido', 'm_apellido2', 'm_fnac', 'm_sexo', 'm_buscar');
 
         // ---------- GPS ----------
         $('btnGps').addEventListener('click', () => {
