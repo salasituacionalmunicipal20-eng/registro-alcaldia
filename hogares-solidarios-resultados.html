@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hogares Solidarios — Resultados</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #0a2351; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-nav:hover { background: rgba(255,255,255,0.25); }
+        .wrap { max-width: 1300px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card.share { border-top: 5px solid #0a6cb0; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 8px 0; color: #fff; }
+        .filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; align-items: end; }
+        .filtros .full { grid-column: 1 / -1; }
+        .stats { display: flex; gap: 14px; flex-wrap: wrap; }
+        .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 130px; }
+        .stat .num { font-size: 24px; font-weight: 800; color: #0a2351; }
+        .stat .lbl { font-size: 12px; color: #64748b; font-weight: 600; }
+        .stat .sub { font-size: 11px; color: #94a3b8; font-weight: 700; margin-top: 2px; }
+        .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #16a34a; font-weight: 700; }
+        .live .dot { width: 9px; height: 9px; border-radius: 50%; background: #16a34a; animation: pulso 1.4s infinite; }
+        @keyframes pulso { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
+        tbody tr:hover { background: #f8fafc; }
+        .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-print { background: #16a34a; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .tag { display: inline-block; background: #eef2ff; color: #3730a3; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; margin: 1px; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #0a2351; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #fff; border-radius: 12px; max-width: 780px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+        .modal h3 { color: #0a2351; font-size: 18px; margin-bottom: 4px; }
+        .modal h4 { color: #0a6cb0; font-size: 14px; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: .3px; border-bottom: 2px solid #dbeafe; padding-bottom: 3px; }
+        .fila { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #eef2f7; font-size: 13.5px; }
+        .fila .k { font-weight: 700; color: #475569; min-width: 180px; }
+        .fila .val { color: #0f172a; white-space: pre-wrap; }
+        .mini { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-top: 8px; }
+        .mini b { color: #0a2351; }
+        .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>🏠 Hogares Solidarios — Resultados</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden"><h2 style="color:#b91c1c;">Acceso restringido</h2><p>Solo para administradores.</p></div>
+
+        <div id="contenido" class="hidden">
+            <div class="card share">
+                <h2>📣 Compartir / viralizar</h2>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
+                    <img id="qr" width="150" height="150" style="border:1px solid #e2e8f0;border-radius:8px;" alt="QR" />
+                    <div style="flex:1;min-width:240px;">
+                        <p style="color:#475569;font-size:14px;margin-bottom:8px;">Comparte este enlace o el QR para registrar Hogares Solidarios (familias afectadas que se mudaron a Charallave):</p>
+                        <div style="font-size:22px;font-weight:800;color:#0a6cb0;margin-bottom:10px;" id="shortTxt">da.gd/XiLKzX</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button id="btnCopiar" class="btn-exp" style="background:#0a2351;">📋 Copiar enlace</button>
+                            <a id="btnWa" class="btn-exp" style="background:#16a34a;text-decoration:none;display:inline-block;" target="_blank" rel="noopener">💬 WhatsApp</a>
+                            <a id="btnQrDl" class="btn-exp" style="background:#0a6cb0;text-decoration:none;display:inline-block;" download="qr-hogares-solidarios.png">⬇️ Descargar QR</a>
+                        </div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Enlace completo: <span id="fullTxt"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
+                <div class="stats">
+                    <div class="stat"><div class="num" id="stRegistros">—</div><div class="lbl">Hogares solidarios</div></div>
+                    <div class="stat"><div class="num" id="stJefes">—</div><div class="lbl">Jefes de familia</div></div>
+                    <div class="stat"><div class="num" id="stMiembros">—</div><div class="lbl">Miembros de familia</div></div>
+                    <div class="stat"><div class="num" id="stPersonas">—</div><div class="lbl">Personas totales</div></div>
+                    <div class="stat"><div class="num" id="stRelacion">—</div><div class="lbl">Relación con el afectado</div><div class="sub" id="stRelacionSub">—</div></div>
+                    <div class="stat"><div class="num" id="stPrioritaria" style="color:#b45309;">—</div><div class="lbl">⭐ Atención prioritaria</div><div class="sub" id="stPrioritariaSub">—</div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Hogares solidarios registrados</h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Reporte general (PDF)</button>
+                </div>
+                <div class="filtros">
+                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Responsable, jefe, cédula, dirección, Nº registro…" autocomplete="off" /></div>
+                    <div><label>Relación</label><select id="fRelacion"><option value="">Todas</option><option>Familiar</option><option>Conocido / Amigo</option></select></div>
+                    <div><label>Parroquia (hogar)</label><select id="fParroquia"><option value="">Todas</option></select></div>
+                    <div><label>Comuna (hogar)</label><select id="fComuna"><option value="">Todas</option></select></div>
+                    <div><label>Tipo de vivienda</label><select id="fTipoViv"><option value="">Todas</option><option>Casa</option><option>Edificio</option></select></div>
+                    <div><label>Situación vivienda origen</label><select id="fVivienda"><option value="">Todas</option><option>COLAPSO ESTRUCTURAL</option><option>PELIGRO ALEDAÑO</option><option>ESPERA INSPECCIÓN</option><option>OTROS</option></select></div>
+                    <div><label>Estado de procedencia</label><select id="fEstadoProc"><option value="">Todos</option></select></div>
+                    <div><label>Atención prioritaria</label><select id="fPrioritaria"><option value="">Todos</option><option value="si">Con caso prioritario</option><option value="no">Sin caso prioritario</option></select></div>
+                    <div><label>Desde</label><input id="fDesde" type="date" /></div>
+                    <div><label>Hasta</label><input id="fHasta" type="date" /></div>
+                    <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
+                </div>
+                <div style="font-size:12.5px;color:#64748b;margin-top:8px;" id="filtroInfo"></div>
+                <div style="overflow-x:auto; margin-top:14px;">
+                    <table>
+                        <thead><tr><th>Nº</th><th>Responsable / hogar</th><th>Relación</th><th>Ubicación (Charallave)</th><th>Tipo</th><th>Procedencia</th><th style="text-align:center;">Jefes</th><th style="text-align:center;">Miemb.</th><th style="text-align:center;">Personas</th><th>Fecha</th><th></th></tr></thead>
+                        <tbody id="tbody"><tr><td colspan="11" class="estado-box">Cargando…</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const toArr = (x) => Array.isArray(x) ? x : (x ? Object.values(x) : []);
+        const gen = (g) => g === 'F' ? 'Femenino' : g === 'M' ? 'Masculino' : (g || '—');
+        const nombreResp = (o) => [o.primer_nombre, o.primer_apellido, o.segundo_apellido].filter(Boolean).join(' ').trim() || '—';
+        const cedDe = (o) => o && o.cedula ? ((o.nacionalidad || 'V') + '-' + o.cedula) : '—';
+        function edadDe(f) { if (!/^\d{4}-\d{2}-\d{2}$/.test(f || '')) return ''; const [a, m, d] = f.split('-').map(Number); const h = new Date(); let e = h.getFullYear() - a; if (h.getMonth() + 1 < m || (h.getMonth() + 1 === m && h.getDate() < d)) e--; return (e >= 0 && e <= 120) ? e : ''; }
+        const fmtFecha = (ms) => ms ? new Date(ms).toLocaleString('es-VE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+        const vivTxt = (j) => j.situacion_vivienda === 'OTROS' && j.situacion_vivienda_otro ? ('OTROS: ' + j.situacion_vivienda_otro) : (j.situacion_vivienda || '—');
+
+        const NODO = 'hogares_solidarios';
+        const URL_FORM = 'https://salasituacionalmunicipal20-eng.github.io/registro-alcaldia/hogares-solidarios.html';
+        const URL_CORTO = 'https://da.gd/XiLKzX';
+
+        let REGS = [], pagina = 1; const TAM = 30;
+
+        // ---- Compartir ----
+        $('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(URL_CORTO)}`;
+        $('shortTxt').textContent = URL_CORTO.replace('https://', '');
+        $('fullTxt').textContent = URL_FORM;
+        $('btnWa').href = `https://wa.me/?text=${encodeURIComponent('Registro de Hogares Solidarios (Sismo 2026) - Cristóbal Rojas: ' + URL_CORTO)}`;
+        $('btnQrDl').href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&download=1&data=${encodeURIComponent(URL_CORTO)}`;
+        $('btnCopiar').addEventListener('click', async () => { try { await navigator.clipboard.writeText(URL_CORTO); $('btnCopiar').textContent = '✓ Copiado'; setTimeout(() => $('btnCopiar').textContent = '📋 Copiar enlace', 1800); } catch (e) { prompt('Copia el enlace:', URL_CORTO); } });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuper;
+            if (!esSuper) { try { const snap = await get(child(ref(database), `operadores/${user.uid}`)); if (snap.exists() && snap.val().rol === 'admin') permitido = true; } catch (e) { permitido = false; } }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            escuchar();
+        });
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch (e) {} location.href = 'index.html'; });
+
+        function escuchar() {
+            onValue(ref(database, NODO), (snap) => {
+                const v = snap.val() || {};
+                REGS = Object.entries(v).map(([id, r]) => ({ id, ...r })).sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
+                poblarFiltros();
+                render();
+            }, () => { REGS = []; render(); });
+        }
+
+        const jefesDe = (r) => toArr(r.jefes);
+        const miembrosDe = (r) => toArr(r.miembros);
+        const personasDe = (r) => Number(r.total_personas) || (jefesDe(r).length + miembrosDe(r).length);
+        const tienePrioritaria = (r) => miembrosDe(r).some(m => (m.tipo || '').trim());
+
+        function poblarFiltros() {
+            const par = [...new Set(REGS.map(r => (r.hogar || {}).parroquia).filter(Boolean))].sort();
+            const prevP = $('fParroquia').value;
+            $('fParroquia').innerHTML = '<option value="">Todas</option>' + par.map(p => `<option>${esc(p)}</option>`).join('');
+            $('fParroquia').value = prevP;
+            const com = [...new Set(REGS.map(r => (r.hogar || {}).comuna).filter(Boolean))].sort();
+            const prevC = $('fComuna').value;
+            $('fComuna').innerHTML = '<option value="">Todas</option>' + com.map(c => `<option>${esc(c)}</option>`).join('');
+            $('fComuna').value = prevC;
+            const est = [...new Set(REGS.flatMap(r => jefesDe(r).map(j => j.proc_estado)).filter(Boolean))].sort();
+            const prevE = $('fEstadoProc').value;
+            $('fEstadoProc').innerHTML = '<option value="">Todos</option>' + est.map(e => `<option>${esc(e)}</option>`).join('');
+            $('fEstadoProc').value = prevE;
+        }
+
+        function filtrados() {
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const fr = $('fRelacion').value, fp = $('fParroquia').value, fc = $('fComuna').value, ftv = $('fTipoViv').value;
+            const fv = $('fVivienda').value, fe = $('fEstadoProc').value, fpr = $('fPrioritaria').value;
+            const fd = $('fDesde').value, fh = $('fHasta').value;
+            return REGS.filter(r => {
+                const h = r.hogar || {}, resp = r.responsable || {}, js = jefesDe(r);
+                if (fr && r.relacion !== fr) return false;
+                if (fp && h.parroquia !== fp) return false;
+                if (fc && h.comuna !== fc) return false;
+                if (ftv && h.tipo_vivienda !== ftv) return false;
+                if (fv && !js.some(j => j.situacion_vivienda === fv)) return false;
+                if (fe && !js.some(j => j.proc_estado === fe)) return false;
+                if (fpr) { const t = tienePrioritaria(r); if (fpr === 'si' && !t) return false; if (fpr === 'no' && t) return false; }
+                if (fd || fh) { const d = r.fecha_registro ? new Date(r.fecha_registro) : null; if (!d) return false; if (fd && d < new Date(fd + 'T00:00:00')) return false; if (fh && d > new Date(fh + 'T23:59:59')) return false; }
+                if (q) {
+                    const blob = `${r.n_registro || ''} ${nombreResp(resp)} ${cedDe(resp)} ${h.parroquia || ''} ${h.comuna || ''} ${h.consejo_comunal || ''} ${h.direccion || ''} ${r.relacion || ''} ` +
+                        js.map(j => `${nombreResp(j)} ${cedDe(j)} ${j.proc_estado || ''} ${j.proc_municipio || ''}`).join(' ') + ' ' +
+                        miembrosDe(r).map(m => `${nombreResp(m)} ${m.cedula || ''}`).join(' ');
+                    if (!blob.toLowerCase().includes(q)) return false;
+                }
+                return true;
+            });
+        }
+
+        function render() {
+            $('stRegistros').textContent = REGS.length;
+            const nJefes = REGS.reduce((s, r) => s + jefesDe(r).length, 0);
+            const nMiem = REGS.reduce((s, r) => s + miembrosDe(r).length, 0);
+            $('stJefes').textContent = nJefes;
+            $('stMiembros').textContent = nMiem;
+            $('stPersonas').textContent = nJefes + nMiem;
+            const fam = REGS.filter(r => r.relacion === 'Familiar').length, con = REGS.filter(r => (r.relacion || '').startsWith('Conocido')).length;
+            $('stRelacion').textContent = fam + con;
+            $('stRelacionSub').textContent = `${fam} familiar · ${con} conocido`;
+            let disc = 0, emb = 0, may = 0;
+            REGS.forEach(r => miembrosDe(r).forEach(m => { const t = (m.tipo || ''); if (t === 'Persona con Discapacidad') disc++; else if (t === 'Mujer Embarazada') emb++; else if (t === 'Adulto Mayor') may++; }));
+            $('stPrioritaria').textContent = disc + emb + may;
+            $('stPrioritariaSub').innerHTML = `♿ ${disc} · 🤰 ${emb} · 👵 ${may}`;
+
+            const lista = filtrados();
+            const totalPag = Math.max(1, Math.ceil(lista.length / TAM));
+            if (pagina > totalPag) pagina = totalPag;
+            $('filtroInfo').textContent = `${lista.length} de ${REGS.length} hogares solidarios` + (lista.length !== REGS.length ? ' (filtrados)' : '');
+            const tb = $('tbody');
+            if (!lista.length) { tb.innerHTML = `<tr><td colspan="11" class="estado-box">${REGS.length ? 'Sin resultados con ese filtro.' : 'Aún no hay registros. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
+            const desde = (pagina - 1) * TAM;
+            tb.innerHTML = lista.slice(desde, desde + TAM).map(r => {
+                const h = r.hogar || {}, resp = r.responsable || {}, js = jefesDe(r);
+                const proc = [...new Set(js.map(j => j.proc_estado).filter(Boolean))].join(', ') || '—';
+                const rel = r.relacion === 'Familiar' ? `Familiar${r.que_familiar ? ' (' + esc(r.que_familiar) + ')' : ''}` : esc(r.relacion || '—');
+                const prio = tienePrioritaria(r) ? ' ⭐' : '';
+                return `<tr>
+                    <td><b>${esc(r.n_registro || '—')}</b></td>
+                    <td><b>${esc(nombreResp(resp))}</b>${prio}<br><span style="font-size:11px;color:#64748b;">${esc(cedDe(resp))}</span></td>
+                    <td>${rel}</td>
+                    <td>${esc(h.parroquia || '—')}${h.comuna ? '<br><span style="font-size:11px;color:#64748b;">' + esc(h.comuna) + '</span>' : ''}</td>
+                    <td>${esc(h.tipo_vivienda || '—')}</td>
+                    <td>${esc(proc)}</td>
+                    <td style="text-align:center;font-weight:800;">${js.length}</td>
+                    <td style="text-align:center;font-weight:800;">${miembrosDe(r).length}</td>
+                    <td style="text-align:center;font-weight:800;color:#0a6cb0;">${personasDe(r)}</td>
+                    <td>${esc(fmtFecha(r.fecha_registro))}</td>
+                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
+                </tr>`;
+            }).join('');
+            tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+            tb.querySelectorAll('button.btn-print').forEach(b => b.addEventListener('click', () => imprimirUno(b.dataset.id)));
+            tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.id)));
+
+            let botones = '';
+            botones += `<button ${pagina <= 1 ? 'disabled' : ''} id="pgPrev">‹ Anterior</button>`;
+            botones += `<span style="font-size:13px;color:#475569;font-weight:600;">Página ${pagina} de ${totalPag}</span>`;
+            botones += `<button ${pagina >= totalPag ? 'disabled' : ''} id="pgNext">Siguiente ›</button>`;
+            $('paginacion').innerHTML = botones;
+            const p = $('pgPrev'), n = $('pgNext');
+            if (p) p.addEventListener('click', () => { if (pagina > 1) { pagina--; render(); } });
+            if (n) n.addEventListener('click', () => { if (pagina < totalPag) { pagina++; render(); } });
+        }
+
+        ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fDesde', 'fHasta'].forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
+        $('btnLimpiar').addEventListener('click', () => { ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fDesde', 'fHasta'].forEach(id => $(id).value = ''); pagina = 1; render(); });
+
+        // ---- Detalle ----
+        function fila(k, val) { return val != null && String(val).trim() !== '' && String(val) !== '—' ? `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val)}</span></div>` : ''; }
+        function verDetalle(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const h = r.hogar || {}, resp = r.responsable || {};
+            const jefes = jefesDe(r).map((j, i) => `<div class="mini"><b>Jefe ${i + 1}: ${esc(nombreResp(j))}</b> · ${esc(cedDe(j))} · ${esc(gen(j.sexo))}${j.fecha_nacimiento ? ' · ' + edadDe(j.fecha_nacimiento) + ' años' : ''}
+                <br><span style="font-size:12.5px;color:#475569;">Procedencia: ${esc([j.proc_estado, j.proc_municipio, j.proc_parroquia].filter(Boolean).join(' / ') || '—')}${j.proc_comuna ? ' · ' + esc(j.proc_comuna) : ''}</span>
+                <br><span style="font-size:12.5px;color:#475569;">Situación actual: ${esc(j.situacion_actual || '—')} · Vivienda de origen: <b>${esc(vivTxt(j))}</b></span>${j.telefono ? '<br><span style="font-size:12.5px;color:#475569;">Tel: ' + esc(j.telefono) + '</span>' : ''}</div>`).join('') || '<div class="fila"><span class="k">Sin jefes</span></div>';
+            const miembros = miembrosDe(r).map((m, i) => `<div class="mini"><b>${i + 1}. ${esc(nombreResp(m))}</b> · ${m.cedula ? esc(cedDe(m)) : 'sin documento'} · ${esc(gen(m.sexo))}${m.fecha_nacimiento ? ' · ' + edadDe(m.fecha_nacimiento) + ' años' : ''}${m.tipo ? ' · <span style="color:#b45309;font-weight:700;">⭐ ' + esc(m.tipo) + '</span>' : ''}</div>`).join('') || '<div class="fila"><span class="k">Sin miembros adicionales</span></div>';
+            $('modal').innerHTML = `
+                <h3>🏠 Hogar Solidario ${esc(r.n_registro ? 'Nº ' + r.n_registro : '')}</h3>
+                <div style="color:#64748b;font-size:13px;">Registrado el ${esc(fmtFecha(r.fecha_registro))} · ${personasDe(r)} persona(s)</div>
+                <h4>Relación y responsable</h4>
+                ${fila('Tipo de relación', r.relacion === 'Familiar' ? 'Familiar' + (r.que_familiar ? ' (' + r.que_familiar + ')' : '') : r.relacion)}
+                ${fila('Responsable de la vivienda', nombreResp(resp))}
+                ${fila('Cédula', cedDe(resp))}
+                ${fila('Sexo', gen(resp.sexo))}
+                ${fila('Fecha de nacimiento', resp.fecha_nacimiento ? resp.fecha_nacimiento + (edadDe(resp.fecha_nacimiento) !== '' ? ' (' + edadDe(resp.fecha_nacimiento) + ' años)' : '') : '')}
+                ${fila('Teléfono', resp.telefono)}
+                <h4>Ubicación del hogar solidario (Charallave)</h4>
+                ${fila('Estado / Municipio', [h.estado, h.municipio].filter(Boolean).join(' / '))}
+                ${fila('Parroquia', h.parroquia)}
+                ${fila('Comuna', h.comuna)}
+                ${fila('Consejo comunal / comunidad', h.consejo_comunal)}
+                ${fila('Dirección exacta', h.direccion)}
+                ${fila('Tipo de vivienda', h.tipo_vivienda)}
+                ${fila('Ubicación GPS', (h.lat && h.lng) ? h.lat + ', ' + h.lng : '')}
+                ${(h.lat && h.lng) ? `<div class="fila"><span class="k">Ver en mapa</span><span class="val"><a href="https://www.google.com/maps?q=${esc(h.lat)},${esc(h.lng)}" target="_blank" rel="noopener" style="color:#0a6cb0;font-weight:700;">Abrir en Google Maps</a></span></div>` : ''}
+                <h4>Jefes de familia (${jefesDe(r).length})</h4>
+                ${jefes}
+                <h4>Miembros de la familia (${miembrosDe(r).length})</h4>
+                ${miembros}
+                <button class="cerrar" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+        }
+        $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        async function borrar(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            if (!confirm(`¿Eliminar el Hogar Solidario ${r.n_registro ? 'Nº ' + r.n_registro : ''} de ${nombreResp(r.responsable || {})}?\n\nEsta acción no se puede deshacer.`)) return;
+            try { await remove(ref(database, NODO + '/' + id)); } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
+        }
+
+        // ---- Excel (3 hojas) ----
+        function mkSheet(hdr, filas, anchos) {
+            const ws = XLSX.utils.aoa_to_sheet([hdr, ...filas]);
+            ws['!cols'] = (anchos || hdr.map(() => 18)).map(w => ({ wch: w }));
+            const rng = XLSX.utils.decode_range(ws['!ref']);
+            for (let c = rng.s.c; c <= rng.e.c; c++) { const ref2 = XLSX.utils.encode_cell({ r: 0, c }); if (ws[ref2]) ws[ref2].s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '0A2351' } }, alignment: { horizontal: 'center' } }; }
+            return ws;
+        }
+        $('btnExcel').addEventListener('click', () => {
+            const lista = filtrados();
+            const wb = XLSX.utils.book_new();
+            const h1 = ['Nº', 'Fecha', 'Relación', 'Qué familiar', 'Responsable', 'Cédula resp.', 'Sexo resp.', 'Teléfono', 'Parroquia', 'Comuna', 'Consejo/comunidad', 'Dirección', 'Tipo vivienda', 'Lat', 'Lng', 'Jefes', 'Miembros', 'Personas'];
+            const f1 = lista.map(r => { const h = r.hogar || {}, o = r.responsable || {}; return [r.n_registro || '', fmtFecha(r.fecha_registro), r.relacion || '', r.que_familiar || '', nombreResp(o), cedDe(o), gen(o.sexo), o.telefono || '', h.parroquia || '', h.comuna || '', h.consejo_comunal || '', h.direccion || '', h.tipo_vivienda || '', h.lat || '', h.lng || '', jefesDe(r).length, miembrosDe(r).length, personasDe(r)]; });
+            XLSX.utils.book_append_sheet(wb, mkSheet(h1, f1, [6, 14, 16, 14, 26, 12, 10, 13, 16, 20, 22, 30, 12, 11, 11, 7, 8, 9]), 'Hogares solidarios');
+
+            const h2 = ['Nº hogar', 'Responsable', 'Jefe de familia', 'Cédula', 'Sexo', 'Edad', 'Teléfono', 'Procedencia estado', 'Procedencia municipio', 'Procedencia parroquia', 'Comuna procedencia', 'Situación actual', 'Situación vivienda origen'];
+            const f2 = [];
+            lista.forEach(r => { const o = r.responsable || {}; jefesDe(r).forEach(j => f2.push([r.n_registro || '', nombreResp(o), nombreResp(j), cedDe(j), gen(j.sexo), edadDe(j.fecha_nacimiento), j.telefono || '', j.proc_estado || '', j.proc_municipio || '', j.proc_parroquia || '', j.proc_comuna || '', j.situacion_actual || '', vivTxt(j)]); });
+            XLSX.utils.book_append_sheet(wb, mkSheet(h2, f2, [8, 24, 24, 12, 10, 6, 13, 16, 18, 16, 16, 22, 22]), 'Jefes de familia');
+
+            const h3 = ['Nº hogar', 'Responsable', 'Miembro', 'Cédula', 'Sexo', 'Edad', 'Atención prioritaria'];
+            const f3 = [];
+            lista.forEach(r => { const o = r.responsable || {}; miembrosDe(r).forEach(m => f3.push([r.n_registro || '', nombreResp(o), nombreResp(m), m.cedula ? cedDe(m) : 'sin documento', gen(m.sexo), edadDe(m.fecha_nacimiento), m.tipo || ''])); });
+            XLSX.utils.book_append_sheet(wb, mkSheet(h3, f3, [8, 24, 24, 14, 10, 6, 22]), 'Miembros');
+
+            XLSX.writeFile(wb, `hogares_solidarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        });
+
+        // ---- PDF helpers ----
+        function _s(str) { if (str == null) return ''; let t = String(str); try { t = t.normalize('NFC'); } catch (e) {} let out = ''; for (const ch of t) { const c = ch.codePointAt(0); if (c === 0x201C || c === 0x201D) out += '"'; else if (c === 0x2018 || c === 0x2019) out += "'"; else if (c === 0x2013 || c === 0x2014) out += '-'; else if (c === 0x2026) out += '...'; else if (c === 0x00A0) out += ' '; else if (c < 32) out += ' '; else if (c <= 255) out += ch; else out += ''; } return out.replace(/ {2,}/g, ' ').trim(); }
+
+        $('btnPdf').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay registros para exportar.'); return; }
+            const doc = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'landscape' });
+            const nJ = lista.reduce((s, r) => s + jefesDe(r).length, 0), nM = lista.reduce((s, r) => s + miembrosDe(r).length, 0);
+            jsPDF.API.autoTable.call(doc, {
+                head: [['Nº', 'Responsable', 'Relacion', 'Parroquia', 'Comuna', 'Tipo', 'Procedencia', 'Jefes', 'Miemb.', 'Pers.', 'Fecha']],
+                body: lista.map(r => { const h = r.hogar || {}, o = r.responsable || {}; const proc = [...new Set(jefesDe(r).map(j => j.proc_estado).filter(Boolean))].join(', '); return [_s(r.n_registro || '-'), _s(nombreResp(o)), _s(r.relacion === 'Familiar' ? 'Familiar' : (r.relacion || '-')), _s(h.parroquia || '-'), _s(h.comuna || '-'), _s(h.tipo_vivienda || '-'), _s(proc || '-'), jefesDe(r).length, miembrosDe(r).length, personasDe(r), _s(fmtFecha(r.fecha_registro))]; }),
+                startY: 58, margin: { top: 58, bottom: 16, left: 12, right: 12 }, theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.6, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, overflow: 'linebreak' },
+                headStyles: { fillColor: [10, 35, 81], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center', fontSize: 8.5 },
+                alternateRowStyles: { fillColor: [241, 245, 249] },
+                columnStyles: { 0: { cellWidth: 12 }, 7: { halign: 'center' }, 8: { halign: 'center' }, 9: { halign: 'center', fontStyle: 'bold' } },
+                didDrawPage: () => { dibujarHeaderPDF(doc, { titulo: 'Hogares Solidarios - Sismo 2026', subtitulo: _s(lista.length + ' hogares · ' + nJ + ' jefes · ' + nM + ' miembros · ' + (nJ + nM) + ' personas') }); dibujarFooterPDF(doc); }
+            });
+            doc.save('hogares_solidarios_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        });
+
+        // ---- PDF por registro (imprimir directo) ----
+        function imprimirUno(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const h = r.hogar || {}, o = r.responsable || {};
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Hogar Solidario - Sismo 2026', subtitulo: _s('Nº ' + (r.n_registro || '-') + ' · ' + nombreResp(o)) }); dibujarFooterPDF(doc); };
+            const rel = r.relacion === 'Familiar' ? 'Familiar' + (r.que_familiar ? ' (' + r.que_familiar + ')' : '') : (r.relacion || '-');
+            jsPDF.API.autoTable.call(doc, {
+                startY: 58, margin: { top: 58, bottom: 16, left: 14, right: 14 }, theme: 'grid',
+                head: [[{ content: _s('RESPONSABLE Y HOGAR SOLIDARIO'), colSpan: 2 }]],
+                body: [
+                    ['Relacion con el afectado', _s(rel)], ['Responsable de la vivienda', _s(nombreResp(o))], ['Cedula', _s(cedDe(o))],
+                    ['Sexo', _s(gen(o.sexo))], ['Telefono', _s(o.telefono || '-')],
+                    ['Estado / Municipio', _s([h.estado, h.municipio].filter(Boolean).join(' / '))], ['Parroquia', _s(h.parroquia || '-')],
+                    ['Comuna', _s(h.comuna || '-')], ['Consejo comunal / comunidad', _s(h.consejo_comunal || '-')],
+                    ['Direccion exacta', _s(h.direccion || '-')], ['Tipo de vivienda', _s(h.tipo_vivienda || '-')],
+                    ['Ubicacion GPS', _s((h.lat && h.lng) ? h.lat + ', ' + h.lng : '-')]
+                ],
+                styles: { font: 'helvetica', fontSize: 10, cellPadding: 2, lineColor: [210, 210, 210], lineWidth: 0.2, overflow: 'linebreak' },
+                headStyles: { fillColor: [10, 35, 81], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 11 },
+                columnStyles: { 0: { cellWidth: 70, fontStyle: 'bold', fillColor: [239, 246, 255] }, 1: { cellWidth: 114 } },
+                didDrawPage: drawHF
+            });
+            if (jefesDe(r).length) jsPDF.API.autoTable.call(doc, {
+                startY: doc.lastAutoTable.finalY + 6, margin: { top: 58, bottom: 16, left: 14, right: 14 }, theme: 'grid',
+                head: [['#', 'Jefe de familia', 'Cedula', 'Sexo', 'Edad', 'Procedencia', 'Sit. actual', 'Vivienda origen']],
+                body: jefesDe(r).map((j, i) => [i + 1, _s(nombreResp(j)), _s(cedDe(j)), _s(gen(j.sexo)), _s(String(edadDe(j.fecha_nacimiento))), _s([j.proc_estado, j.proc_municipio].filter(Boolean).join(' / ')), _s(j.situacion_actual || '-'), _s(vivTxt(j))]),
+                styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.6, lineColor: [210, 210, 210], lineWidth: 0.2, overflow: 'linebreak' },
+                headStyles: { fillColor: [10, 108, 176], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+                columnStyles: { 0: { cellWidth: 8 }, 4: { halign: 'center' } },
+                didDrawPage: drawHF
+            });
+            if (miembrosDe(r).length) jsPDF.API.autoTable.call(doc, {
+                startY: doc.lastAutoTable.finalY + 6, margin: { top: 58, bottom: 16, left: 14, right: 14 }, theme: 'grid',
+                head: [['#', 'Miembro de familia', 'Cedula', 'Sexo', 'Edad', 'Atencion prioritaria']],
+                body: miembrosDe(r).map((m, i) => [i + 1, _s(nombreResp(m)), _s(m.cedula ? cedDe(m) : 'sin documento'), _s(gen(m.sexo)), _s(String(edadDe(m.fecha_nacimiento))), _s(m.tipo || '-')]),
+                styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.7, lineColor: [210, 210, 210], lineWidth: 0.2, overflow: 'linebreak' },
+                headStyles: { fillColor: [180, 83, 9], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+                columnStyles: { 0: { cellWidth: 8 }, 4: { halign: 'center' } },
+                didDrawPage: drawHF
+            });
+            doc.autoPrint();
+            window.open(doc.output('bloburl'), '_blank');
+        }
+    </script>
+</body>
+</html>

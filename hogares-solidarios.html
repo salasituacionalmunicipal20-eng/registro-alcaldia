@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hogar Solidario — Sismo 2026 | Cristóbal Rojas</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #eef2f7; color: #0f172a; line-height: 1.55; }
+        .top { background: linear-gradient(135deg, #0a2351 0%, #0a6cb0 100%); color: #fff; padding: 20px 18px; text-align: center; }
+        .top h1 { font-size: 20px; font-weight: 800; }
+        .top p { font-size: 13px; opacity: .92; margin-top: 4px; max-width: 640px; margin-left: auto; margin-right: auto; }
+        .wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
+        /* Stepper */
+        .stepper { display: flex; gap: 6px; margin-bottom: 14px; }
+        .step { flex: 1; text-align: center; font-size: 11.5px; font-weight: 700; color: #94a3b8; }
+        .step .dot { width: 30px; height: 30px; border-radius: 50%; background: #cbd5e1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin: 0 auto 5px; }
+        .step.on .dot { background: #0a6cb0; box-shadow: 0 0 0 4px rgba(10,108,176,.18); }
+        .step.done .dot { background: #16a34a; }
+        .step.on { color: #0a2351; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 14px; }
+        .card h2 { font-size: 14px; font-weight: 800; color: #0a2351; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        .card h2 .ic { margin-right: 6px; }
+        .card .sub { font-size: 12.5px; color: #64748b; margin-bottom: 12px; }
+        label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin: 12px 0 4px; }
+        .hint { font-weight: 400; color: #94a3b8; font-size: 11.5px; }
+        input, select, textarea { width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        input:focus, textarea:focus, select:focus { border-color: #0a6cb0; background: #fff; }
+        textarea { min-height: 60px; resize: vertical; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .ced { display: grid; grid-template-columns: 64px 1fr auto; gap: 8px; align-items: end; }
+        .btn-cne { padding: 11px 13px; background: #0a6cb0; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
+        @media (max-width: 560px) { .row2, .row3 { grid-template-columns: 1fr; } }
+        .fixed-box { background: #eef6ff; border: 1px dashed #93c5fd; border-radius: 8px; padding: 8px 11px; font-size: 13px; color: #0a2351; font-weight: 700; }
+        .radios { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+        .radios.inline { flex-direction: row; gap: 18px; }
+        .radios label { display: flex; align-items: center; gap: 7px; margin: 4px 0; font-weight: 600; color: #0f172a; cursor: pointer; }
+        .radios input { width: auto; }
+        .nav { display: flex; gap: 10px; margin-top: 8px; }
+        .btn { flex: 1; border: none; border-radius: 10px; padding: 15px; font-size: 16px; font-weight: 800; cursor: pointer; }
+        .btn-prev { background: #e2e8f0; color: #334155; }
+        .btn-next { background: #0a6cb0; color: #fff; }
+        .btn-send { background: #16a34a; color: #fff; }
+        .btn-add { width: 100%; background: #0a2351; color: #fff; border: none; border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 6px; }
+        .btn-gps { width: 100%; background: #7c3aed; color: #fff; border: none; border-radius: 8px; padding: 12px; font-weight: 800; cursor: pointer; font-size: 14px; }
+        .tabla { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+        .tabla th { background: #0a2351; color: #fff; padding: 8px 6px; text-align: left; font-size: 11.5px; }
+        .tabla td { padding: 8px 6px; border-bottom: 1px solid #eef2f7; }
+        .tabla .acc { white-space: nowrap; }
+        .tabla button { border: none; background: none; cursor: pointer; font-size: 15px; padding: 2px 4px; }
+        .vacio { text-align: center; color: #94a3b8; padding: 14px; font-size: 13px; }
+        .subform { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #fbfdff; }
+        .msg { padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-top: 12px; display: none; }
+        .msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
+        .msg.ok { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; display: block; }
+        .ok-screen { display: none; text-align: center; padding: 40px 20px; }
+        .ok-screen .check { font-size: 60px; }
+        .ok-screen h2 { color: #16a34a; font-size: 24px; margin: 10px 0; }
+        .ok-screen p { color: #475569; font-size: 15px; }
+        .ok-screen .reg { font-size: 18px; font-weight: 800; color: #0a2351; margin-top: 6px; }
+        .ok-screen button { margin-top: 22px; background: #0a2351; color: #fff; border: none; border-radius: 10px; padding: 14px 22px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 16px; }
+        .hidden { display: none !important; }
+        .seclabel { font-size: 12px; font-weight: 800; color: #0a6cb0; text-transform: uppercase; letter-spacing: .4px; margin: 6px 0 2px; }
+    </style>
+</head>
+<body>
+    <div class="top">
+        <h1>🏠 Hogar Solidario — Sismo 2026</h1>
+        <p>Registro de personas afectadas por el sismo que se trasladaron a vivir con familiares o conocidos en <b>Charallave</b> · Municipio Cristóbal Rojas</p>
+    </div>
+
+    <div class="wrap">
+        <div id="formWrap">
+            <div class="stepper">
+                <div class="step on" id="stp1"><div class="dot">1</div>Hogar Solidario</div>
+                <div class="step" id="stp2"><div class="dot">2</div>Jefes de Familia</div>
+                <div class="step" id="stp3"><div class="dot">3</div>Miembros</div>
+            </div>
+
+            <!-- ============ PASO 1: HOGAR SOLIDARIO (HOSPEDADOR) ============ -->
+            <section id="sec1">
+                <div class="card">
+                    <h2><span class="ic">🤝</span>Tipo de relación</h2>
+                    <div class="sub">¿Qué relación tiene quien presta la vivienda con la familia afectada?</div>
+                    <div class="row2">
+                        <div>
+                            <label>Tipo de relación con el afectado *</label>
+                            <select id="relacion"><option value="">Selecciona una opción</option><option>Familiar</option><option>Conocido / Amigo</option></select>
+                        </div>
+                        <div id="wrapFamiliar" class="hidden">
+                            <label>¿Qué familiar es? *</label>
+                            <select id="que_familiar"><option value="">Selecciona una opción</option></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2><span class="ic">🧑</span>Responsable de la vivienda</h2>
+                    <div class="sub">Persona dueña o responsable del Hogar Solidario que recibe a la familia.</div>
+                    <label>Documento de identidad *</label>
+                    <div class="ced">
+                        <select id="r_nac"><option>V</option><option>E</option></select>
+                        <input id="r_cedula" placeholder="Número de cédula" autocomplete="off" inputmode="numeric" />
+                        <button type="button" class="btn-cne" id="r_buscar">🔎</button>
+                    </div>
+                    <div class="hint">Al escribir la cédula se autocompletan los nombres desde el CNE.</div>
+                    <div class="row3">
+                        <div><label>Primer nombre *</label><input id="r_nombre" autocomplete="off" /></div>
+                        <div><label>Primer apellido *</label><input id="r_apellido" autocomplete="off" /></div>
+                        <div><label>Segundo apellido</label><input id="r_apellido2" autocomplete="off" /></div>
+                    </div>
+                    <div class="row3">
+                        <div><label>Fecha de nacimiento *</label><input id="r_fnac" type="date" /></div>
+                        <div><label>Sexo *</label><select id="r_sexo"><option value="">—</option><option value="M">Masculino</option><option value="F">Femenino</option></select></div>
+                        <div><label>Teléfono</label><input id="r_tel" inputmode="tel" placeholder="0414-0000000" autocomplete="off" /></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2><span class="ic">📍</span>Ubicación del Hogar Solidario</h2>
+                    <div class="sub">Dónde se encuentra la vivienda que recibe a la familia (en Charallave).</div>
+                    <div class="row2">
+                        <div><label>Estado</label><div class="fixed-box">MIRANDA</div></div>
+                        <div><label>Municipio</label><div class="fixed-box">CRISTÓBAL ROJAS</div></div>
+                    </div>
+                    <div class="row3">
+                        <div><label>Parroquia *</label><select id="h_parroquia"><option value="">Selecciona…</option></select></div>
+                        <div><label>Comuna</label><select id="h_comuna"><option value="">Selecciona…</option></select></div>
+                        <div><label>Consejo comunal / comunidad</label><select id="h_consejo"><option value="">Selecciona…</option></select></div>
+                    </div>
+                    <div id="wrapConsejoOtro" class="hidden"><label>Escribe el consejo comunal / comunidad</label><input id="h_consejo_otro" autocomplete="off" /></div>
+                    <label>Dirección exacta *</label>
+                    <textarea id="h_direccion" placeholder="Calle, sector, casa/edificio, punto de referencia…"></textarea>
+                    <label>Tipo de vivienda *</label>
+                    <div class="radios inline">
+                        <label><input type="radio" name="tipo_viv" value="Casa" /> Casa</label>
+                        <label><input type="radio" name="tipo_viv" value="Edificio" /> Edificio</label>
+                    </div>
+                    <label>Ubicación geográfica (opcional)</label>
+                    <button type="button" class="btn-gps" id="btnGps">📌 Usar mi ubicación actual</button>
+                    <div class="row2" style="margin-top:8px;">
+                        <div><input id="h_lat" placeholder="Latitud" autocomplete="off" /></div>
+                        <div><input id="h_lng" placeholder="Longitud" autocomplete="off" /></div>
+                    </div>
+                    <div id="gpsMsg" class="hint"></div>
+                </div>
+
+                <div id="msg1" class="msg"></div>
+                <div class="nav"><button class="btn btn-next" id="next1">Siguiente →</button></div>
+            </section>
+
+            <!-- ============ PASO 2: JEFES DE FAMILIA ============ -->
+            <section id="sec2" class="hidden">
+                <div class="card">
+                    <h2><span class="ic">👨‍👩‍👧</span>Jefes de familia afectados</h2>
+                    <div class="sub">Agrega uno o varios jefes de familia que fueron afectados y ahora viven en este Hogar Solidario.</div>
+
+                    <div class="subform">
+                        <div class="seclabel">Ubicación de procedencia (de dónde vienen)</div>
+                        <div class="row3">
+                            <div><label>Estado *</label><select id="p_estado"><option value="">Selecciona…</option></select></div>
+                            <div><label>Municipio *</label><select id="p_municipio"><option value="">Selecciona…</option></select></div>
+                            <div><label>Parroquia *</label><input id="p_parroquia" autocomplete="off" /></div>
+                        </div>
+                        <label>Comuna</label><input id="p_comuna" autocomplete="off" />
+
+                        <div class="seclabel" style="margin-top:14px;">Datos del jefe de familia</div>
+                        <label>Documento *</label>
+                        <div class="ced">
+                            <select id="j_nac"><option>V</option><option>E</option></select>
+                            <input id="j_cedula" placeholder="Número de cédula" autocomplete="off" inputmode="numeric" />
+                            <button type="button" class="btn-cne" id="j_buscar">🔎</button>
+                        </div>
+                        <div class="row3">
+                            <div><label>Primer nombre *</label><input id="j_nombre" autocomplete="off" /></div>
+                            <div><label>Primer apellido *</label><input id="j_apellido" autocomplete="off" /></div>
+                            <div><label>Segundo apellido</label><input id="j_apellido2" autocomplete="off" /></div>
+                        </div>
+                        <div class="row3">
+                            <div><label>Fecha de nacimiento *</label><input id="j_fnac" type="date" /></div>
+                            <div><label>Sexo *</label><select id="j_sexo"><option value="">—</option><option value="M">Masculino</option><option value="F">Femenino</option></select></div>
+                            <div><label>Teléfono</label><input id="j_tel" inputmode="tel" placeholder="0414-0000000" autocomplete="off" /></div>
+                        </div>
+                        <label>Situación actual</label>
+                        <div class="radios" id="sitActual"></div>
+                        <label>Situación de la vivienda de origen *</label>
+                        <select id="j_vivienda"><option value="">Selecciona una opción</option><option>COLAPSO ESTRUCTURAL</option><option>PELIGRO ALEDAÑO</option><option>ESPERA INSPECCIÓN</option><option>OTROS</option></select>
+                        <div id="wrapVivOtro" class="hidden"><label>¿Indique cuál?</label><input id="j_vivienda_otro" autocomplete="off" /></div>
+
+                        <button type="button" class="btn-add" id="addJefe">➕ Agregar jefe de familia</button>
+                        <div id="msgJefe" class="msg"></div>
+                    </div>
+
+                    <table class="tabla">
+                        <thead><tr><th>Cédula</th><th>Nombre</th><th>Apellido</th><th>Vivienda origen</th><th></th></tr></thead>
+                        <tbody id="tablaJefes"><tr><td colspan="5" class="vacio">Sin jefes agregados todavía.</td></tr></tbody>
+                    </table>
+                </div>
+
+                <div id="msg2" class="msg"></div>
+                <div class="nav"><button class="btn btn-prev" id="prev2">← Anterior</button><button class="btn btn-next" id="next2">Siguiente →</button></div>
+            </section>
+
+            <!-- ============ PASO 3: MIEMBROS DE LA FAMILIA ============ -->
+            <section id="sec3" class="hidden">
+                <div class="card">
+                    <h2><span class="ic">👪</span>Miembros de la familia</h2>
+                    <div class="sub">Otras personas del grupo familiar que también viven en el Hogar Solidario (opcional).</div>
+
+                    <div class="subform">
+                        <label>¿Posee documento de identidad?</label>
+                        <div class="radios inline" id="mDoc">
+                            <label><input type="radio" name="m_doc" value="Si" /> Sí</label>
+                            <label><input type="radio" name="m_doc" value="No" checked /> No</label>
+                        </div>
+                        <div id="wrapMdoc" class="hidden">
+                            <label>Documento</label>
+                            <div class="ced">
+                                <select id="m_nac"><option>V</option><option>E</option></select>
+                                <input id="m_cedula" placeholder="Número de cédula" autocomplete="off" inputmode="numeric" />
+                                <button type="button" class="btn-cne" id="m_buscar">🔎</button>
+                            </div>
+                        </div>
+                        <div class="row2">
+                            <div><label>Primer nombre *</label><input id="m_nombre" autocomplete="off" /></div>
+                            <div><label>Segundo nombre</label><input id="m_nombre2" autocomplete="off" /></div>
+                        </div>
+                        <div class="row2">
+                            <div><label>Primer apellido *</label><input id="m_apellido" autocomplete="off" /></div>
+                            <div><label>Segundo apellido</label><input id="m_apellido2" autocomplete="off" /></div>
+                        </div>
+                        <div class="row3">
+                            <div><label>Fecha de nacimiento *</label><input id="m_fnac" type="date" /></div>
+                            <div><label>Sexo *</label><select id="m_sexo"><option value="">—</option><option value="M">Masculino</option><option value="F">Femenino</option></select></div>
+                            <div><label>Tipo (atención prioritaria)</label><select id="m_tipo"><option value="">Selecciona una opción</option><option>Persona con Discapacidad</option><option>Mujer Embarazada</option><option>Adulto Mayor</option></select></div>
+                        </div>
+                        <button type="button" class="btn-add" id="addMiembro">➕ Agregar miembro</button>
+                        <div id="msgMiembro" class="msg"></div>
+                    </div>
+
+                    <table class="tabla">
+                        <thead><tr><th>Cédula</th><th>Nombre</th><th>Apellido</th><th>Tipo</th><th></th></tr></thead>
+                        <tbody id="tablaMiembros"><tr><td colspan="5" class="vacio">Sin miembros agregados todavía.</td></tr></tbody>
+                    </table>
+                </div>
+
+                <div id="msg3" class="msg"></div>
+                <div class="nav"><button class="btn btn-prev" id="prev3">← Anterior</button><button class="btn btn-send" id="enviar">Enviar registro ✓</button></div>
+            </section>
+        </div>
+
+        <div class="ok-screen" id="okScreen">
+            <div class="check">✅</div>
+            <h2>¡Envío exitoso!</h2>
+            <p>El registro del Hogar Solidario fue guardado correctamente.</p>
+            <div class="reg" id="okReg"></div>
+            <button id="btnOtro" type="button">Registrar otro Hogar Solidario</button>
+        </div>
+    </div>
+
+    <div class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional · Hogar Solidario (Sismo 2026)</div>
+
+    <script src="municipios-data.js"></script>
+    <script src="territorio-data.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, push, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const $ = (id) => document.getElementById(id);
+        const v = (id) => ($(id).value || '').trim();
+
+        // ---------- Datos de listas ----------
+        const FAMILIARES = ['PADRE / MADRE', 'HIJO / A', 'HERMANO / A', 'TIO / A', 'ABUELO / A', 'SUEGRO / A', 'CUÑADO / A', 'PRIMO / A', 'OTROS'];
+        const SIT_ACTUAL = ['Desempleado buscando trabajo', 'Desempleado NO buscando trabajo', 'Empleado formal', 'Estudiante', 'Jubilado/Pensionado', 'Labores del hogar exclusivamente', 'Trabajador independiente/informal', 'Otro'];
+        $('que_familiar').innerHTML = '<option value="">Selecciona una opción</option>' + FAMILIARES.map(f => `<option>${f}</option>`).join('');
+        $('sitActual').innerHTML = SIT_ACTUAL.map((s, i) => `<label><input type="radio" name="sit_actual" value="${s}" /> ${s}</label>`).join('');
+
+        // relación → mostrar "¿qué familiar es?"
+        $('relacion').addEventListener('change', () => $('wrapFamiliar').classList.toggle('hidden', $('relacion').value !== 'Familiar'));
+        // situación vivienda OTROS → indique cuál
+        $('j_vivienda').addEventListener('change', () => $('wrapVivOtro').classList.toggle('hidden', $('j_vivienda').value !== 'OTROS'));
+        // miembro posee documento
+        document.querySelectorAll('input[name="m_doc"]').forEach(r => r.addEventListener('change', () => $('wrapMdoc').classList.toggle('hidden', document.querySelector('input[name="m_doc"]:checked').value !== 'Si')));
+
+        // ---------- Territorio (Charallave, Cristóbal Rojas) ----------
+        function T() { return (window.TERRITORIO && window.TERRITORIO.comunidades) ? window.TERRITORIO.comunidades : {}; }
+        function parroquias() { const s = new Set(); Object.values(T()).forEach(c => { if (c.activo) s.add(c.parroquia); }); return [...s].sort(); }
+        function comunasDe(par) { const s = new Set(); Object.values(T()).forEach(c => { if (c.activo && c.parroquia === par) s.add(c.circuito_comunal); }); return [...s].sort(); }
+        function comunidadesDe(par, com) { const a = []; Object.values(T()).forEach(c => { if (c.activo && c.parroquia === par && c.circuito_comunal === com) a.push(c.nombre); }); return a.sort((x, y) => x.localeCompare(y, 'es')); }
+        $('h_parroquia').innerHTML = '<option value="">Selecciona…</option>' + parroquias().map(p => `<option>${p}</option>`).join('');
+        $('h_parroquia').addEventListener('change', () => {
+            $('h_comuna').innerHTML = '<option value="">Selecciona…</option>' + comunasDe($('h_parroquia').value).map(c => `<option>${c}</option>`).join('');
+            $('h_comuna').value = ''; $('h_consejo').innerHTML = '<option value="">Selecciona…</option>'; $('wrapConsejoOtro').classList.add('hidden');
+        });
+        $('h_comuna').addEventListener('change', () => {
+            const cs = comunidadesDe($('h_parroquia').value, $('h_comuna').value);
+            $('h_consejo').innerHTML = '<option value="">Selecciona…</option>' + cs.map(c => `<option>${c}</option>`).join('') + '<option value="__OTRO__">Otra (escribir a mano)…</option>';
+            $('wrapConsejoOtro').classList.add('hidden');
+        });
+        $('h_consejo').addEventListener('change', () => $('wrapConsejoOtro').classList.toggle('hidden', $('h_consejo').value !== '__OTRO__'));
+
+        // ---------- Municipios nacionales (procedencia) ----------
+        const MUN = window.MUNICIPIOS || {};
+        $('p_estado').innerHTML = '<option value="">Selecciona…</option>' + Object.keys(MUN).sort((a, b) => a.localeCompare(b, 'es')).map(e => `<option>${e}</option>`).join('');
+        $('p_estado').addEventListener('change', () => {
+            const lista = MUN[$('p_estado').value] || [];
+            $('p_municipio').innerHTML = '<option value="">Selecciona…</option>' + lista.map(m => `<option>${m}</option>`).join('');
+        });
+
+        // ---------- CNE ----------
+        async function consultarCNE(nac, num) {
+            const n = (num || '').replace(/\D/g, '');
+            if (n.length < 4 || n.length > 10) return null;
+            try {
+                const r = await fetch('https://tfbzghjjfcaqmkzsxrrs.supabase.co/functions/v1/consultar-cedula', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cedula: n, nacionalidad: nac || 'V' })
+                });
+                if (!r.ok) return null;
+                const j = await r.json();
+                return (j && !j.error && j.data) ? j.data : null;
+            } catch (e) { return null; }
+        }
+        function fechaCneOk(f) { return /^\d{4}-\d{2}-\d{2}$/.test(f || '') && f !== '0000-00-00' && +f.slice(0, 4) >= 1900 && +f.slice(0, 4) <= 2030; }
+        function engancharCNE(cedId, nacId, nomId, apeId, ape2Id, fnacId, btnId) {
+            const run = async () => {
+                const ced = $(cedId); ced.style.background = '#fef3c7';
+                const d = await consultarCNE($(nacId).value, ced.value);
+                ced.style.background = '';
+                if (!d) return;
+                if (nomId && !v(nomId)) $(nomId).value = d.primer_nombre || '';
+                if (apeId && !v(apeId)) $(apeId).value = d.primer_apellido || '';
+                if (ape2Id && !v(ape2Id)) $(ape2Id).value = d.segundo_apellido || '';
+                if (fnacId && !v(fnacId) && fechaCneOk(d.fecha_nac)) $(fnacId).value = d.fecha_nac;
+                ced.style.background = '#dcfce7'; setTimeout(() => ced.style.background = '', 1200);
+            };
+            $(cedId).addEventListener('blur', run);
+            if (btnId) $(btnId).addEventListener('click', run);
+        }
+        engancharCNE('r_cedula', 'r_nac', 'r_nombre', 'r_apellido', 'r_apellido2', 'r_fnac', 'r_buscar');
+        engancharCNE('j_cedula', 'j_nac', 'j_nombre', 'j_apellido', 'j_apellido2', 'j_fnac', 'j_buscar');
+        engancharCNE('m_cedula', 'm_nac', 'm_nombre', 'm_apellido', 'm_apellido2', 'm_fnac', 'm_buscar');
+
+        // ---------- GPS ----------
+        $('btnGps').addEventListener('click', () => {
+            if (!navigator.geolocation) { $('gpsMsg').textContent = 'Tu dispositivo no permite ubicación.'; return; }
+            $('gpsMsg').textContent = 'Obteniendo ubicación…';
+            navigator.geolocation.getCurrentPosition(
+                pos => { $('h_lat').value = pos.coords.latitude.toFixed(6); $('h_lng').value = pos.coords.longitude.toFixed(6); $('gpsMsg').textContent = '✓ Ubicación capturada.'; },
+                () => { $('gpsMsg').textContent = 'No se pudo obtener la ubicación (puedes escribirla a mano).'; }
+            );
+        });
+
+        // ---------- Navegación de pasos ----------
+        const setStep = (n) => {
+            [1, 2, 3].forEach(i => { $('sec' + i).classList.toggle('hidden', i !== n); const st = $('stp' + i); st.classList.toggle('on', i === n); st.classList.toggle('done', i < n); });
+            window.scrollTo(0, 0);
+        };
+        function err(id, txt) { const m = $(id); m.textContent = txt; m.className = 'msg err'; window.scrollTo(0, document.body.scrollHeight); }
+        function clearMsg(id) { const m = $(id); m.textContent = ''; m.className = 'msg'; }
+
+        $('next1').addEventListener('click', () => {
+            clearMsg('msg1');
+            if (!v('relacion')) return err('msg1', 'Selecciona el tipo de relación.');
+            if (v('relacion') === 'Familiar' && !v('que_familiar')) return err('msg1', 'Indica qué familiar es.');
+            if (!v('r_cedula')) return err('msg1', 'Falta la cédula del responsable.');
+            if (!v('r_nombre') || !v('r_apellido')) return err('msg1', 'Falta el nombre/apellido del responsable.');
+            if (!v('r_fnac')) return err('msg1', 'Falta la fecha de nacimiento del responsable.');
+            if (!v('r_sexo')) return err('msg1', 'Falta el sexo del responsable.');
+            if (!v('h_parroquia')) return err('msg1', 'Selecciona la parroquia del hogar solidario.');
+            if (!v('h_direccion')) return err('msg1', 'Escribe la dirección exacta.');
+            if (!document.querySelector('input[name="tipo_viv"]:checked')) return err('msg1', 'Indica el tipo de vivienda (Casa/Edificio).');
+            setStep(2);
+        });
+        $('prev2').addEventListener('click', () => setStep(1));
+        $('next2').addEventListener('click', () => { clearMsg('msg2'); if (!JEFES.length) return err('msg2', 'Agrega al menos un jefe de familia.'); setStep(3); });
+        $('prev3').addEventListener('click', () => setStep(2));
+
+        // ---------- Jefes de familia (agregar / editar / eliminar) ----------
+        let JEFES = [], editJefe = -1;
+        function leerJefe() {
+            const sit = document.querySelector('input[name="sit_actual"]:checked');
+            return {
+                proc_estado: v('p_estado'), proc_municipio: v('p_municipio'), proc_parroquia: v('p_parroquia'), proc_comuna: v('p_comuna'),
+                nacionalidad: v('j_nac'), cedula: v('j_cedula'), primer_nombre: v('j_nombre'), primer_apellido: v('j_apellido'), segundo_apellido: v('j_apellido2'),
+                fecha_nacimiento: v('j_fnac'), sexo: v('j_sexo'), telefono: v('j_tel'),
+                situacion_actual: sit ? sit.value : '', situacion_vivienda: v('j_vivienda'), situacion_vivienda_otro: v('j_vivienda') === 'OTROS' ? v('j_vivienda_otro') : ''
+            };
+        }
+        function limpiarJefe() {
+            ['p_estado', 'p_municipio', 'p_parroquia', 'p_comuna', 'j_cedula', 'j_nombre', 'j_apellido', 'j_apellido2', 'j_fnac', 'j_sexo', 'j_tel', 'j_vivienda', 'j_vivienda_otro'].forEach(id => $(id).value = '');
+            $('p_municipio').innerHTML = '<option value="">Selecciona…</option>';
+            const s = document.querySelector('input[name="sit_actual"]:checked'); if (s) s.checked = false;
+            $('wrapVivOtro').classList.add('hidden'); editJefe = -1; $('addJefe').textContent = '➕ Agregar jefe de familia';
+        }
+        $('addJefe').addEventListener('click', () => {
+            clearMsg('msgJefe');
+            if (!v('p_estado') || !v('p_municipio') || !v('p_parroquia')) return err('msgJefe', 'Completa la procedencia (estado, municipio, parroquia).');
+            if (!v('j_cedula')) return err('msgJefe', 'Falta la cédula del jefe de familia.');
+            if (!v('j_nombre') || !v('j_apellido')) return err('msgJefe', 'Falta nombre/apellido del jefe.');
+            if (!v('j_fnac')) return err('msgJefe', 'Falta la fecha de nacimiento del jefe.');
+            if (!v('j_sexo')) return err('msgJefe', 'Falta el sexo del jefe.');
+            if (!v('j_vivienda')) return err('msgJefe', 'Indica la situación de la vivienda de origen.');
+            const j = leerJefe();
+            if (editJefe >= 0) JEFES[editJefe] = j; else JEFES.push(j);
+            limpiarJefe(); renderJefes();
+        });
+        function renderJefes() {
+            const tb = $('tablaJefes');
+            if (!JEFES.length) { tb.innerHTML = '<tr><td colspan="5" class="vacio">Sin jefes agregados todavía.</td></tr>'; return; }
+            tb.innerHTML = JEFES.map((j, i) => `<tr><td>${j.nacionalidad}-${j.cedula}</td><td>${esc(j.primer_nombre)}</td><td>${esc(j.primer_apellido)}</td><td>${esc(j.situacion_vivienda === 'OTROS' && j.situacion_vivienda_otro ? j.situacion_vivienda_otro : j.situacion_vivienda)}</td><td class="acc"><button data-e="${i}" title="Editar">✏️</button><button data-d="${i}" title="Eliminar">🗑️</button></td></tr>`).join('');
+            tb.querySelectorAll('button[data-d]').forEach(b => b.addEventListener('click', () => { JEFES.splice(+b.dataset.d, 1); renderJefes(); }));
+            tb.querySelectorAll('button[data-e]').forEach(b => b.addEventListener('click', () => cargarJefe(+b.dataset.e)));
+        }
+        function cargarJefe(i) {
+            const j = JEFES[i]; editJefe = i;
+            $('p_estado').value = j.proc_estado; $('p_estado').dispatchEvent(new Event('change')); $('p_municipio').value = j.proc_municipio;
+            $('p_parroquia').value = j.proc_parroquia; $('p_comuna').value = j.proc_comuna;
+            $('j_nac').value = j.nacionalidad; $('j_cedula').value = j.cedula; $('j_nombre').value = j.primer_nombre; $('j_apellido').value = j.primer_apellido; $('j_apellido2').value = j.segundo_apellido;
+            $('j_fnac').value = j.fecha_nacimiento; $('j_sexo').value = j.sexo; $('j_tel').value = j.telefono;
+            if (j.situacion_actual) { const r = document.querySelector(`input[name="sit_actual"][value="${CSS.escape(j.situacion_actual)}"]`); if (r) r.checked = true; }
+            $('j_vivienda').value = j.situacion_vivienda; $('wrapVivOtro').classList.toggle('hidden', j.situacion_vivienda !== 'OTROS'); $('j_vivienda_otro').value = j.situacion_vivienda_otro || '';
+            $('addJefe').textContent = '💾 Guardar cambios del jefe'; window.scrollTo(0, 0);
+        }
+
+        // ---------- Miembros (agregar / editar / eliminar) ----------
+        let MIEMBROS = [], editMiem = -1;
+        function leerMiembro() {
+            const doc = document.querySelector('input[name="m_doc"]:checked').value;
+            return {
+                tiene_documento: doc, nacionalidad: doc === 'Si' ? v('m_nac') : '', cedula: doc === 'Si' ? v('m_cedula') : '',
+                primer_nombre: v('m_nombre'), segundo_nombre: v('m_nombre2'), primer_apellido: v('m_apellido'), segundo_apellido: v('m_apellido2'),
+                fecha_nacimiento: v('m_fnac'), sexo: v('m_sexo'), tipo: v('m_tipo')
+            };
+        }
+        function limpiarMiembro() {
+            ['m_cedula', 'm_nombre', 'm_nombre2', 'm_apellido', 'm_apellido2', 'm_fnac', 'm_sexo', 'm_tipo'].forEach(id => $(id).value = '');
+            editMiem = -1; $('addMiembro').textContent = '➕ Agregar miembro';
+        }
+        $('addMiembro').addEventListener('click', () => {
+            clearMsg('msgMiembro');
+            const doc = document.querySelector('input[name="m_doc"]:checked').value;
+            if (doc === 'Si' && !v('m_cedula')) return err('msgMiembro', 'Escribe la cédula o marca "No posee documento".');
+            if (!v('m_nombre') || !v('m_apellido')) return err('msgMiembro', 'Falta nombre/apellido del miembro.');
+            if (!v('m_fnac')) return err('msgMiembro', 'Falta la fecha de nacimiento del miembro.');
+            if (!v('m_sexo')) return err('msgMiembro', 'Falta el sexo del miembro.');
+            const m = leerMiembro();
+            if (editMiem >= 0) MIEMBROS[editMiem] = m; else MIEMBROS.push(m);
+            limpiarMiembro(); renderMiembros();
+        });
+        function renderMiembros() {
+            const tb = $('tablaMiembros');
+            if (!MIEMBROS.length) { tb.innerHTML = '<tr><td colspan="5" class="vacio">Sin miembros agregados todavía.</td></tr>'; return; }
+            tb.innerHTML = MIEMBROS.map((m, i) => `<tr><td>${m.cedula ? m.nacionalidad + '-' + m.cedula : '—'}</td><td>${esc(m.primer_nombre)}</td><td>${esc(m.primer_apellido)}</td><td>${esc(m.tipo || '—')}</td><td class="acc"><button data-e="${i}" title="Editar">✏️</button><button data-d="${i}" title="Eliminar">🗑️</button></td></tr>`).join('');
+            tb.querySelectorAll('button[data-d]').forEach(b => b.addEventListener('click', () => { MIEMBROS.splice(+b.dataset.d, 1); renderMiembros(); }));
+            tb.querySelectorAll('button[data-e]').forEach(b => b.addEventListener('click', () => cargarMiembro(+b.dataset.e)));
+        }
+        function cargarMiembro(i) {
+            const m = MIEMBROS[i]; editMiem = i;
+            const r = document.querySelector(`input[name="m_doc"][value="${m.tiene_documento}"]`); if (r) { r.checked = true; r.dispatchEvent(new Event('change')); }
+            $('m_nac').value = m.nacionalidad || 'V'; $('m_cedula').value = m.cedula; $('m_nombre').value = m.primer_nombre; $('m_nombre2').value = m.segundo_nombre;
+            $('m_apellido').value = m.primer_apellido; $('m_apellido2').value = m.segundo_apellido; $('m_fnac').value = m.fecha_nacimiento; $('m_sexo').value = m.sexo; $('m_tipo').value = m.tipo;
+            $('addMiembro').textContent = '💾 Guardar cambios del miembro'; window.scrollTo(0, document.getElementById('addMiembro').offsetTop);
+        }
+
+        function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+        // ---------- Enviar ----------
+        $('enviar').addEventListener('click', async () => {
+            clearMsg('msg3');
+            if (!JEFES.length) return err('msg3', 'Debes agregar al menos un jefe de familia (paso 2).');
+            const tipoViv = document.querySelector('input[name="tipo_viv"]:checked');
+            const consejo = $('h_consejo').value === '__OTRO__' ? v('h_consejo_otro') : v('h_consejo');
+            const total_personas = JEFES.length + MIEMBROS.length;
+            const payload = {
+                relacion: v('relacion'), que_familiar: v('relacion') === 'Familiar' ? v('que_familiar') : '',
+                responsable: {
+                    nacionalidad: v('r_nac'), cedula: v('r_cedula'), primer_nombre: v('r_nombre'), primer_apellido: v('r_apellido'), segundo_apellido: v('r_apellido2'),
+                    fecha_nacimiento: v('r_fnac'), sexo: v('r_sexo'), telefono: v('r_tel')
+                },
+                hogar: {
+                    estado: 'Miranda', municipio: 'Cristóbal Rojas', parroquia: v('h_parroquia'), comuna: v('h_comuna'), consejo_comunal: consejo,
+                    direccion: v('h_direccion'), tipo_vivienda: tipoViv ? tipoViv.value : '', lat: v('h_lat'), lng: v('h_lng')
+                },
+                jefes: JEFES, miembros: MIEMBROS,
+                total_jefes: JEFES.length, total_miembros: MIEMBROS.length, total_personas,
+                fecha_registro: Date.now(), registrado_por: 'Formulario público'
+            };
+            $('enviar').disabled = true; $('enviar').textContent = 'Enviando…';
+            try {
+                let numRegistro = '';
+                try { const res = await runTransaction(ref(database, 'hogares_solidarios_contador'), (cur) => (Number(cur) || 0) + 1); if (res.committed && res.snapshot.exists()) numRegistro = String(res.snapshot.val()).padStart(4, '0'); } catch (e) {}
+                payload.n_registro = numRegistro;
+                await set(push(ref(database, 'hogares_solidarios')), payload);
+                $('formWrap').style.display = 'none';
+                $('okScreen').style.display = 'block';
+                $('okReg').textContent = numRegistro ? 'Nº de registro: ' + numRegistro : '';
+                window.scrollTo(0, 0);
+            } catch (e) {
+                err('msg3', 'No se pudo enviar (' + (e.message || e.code || 'error') + '). Revisa tu conexión e intenta de nuevo.');
+                $('enviar').disabled = false; $('enviar').textContent = 'Enviar registro ✓';
+            }
+        });
+        $('btnOtro').addEventListener('click', () => location.reload());
+    </script>
+</body>
+</html>
