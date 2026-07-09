@@ -37,6 +37,10 @@
         .radios.inline { flex-direction: row; gap: 18px; }
         .radios label { display: flex; align-items: center; gap: 7px; margin: 4px 0; font-weight: 600; color: #0f172a; cursor: pointer; }
         .radios input { width: auto; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+        .chip { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 20px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .chip input { width: auto; }
+        .chip.on { background: #dbeafe; border-color: #0a6cb0; color: #0a2351; }
         .nav { display: flex; gap: 10px; margin-top: 8px; }
         .btn { flex: 1; border: none; border-radius: 10px; padding: 15px; font-size: 16px; font-weight: 800; cursor: pointer; }
         .btn-prev { background: #e2e8f0; color: #334155; }
@@ -189,6 +193,28 @@
                         <select id="j_vivienda"><option value="">Selecciona una opción</option><option>COLAPSO ESTRUCTURAL</option><option>PELIGRO ALEDAÑO</option><option>ESPERA INSPECCIÓN</option><option>OTROS</option></select>
                         <div id="wrapVivOtro" class="hidden"><label>¿Indique cuál?</label><input id="j_vivienda_otro" autocomplete="off" /></div>
 
+                        <div class="seclabel" style="margin-top:14px;">🩺 Salud, atención y necesidades</div>
+                        <label>Estado de atención</label>
+                        <select id="j_estado_atencion"><option value="">Selecciona…</option><option>Pendiente</option><option>En atención</option><option>Atendido</option></select>
+                        <label>Vulnerabilidad</label>
+                        <div class="chips" id="j_vuln"></div>
+                        <label>Necesidades</label>
+                        <div class="chips" id="j_nec"></div>
+                        <label>Detalle de necesidades</label>
+                        <textarea id="j_nec_detalle" placeholder="Ej: medicinas para la tensión, pañales talla G, colchoneta…"></textarea>
+                        <div class="row2">
+                            <div><label>Patología / condición</label><input id="j_patologia" autocomplete="off" /></div>
+                            <div><label>Medicamentos que toma</label><input id="j_medicamento" autocomplete="off" /></div>
+                        </div>
+                        <label>👕 Tallas de ropa</label>
+                        <div class="row3">
+                            <div><label>Camisa</label><input id="j_talla_camisa" placeholder="Talla" autocomplete="off" /></div>
+                            <div><label>Pantalón</label><input id="j_talla_pantalon" placeholder="Talla" autocomplete="off" /></div>
+                            <div><label>Zapatos</label><input id="j_talla_zapatos" placeholder="Talla" autocomplete="off" /></div>
+                        </div>
+                        <label>Observaciones</label>
+                        <textarea id="j_observaciones"></textarea>
+
                         <button type="button" class="btn-add" id="addJefe">➕ Agregar jefe de familia</button>
                         <div id="msgJefe" class="msg"></div>
                     </div>
@@ -236,6 +262,18 @@
                             <div><label>Sexo *</label><select id="m_sexo"><option value="">—</option><option value="M">Masculino</option><option value="F">Femenino</option></select></div>
                             <div><label>Tipo (atención prioritaria)</label><select id="m_tipo"><option value="">Selecciona una opción</option><option>Persona con Discapacidad</option><option>Mujer Embarazada</option><option>Adulto Mayor</option></select></div>
                         </div>
+                        <div class="row2">
+                            <div><label>Patología / condición</label><input id="m_patologia" autocomplete="off" /></div>
+                            <div><label>Medicamentos que toma</label><input id="m_medicamento" autocomplete="off" /></div>
+                        </div>
+                        <label>👕 Tallas de ropa</label>
+                        <div class="row3">
+                            <div><label>Camisa</label><input id="m_talla_camisa" placeholder="Talla" autocomplete="off" /></div>
+                            <div><label>Pantalón</label><input id="m_talla_pantalon" placeholder="Talla" autocomplete="off" /></div>
+                            <div><label>Zapatos</label><input id="m_talla_zapatos" placeholder="Talla" autocomplete="off" /></div>
+                        </div>
+                        <label>Observaciones</label>
+                        <textarea id="m_observaciones"></textarea>
                         <button type="button" class="btn-add" id="addMiembro">➕ Agregar miembro</button>
                         <div id="msgMiembro" class="msg"></div>
                     </div>
@@ -286,8 +324,15 @@
         // ---------- Datos de listas ----------
         const FAMILIARES = ['PADRE / MADRE', 'HIJO / A', 'HERMANO / A', 'TIO / A', 'ABUELO / A', 'SUEGRO / A', 'CUÑADO / A', 'PRIMO / A', 'OTROS'];
         const SIT_ACTUAL = ['Desempleado buscando trabajo', 'Desempleado NO buscando trabajo', 'Empleado formal', 'Estudiante', 'Jubilado/Pensionado', 'Labores del hogar exclusivamente', 'Trabajador independiente/informal', 'Otro'];
+        const VULN_HS = ['Niños/as', 'Embarazadas', 'Adultos mayores', 'Personas con discapacidad', 'Enfermos crónicos'];
+        const NEC_HS = ['Alimentos', 'Agua', 'Medicinas', 'Atención médica', 'Colchones / cobijas', 'Ropa', 'Artículos de higiene', 'Otro'];
         $('que_familiar').innerHTML = '<option value="">Selecciona una opción</option>' + FAMILIARES.map(f => `<option>${f}</option>`).join('');
         $('sitActual').innerHTML = SIT_ACTUAL.map((s, i) => `<label><input type="radio" name="sit_actual" value="${s}" /> ${s}</label>`).join('');
+        function mkChecks(contId, arr) { $(contId).innerHTML = arr.map(t => `<label class="chip"><input type="checkbox" value="${t}"> ${t}</label>`).join(''); $(contId).querySelectorAll('input').forEach(c => c.addEventListener('change', () => c.closest('.chip').classList.toggle('on', c.checked))); }
+        function checksGet(contId) { return [...$(contId).querySelectorAll('input:checked')].map(c => c.value); }
+        function checksSet(contId, vals) { const s = new Set(vals || []); $(contId).querySelectorAll('input').forEach(c => { c.checked = s.has(c.value); c.closest('.chip').classList.toggle('on', c.checked); }); }
+        mkChecks('j_vuln', VULN_HS);
+        mkChecks('j_nec', NEC_HS);
 
         // relación → mostrar "¿qué familiar es?"
         $('relacion').addEventListener('change', () => $('wrapFamiliar').classList.toggle('hidden', $('relacion').value !== 'Familiar'));
@@ -418,12 +463,16 @@
                 proc_estado: v('p_estado'), proc_municipio: v('p_municipio'), proc_parroquia: v('p_parroquia'), proc_comuna: v('p_comuna'),
                 nacionalidad: v('j_nac'), cedula: v('j_cedula'), primer_nombre: v('j_nombre'), primer_apellido: v('j_apellido'), segundo_apellido: v('j_apellido2'),
                 fecha_nacimiento: v('j_fnac'), sexo: v('j_sexo'), telefono: v('j_tel'),
-                situacion_actual: sit ? sit.value : '', situacion_vivienda: v('j_vivienda'), situacion_vivienda_otro: v('j_vivienda') === 'OTROS' ? v('j_vivienda_otro') : ''
+                situacion_actual: sit ? sit.value : '', situacion_vivienda: v('j_vivienda'), situacion_vivienda_otro: v('j_vivienda') === 'OTROS' ? v('j_vivienda_otro') : '',
+                estado_atencion: v('j_estado_atencion'), vulnerabilidad: checksGet('j_vuln'), necesidades: checksGet('j_nec'), necesidades_detalle: v('j_nec_detalle'),
+                patologia: v('j_patologia'), medicamento: v('j_medicamento'),
+                talla_camisa: v('j_talla_camisa'), talla_pantalon: v('j_talla_pantalon'), talla_zapatos: v('j_talla_zapatos'), observaciones: v('j_observaciones')
             };
         }
         function limpiarJefe() {
-            ['p_estado', 'p_municipio', 'p_parroquia', 'p_comuna', 'j_cedula', 'j_nombre', 'j_apellido', 'j_apellido2', 'j_fnac', 'j_sexo', 'j_tel', 'j_vivienda', 'j_vivienda_otro'].forEach(id => $(id).value = '');
+            ['p_estado', 'p_municipio', 'p_parroquia', 'p_comuna', 'j_cedula', 'j_nombre', 'j_apellido', 'j_apellido2', 'j_fnac', 'j_sexo', 'j_tel', 'j_vivienda', 'j_vivienda_otro', 'j_estado_atencion', 'j_nec_detalle', 'j_patologia', 'j_medicamento', 'j_talla_camisa', 'j_talla_pantalon', 'j_talla_zapatos', 'j_observaciones'].forEach(id => $(id).value = '');
             $('p_municipio').innerHTML = '<option value="">Selecciona…</option>';
+            checksSet('j_vuln', []); checksSet('j_nec', []);
             const s = document.querySelector('input[name="sit_actual"]:checked'); if (s) s.checked = false;
             $('wrapVivOtro').classList.add('hidden'); editJefe = -1; $('addJefe').textContent = '➕ Agregar jefe de familia';
         }
@@ -454,6 +503,9 @@
             $('j_fnac').value = j.fecha_nacimiento; $('j_sexo').value = j.sexo; $('j_tel').value = j.telefono;
             if (j.situacion_actual) { const r = document.querySelector(`input[name="sit_actual"][value="${CSS.escape(j.situacion_actual)}"]`); if (r) r.checked = true; }
             $('j_vivienda').value = j.situacion_vivienda; $('wrapVivOtro').classList.toggle('hidden', j.situacion_vivienda !== 'OTROS'); $('j_vivienda_otro').value = j.situacion_vivienda_otro || '';
+            $('j_estado_atencion').value = j.estado_atencion || ''; checksSet('j_vuln', j.vulnerabilidad); checksSet('j_nec', j.necesidades); $('j_nec_detalle').value = j.necesidades_detalle || '';
+            $('j_patologia').value = j.patologia || ''; $('j_medicamento').value = j.medicamento || '';
+            $('j_talla_camisa').value = j.talla_camisa || ''; $('j_talla_pantalon').value = j.talla_pantalon || ''; $('j_talla_zapatos').value = j.talla_zapatos || ''; $('j_observaciones').value = j.observaciones || '';
             $('addJefe').textContent = '💾 Guardar cambios del jefe'; window.scrollTo(0, 0);
         }
 
@@ -464,11 +516,13 @@
             return {
                 tiene_documento: doc, nacionalidad: doc === 'Si' ? v('m_nac') : '', cedula: doc === 'Si' ? v('m_cedula') : '',
                 primer_nombre: v('m_nombre'), segundo_nombre: v('m_nombre2'), primer_apellido: v('m_apellido'), segundo_apellido: v('m_apellido2'),
-                fecha_nacimiento: v('m_fnac'), sexo: v('m_sexo'), tipo: v('m_tipo')
+                fecha_nacimiento: v('m_fnac'), sexo: v('m_sexo'), tipo: v('m_tipo'),
+                patologia: v('m_patologia'), medicamento: v('m_medicamento'),
+                talla_camisa: v('m_talla_camisa'), talla_pantalon: v('m_talla_pantalon'), talla_zapatos: v('m_talla_zapatos'), observaciones: v('m_observaciones')
             };
         }
         function limpiarMiembro() {
-            ['m_cedula', 'm_nombre', 'm_nombre2', 'm_apellido', 'm_apellido2', 'm_fnac', 'm_sexo', 'm_tipo'].forEach(id => $(id).value = '');
+            ['m_cedula', 'm_nombre', 'm_nombre2', 'm_apellido', 'm_apellido2', 'm_fnac', 'm_sexo', 'm_tipo', 'm_patologia', 'm_medicamento', 'm_talla_camisa', 'm_talla_pantalon', 'm_talla_zapatos', 'm_observaciones'].forEach(id => $(id).value = '');
             editMiem = -1; $('addMiembro').textContent = '➕ Agregar miembro';
         }
         $('addMiembro').addEventListener('click', () => {
@@ -494,6 +548,8 @@
             const r = document.querySelector(`input[name="m_doc"][value="${m.tiene_documento}"]`); if (r) { r.checked = true; r.dispatchEvent(new Event('change')); }
             $('m_nac').value = m.nacionalidad || 'V'; $('m_cedula').value = m.cedula; $('m_nombre').value = m.primer_nombre; $('m_nombre2').value = m.segundo_nombre;
             $('m_apellido').value = m.primer_apellido; $('m_apellido2').value = m.segundo_apellido; $('m_fnac').value = m.fecha_nacimiento; $('m_sexo').value = m.sexo; $('m_tipo').value = m.tipo;
+            $('m_patologia').value = m.patologia || ''; $('m_medicamento').value = m.medicamento || '';
+            $('m_talla_camisa').value = m.talla_camisa || ''; $('m_talla_pantalon').value = m.talla_pantalon || ''; $('m_talla_zapatos').value = m.talla_zapatos || ''; $('m_observaciones').value = m.observaciones || '';
             $('addMiembro').textContent = '💾 Guardar cambios del miembro'; window.scrollTo(0, document.getElementById('addMiembro').offsetTop);
         }
 

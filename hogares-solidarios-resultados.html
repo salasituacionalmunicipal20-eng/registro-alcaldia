@@ -119,6 +119,8 @@
                     <div><label>Situación vivienda origen</label><select id="fVivienda"><option value="">Todas</option><option>COLAPSO ESTRUCTURAL</option><option>PELIGRO ALEDAÑO</option><option>ESPERA INSPECCIÓN</option><option>OTROS</option></select></div>
                     <div><label>Estado de procedencia</label><select id="fEstadoProc"><option value="">Todos</option></select></div>
                     <div><label>Atención prioritaria</label><select id="fPrioritaria"><option value="">Todos</option><option value="si">Con caso prioritario</option><option value="no">Sin caso prioritario</option></select></div>
+                    <div><label>Estado de atención</label><select id="fEstadoAtencion"><option value="">Todos</option><option>Pendiente</option><option>En atención</option><option>Atendido</option></select></div>
+                    <div><label>Necesidad</label><select id="fNecesidad"><option value="">Todas</option><option>Alimentos</option><option>Agua</option><option>Medicinas</option><option>Atención médica</option><option>Colchones / cobijas</option><option>Ropa</option><option>Artículos de higiene</option><option>Otro</option></select></div>
                     <div><label>Desde</label><input id="fDesde" type="date" /></div>
                     <div><label>Hasta</label><input id="fHasta" type="date" /></div>
                     <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
@@ -226,6 +228,7 @@
             const q = ($('fBuscar').value || '').trim().toLowerCase();
             const fr = $('fRelacion').value, fp = $('fParroquia').value, fc = $('fComuna').value, ftv = $('fTipoViv').value;
             const fv = $('fVivienda').value, fe = $('fEstadoProc').value, fpr = $('fPrioritaria').value;
+            const fea = $('fEstadoAtencion').value, fnec = $('fNecesidad').value;
             const fd = $('fDesde').value, fh = $('fHasta').value;
             return REGS.filter(r => {
                 const h = r.hogar || {}, resp = r.responsable || {}, js = jefesDe(r);
@@ -235,6 +238,8 @@
                 if (ftv && h.tipo_vivienda !== ftv) return false;
                 if (fv && !js.some(j => j.situacion_vivienda === fv)) return false;
                 if (fe && !js.some(j => j.proc_estado === fe)) return false;
+                if (fea && !js.some(j => j.estado_atencion === fea)) return false;
+                if (fnec && !js.some(j => toArr(j.necesidades).includes(fnec))) return false;
                 if (fpr) { const t = tienePrioritaria(r); if (fpr === 'si' && !t) return false; if (fpr === 'no' && t) return false; }
                 if (fd || fh) { const d = r.fecha_registro ? new Date(r.fecha_registro) : null; if (!d) return false; if (fd && d < new Date(fd + 'T00:00:00')) return false; if (fh && d > new Date(fh + 'T23:59:59')) return false; }
                 if (q) {
@@ -302,18 +307,31 @@
             if (n) n.addEventListener('click', () => { if (pagina < totalPag) { pagina++; render(); } });
         }
 
-        ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fDesde', 'fHasta'].forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
-        $('btnLimpiar').addEventListener('click', () => { ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fDesde', 'fHasta'].forEach(id => $(id).value = ''); pagina = 1; render(); });
+        ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fEstadoAtencion', 'fNecesidad', 'fDesde', 'fHasta'].forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
+        $('btnLimpiar').addEventListener('click', () => { ['fBuscar', 'fRelacion', 'fParroquia', 'fComuna', 'fTipoViv', 'fVivienda', 'fEstadoProc', 'fPrioritaria', 'fEstadoAtencion', 'fNecesidad', 'fDesde', 'fHasta'].forEach(id => $(id).value = ''); pagina = 1; render(); });
 
         // ---- Detalle ----
         function fila(k, val) { return val != null && String(val).trim() !== '' && String(val) !== '—' ? `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val)}</span></div>` : ''; }
+        const tallasTxt = (o) => [o.talla_camisa ? 'Camisa ' + o.talla_camisa : '', o.talla_pantalon ? 'Pantalón ' + o.talla_pantalon : '', o.talla_zapatos ? 'Zapatos ' + o.talla_zapatos : ''].filter(Boolean).join(' · ');
+        function lineasPersona(o) {
+            const L = [];
+            if (o.estado_atencion) L.push(['📌 Estado de atención', o.estado_atencion]);
+            if (toArr(o.vulnerabilidad).length) L.push(['⚠️ Vulnerabilidad', toArr(o.vulnerabilidad).join(', ')]);
+            if (toArr(o.necesidades).length) L.push(['🆘 Necesidades', toArr(o.necesidades).join(', ')]);
+            if (o.necesidades_detalle) L.push(['📝 Detalle necesidades', o.necesidades_detalle]);
+            if (o.patologia) L.push(['🩺 Patología / condición', o.patologia]);
+            if (o.medicamento) L.push(['💊 Medicamentos', o.medicamento]);
+            const t = tallasTxt(o); if (t) L.push(['👕 Tallas', t]);
+            if (o.observaciones) L.push(['🗒️ Observaciones', o.observaciones]);
+            return L.map(([k, val]) => `<br><span style="font-size:12.5px;color:#475569;">${k}: ${esc(val)}</span>`).join('');
+        }
         function verDetalle(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
             const h = r.hogar || {}, resp = r.responsable || {};
             const jefes = jefesDe(r).map((j, i) => `<div class="mini"><b>Jefe ${i + 1}: ${esc(nombreResp(j))}</b> · ${esc(cedDe(j))} · ${esc(gen(j.sexo))}${j.fecha_nacimiento ? ' · ' + edadDe(j.fecha_nacimiento) + ' años' : ''}
                 <br><span style="font-size:12.5px;color:#475569;">Procedencia: ${esc([j.proc_estado, j.proc_municipio, j.proc_parroquia].filter(Boolean).join(' / ') || '—')}${j.proc_comuna ? ' · ' + esc(j.proc_comuna) : ''}</span>
-                <br><span style="font-size:12.5px;color:#475569;">Situación actual: ${esc(j.situacion_actual || '—')} · Vivienda de origen: <b>${esc(vivTxt(j))}</b></span>${j.telefono ? '<br><span style="font-size:12.5px;color:#475569;">Tel: ' + esc(j.telefono) + '</span>' : ''}</div>`).join('') || '<div class="fila"><span class="k">Sin jefes</span></div>';
-            const miembros = miembrosDe(r).map((m, i) => `<div class="mini"><b>${i + 1}. ${esc(nombreResp(m))}</b> · ${m.cedula ? esc(cedDe(m)) : 'sin documento'} · ${esc(gen(m.sexo))}${m.fecha_nacimiento ? ' · ' + edadDe(m.fecha_nacimiento) + ' años' : ''}${m.tipo ? ' · <span style="color:#b45309;font-weight:700;">⭐ ' + esc(m.tipo) + '</span>' : ''}</div>`).join('') || '<div class="fila"><span class="k">Sin miembros adicionales</span></div>';
+                <br><span style="font-size:12.5px;color:#475569;">Situación actual: ${esc(j.situacion_actual || '—')} · Vivienda de origen: <b>${esc(vivTxt(j))}</b></span>${j.telefono ? '<br><span style="font-size:12.5px;color:#475569;">Tel: ' + esc(j.telefono) + '</span>' : ''}${lineasPersona(j)}</div>`).join('') || '<div class="fila"><span class="k">Sin jefes</span></div>';
+            const miembros = miembrosDe(r).map((m, i) => `<div class="mini"><b>${i + 1}. ${esc(nombreResp(m))}</b> · ${m.cedula ? esc(cedDe(m)) : 'sin documento'} · ${esc(gen(m.sexo))}${m.fecha_nacimiento ? ' · ' + edadDe(m.fecha_nacimiento) + ' años' : ''}${m.tipo ? ' · <span style="color:#b45309;font-weight:700;">⭐ ' + esc(m.tipo) + '</span>' : ''}${lineasPersona(m)}</div>`).join('') || '<div class="fila"><span class="k">Sin miembros adicionales</span></div>';
             $('modal').innerHTML = `
                 <h3>🏠 Hogar Solidario ${esc(r.n_registro ? 'Nº ' + r.n_registro : '')}</h3>
                 <div style="color:#64748b;font-size:13px;">Registrado el ${esc(fmtFecha(r.fecha_registro))} · ${personasDe(r)} persona(s)</div>
@@ -364,15 +382,15 @@
             const f1 = lista.map(r => { const h = r.hogar || {}, o = r.responsable || {}; return [r.n_registro || '', fmtFecha(r.fecha_registro), r.relacion || '', r.que_familiar || '', nombreResp(o), cedDe(o), gen(o.sexo), o.telefono || '', h.parroquia || '', h.comuna || '', h.consejo_comunal || '', h.direccion || '', h.tipo_vivienda || '', h.lat || '', h.lng || '', jefesDe(r).length, miembrosDe(r).length, personasDe(r)]; });
             XLSX.utils.book_append_sheet(wb, mkSheet(h1, f1, [6, 14, 16, 14, 26, 12, 10, 13, 16, 20, 22, 30, 12, 11, 11, 7, 8, 9]), 'Hogares solidarios');
 
-            const h2 = ['Nº hogar', 'Responsable', 'Jefe de familia', 'Cédula', 'Sexo', 'Edad', 'Teléfono', 'Procedencia estado', 'Procedencia municipio', 'Procedencia parroquia', 'Comuna procedencia', 'Situación actual', 'Situación vivienda origen'];
+            const h2 = ['Nº hogar', 'Responsable', 'Jefe de familia', 'Cédula', 'Sexo', 'Edad', 'Teléfono', 'Procedencia estado', 'Procedencia municipio', 'Procedencia parroquia', 'Comuna procedencia', 'Situación actual', 'Situación vivienda origen', 'Estado de atención', 'Vulnerabilidad', 'Necesidades', 'Detalle necesidades', 'Patología / condición', 'Medicamentos', 'Talla camisa', 'Talla pantalón', 'Talla zapatos', 'Observaciones'];
             const f2 = [];
-            lista.forEach(r => { const o = r.responsable || {}; jefesDe(r).forEach(j => f2.push([r.n_registro || '', nombreResp(o), nombreResp(j), cedDe(j), gen(j.sexo), edadDe(j.fecha_nacimiento), j.telefono || '', j.proc_estado || '', j.proc_municipio || '', j.proc_parroquia || '', j.proc_comuna || '', j.situacion_actual || '', vivTxt(j)])); });
-            XLSX.utils.book_append_sheet(wb, mkSheet(h2, f2, [8, 24, 24, 12, 10, 6, 13, 16, 18, 16, 16, 22, 22]), 'Jefes de familia');
+            lista.forEach(r => { const o = r.responsable || {}; jefesDe(r).forEach(j => f2.push([r.n_registro || '', nombreResp(o), nombreResp(j), cedDe(j), gen(j.sexo), edadDe(j.fecha_nacimiento), j.telefono || '', j.proc_estado || '', j.proc_municipio || '', j.proc_parroquia || '', j.proc_comuna || '', j.situacion_actual || '', vivTxt(j), j.estado_atencion || '', toArr(j.vulnerabilidad).join(', '), toArr(j.necesidades).join(', '), j.necesidades_detalle || '', j.patologia || '', j.medicamento || '', j.talla_camisa || '', j.talla_pantalon || '', j.talla_zapatos || '', j.observaciones || ''])); });
+            XLSX.utils.book_append_sheet(wb, mkSheet(h2, f2, [8, 24, 24, 12, 10, 6, 13, 16, 18, 16, 16, 22, 22, 16, 24, 24, 30, 22, 20, 12, 12, 12, 30]), 'Jefes de familia');
 
-            const h3 = ['Nº hogar', 'Responsable', 'Miembro', 'Cédula', 'Sexo', 'Edad', 'Atención prioritaria'];
+            const h3 = ['Nº hogar', 'Responsable', 'Miembro', 'Cédula', 'Sexo', 'Edad', 'Atención prioritaria', 'Patología / condición', 'Medicamentos', 'Talla camisa', 'Talla pantalón', 'Talla zapatos', 'Observaciones'];
             const f3 = [];
-            lista.forEach(r => { const o = r.responsable || {}; miembrosDe(r).forEach(m => f3.push([r.n_registro || '', nombreResp(o), nombreResp(m), m.cedula ? cedDe(m) : 'sin documento', gen(m.sexo), edadDe(m.fecha_nacimiento), m.tipo || ''])); });
-            XLSX.utils.book_append_sheet(wb, mkSheet(h3, f3, [8, 24, 24, 14, 10, 6, 22]), 'Miembros');
+            lista.forEach(r => { const o = r.responsable || {}; miembrosDe(r).forEach(m => f3.push([r.n_registro || '', nombreResp(o), nombreResp(m), m.cedula ? cedDe(m) : 'sin documento', gen(m.sexo), edadDe(m.fecha_nacimiento), m.tipo || '', m.patologia || '', m.medicamento || '', m.talla_camisa || '', m.talla_pantalon || '', m.talla_zapatos || '', m.observaciones || ''])); });
+            XLSX.utils.book_append_sheet(wb, mkSheet(h3, f3, [8, 24, 24, 14, 10, 6, 22, 22, 20, 12, 12, 12, 30]), 'Miembros');
 
             XLSX.writeFile(wb, `hogares_solidarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
         });
