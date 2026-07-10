@@ -323,26 +323,42 @@
 
         // ---- Detalle ----
         function fila(k, val) { return val != null && String(val).trim() !== '' && String(val) !== '—' ? `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val)}</span></div>` : ''; }
-        const tallasTxt = (o) => [o.talla_camisa ? 'Camisa ' + o.talla_camisa : '', o.talla_pantalon ? 'Pantalón ' + o.talla_pantalon : '', o.talla_zapatos ? 'Zapatos ' + o.talla_zapatos : ''].filter(Boolean).join(' · ');
-        function lineasPersona(o) {
-            const L = [];
-            if (o.estado_atencion) L.push(['📌 Estado de atención', o.estado_atencion]);
-            if (toArr(o.vulnerabilidad).length) L.push(['⚠️ Vulnerabilidad', toArr(o.vulnerabilidad).join(', ')]);
-            if (toArr(o.necesidades).length) L.push(['🆘 Necesidades', toArr(o.necesidades).join(', ')]);
-            if (o.necesidades_detalle) L.push(['📝 Detalle necesidades', o.necesidades_detalle]);
-            if (o.patologia) L.push(['🩺 Patología / condición', o.patologia]);
-            if (o.medicamento) L.push(['💊 Medicamentos', o.medicamento]);
-            const t = tallasTxt(o); if (t) L.push(['👕 Tallas', t]);
-            if (o.observaciones) L.push(['🗒️ Observaciones', o.observaciones]);
-            return L.map(([k, val]) => `<br><span style="font-size:12.5px;color:#475569;">${k}: ${esc(val)}</span>`).join('');
+        // Lista COMPLETA de campos de una persona (jefe o miembro). Siempre incluye todos,
+        // con "—" cuando el dato está vacío, para que en Ver/Imprimir no falte ningún campo.
+        function fichaFilas(o, esJefe) {
+            const edad = (o.fecha_nacimiento && edadDe(o.fecha_nacimiento) !== '') ? edadDe(o.fecha_nacimiento) + ' años' : '';
+            const F = [
+                ['Cédula', o.cedula ? cedDe(o) : (o.tiene_documento === 'No' ? 'No posee documento' : '—')],
+                ['Sexo', gen(o.sexo)],
+                ['Fecha de nacimiento', o.fecha_nacimiento ? (o.fecha_nacimiento + (edad ? ' (' + edad + ')' : '')) : '—']
+            ];
+            if (esJefe) {
+                F.push(['Teléfono', o.telefono || '—']);
+                F.push(['Procedencia', [o.proc_estado, o.proc_municipio, o.proc_parroquia].filter(Boolean).join(' / ') || '—']);
+                F.push(['Comuna de procedencia', o.proc_comuna || '—']);
+                F.push(['Situación actual', o.situacion_actual || '—']);
+                F.push(['Situación vivienda de origen', vivTxt(o)]);
+                F.push(['Estado de atención', o.estado_atencion || '—']);
+                F.push(['Vulnerabilidad', toArr(o.vulnerabilidad).join(', ') || '—']);
+                F.push(['Necesidades', toArr(o.necesidades).join(', ') || '—']);
+                F.push(['Detalle de necesidades', o.necesidades_detalle || '—']);
+            } else {
+                F.push(['Tipo (atención prioritaria)', o.tipo || '—']);
+            }
+            F.push(['Patología / condición', o.patologia || '—']);
+            F.push(['Medicamentos que toma', o.medicamento || '—']);
+            F.push(['Talla de camisa', o.talla_camisa || '—']);
+            F.push(['Talla de pantalón', o.talla_pantalon || '—']);
+            F.push(['Talla de zapatos', o.talla_zapatos || '—']);
+            F.push(['Observaciones', o.observaciones || '—']);
+            return F;
         }
+        const fichaHTML = (o, esJefe) => fichaFilas(o, esJefe).map(([k, val]) => `<div style="display:flex;gap:10px;padding:3px 0;border-bottom:1px solid #eef2f7;font-size:12.5px;"><span style="font-weight:700;color:#475569;min-width:185px;">${esc(k)}</span><span style="color:#0f172a;">${esc(val)}</span></div>`).join('');
         function verDetalle(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
             const h = r.hogar || {}, resp = r.responsable || {};
-            const jefes = jefesDe(r).map((j, i) => `<div class="mini"><b>Jefe ${i + 1}: ${esc(nombreResp(j))}</b> · ${esc(cedDe(j))} · ${esc(gen(j.sexo))}${j.fecha_nacimiento ? ' · ' + edadDe(j.fecha_nacimiento) + ' años' : ''}
-                <br><span style="font-size:12.5px;color:#475569;">Procedencia: ${esc([j.proc_estado, j.proc_municipio, j.proc_parroquia].filter(Boolean).join(' / ') || '—')}${j.proc_comuna ? ' · ' + esc(j.proc_comuna) : ''}</span>
-                <br><span style="font-size:12.5px;color:#475569;">Situación actual: ${esc(j.situacion_actual || '—')} · Vivienda de origen: <b>${esc(vivTxt(j))}</b></span>${j.telefono ? '<br><span style="font-size:12.5px;color:#475569;">Tel: ' + esc(j.telefono) + '</span>' : ''}${lineasPersona(j)}</div>`).join('') || '<div class="fila"><span class="k">Sin jefes</span></div>';
-            const miembros = miembrosDe(r).map((m, i) => `<div class="mini"><b>${i + 1}. ${esc(nombreResp(m))}</b> · ${m.cedula ? esc(cedDe(m)) : 'sin documento'} · ${esc(gen(m.sexo))}${m.fecha_nacimiento ? ' · ' + edadDe(m.fecha_nacimiento) + ' años' : ''}${m.tipo ? ' · <span style="color:#b45309;font-weight:700;">⭐ ' + esc(m.tipo) + '</span>' : ''}${lineasPersona(m)}</div>`).join('') || '<div class="fila"><span class="k">Sin miembros adicionales</span></div>';
+            const jefes = jefesDe(r).map((j, i) => `<div class="mini"><b style="color:#0a2351;font-size:14px;">👤 Jefe ${i + 1}: ${esc(nombreResp(j))}</b>${fichaHTML(j, true)}</div>`).join('') || '<div class="fila"><span class="k">Sin jefes</span></div>';
+            const miembros = miembrosDe(r).map((m, i) => `<div class="mini"><b style="color:#0a2351;font-size:14px;">👤 Miembro ${i + 1}: ${esc(nombreResp(m))}</b>${fichaHTML(m, false)}</div>`).join('') || '<div class="fila"><span class="k">Sin miembros adicionales</span></div>';
             $('modal').innerHTML = `
                 <h3>🏠 Hogar Solidario ${esc(r.n_registro ? 'Nº ' + r.n_registro : '')} ${r.atendida ? '<span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:2px 10px;font-size:13px;font-weight:800;">✅ Atendida</span>' : '<span style="background:#fee2e2;color:#b91c1c;border-radius:20px;padding:2px 10px;font-size:13px;font-weight:800;">⏳ No atendida</span>'}</h3>
                 <div style="color:#64748b;font-size:13px;">Registrado el ${esc(fmtFecha(r.fecha_registro))} · ${personasDe(r)} persona(s)</div>
@@ -448,6 +464,7 @@
                 startY: 58, margin: { top: 58, bottom: 16, left: 14, right: 14 }, theme: 'grid',
                 head: [[{ content: _s('RESPONSABLE Y HOGAR SOLIDARIO'), colSpan: 2 }]],
                 body: [
+                    ['Atencion de la familia', _s(r.atendida ? 'ATENDIDA' : 'NO ATENDIDA')],
                     ['Relacion con el afectado', _s(rel)], ['Responsable de la vivienda', _s(nombreResp(o))], ['Cedula', _s(cedDe(o))],
                     ['Sexo', _s(gen(o.sexo))], ['Telefono', _s(o.telefono || '-')],
                     ['Estado / Municipio', _s([h.estado, h.municipio].filter(Boolean).join(' / '))], ['Parroquia', _s(h.parroquia || '-')],
@@ -460,24 +477,24 @@
                 columnStyles: { 0: { cellWidth: 70, fontStyle: 'bold', fillColor: [239, 246, 255] }, 1: { cellWidth: 114 } },
                 didDrawPage: drawHF
             });
-            if (jefesDe(r).length) jsPDF.API.autoTable.call(doc, {
+            jefesDe(r).forEach((j, i) => jsPDF.API.autoTable.call(doc, {
                 startY: doc.lastAutoTable.finalY + 6, margin: { top: 58, bottom: 16, left: 14, right: 14 }, theme: 'grid',
-                head: [['#', 'Jefe de familia', 'Cedula', 'Sexo', 'Edad', 'Procedencia', 'Sit. actual', 'Vivienda origen']],
-                body: jefesDe(r).map((j, i) => [i + 1, _s(nombreResp(j)), _s(cedDe(j)), _s(gen(j.sexo)), _s(String(edadDe(j.fecha_nacimiento))), _s([j.proc_estado, j.proc_municipio].filter(Boolean).join(' / ')), _s(j.situacion_actual || '-'), _s(vivTxt(j))]),
-                styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.6, lineColor: [210, 210, 210], lineWidth: 0.2, overflow: 'linebreak' },
-                headStyles: { fillColor: [10, 108, 176], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
-                columnStyles: { 0: { cellWidth: 8 }, 4: { halign: 'center' } },
+                head: [[{ content: _s('JEFE DE FAMILIA ' + (i + 1) + ': ' + nombreResp(j)), colSpan: 2 }]],
+                body: fichaFilas(j, true).map(([k, val]) => [_s(k), _s(val)]),
+                styles: { font: 'helvetica', fontSize: 9.5, cellPadding: 1.8, lineColor: [210, 210, 210], lineWidth: 0.2, overflow: 'linebreak' },
+                headStyles: { fillColor: [10, 108, 176], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 10.5 },
+                columnStyles: { 0: { cellWidth: 64, fontStyle: 'bold', fillColor: [239, 246, 255] }, 1: { cellWidth: 120 } },
                 didDrawPage: drawHF
-            });
-            if (miembrosDe(r).length) jsPDF.API.autoTable.call(doc, {
+            }));
+            miembrosDe(r).forEach((m, i) => jsPDF.API.autoTable.call(doc, {
                 startY: doc.lastAutoTable.finalY + 6, margin: { top: 58, bottom: 16, left: 14, right: 14 }, theme: 'grid',
-                head: [['#', 'Miembro de familia', 'Cedula', 'Sexo', 'Edad', 'Atencion prioritaria']],
-                body: miembrosDe(r).map((m, i) => [i + 1, _s(nombreResp(m)), _s(m.cedula ? cedDe(m) : 'sin documento'), _s(gen(m.sexo)), _s(String(edadDe(m.fecha_nacimiento))), _s(m.tipo || '-')]),
-                styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.7, lineColor: [210, 210, 210], lineWidth: 0.2, overflow: 'linebreak' },
-                headStyles: { fillColor: [180, 83, 9], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
-                columnStyles: { 0: { cellWidth: 8 }, 4: { halign: 'center' } },
+                head: [[{ content: _s('MIEMBRO DE FAMILIA ' + (i + 1) + ': ' + nombreResp(m)), colSpan: 2 }]],
+                body: fichaFilas(m, false).map(([k, val]) => [_s(k), _s(val)]),
+                styles: { font: 'helvetica', fontSize: 9.5, cellPadding: 1.8, lineColor: [210, 210, 210], lineWidth: 0.2, overflow: 'linebreak' },
+                headStyles: { fillColor: [180, 83, 9], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 10.5 },
+                columnStyles: { 0: { cellWidth: 64, fontStyle: 'bold', fillColor: [255, 247, 237] }, 1: { cellWidth: 120 } },
                 didDrawPage: drawHF
-            });
+            }));
             doc.autoPrint();
             window.open(doc.output('bloburl'), '_blank');
         }
