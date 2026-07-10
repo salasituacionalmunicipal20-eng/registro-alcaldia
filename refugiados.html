@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- ==== REDIRECCION A HOGARES SOLIDARIOS ====
+         da.gd/qdRv5 apunta a esta pagina; ahora reenvia a Hogares Solidarios.
+         PARA REVERTIR y volver a mostrar el formulario de Refugiados: elimina este bloque
+         (el script + el meta refresh de abajo). El resto del formulario queda intacto. -->
+    <script>window.location.replace('hogares-solidarios.html' + (window.location.search || '') + (window.location.hash || ''));</script>
+    <meta http-equiv="refresh" content="0; url=hogares-solidarios.html" />
+    <!-- ==== FIN REDIRECCION ==== -->
     <title>Registro de Refugiados — Alcaldía de Cristóbal Rojas</title>
     <meta name="description" content="Registro de personas que llegan al Municipio Cristóbal Rojas en calidad de refugiado tras el terremoto. Alcaldía de Cristóbal Rojas." />
     <script defer src="territorio-data.js"></script>
