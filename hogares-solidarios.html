@@ -142,6 +142,10 @@
                         <label><input type="radio" name="tipo_viv" value="Casa" /> Casa</label>
                         <label><input type="radio" name="tipo_viv" value="Edificio" /> Edificio</label>
                     </div>
+                    <div class="row2">
+                        <div><label>Número de casa / apartamento</label><input id="h_numero" placeholder="Ej: Casa 12, Apto 3-B…" autocomplete="off" /></div>
+                        <div><label>Cantidad de habitantes en la vivienda</label><input id="h_habitantes" type="number" min="0" inputmode="numeric" placeholder="Nº de personas que viven ahí" /></div>
+                    </div>
                     <label>Ubicación geográfica (opcional)</label>
                     <button type="button" class="btn-gps" id="btnGps">📌 Usar mi ubicación actual</button>
                     <div class="row2" style="margin-top:8px;">
@@ -570,7 +574,7 @@
                 },
                 hogar: {
                     estado: 'Miranda', municipio: 'Cristóbal Rojas', parroquia: v('h_parroquia'), comuna: v('h_comuna'), consejo_comunal: consejo,
-                    direccion: v('h_direccion'), tipo_vivienda: tipoViv ? tipoViv.value : '', lat: v('h_lat'), lng: v('h_lng')
+                    direccion: v('h_direccion'), tipo_vivienda: tipoViv ? tipoViv.value : '', numero_casa: v('h_numero'), cantidad_habitantes: v('h_habitantes'), lat: v('h_lat'), lng: v('h_lng')
                 },
                 jefes: JEFES, miembros: MIEMBROS,
                 total_jefes: JEFES.length, total_miembros: MIEMBROS.length, total_personas,
