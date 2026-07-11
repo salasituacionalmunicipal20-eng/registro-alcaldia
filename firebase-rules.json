@@ -115,6 +115,13 @@
       ".read": true,
       ".write": "(newData.isNumber() && ((!data.exists() && newData.val() === 1) || newData.val() === data.val() + 1)) || auth.token.email === 'carlos.admin@alcaldia.com'"
     },
+    "hogares_solidarios_cedulas": {
+      "$cedula": {
+        ".read": true,
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "newData.isNumber()"
+      }
+    },
     "tickets": {
       ".read": "auth != null",
       "$ticketId": {

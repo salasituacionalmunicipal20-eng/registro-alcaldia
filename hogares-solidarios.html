@@ -308,7 +308,7 @@
     <script src="territorio-data.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -324,6 +324,7 @@
         const database = getDatabase(app);
         const $ = (id) => document.getElementById(id);
         const v = (id) => ($(id).value || '').trim();
+        const soloDig = (s) => (s || '').replace(/\D/g, '');
 
         // ---------- Datos de listas ----------
         const FAMILIARES = ['PADRE / MADRE', 'HIJO / A', 'HERMANO / A', 'TIO / A', 'ABUELO / A', 'SUEGRO / A', 'CUÑADO / A', 'PRIMO / A', 'OTROS'];
@@ -563,6 +564,32 @@
         $('enviar').addEventListener('click', async () => {
             clearMsg('msg3');
             if (!JEFES.length) return err('msg3', 'Debes agregar al menos un jefe de familia (paso 2).');
+
+            // ---- Evitar cédulas repetidas (responsable + jefes + miembros) ----
+            const ceds = [];
+            const addCed = (nac, ced, etiqueta) => { const d = soloDig(ced); if (d) ceds.push({ key: (nac || 'V') + d, ced: (nac || 'V') + '-' + d, etiqueta }); };
+            addCed(v('r_nac'), v('r_cedula'), 'responsable (' + (v('r_nombre') + ' ' + v('r_apellido')).trim() + ')');
+            JEFES.forEach((j, i) => addCed(j.nacionalidad, j.cedula, 'jefe ' + (i + 1) + (j.primer_nombre ? ' (' + (j.primer_nombre + ' ' + j.primer_apellido).trim() + ')' : '')));
+            MIEMBROS.forEach((m, i) => { if (m.cedula) addCed(m.nacionalidad, m.cedula, 'miembro ' + (i + 1) + (m.primer_nombre ? ' (' + (m.primer_nombre + ' ' + m.primer_apellido).trim() + ')' : '')); });
+            // 1) Duplicados dentro del mismo registro
+            const vistos = {};
+            for (const c of ceds) {
+                if (vistos[c.key]) return err('msg3', 'La cédula ' + c.ced + ' está repetida en este mismo registro (' + vistos[c.key] + ' y ' + c.etiqueta + '). Cada persona debe tener una cédula distinta.');
+                vistos[c.key] = c.etiqueta;
+            }
+            // 2) Duplicados contra registros anteriores (índice público de cédulas)
+            $('enviar').disabled = true; $('enviar').textContent = 'Verificando cédulas…';
+            try {
+                const claves = [...new Set(ceds.map(c => c.key))];
+                const chequeos = await Promise.all(claves.map(async k => ({ k, existe: (await get(ref(database, 'hogares_solidarios_cedulas/' + k))).exists() })));
+                const rep = chequeos.find(x => x.existe);
+                if (rep) {
+                    const c = ceds.find(x => x.key === rep.k);
+                    $('enviar').disabled = false; $('enviar').textContent = 'Enviar registro ✓';
+                    return err('msg3', 'La cédula ' + c.ced + ' (' + c.etiqueta + ') ya fue registrada en otro Hogar Solidario. No se puede repetir.');
+                }
+            } catch (e) { /* si no se puede verificar, no bloquear el envío */ }
+
             const tipoViv = document.querySelector('input[name="tipo_viv"]:checked');
             const consejo = $('h_consejo').value === '__OTRO__' ? v('h_consejo_otro') : v('h_consejo');
             const total_personas = JEFES.length + MIEMBROS.length;
@@ -586,6 +613,8 @@
                 try { const res = await runTransaction(ref(database, 'hogares_solidarios_contador'), (cur) => (Number(cur) || 0) + 1); if (res.committed && res.snapshot.exists()) numRegistro = String(res.snapshot.val()).padStart(4, '0'); } catch (e) {}
                 payload.n_registro = numRegistro;
                 await set(push(ref(database, 'hogares_solidarios')), payload);
+                // registrar las cédulas en el índice para evitar duplicados futuros
+                try { await Promise.all([...new Set(ceds.map(c => c.key))].map(k => set(ref(database, 'hogares_solidarios_cedulas/' + k), payload.fecha_registro))); } catch (e) {}
                 $('formWrap').style.display = 'none';
                 $('okScreen').style.display = 'block';
                 $('okReg').textContent = numRegistro ? 'Nº de registro: ' + numRegistro : '';
