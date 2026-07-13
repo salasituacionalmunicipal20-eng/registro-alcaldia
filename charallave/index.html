@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Portal oficial de la Alcaldia del Municipio Cristobal Rojas - Charallave, estado Miranda. Tramites, servicios, atencion al ciudadano y respuesta ante el sismo.">
+<meta name="theme-color" content="#0a2351">
+<meta property="og:title" content="Alcaldia de Charallave - Municipio Cristobal Rojas">
+<meta property="og:description" content="Portal oficial: tramites, servicios y atencion al ciudadano.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2232%22%20r%3D%2230%22%20fill%3D%22%230a2351%22%20stroke%3D%22%23f4c20d%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M32%2012l2.4%205%205.4.8-3.9%203.8%201%205.4-4.9-2.6-4.9%202.6%201-5.4-3.9-3.8%205.4-.8z%22%20fill%3D%22%23f4c20d%22%2F%3E%3C%2Fsvg%3E">
+<title>Alcaldía de Charallave · Municipio Cristóbal Rojas</title>
+<style>
+    :root {
+        --bg: #eef2f9; --surface: #ffffff; --surface-2: #f3f6fc; --raise: #ffffff;
+        --ink: #0b1730; --ink-soft: #3d4863; --muted: #6a7690; --line: #dce3f0;
+        --navy: #0a2351; --navy-2: #123571; --blue: #0a6cb0; --blue-2: #1183d1; --blue-soft: #e6f0fb;
+        --gold: #f4c20d; --gold-2: #ffd23a; --gold-ink: #3a2b00; --red: #d21534; --red-soft: #fdecef;
+        --grad-hero: linear-gradient(155deg, #0a2351 0%, #071a3d 55%, #0b2454 100%);
+        --ring: rgba(17,131,209,.45);
+        --shadow: 0 1px 2px rgba(11,23,48,.05), 0 10px 26px rgba(11,23,48,.07);
+        --shadow-lg: 0 30px 70px rgba(10,35,81,.22);
+        --sans: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+        --maxw: 1180px; --pad: clamp(16px, 4.2vw, 30px);
+        --r: 16px; --r-sm: 11px; --r-pill: 999px;
+        --hero-ink: #eef3ff; --hero-muted: #aebfdf;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #070e1c; --surface: #0d1b33; --surface-2: #0a1729; --raise: #12233f;
+            --ink: #e9eefb; --ink-soft: #bac6e0; --muted: #8493b3; --line: #1c2f54;
+            --blue: #45a6ef; --blue-2: #63b6f5; --blue-soft: #10233f; --red: #ff5a72; --red-soft: #2a1319;
+            --ring: rgba(69,166,239,.5);
+            --shadow: 0 1px 2px rgba(0,0,0,.45), 0 12px 34px rgba(0,0,0,.4);
+            --shadow-lg: 0 34px 80px rgba(0,0,0,.55);
+        }
+    }
+    :root[data-theme="light"] {
+        --bg: #eef2f9; --surface: #ffffff; --surface-2: #f3f6fc; --raise: #ffffff;
+        --ink: #0b1730; --ink-soft: #3d4863; --muted: #6a7690; --line: #dce3f0;
+        --blue: #0a6cb0; --blue-2: #1183d1; --blue-soft: #e6f0fb; --red: #d21534; --red-soft: #fdecef;
+        --ring: rgba(17,131,209,.45);
+        --shadow: 0 1px 2px rgba(11,23,48,.05), 0 10px 26px rgba(11,23,48,.07);
+        --shadow-lg: 0 30px 70px rgba(10,35,81,.22);
+    }
+    :root[data-theme="dark"] {
+        --bg: #070e1c; --surface: #0d1b33; --surface-2: #0a1729; --raise: #12233f;
+        --ink: #e9eefb; --ink-soft: #bac6e0; --muted: #8493b3; --line: #1c2f54;
+        --blue: #45a6ef; --blue-2: #63b6f5; --blue-soft: #10233f; --red: #ff5a72; --red-soft: #2a1319;
+        --ring: rgba(69,166,239,.5);
+        --shadow: 0 1px 2px rgba(0,0,0,.45), 0 12px 34px rgba(0,0,0,.4);
+        --shadow-lg: 0 34px 80px rgba(0,0,0,.55);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
+    body { font-family: var(--sans); background: var(--bg); color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    a { color: inherit; text-decoration: none; }
+    svg { display: block; }
+    button { font: inherit; }
+    .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--pad); }
+    .eyebrow { font-size: .74rem; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }
+    .tricolor { height: 5px; display: flex; }
+    .tricolor > i { flex: 1; }
+    .tricolor .c1 { background: var(--gold); } .tricolor .c2 { background: var(--blue); } .tricolor .c3 { background: var(--red); }
+    .skip { position: absolute; left: -9999px; top: 0; background: var(--gold); color: var(--gold-ink); padding: 10px 16px; font-weight: 800; border-radius: 0 0 8px 0; z-index: 200; }
+    .skip:focus { left: 0; }
+    :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; border-radius: 6px; }
+
+    /* ---- alert ---- */
+    .alert { background: linear-gradient(90deg, #b00f26, #d21534); color: #fff; font-size: 14px; }
+    .alert .wrap { display: flex; align-items: center; gap: 12px; padding: 9px var(--pad); }
+    .alert .pulse { width: 9px; height: 9px; border-radius: 50%; background: #ffd23a; flex: none; box-shadow: 0 0 0 0 rgba(255,210,58,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 70% { box-shadow: 0 0 0 9px rgba(255,210,58,0); } 100% { box-shadow: 0 0 0 0 rgba(255,210,58,0); } }
+    .alert b { font-weight: 800; }
+    .alert a.cta { margin-left: auto; background: #fff; color: #b00f26; font-weight: 800; padding: 5px 13px; border-radius: var(--r-pill); font-size: 13px; white-space: nowrap; }
+    .alert a.cta:hover { background: #ffe9ec; }
+    .alert .x { background: rgba(255,255,255,.18); border: none; color: #fff; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; flex: none; font-size: 15px; line-height: 1; }
+    .alert .x:hover { background: rgba(255,255,255,.32); }
+    @media (max-width: 640px) { .alert .msg-long { display: none; } }
+
+    /* ---- utility ---- */
+    .util { background: #061634; color: #b9c8e6; font-size: 12.5px; }
+    .util .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+    .util .gov { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+    .util .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+    #themeBtn { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: inherit; font-size: 12px; padding: 3px 11px; border-radius: var(--r-pill); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    #themeBtn:hover { background: rgba(255,255,255,.18); }
+    @media (max-width: 520px) { .util .gov .long { display: none; } }
+
+    /* ---- header ---- */
+    header.site { position: sticky; top: 0; z-index: 60; background: color-mix(in srgb, var(--surface) 86%, transparent); backdrop-filter: saturate(150%) blur(12px); border-bottom: 1px solid var(--line); }
+    .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 72px; }
+    .brand { display: inline-flex; align-items: center; gap: 12px; }
+    .brand .seal { width: 44px; height: 44px; flex: none; filter: drop-shadow(0 2px 5px rgba(10,35,81,.3)); }
+    .brand strong { display: block; font-size: 15px; font-weight: 850; letter-spacing: -.015em; line-height: 1.03; color: var(--ink); }
+    .brand span { display: block; font-size: 11.5px; color: var(--muted); font-weight: 650; letter-spacing: .01em; margin-top: 2px; }
+    nav.main { display: flex; align-items: center; gap: 2px; }
+    nav.main a { font-size: 14px; font-weight: 650; color: var(--ink-soft); padding: 9px 12px; border-radius: 9px; }
+    nav.main a:hover { color: var(--ink); background: var(--surface-2); }
+    nav.main a.cta { background: var(--navy); color: #fff; padding: 9px 17px; margin-left: 6px; }
+    nav.main a.cta:hover { background: var(--navy-2); }
+    .menu-btn { display: none; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; width: 44px; height: 44px; cursor: pointer; align-items: center; justify-content: center; }
+    .menu-btn svg { width: 22px; height: 22px; }
+    @media (max-width: 900px) {
+        nav.main { position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 2px; background: var(--surface); border-bottom: 1px solid var(--line); padding: 10px var(--pad) 16px; box-shadow: var(--shadow); display: none; }
+        nav.main.open { display: flex; }
+        nav.main a { padding: 13px 12px; }
+        nav.main a.cta { text-align: center; margin: 6px 0 0; }
+        .menu-btn { display: inline-flex; }
+    }
+
+    /* ---- hero ---- */
+    .hero { position: relative; overflow: hidden; background: var(--grad-hero); color: var(--hero-ink); }
+    .hero .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .5; pointer-events: none; }
+    .hero .b1 { width: 420px; height: 420px; right: -80px; top: -120px; background: radial-gradient(circle, rgba(17,131,209,.6), transparent 70%); }
+    .hero .b2 { width: 360px; height: 360px; left: -120px; bottom: -160px; background: radial-gradient(circle, rgba(244,194,13,.22), transparent 70%); }
+    .hero .seal-bg { position: absolute; right: -40px; top: 46%; transform: translateY(-50%); width: 330px; opacity: .06; pointer-events: none; }
+    .hero .inner { position: relative; padding: clamp(46px, 7vw, 86px) 0 clamp(40px, 6vw, 70px); max-width: 760px; }
+    .hero .eyebrow { color: var(--gold); }
+    .hero h1 { font-size: clamp(2.1rem, 5.6vw, 3.7rem); line-height: 1.06; font-weight: 880; letter-spacing: -.025em; text-wrap: balance; margin: 16px 0 0; }
+    .hero h1 .u { color: var(--gold); }
+    .hero p.lead { color: var(--hero-muted); font-size: clamp(1rem, 1.5vw, 1.18rem); max-width: 58ch; margin-top: 18px; }
+    .search { margin-top: 30px; display: flex; align-items: center; gap: 8px; background: #fff; border-radius: var(--r-pill); padding: 7px 8px 7px 18px; box-shadow: 0 18px 44px rgba(3,12,30,.4); max-width: 640px; }
+    .search svg { width: 22px; height: 22px; color: #64748b; flex: none; }
+    .search input { flex: 1; border: none; outline: none; font: inherit; font-size: 16px; color: #0b1730; background: transparent; padding: 8px 4px; min-width: 0; }
+    .search button { background: var(--navy); color: #fff; border: none; border-radius: var(--r-pill); padding: 11px 22px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+    .search button:hover { background: var(--navy-2); }
+    .chips-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .chips-quick a { font-size: 13px; font-weight: 650; color: var(--hero-ink); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.2); padding: 7px 13px; border-radius: var(--r-pill); }
+    .chips-quick a:hover { background: rgba(255,255,255,.2); }
+    .chips-quick a b { color: var(--gold); font-weight: 800; }
+
+    /* ---- accesos rápidos (top tasks) ---- */
+    .tasks { margin-top: -34px; position: relative; z-index: 5; padding-bottom: clamp(30px,5vw,54px); }
+    .tasks-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    @media (max-width: 900px) { .tasks-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .tasks-grid { grid-template-columns: 1fr 1fr; } }
+    .task { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; transition: transform .16s, box-shadow .16s, border-color .16s; }
+    .task:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: color-mix(in srgb, var(--blue) 45%, var(--line)); }
+    .task .ico { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--blue-soft); color: var(--blue); }
+    .task .ico svg { width: 23px; height: 23px; }
+    .task b { font-size: 1rem; font-weight: 780; letter-spacing: -.01em; }
+    .task span { font-size: 12.5px; color: var(--muted); }
+    .task.red .ico { background: var(--red-soft); color: var(--red); }
+
+    /* ---- sections ---- */
+    section { padding: clamp(48px, 7vw, 84px) 0; }
+    .sec-head { max-width: 660px; margin-bottom: 30px; }
+    .sec-head .eyebrow { color: var(--blue); }
+    .sec-head h2 { font-size: clamp(1.55rem, 3.6vw, 2.3rem); font-weight: 850; letter-spacing: -.025em; line-height: 1.13; margin: 11px 0 0; text-wrap: balance; }
+    .sec-head p { color: var(--ink-soft); margin-top: 12px; font-size: 1.04rem; }
+    .rule { width: 56px; height: 4px; border-radius: 3px; background: var(--gold); margin-top: 4px; }
+
+    /* ---- trámites (buscador) ---- */
+    .tram { background: var(--surface-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; align-items: center; }
+    .chip { font-size: 13px; font-weight: 700; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--line); padding: 8px 15px; border-radius: var(--r-pill); cursor: pointer; transition: all .14s; }
+    .chip:hover { border-color: var(--blue); color: var(--ink); }
+    .chip.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+    #tramCount { margin-left: auto; font-size: 13px; color: var(--muted); font-weight: 650; }
+    .tram-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 900px) { .tram-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .tram-grid { grid-template-columns: 1fr; } }
+    .tram-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; transition: transform .16s, box-shadow .16s, border-color .16s; }
+    .tram-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: color-mix(in srgb, var(--blue) 40%, var(--line)); }
+    .tram-card .cat { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); }
+    .tram-card h3 { font-size: 1.06rem; font-weight: 770; margin: 7px 0 6px; letter-spacing: -.01em; }
+    .tram-card p { font-size: .92rem; color: var(--ink-soft); flex: 1; }
+    .tram-card .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; gap: 10px; }
+    .badge { font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: var(--r-pill); }
+    .badge.on { background: color-mix(in srgb, #16a34a 16%, transparent); color: #16a34a; }
+    .badge.pres { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+    .tram-card a.go { font-size: 13.5px; font-weight: 800; color: var(--blue); display: inline-flex; align-items: center; gap: 5px; }
+    .empty { grid-column: 1/-1; text-align: center; padding: 40px; color: var(--muted); }
+
+    /* ---- gobierno digital ---- */
+    .digital { position: relative; overflow: hidden; background: var(--grad-hero); color: var(--hero-ink); }
+    .digital .b2 { position: absolute; width: 360px; height: 360px; right: -100px; top: -120px; border-radius: 50%; filter: blur(70px); background: radial-gradient(circle, rgba(244,194,13,.2), transparent 70%); }
+    .digital .grid2 { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+    @media (max-width: 820px) { .digital .grid2 { grid-template-columns: 1fr; gap: 26px; } }
+    .digital .eyebrow { color: var(--gold); }
+    .digital h2 { font-size: clamp(1.55rem, 3.6vw, 2.3rem); font-weight: 850; letter-spacing: -.025em; margin: 11px 0 0; }
+    .digital p.lead { color: var(--hero-muted); margin-top: 14px; font-size: 1.05rem; }
+    .digital .dlist { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+    .digital .di { display: flex; gap: 14px; align-items: flex-start; }
+    .digital .di .k { width: 40px; height: 40px; flex: none; border-radius: 11px; background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; color: var(--gold); }
+    .digital .di .k svg { width: 20px; height: 20px; }
+    .digital .di b { font-weight: 750; }
+    .digital .di span { display: block; color: var(--hero-muted); font-size: .94rem; }
+    .dpanel { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.18); border-radius: var(--r); padding: 26px; }
+    .dpanel h3 { font-size: 1.15rem; font-weight: 800; }
+    .dpanel p { color: var(--hero-muted); margin: 8px 0 18px; font-size: .96rem; }
+    .dpanel a { display: flex; align-items: center; justify-content: center; gap: 9px; background: var(--gold); color: var(--gold-ink); font-weight: 820; padding: 14px; border-radius: 12px; transition: transform .15s, background .15s; }
+    .dpanel a:hover { transform: translateY(-2px); background: var(--gold-2); }
+    .dpanel a.ghost { background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.24); margin-top: 10px; }
+    .dpanel a.ghost:hover { background: rgba(255,255,255,.16); }
+
+    /* ---- municipio ---- */
+    .muni-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 42px; align-items: center; }
+    @media (max-width: 860px) { .muni-grid { grid-template-columns: 1fr; gap: 28px; } }
+    .muni-grid p { color: var(--ink-soft); margin-top: 14px; font-size: 1.04rem; }
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .fact { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 20px; box-shadow: var(--shadow); }
+    .fact span { font-size: 11.5px; text-transform: uppercase; letter-spacing: .09em; font-weight: 800; color: var(--muted); }
+    .fact b { display: block; font-size: 1.2rem; font-weight: 830; color: var(--ink); margin-top: 4px; letter-spacing: -.01em; }
+
+    /* ---- noticias ---- */
+    .news { background: var(--surface-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 900px) { .news-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .news-grid { grid-template-columns: 1fr; } }
+    .news article { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; box-shadow: var(--shadow); transition: transform .16s, box-shadow .16s; }
+    .news article:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .news .thumb { height: 128px; position: relative; }
+    .news .thumb.a { background: linear-gradient(135deg, #0a2351, #0a6cb0); }
+    .news .thumb.b { background: linear-gradient(135deg, #123571, #1183d1); }
+    .news .thumb.c { background: linear-gradient(135deg, #0a2351, #143f86); }
+    .news .thumb .t { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; display: flex; }
+    .news .thumb .t i { flex: 1; } .news .thumb .t .c1 { background: var(--gold); } .news .thumb .t .c2 { background: var(--blue); } .news .thumb .t .c3 { background: var(--red); }
+    .news .body { padding: 17px 19px 21px; }
+    .news time { font-size: 12px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: .05em; }
+    .news h3 { font-size: 1.04rem; font-weight: 760; margin: 8px 0 6px; letter-spacing: -.01em; }
+    .news p { color: var(--ink-soft); font-size: .92rem; }
+
+    /* ---- contacto ---- */
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 42px; }
+    @media (max-width: 800px) { .contact-grid { grid-template-columns: 1fr; gap: 28px; } }
+    .clist { display: flex; flex-direction: column; margin-top: 22px; }
+    .crow { display: flex; align-items: flex-start; gap: 14px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .crow .ci { width: 42px; height: 42px; flex: none; border-radius: 12px; background: var(--blue-soft); color: var(--blue); display: flex; align-items: center; justify-content: center; }
+    .crow .ci svg { width: 20px; height: 20px; }
+    .crow .ck { font-size: 11.5px; text-transform: uppercase; letter-spacing: .1em; font-weight: 800; color: var(--muted); }
+    .crow .cv { font-size: 1.02rem; font-weight: 620; margin-top: 2px; word-break: break-word; color: var(--ink); }
+    .crow a.cv:hover { color: var(--blue); }
+    .cbox { background: var(--navy); color: var(--hero-ink); border-radius: var(--r); padding: 28px; position: relative; overflow: hidden; }
+    .cbox h3 { font-size: 1.18rem; font-weight: 820; }
+    .cbox p { color: var(--hero-muted); margin: 9px 0 18px; font-size: .96rem; }
+    .cbox .maplink { display: inline-flex; align-items: center; gap: 9px; background: var(--gold); color: var(--gold-ink); font-weight: 820; padding: 13px 20px; border-radius: 12px; }
+    .cbox .maplink:hover { background: var(--gold-2); }
+    .cbox .soc { display: flex; gap: 10px; margin-top: 20px; }
+    .cbox .soc a { width: 42px; height: 42px; border-radius: 11px; background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; color: #e5edfb; transition: background .15s, transform .15s; }
+    .cbox .soc a:hover { background: rgba(255,255,255,.2); transform: translateY(-2px); color: #fff; }
+    .cbox .soc svg { width: 20px; height: 20px; }
+
+    /* ---- footer ---- */
+    footer.site { background: #05122c; color: #9fb0d2; }
+    .foot { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 28px; padding: 44px 0 30px; }
+    @media (max-width: 720px) { .foot { grid-template-columns: 1fr; gap: 22px; } }
+    .foot .brand2 { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .foot .brand2 .seal { width: 42px; height: 42px; }
+    .foot .brand2 strong { color: #fff; font-size: 14px; font-weight: 850; display: block; }
+    .foot .brand2 span { font-size: 12px; }
+    .foot .col h4 { color: #fff; font-size: 12px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 12px; font-weight: 800; }
+    .foot .col a { display: block; padding: 5px 0; font-size: 13.5px; }
+    .foot .col a:hover { color: #fff; }
+    .foot p.about { font-size: 13px; color: #8497bd; max-width: 40ch; }
+    .foot-note { border-top: 1px solid rgba(255,255,255,.09); font-size: 12.5px; color: #7386ac; padding: 16px 0 30px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+
+<a class="skip" href="#contenido">Saltar al contenido</a>
+
+<!-- ALERTA SISMO -->
+<div class="alert" id="alerta">
+    <div class="wrap">
+        <span class="pulse"></span>
+        <span><b>Emergencia por el sismo.</b> <span class="msg-long">Registro abierto para familias afectadas en Charallave.</span></span>
+        <a class="cta" href="https://salasituacionalmunicipal20-eng.github.io/registro-alcaldia/hogares-solidarios.html" target="_blank" rel="noopener">Registrarme →</a>
+        <button class="x" id="alertX" type="button" aria-label="Cerrar aviso">✕</button>
+    </div>
+</div>
+
+<!-- UTILITY -->
+<div class="util">
+    <div class="wrap">
+        <span class="gov"><span class="dot"></span> República Bolivariana de Venezuela <span class="long">· Estado Bolivariano de Miranda</span></span>
+        <button id="themeBtn" type="button" aria-label="Cambiar tema"><span id="themeIcon">🌙</span> <span id="themeTxt">Oscuro</span></button>
+    </div>
+</div>
+
+<!-- HEADER -->
+<header class="site">
+    <div class="wrap head">
+        <a class="brand" href="#top" aria-label="Inicio">
+            <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="Escudo de la Alcaldía">
+                <circle cx="32" cy="32" r="30" fill="#0a2351" stroke="#f4c20d" stroke-width="2.5"/>
+                <path d="M18 26h28v10a14 14 0 0 1-14 12 14 14 0 0 1-14-12z" fill="#0a6cb0"/>
+                <rect x="18" y="26" width="28" height="4.5" fill="#f4c20d"/><rect x="18" y="30.5" width="28" height="4.5" fill="#0a6cb0"/><rect x="18" y="35" width="28" height="4.5" fill="#d21534"/>
+                <path d="M32 12l2.2 4.6 5 .7-3.7 3.5.9 5-4.4-2.4-4.4 2.4.9-5-3.7-3.5 5-.7z" fill="#f4c20d"/>
+            </svg>
+            <span><strong>Alcaldía de Charallave</strong><span>Municipio Cristóbal Rojas · Miranda</span></span>
+        </a>
+        <button class="menu-btn" id="menuBtn" type="button" aria-label="Menú" aria-expanded="false" aria-controls="nav">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <nav class="main" id="nav" aria-label="Principal">
+            <a href="#tramites">Trámites</a>
+            <a href="#emergencia">Emergencia</a>
+            <a href="#digital">Gobierno Digital</a>
+            <a href="#municipio">El Municipio</a>
+            <a href="#noticias">Noticias</a>
+            <a class="cta" href="#contacto">Contacto</a>
+        </nav>
+    </div>
+</header>
+<div class="tricolor"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>
+
+<!-- HERO -->
+<main id="contenido">
+<span id="top"></span>
+<section class="hero">
+    <span class="blob b1"></span><span class="blob b2"></span>
+    <svg class="seal-bg" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="none" stroke="#fff" stroke-width="1.4"/><path d="M32 10l2.6 5.4 6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.3-4.2 6-.9z" fill="#fff"/></svg>
+    <div class="wrap inner">
+        <p class="eyebrow">Portal Ciudadano · Gobierno Municipal</p>
+        <h1>Charallave, más cerca de <span class="u">ti</span></h1>
+        <p class="lead">Haz tus trámites, encuentra servicios y accede a la atención de la Alcaldía del Municipio Cristóbal Rojas — desde tu teléfono, cuando lo necesites.</p>
+        <form class="search" onsubmit="return false;" role="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="q" type="search" placeholder="Busca un trámite o servicio…" aria-label="Buscar trámite o servicio" autocomplete="off" />
+            <button type="button" id="qBtn">Buscar</button>
+        </form>
+        <div class="chips-quick">
+            <span style="color:var(--hero-muted);font-size:13px;font-weight:650;align-self:center;">Popular:</span>
+            <a href="#tramites" data-q="acta">Actas y constancias</a>
+            <a href="#tramites" data-q="impuesto">Pagos e impuestos</a>
+            <a href="#tramites" data-q="permiso">Permisos</a>
+            <a href="#emergencia" data-q="">Ayuda por el sismo</a>
+        </div>
+    </div>
+</section>
+
+<!-- ACCESOS RÁPIDOS -->
+<div class="wrap tasks">
+    <div class="tasks-grid">
+        <a class="task red" href="#emergencia">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <b>Ayuda por el sismo</b><span>Registra a tu familia afectada</span>
+        </a>
+        <a class="task" href="#tramites" data-q="acta">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>
+            <b>Registro Civil</b><span>Actas y constancias</span>
+        </a>
+        <a class="task" href="#tramites" data-q="impuesto">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+            <b>Pagos e impuestos</b><span>Tributos y solvencias</span>
+        </a>
+        <a class="task" href="#tramites" data-q="permiso">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 3 7 7-4 4-7-7zM11 6 3 14v4h4l8-8"/></svg></span>
+            <b>Permisos y catastro</b><span>Construcción y usos</span>
+        </a>
+    </div>
+</div>
+
+<!-- TRÁMITES BUSCABLES -->
+<section class="tram" id="tramites">
+    <div class="wrap">
+        <div class="sec-head">
+            <p class="eyebrow">Directorio de trámites</p>
+            <h2>Encuentra tu trámite o servicio</h2>
+            <div class="rule"></div>
+            <p>Busca por nombre o filtra por categoría. Los marcados como <strong>En línea</strong> se realizan desde la web; el resto, en la Casa Municipal.</p>
+        </div>
+        <div class="filters" id="chips" role="tablist" aria-label="Categorías"></div>
+        <div class="tram-grid" id="tramGrid"></div>
+    </div>
+</section>
+
+<!-- GOBIERNO DIGITAL -->
+<section class="digital" id="digital">
+    <span class="b2"></span>
+    <div class="wrap grid2">
+        <div>
+            <p class="eyebrow">Gobierno digital</p>
+            <h2>Una alcaldía que trabaja en tiempo real</h2>
+            <p class="lead">Modernizamos la gestión con herramientas digitales que acercan el gobierno a la gente y hacen la atención más rápida y transparente.</p>
+            <div class="dlist">
+                <div class="di"><span class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 3v9l6 3"/></svg></span><div><b>Sala Situacional 24/7</b><span>Monitoreo y respuesta permanente a las necesidades del municipio.</span></div></div>
+                <div class="di"><span class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><div><b>Registro en línea</b><span>Censos y solicitudes que el ciudadano completa desde su teléfono.</span></div></div>
+                <div class="di"><span class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V6z"/></svg></span><div><b>Datos protegidos</b><span>La información de los ciudadanos se maneja con resguardo y responsabilidad.</span></div></div>
+            </div>
+        </div>
+        <div class="dpanel">
+            <h3>Registro Hogares Solidarios</h3>
+            <p>El sistema en línea para atender a las familias afectadas por el sismo que se trasladaron a Charallave. Regístrate en minutos.</p>
+            <a href="https://salasituacionalmunicipal20-eng.github.io/registro-alcaldia/hogares-solidarios.html" target="_blank" rel="noopener">Abrir el registro →</a>
+            <a class="ghost" href="#contacto">Más información</a>
+        </div>
+    </div>
+</section>
+
+<!-- MUNICIPIO -->
+<section id="municipio">
+    <div class="wrap muni-grid">
+        <div class="reveal">
+            <p class="eyebrow" style="color:var(--blue);">Nuestra tierra</p>
+            <h2 style="font-size:clamp(1.55rem,3.6vw,2.3rem);font-weight:850;letter-spacing:-.025em;margin-top:11px;">El Municipio Cristóbal Rojas</h2>
+            <div class="rule"></div>
+            <p>Con su capital <strong>Charallave</strong>, el municipio se ubica en los <strong>Valles del Tuy</strong>, en el estado Bolivariano de Miranda. Su nombre honra al insigne pintor venezolano <strong>Cristóbal Rojas</strong>, gloria de las artes de la nación.</p>
+            <p>Tierra de gente trabajadora y puerta de entrada a los Valles del Tuy. Desde la Alcaldía trabajamos por un municipio más seguro, ordenado y humano.</p>
+        </div>
+        <div class="facts reveal">
+            <div class="fact"><span>Capital</span><b>Charallave</b></div>
+            <div class="fact"><span>Estado</span><b>Miranda</b></div>
+            <div class="fact"><span>Región</span><b>Valles del Tuy</b></div>
+            <div class="fact"><span>Gentilicio</span><b>Charallavense</b></div>
+        </div>
+    </div>
+</section>
+
+<!-- NOTICIAS -->
+<section class="news" id="noticias">
+    <div class="wrap">
+        <div class="sec-head">
+            <p class="eyebrow">Comunicación</p>
+            <h2>Noticias y comunicados</h2>
+            <div class="rule"></div>
+            <p>Información oficial de la gestión. <em style="color:var(--muted);">(Espacio para actualizar con contenidos reales.)</em></p>
+        </div>
+        <div class="news-grid">
+            <article class="reveal"><div class="thumb a"><span class="t"><i class="c1"></i><i class="c2"></i><i class="c3"></i></span></div><div class="body"><time>Comunicado</time><h3>Plan de atención a las familias afectadas por el sismo</h3><p>Se activa el registro de Hogares Solidarios y la Sala Situacional para atender a los afectados.</p></div></article>
+            <article class="reveal"><div class="thumb b"><span class="t"><i class="c1"></i><i class="c2"></i><i class="c3"></i></span></div><div class="body"><time>Gestión</time><h3>Jornadas de servicios en las comunidades</h3><p>Atención directa en registro civil, salud y servicios públicos en los sectores de Charallave.</p></div></article>
+            <article class="reveal"><div class="thumb c"><span class="t"><i class="c1"></i><i class="c2"></i><i class="c3"></i></span></div><div class="body"><time>Aviso</time><h3>Horarios de atención en la Casa Municipal</h3><p>Consulta los horarios de cada dependencia para agilizar tus trámites.</p></div></article>
+        </div>
+    </div>
+</section>
+
+<!-- CONTACTO -->
+<section id="contacto">
+    <div class="wrap">
+        <div class="sec-head"><p class="eyebrow">Estamos para servirte</p><h2>Contacto y atención al ciudadano</h2><div class="rule"></div></div>
+        <div class="contact-grid">
+            <div>
+                <div class="clist">
+                    <div class="crow"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div><div class="ck">Dirección</div><div class="cv">Casa Municipal de Charallave, Municipio Cristóbal Rojas, estado Miranda</div></div></div>
+                    <div class="crow"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5c0 9 6 15 15 15v-3.5l-4-1.5-2 2c-3-1.5-5.5-4-7-7l2-2L6.5 4H5a1 1 0 0 0-1 1z"/></svg></span><div><div class="ck">Teléfono</div><div class="cv">0239 — 000 00 00 <em style="color:var(--muted);font-style:normal;">(actualizar)</em></div></div></div>
+                    <div class="crow"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><div><div class="ck">Correo</div><a class="cv" href="mailto:contacto@alcaldiadecharallave.com">contacto@alcaldiadecharallave.com</a></div></div>
+                    <div class="crow"><span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><div class="ck">Horario</div><div class="cv">Lunes a viernes · 8:00 a.m. – 4:00 p.m.</div></div></div>
+                </div>
+            </div>
+            <div class="cbox">
+                <h3>Casa Municipal</h3>
+                <p>Visítanos para realizar tus trámites de forma presencial. Nuestro personal te orientará en cada gestión.</p>
+                <a class="maplink" href="https://www.google.com/maps/search/Alcald%C3%ADa+de+Charallave+Crist%C3%B3bal+Rojas+Miranda" target="_blank" rel="noopener">📍 Ver en el mapa</a>
+                <div class="soc">
+                    <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+                    <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3V6h-3c-2 0-3.5 1.5-3.5 3.5V11H8v3h2.5v7h3v-7H16l.5-3h-3V9.7c0-.4.3-.7.7-.7z"/></svg></a>
+                    <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h4l4 5.5L16.5 4H20l-6 8 6.5 8H16l-4.5-6L6.5 20H3l6.7-8.6z"/></svg></a>
+                    <a href="https://wa.me/" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3zm0 2a7 7 0 0 1 5.9 10.8l.4.6-.7 2.3-2.4-.7-.5.3A7 7 0 1 1 12 5zm-2.6 3.5c-.2 0-.5 0-.7.4-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.7 2.8 4.3 3.7 2.1.7 2.5.6 3 .6.5 0 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2 0-.1-.2-.2-.5-.3l-1.5-.7c-.2-.1-.4-.1-.6.1l-.6.8c-.1.2-.3.2-.5.1-.7-.3-1.4-.6-2.1-1.5-.5-.6-.9-1.3-.9-1.5s.1-.3.2-.4l.4-.5c.1-.2.1-.3 0-.5l-.7-1.6c-.1-.3-.3-.3-.5-.3z"/></svg></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</main>
+
+<!-- FOOTER -->
+<footer class="site">
+    <div class="tricolor"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>
+    <div class="wrap foot">
+        <div>
+            <div class="brand2">
+                <svg class="seal" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#0a2351" stroke="#f4c20d" stroke-width="2.5"/><path d="M18 26h28v10a14 14 0 0 1-14 12 14 14 0 0 1-14-12z" fill="#0a6cb0"/><rect x="18" y="26" width="28" height="4.5" fill="#f4c20d"/><rect x="18" y="30.5" width="28" height="4.5" fill="#0a6cb0"/><rect x="18" y="35" width="28" height="4.5" fill="#d21534"/><path d="M32 12l2.2 4.6 5 .7-3.7 3.5.9 5-4.4-2.4-4.4 2.4.9-5-3.7-3.5 5-.7z" fill="#f4c20d"/></svg>
+                <div><strong>Alcaldía del Municipio Cristóbal Rojas</strong><span>Charallave · Estado Bolivariano de Miranda</span></div>
+            </div>
+            <p class="about">Gobierno municipal al servicio del pueblo de Charallave. Trámites, servicios y atención al ciudadano.</p>
+        </div>
+        <div class="col"><h4>Trámites</h4><a href="#tramites">Registro Civil</a><a href="#tramites">Pagos e impuestos</a><a href="#tramites">Permisos y catastro</a><a href="#emergencia">Ayuda por el sismo</a></div>
+        <div class="col"><h4>Institución</h4><a href="#municipio">El Municipio</a><a href="#digital">Gobierno Digital</a><a href="#noticias">Noticias</a><a href="#contacto">Contacto</a></div>
+    </div>
+    <div class="wrap foot-note">
+        <span>© 2026 Alcaldía del Municipio Cristóbal Rojas · Charallave, Venezuela.</span>
+        <span>Hecho con compromiso por nuestra gente.</span>
+    </div>
+</footer>
+
+<script>
+    (function () {
+        var root = document.documentElement;
+        // --- Tema ---
+        var btn = document.getElementById('themeBtn'), ic = document.getElementById('themeIcon'), tx = document.getElementById('themeTxt');
+        function cur() { return root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+        function paint() { var d = cur() === 'dark'; ic.textContent = d ? '☀️' : '🌙'; tx.textContent = d ? 'Claro' : 'Oscuro'; }
+        paint(); btn.addEventListener('click', function () { root.setAttribute('data-theme', cur() === 'dark' ? 'light' : 'dark'); paint(); });
+        try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paint); } catch (e) {}
+        // --- Menú móvil ---
+        var mb = document.getElementById('menuBtn'), nav = document.getElementById('nav');
+        mb.addEventListener('click', function () { var o = nav.classList.toggle('open'); mb.setAttribute('aria-expanded', o ? 'true' : 'false'); });
+        nav.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { nav.classList.remove('open'); mb.setAttribute('aria-expanded', 'false'); }); });
+        // --- Alerta ---
+        var ax = document.getElementById('alertX'); if (ax) ax.addEventListener('click', function () { document.getElementById('alerta').style.display = 'none'; });
+
+        // --- Directorio de trámites ---
+        var LINK_HS = 'https://salasituacionalmunicipal20-eng.github.io/registro-alcaldia/hogares-solidarios.html';
+        var TRAMITES = [
+            { n: 'Acta de nacimiento', c: 'Documentos', d: 'Solicitud y copia certificada del acta de nacimiento.' },
+            { n: 'Acta de matrimonio', c: 'Documentos', d: 'Copia certificada del acta de matrimonio.' },
+            { n: 'Acta de defunción', c: 'Documentos', d: 'Copia certificada del acta de defunción.' },
+            { n: 'Constancia de residencia', c: 'Documentos', d: 'Constancia que acredita tu residencia en el municipio.' },
+            { n: 'Pago de impuestos municipales', c: 'Pagos y tributos', d: 'Cancela tus tributos municipales y mantente al día.' },
+            { n: 'Solvencia municipal', c: 'Pagos y tributos', d: 'Documento que certifica que estás solvente con la Alcaldía.' },
+            { n: 'Patente de industria y comercio', c: 'Pagos y tributos', d: 'Registro y pago de la patente para tu comercio o industria.' },
+            { n: 'Ficha catastral', c: 'Permisos y catastro', d: 'Cédula catastral y datos del inmueble.' },
+            { n: 'Permiso de construcción', c: 'Permisos y catastro', d: 'Autorización para obras y remodelaciones.' },
+            { n: 'Conformidad de uso', c: 'Permisos y catastro', d: 'Constancia del uso permitido para un local o inmueble.' },
+            { n: 'Reporte de alumbrado o bache', c: 'Ciudad y ambiente', d: 'Notifica fallas en el alumbrado o daños en la vía.' },
+            { n: 'Aseo urbano y recolección', c: 'Ciudad y ambiente', d: 'Solicitudes relacionadas con la recolección de desechos.' },
+            { n: 'Registro Hogares Solidarios (sismo)', c: 'Emergencias', d: 'Registro de familias afectadas por el sismo que se mudaron a Charallave.', online: true, url: LINK_HS },
+            { n: 'Protección Civil', c: 'Emergencias', d: 'Atención de emergencias y prevención de riesgos.' },
+            { n: 'Atención al ciudadano', c: 'Atención', d: 'Orientación, solicitudes y denuncias del vecino.' },
+            { n: 'Ayudas sociales', c: 'Atención', d: 'Programas de apoyo a familias y personas vulnerables.' }
+        ];
+        var CATS = ['Todos', 'Documentos', 'Pagos y tributos', 'Permisos y catastro', 'Ciudad y ambiente', 'Emergencias', 'Atención'];
+        var st = { q: '', cat: 'Todos' };
+        var grid = document.getElementById('tramGrid'), chips = document.getElementById('chips');
+
+        CATS.forEach(function (c) {
+            var b = document.createElement('button'); b.className = 'chip' + (c === 'Todos' ? ' on' : ''); b.textContent = c; b.type = 'button';
+            b.addEventListener('click', function () { st.cat = c; chips.querySelectorAll('.chip').forEach(function (x) { x.classList.toggle('on', x === b); }); render(); });
+            chips.appendChild(b);
+        });
+        var count = document.createElement('span'); count.id = 'tramCount'; chips.appendChild(count);
+
+        function norm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+        function render() {
+            var q = norm(st.q);
+            var list = TRAMITES.filter(function (t) {
+                if (st.cat !== 'Todos' && t.c !== st.cat) return false;
+                if (q && norm(t.n + ' ' + t.c + ' ' + t.d).indexOf(q) < 0) return false;
+                return true;
+            });
+            count.textContent = list.length + (list.length === 1 ? ' trámite' : ' trámites');
+            if (!list.length) { grid.innerHTML = '<div class="empty">No encontramos trámites con esa búsqueda. Prueba otra palabra o revisa por categoría.</div>'; return; }
+            grid.innerHTML = list.map(function (t) {
+                var badge = t.online ? '<span class="badge on">● En línea</span>' : '<span class="badge pres">Presencial</span>';
+                var go = t.online ? '<a class="go" href="' + t.url + '" target="_blank" rel="noopener">Abrir →</a>' : '<a class="go" href="#contacto">Cómo hacerlo →</a>';
+                return '<div class="tram-card"><div class="cat">' + t.c + '</div><h3>' + t.n + '</h3><p>' + t.d + '</p><div class="foot">' + badge + go + '</div></div>';
+            }).join('');
+        }
+        render();
+
+        // Buscador del hero + chips populares
+        var q = document.getElementById('q');
+        q.addEventListener('input', function () { st.q = q.value; render(); });
+        document.getElementById('qBtn').addEventListener('click', function () { document.getElementById('tramites').scrollIntoView({ behavior: 'smooth' }); });
+        document.querySelectorAll('[data-q]').forEach(function (a) {
+            a.addEventListener('click', function () { var v = a.getAttribute('data-q'); if (v) { st.q = v; q.value = v; st.cat = 'Todos'; chips.querySelectorAll('.chip').forEach(function (x, i) { x.classList.toggle('on', i === 0); }); render(); } });
+        });
+
+        // Reveal
+        var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { threshold: .12 });
+        document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+    })();
+</script>
+
+</body>
+</html>
