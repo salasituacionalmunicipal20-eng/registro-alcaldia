@@ -4,7 +4,7 @@
 const { app, BrowserWindow, Menu, shell, dialog, session } = require('electron');
 const path = require('path');
 
-const URL_PRODUCCION = 'https://salasituacionalmunicipal20-eng.github.io/registro-alcaldia/';
+const URL_PRODUCCION = 'https://salasituacional.alcaldiadecharallave.com/';
 const URL_PAGINA_OFFLINE = `file://${path.join(__dirname, 'renderer', 'sin-conexion.html')}`;
 
 let ventanaPrincipal = null;

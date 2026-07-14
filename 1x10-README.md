@@ -24,7 +24,7 @@ El jefe puede volver a entrar despues con la misma cedula para **continuar** reg
 ## 2. URL larga (link publico oficial)
 
 ```
-https://salasituacionalmunicipal20-eng.github.io/registro-alcaldia/1x10.html
+https://salasituacional.alcaldiadecharallave.com/1x10.html
 ```
 
 Este es el link **canonico**, hosteado en GitHub Pages desde el repo `registro-alcaldia` (carpeta local `alcaldia-admin`). Cada `git push origin main` redeploya automaticamente.
