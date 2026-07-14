@@ -102,7 +102,34 @@
                     <div class="stat"><div class="num" id="stRelacion">—</div><div class="lbl">Relación con el afectado</div><div class="sub" id="stRelacionSub">—</div></div>
                     <div class="stat"><div class="num" id="stPrioritaria" style="color:#b45309;">—</div><div class="lbl">⭐ Atención prioritaria</div><div class="sub" id="stPrioritariaSub">—</div></div>
                     <div class="stat"><div class="num" id="stAtendidas" style="color:#15803d;">—</div><div class="lbl">✅ Familias atendidas</div><div class="sub" id="stAtendidasSub">—</div></div>
+                    <div class="stat"><div class="num" id="stNinos">—</div><div class="lbl">Niños/as (menores de 18)</div><div class="sub" id="stNinosSexo">—</div></div>
+                    <div class="stat"><div class="num" id="stBebes">—</div><div class="lbl">Bebés (0–1 año)</div></div>
+                    <div class="stat"><div class="num" id="stMayores">—</div><div class="lbl">Adultos mayores (60+)</div></div>
+                    <div class="stat"><div class="num" id="stJefesRep">—</div><div class="lbl">Cédulas de jefe repetidas</div></div>
                 </div>
+                <button id="btnVerRep" class="btn-exp" style="background:#b91c1c;margin-top:12px;display:none;">🔁 Ver cédulas repetidas</button>
+            </div>
+
+            <div class="card">
+                <h2>Tabulación por edades <span style="font-size:12px;font-weight:600;color:#64748b;">(jefes y miembros)</span></h2>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th>Grupo etario</th><th>Rango</th><th style="text-align:center;color:#be185d;">♀ Fem.</th><th style="text-align:center;color:#1d4ed8;">♂ Masc.</th><th style="text-align:center;">Sin dato</th><th style="text-align:center;">Personas</th></tr></thead>
+                        <tbody id="tbodyEdades"><tr><td colspan="6" class="estado-box">—</td></tr></tbody>
+                    </table>
+                </div>
+                <div style="font-size:12px;color:#64748b;margin-top:8px;">Cuenta a cada jefe de familia y miembro con fecha de nacimiento registrada (la familia afectada, sin el responsable/anfitrión).</div>
+            </div>
+
+            <div class="card">
+                <h2>Necesidades por sexo <span style="font-size:12px;font-weight:600;color:#64748b;">(jefes de familia)</span></h2>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr><th>Necesidad</th><th style="text-align:center;">Total</th><th style="text-align:center;color:#be185d;">Femenino</th><th style="text-align:center;color:#1d4ed8;">Masculino</th><th style="text-align:center;">Sin dato</th></tr></thead>
+                        <tbody id="tbodyNec"><tr><td colspan="5" class="estado-box">—</td></tr></tbody>
+                    </table>
+                </div>
+                <div style="font-size:12px;color:#64748b;margin-top:8px;">Jefes de familia que marcaron cada necesidad, según su sexo.</div>
             </div>
 
             <div class="card">
@@ -174,6 +201,20 @@
         const NODO = 'hogares_solidarios';
         const URL_FORM = 'https://salasituacional.alcaldiadecharallave.com/hogares-solidarios.html';
         const URL_CORTO = 'https://da.gd/XiLKzX';
+
+        // Grupos etarios para la tabulación por edades (igual que en refugiados)
+        const GRUPOS_EDAD = [
+            { label: 'Primera infancia (temprana)', rango: '0 a 2 años', test: e => e >= 0 && e <= 2 },
+            { label: 'Preescolar', rango: '3 a 5 años', test: e => e >= 3 && e <= 5 },
+            { label: 'Niños/as en edad escolar', rango: '6 a 12 años', test: e => e >= 6 && e <= 12 },
+            { label: 'Adolescentes (menores de edad)', rango: '13 a 17 años', test: e => e >= 13 && e <= 17 },
+            { label: 'Jóvenes / adultos jóvenes', rango: '18 a 29 años', test: e => e >= 18 && e <= 29 },
+            { label: 'Adulto contemporáneo', rango: '30 a 49 años', test: e => e >= 30 && e <= 49 },
+            { label: 'Adultos maduros', rango: '50 a 59 años', test: e => e >= 50 && e <= 59 },
+            { label: 'Tercera edad (adulto mayor)', rango: '60 años en adelante', test: e => e >= 60 },
+        ];
+        const NEC_HOGARES = ['Alimentos', 'Agua', 'Medicinas', 'Atención médica', 'Colchones / cobijas', 'Ropa', 'Artículos de higiene', 'Otro'];
+        let _jefesRep = [];
 
         let REGS = [], pagina = 1; const TAM = 30;
 
@@ -273,6 +314,50 @@
             const atendidas = REGS.filter(r => r.atendida).length;
             $('stAtendidas').textContent = atendidas;
             $('stAtendidasSub').textContent = (REGS.length - atendidas) + ' no atendidas';
+
+            // ---- Demografía por edad y sexo (jefes + miembros = familia afectada) ----
+            let nNinos = 0, nBebes = 0, nMayores = 0, nSinEdad = 0, ninasF = 0, ninosM = 0, ninosX = 0;
+            const tab = GRUPOS_EDAD.map(() => 0), tabF = GRUPOS_EDAD.map(() => 0), tabM = GRUPOS_EDAD.map(() => 0), tabX = GRUPOS_EDAD.map(() => 0);
+            REGS.forEach(r => [...jefesDe(r), ...miembrosDe(r)].forEach(o => {
+                const e = edadDe(o.fecha_nacimiento);
+                if (e === '') { nSinEdad++; return; }
+                const sx = o.sexo;
+                if (e <= 1) nBebes++;
+                if (e < 18) { nNinos++; if (sx === 'F') ninasF++; else if (sx === 'M') ninosM++; else ninosX++; }
+                if (e >= 60) nMayores++;
+                const gi = GRUPOS_EDAD.findIndex(gr => gr.test(e));
+                if (gi >= 0) { tab[gi]++; if (sx === 'F') tabF[gi]++; else if (sx === 'M') tabM[gi]++; else tabX[gi]++; }
+            }));
+            $('stNinos').textContent = nNinos;
+            $('stNinosSexo').innerHTML = `<span style="color:#be185d;">♀ ${ninasF}</span> · <span style="color:#1d4ed8;">♂ ${ninosM}</span>` + (ninosX ? ` · <span style="color:#94a3b8;">${ninosX} s/d</span>` : '');
+            $('stBebes').textContent = nBebes;
+            $('stMayores').textContent = nMayores;
+            const totTab = tab.reduce((a, b) => a + b, 0), totF = tabF.reduce((a, b) => a + b, 0), totM = tabM.reduce((a, b) => a + b, 0), totX = tabX.reduce((a, b) => a + b, 0);
+            $('tbodyEdades').innerHTML = GRUPOS_EDAD.map((gr, i) => `<tr><td>${esc(gr.label)}</td><td style="color:#64748b;">${esc(gr.rango)}</td><td style="text-align:center;font-weight:700;color:#be185d;">${tabF[i]}</td><td style="text-align:center;font-weight:700;color:#1d4ed8;">${tabM[i]}</td><td style="text-align:center;color:#94a3b8;">${tabX[i]}</td><td style="text-align:center;font-weight:800;color:#0a2351;">${tab[i]}</td></tr>`).join('')
+                + `<tr style="background:#f8fafc;"><td colspan="2" style="font-weight:800;">Total con edad registrada</td><td style="text-align:center;font-weight:800;color:#be185d;">${totF}</td><td style="text-align:center;font-weight:800;color:#1d4ed8;">${totM}</td><td style="text-align:center;font-weight:800;color:#94a3b8;">${totX}</td><td style="text-align:center;font-weight:800;">${totTab}</td></tr>`
+                + (nSinEdad ? `<tr><td colspan="5" style="color:#94a3b8;">Sin fecha de nacimiento</td><td style="text-align:center;color:#94a3b8;">${nSinEdad}</td></tr>` : '');
+
+            // ---- Necesidades por sexo (jefes de familia) ----
+            const nec = {}; NEC_HOGARES.forEach(n => nec[n] = { t: 0, F: 0, M: 0, X: 0 });
+            REGS.forEach(r => jefesDe(r).forEach(j => {
+                const necs = toArr(j.necesidades), sx = j.sexo;
+                NEC_HOGARES.forEach(n => { if (necs.includes(n)) { nec[n].t++; if (sx === 'F') nec[n].F++; else if (sx === 'M') nec[n].M++; else nec[n].X++; } });
+            }));
+            $('tbodyNec').innerHTML = NEC_HOGARES.map(n => { const x = nec[n]; return `<tr><td><b>${esc(n)}</b></td><td style="text-align:center;font-weight:800;">${x.t}</td><td style="text-align:center;font-weight:700;color:#be185d;">${x.F}</td><td style="text-align:center;font-weight:700;color:#1d4ed8;">${x.M}</td><td style="text-align:center;color:#94a3b8;">${x.X}</td></tr>`; }).join('');
+
+            // ---- Cédulas de jefe repetidas (misma cédula en 2+ hogares) ----
+            const cedMap = new Map();
+            REGS.forEach(r => jefesDe(r).forEach(j => {
+                const dig = (j.cedula ? String(j.cedula).replace(/\D/g, '') : '');
+                if (dig.length < 4) return;
+                const k = (j.nacionalidad || 'V') + '-' + dig;
+                if (!cedMap.has(k)) cedMap.set(k, []);
+                cedMap.get(k).push({ r, j });
+            }));
+            _jefesRep = [...cedMap.entries()].filter(([, arr]) => arr.length > 1).sort((a, b) => b[1].length - a[1].length);
+            $('stJefesRep').textContent = _jefesRep.length;
+            $('stJefesRep').style.color = _jefesRep.length ? '#b91c1c' : '';
+            const _btnRep = $('btnVerRep'); if (_btnRep) _btnRep.style.display = _jefesRep.length ? '' : 'none';
 
             const lista = filtrados();
             const totalPag = Math.max(1, Math.ceil(lista.length / TAM));
@@ -389,6 +474,22 @@
             $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
         }
         $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        // ---- Modal: cédulas de jefe repetidas ----
+        function verJefesRep() {
+            if (!_jefesRep.length) return;
+            const cont = _jefesRep.map(([ced, arr]) => {
+                const items = arr.map(({ r, j }) => `<div class="fila"><span class="k">Hogar ${esc(r.n_registro || '—')}</span><span class="val">${esc(nombreResp(j))} · resp.: ${esc(nombreResp(r.responsable || {}))}${r.fecha_registro ? ' · ' + esc(fmtFecha(r.fecha_registro)) : ''}</span></div>`).join('');
+                return `<div class="mini"><b style="color:#b91c1c;font-size:14px;">🪪 ${esc(ced)} — ${arr.length} veces</b>${items}</div>`;
+            }).join('');
+            $('modal').innerHTML = `<h3>🔁 Cédulas de jefe repetidas (${_jefesRep.length})</h3>
+                <div style="color:#64748b;font-size:13px;margin-bottom:10px;">Cédulas de jefe de familia que aparecen en más de un hogar solidario. Revisa si son registros duplicados.</div>
+                ${cont}
+                <button class="cerrar" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+        }
+        const _btnVerRep = $('btnVerRep'); if (_btnVerRep) _btnVerRep.addEventListener('click', verJefesRep);
 
         async function borrar(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
