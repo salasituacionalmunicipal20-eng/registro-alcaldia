@@ -100,6 +100,7 @@
             const r = $('resultado'); r.classList.remove('hidden');
             const edad = (d.edad !== '' && d.edad != null) ? (d.edad + ' años') : '';
             const sexoEdad = [genTxt(d.sexo), edad].filter(x => x && x !== '—').join(' · ') || genTxt(d.sexo);
+            const programa = d.programa || 'Hogares Solidarios · Sismo 2026';
             const fotoHTML = d.foto
                 ? `<img class="foto" src="${d.foto}" alt="Foto de ${esc(d.nombre || '')}" />`
                 : `<div class="foto-ph">SIN<br>FOTO</div>`;
@@ -120,12 +121,15 @@
                     <div class="datos">
                         ${fila('Cédula', d.cedula)}
                         ${fila('Sexo / Edad', sexoEdad)}
-                        ${fila('Nº de hogar', d.n_hogar)}
+                        ${fila('Tipo de sangre', d.tipo_sangre)}
+                        ${fila('Ubicación (campamento)', d.campamento)}
+                        ${fila('Nº de registro', d.n_registro || d.n_hogar)}
                         ${fila('Ubicación (Charallave)', d.ubicacion)}
-                        ${fila('Programa', 'Hogares Solidarios · Sismo 2026')}
+                        ${fila('Procedencia', d.procedencia)}
+                        ${fila('Programa', programa)}
                         ${fila('Carnet emitido', fmtFecha(d.emitido_en))}
                     </div>
-                    <div class="nota">✓ Esta persona forma parte de una familia registrada como Hogar Solidario ante la Alcaldía del Municipio Cristóbal Rojas.</div>
+                    <div class="nota">✓ Esta persona está registrada en el sistema oficial de la Alcaldía del Municipio Cristóbal Rojas — ${esc(programa)}.</div>
                     <div class="sello">Verificación en línea · ${esc(fmtFecha(Date.now()))}</div>
                 </div>`;
         }
