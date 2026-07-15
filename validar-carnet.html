@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Validación de carnet — Alcaldía de Cristóbal Rojas</title>
+    <meta name="description" content="Validación oficial de carnet de control de Hogares Solidarios — Alcaldía del Municipio Cristóbal Rojas, Charallave." />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; background: #eef2f7; color: #0f172a; line-height: 1.5; min-height: 100vh; padding-bottom: 40px; }
+        .tricolor { height: 6px; display: flex; }
+        .tricolor i { flex: 1; }
+        .tricolor .c1 { background: #f4c20d; } .tricolor .c2 { background: #0a6cb0; } .tricolor .c3 { background: #d21534; }
+        .cab { background: #0a2351; color: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 12px; justify-content: center; text-align: center; }
+        .cab svg { flex: none; }
+        .cab b { display: block; font-size: 14px; font-weight: 800; letter-spacing: .2px; }
+        .cab span { display: block; font-size: 11.5px; color: #aebfdf; margin-top: 1px; }
+        .wrap { max-width: 460px; margin: 0 auto; padding: 18px 16px; }
+        .estado-box { text-align: center; padding: 46px 20px; color: #64748b; font-size: 15px; }
+        .spinner { width: 34px; height: 34px; border: 4px solid #cbd5e1; border-top-color: #0a2351; border-radius: 50%; margin: 0 auto 14px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .banner { border-radius: 14px 14px 0 0; padding: 20px 18px; text-align: center; color: #fff; }
+        .banner.ok { background: linear-gradient(135deg, #15803d, #16a34a); }
+        .banner.no { background: linear-gradient(135deg, #b91c1c, #dc2626); }
+        .banner .ico { width: 62px; height: 62px; border-radius: 50%; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-size: 34px; line-height: 1; }
+        .banner h1 { font-size: 21px; font-weight: 900; letter-spacing: .5px; text-transform: uppercase; }
+        .banner p { font-size: 13px; opacity: .95; margin-top: 4px; }
+        .card { background: #fff; border-radius: 0 0 14px 14px; box-shadow: 0 8px 30px rgba(10,35,81,.14); overflow: hidden; }
+        .cbody { padding: 18px; }
+        .persona { display: flex; gap: 16px; align-items: center; }
+        .persona .foto { width: 96px; height: 120px; flex: none; border-radius: 10px; border: 1px solid #cbd5e1; background: #f1f5f9; object-fit: cover; display: block; }
+        .persona .foto-ph { width: 96px; height: 120px; flex: none; border-radius: 10px; border: 1px dashed #cbd5e1; background: #f8fafc; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 11px; font-weight: 700; text-align: center; }
+        .persona .nom { font-size: 18px; font-weight: 850; color: #0a2351; letter-spacing: -.2px; }
+        .persona .cond { display: inline-block; margin-top: 5px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #0a6cb0; background: #e6f0fb; border-radius: 999px; padding: 3px 10px; }
+        .datos { margin-top: 16px; border-top: 1px solid #eef2f7; }
+        .fila { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid #eef2f7; font-size: 13.5px; }
+        .fila .k { font-weight: 700; color: #64748b; min-width: 128px; }
+        .fila .v { color: #0f172a; font-weight: 600; }
+        .nota { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; border-radius: 10px; padding: 12px 14px; font-size: 12.5px; margin-top: 16px; }
+        .nota.no { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
+        .sello { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 16px; }
+        footer { text-align: center; font-size: 11.5px; color: #64748b; margin-top: 26px; padding: 0 16px; }
+        footer b { color: #475569; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="tricolor"><i class="c1"></i><i class="c2"></i><i class="c3"></i></div>
+    <div class="cab">
+        <svg viewBox="0 0 48 56" width="34" height="40" aria-hidden="true"><path d="M24 2 44 9v20c0 13-9 21-20 25C13 50 4 42 4 29V9z" fill="#123571" stroke="#f4c20d" stroke-width="2"/><path d="M24 12l2.6 5.6 6 .8-4.4 4.3 1.1 6L24 31.9 18.7 34.7l1.1-6-4.4-4.3 6-.8z" fill="#f4c20d"/></svg>
+        <div><b>ALCALDÍA DEL MUNICIPIO CRISTÓBAL ROJAS</b><span>Charallave · Estado Bolivariano de Miranda</span></div>
+    </div>
+
+    <div class="wrap">
+        <div id="cargando" class="estado-box"><div class="spinner"></div>Validando carnet…</div>
+        <div id="resultado" class="card hidden"></div>
+        <footer>Sistema oficial de <b>Hogares Solidarios</b> — respuesta ante el sismo 2026.<br>Alcaldía del Municipio Cristóbal Rojas.</footer>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const genTxt = (g) => g === 'F' ? 'Femenino' : g === 'M' ? 'Masculino' : '—';
+        const fmtFecha = (ms) => { if (!ms) return '—'; try { return new Date(ms).toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (e) { return '—'; } };
+
+        function noValido(msg) {
+            $('cargando').classList.add('hidden');
+            const r = $('resultado'); r.classList.remove('hidden');
+            r.innerHTML = `
+                <div class="banner no">
+                    <div class="ico">✕</div>
+                    <h1>Carnet no válido</h1>
+                    <p>No pudimos verificar este carnet.</p>
+                </div>
+                <div class="cbody">
+                    <div class="nota no">${esc(msg || 'El código no corresponde a ningún carnet emitido por la Alcaldía. Si crees que es un error, comunícate con la Sala Situacional.')}</div>
+                </div>`;
+        }
+
+        function fila(k, v) { return (v && String(v).trim() && String(v) !== '—') ? `<div class="fila"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>` : ''; }
+
+        function mostrar(d) {
+            $('cargando').classList.add('hidden');
+            const r = $('resultado'); r.classList.remove('hidden');
+            const edad = (d.edad !== '' && d.edad != null) ? (d.edad + ' años') : '';
+            const sexoEdad = [genTxt(d.sexo), edad].filter(x => x && x !== '—').join(' · ') || genTxt(d.sexo);
+            const fotoHTML = d.foto
+                ? `<img class="foto" src="${d.foto}" alt="Foto de ${esc(d.nombre || '')}" />`
+                : `<div class="foto-ph">SIN<br>FOTO</div>`;
+            r.innerHTML = `
+                <div class="banner ok">
+                    <div class="ico">✓</div>
+                    <h1>Carnet válido</h1>
+                    <p>Registrado en el sistema oficial de la Alcaldía.</p>
+                </div>
+                <div class="cbody">
+                    <div class="persona">
+                        ${fotoHTML}
+                        <div>
+                            <div class="nom">${esc(d.nombre || '—')}</div>
+                            <span class="cond">${esc(d.tipo || 'Registrado')}</span>
+                        </div>
+                    </div>
+                    <div class="datos">
+                        ${fila('Cédula', d.cedula)}
+                        ${fila('Sexo / Edad', sexoEdad)}
+                        ${fila('Nº de hogar', d.n_hogar)}
+                        ${fila('Ubicación (Charallave)', d.ubicacion)}
+                        ${fila('Programa', 'Hogares Solidarios · Sismo 2026')}
+                        ${fila('Carnet emitido', fmtFecha(d.emitido_en))}
+                    </div>
+                    <div class="nota">✓ Esta persona forma parte de una familia registrada como Hogar Solidario ante la Alcaldía del Municipio Cristóbal Rojas.</div>
+                    <div class="sello">Verificación en línea · ${esc(fmtFecha(Date.now()))}</div>
+                </div>`;
+        }
+
+        (async function () {
+            const params = new URLSearchParams(location.search);
+            const cid = (params.get('c') || params.get('id') || '').trim();
+            if (!cid) { noValido('Este enlace no incluye un código de carnet. Escanea el código QR del carnet.'); return; }
+            try {
+                const snap = await get(ref(database, 'carnets/' + cid));
+                if (!snap.exists()) { noValido(); return; }
+                const d = snap.val();
+                if (d && d.valido === false) { noValido('Este carnet fue anulado.'); return; }
+                mostrar(d || {});
+            } catch (e) {
+                noValido('No se pudo conectar para validar. Verifica tu conexión a Internet e inténtalo de nuevo.');
+            }
+        })();
+    </script>
+</body>
+</html>

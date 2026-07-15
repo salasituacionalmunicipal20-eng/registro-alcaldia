@@ -39,6 +39,7 @@
         .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
         .btn-print { background: #16a34a; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
         .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .btn-carnet { background: #0a6cb0; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
         .tag { display: inline-block; background: #eef2ff; color: #3730a3; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; margin: 1px; }
         .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
         .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
@@ -171,7 +172,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, onValue, get, child, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, child, remove, update, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
 
         const firebaseConfig = {
@@ -215,6 +216,53 @@
         ];
         const NEC_HOGARES = ['Alimentos', 'Agua', 'Medicinas', 'Atención médica', 'Colchones / cobijas', 'Ropa', 'Artículos de higiene', 'Otro'];
         let _jefesRep = [];
+
+        // ---- Carnets con QR (constantes) ----
+        const BASE_VALID = 'https://salasituacional.alcaldiadecharallave.com/validar-carnet.html';
+        const ESCUDO_SVG = '<svg viewBox="0 0 48 56" width="26" height="30"><path d="M24 2 44 9v20c0 13-9 21-20 25C13 50 4 42 4 29V9z" fill="#123571" stroke="#f4c20d" stroke-width="2"/><path d="M24 12l2.6 5.6 6 .8-4.4 4.3 1.1 6L24 31.9 18.7 34.7l1.1-6-4.4-4.3 6-.8z" fill="#f4c20d"/></svg>';
+        const CARNET_CSS = `* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; background: #fff; padding: 12px; }
+.carnet { width: 340px; border: 1.5px solid #0a2351; border-radius: 12px; overflow: hidden; margin: 0 auto 16px; page-break-inside: avoid; }
+.carnet .tri { height: 6px; display: flex; } .carnet .tri i { flex: 1; }
+.carnet .tri i:nth-child(1){ background:#f4c20d; } .carnet .tri i:nth-child(2){ background:#0a6cb0; } .carnet .tri i:nth-child(3){ background:#d21534; }
+.carnet .hd { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #0a2351; color: #fff; }
+.carnet .hd .ht b { display: block; font-size: 10.5px; font-weight: 800; line-height: 1.1; }
+.carnet .hd .ht span { display: block; font-size: 8.5px; color: #aebfdf; }
+.carnet .band { background: #f4c20d; color: #3a2b00; font-size: 9px; font-weight: 800; text-align: center; letter-spacing: .4px; padding: 4px 6px; text-transform: uppercase; }
+.carnet .bd { display: flex; gap: 10px; padding: 12px 10px; align-items: flex-start; }
+.carnet .foto img { width: 74px; height: 92px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; display: block; }
+.carnet .foto .ph { width: 74px; height: 92px; border: 1px dashed #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #94a3b8; font-weight: 700; }
+.carnet .data { flex: 1; min-width: 0; }
+.carnet .data .nm { font-size: 13px; font-weight: 850; color: #0a2351; line-height: 1.15; margin-bottom: 4px; }
+.carnet .data .rw { font-size: 9.5px; display: flex; gap: 5px; padding: 1.5px 0; }
+.carnet .data .rw span { color: #64748b; min-width: 58px; font-weight: 700; }
+.carnet .data .rw b { color: #0f172a; }
+.carnet .qr { text-align: center; flex: none; }
+.carnet .qr img { width: 66px; height: 66px; display: block; }
+.carnet .qr span { font-size: 7.5px; color: #64748b; display: block; margin-top: 2px; max-width: 66px; }
+.carnet .ft { font-size: 7.5px; color: #64748b; text-align: center; padding: 5px 8px; border-top: 1px solid #eef2f7; }
+@media print { body { padding: 0; } }`;
+
+        function comprimir(file) {
+            return new Promise((resolve) => {
+                if (!file || !file.type || file.type.indexOf('image/') !== 0) { resolve(''); return; }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const MAX = 480; let w = img.width, h = img.height;
+                        if (w >= h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+                        else if (h > w && h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+                        const c = document.createElement('canvas'); c.width = w; c.height = h;
+                        c.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(c.toDataURL('image/jpeg', 0.6));
+                    };
+                    img.onerror = () => resolve('');
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
 
         let REGS = [], pagina = 1; const TAM = 30;
 
@@ -385,13 +433,14 @@
                         ? '<span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;">✅ Atendida</span>'
                         : '<span style="background:#fee2e2;color:#b91c1c;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;">⏳ No atendida</span>'}<br><button class="btn-atender" data-id="${esc(r.id)}" style="margin-top:5px;background:${r.atendida ? '#fef9c3' : '#16a34a'};color:${r.atendida ? '#854d0e' : '#fff'};border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">${r.atendida ? '↩️ Marcar no atendida' : '✅ Marcar atendida'}</button></td>
                     <td>${esc(fmtFecha(r.fecha_registro))}</td>
-                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
+                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-carnet" data-id="${esc(r.id)}" title="Carnets con QR">🪪</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
                 </tr>`;
             }).join('');
             tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
             tb.querySelectorAll('button.btn-print').forEach(b => b.addEventListener('click', () => imprimirUno(b.dataset.id)));
             tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.id)));
             tb.querySelectorAll('button.btn-atender').forEach(b => b.addEventListener('click', () => toggleAtendida(b.dataset.id)));
+            tb.querySelectorAll('button.btn-carnet').forEach(b => b.addEventListener('click', () => abrirCarnets(b.dataset.id)));
 
             let botones = '';
             botones += `<button ${pagina <= 1 ? 'disabled' : ''} id="pgPrev">‹ Anterior</button>`;
@@ -490,6 +539,107 @@
             $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
         }
         const _btnVerRep = $('btnVerRep'); if (_btnVerRep) _btnVerRep.addEventListener('click', verJefesRep);
+
+        // ---- Carnets: generación, foto e impresión ----
+        const carnetIdDe = (r, tipo, idx) => `${r.id}_${tipo === 'jefe' ? 'j' : 'm'}${idx}`;
+        function payloadDe(r, p, tipo, idx) {
+            const h = r.hogar || {};
+            const ed = edadDe(p.fecha_nacimiento);
+            return {
+                reg_id: r.id,
+                n_hogar: r.n_registro || '',
+                tipo: tipo === 'jefe' ? 'Jefe de familia' : 'Miembro de familia',
+                nombre: nombreResp(p),
+                cedula: p.cedula ? cedDe(p) : '—',
+                sexo: p.sexo || '',
+                fecha_nac: p.fecha_nacimiento || '',
+                edad: ed === '' ? '' : ed,
+                ubicacion: [h.parroquia, h.comuna].filter(Boolean).join(' · '),
+                relacion: r.relacion || '',
+                foto: '',
+                emitido_en: Date.now(),
+                valido: true
+            };
+        }
+        async function emitirCarnet(cid, pl) {
+            try { await set(ref(database, 'carnets/' + cid), pl); return true; }
+            catch (e) { alert('No se pudo emitir el carnet: ' + (e.message || e.code)); return false; }
+        }
+        function tarjetaCarnetHTML(cid, pl) {
+            const url = BASE_VALID + '?c=' + encodeURIComponent(cid);
+            const qr = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=' + encodeURIComponent(url);
+            const sexoEdad = [gen(pl.sexo), (pl.edad !== '' && pl.edad != null) ? (pl.edad + ' años') : ''].filter(x => x && x !== '—').join(' · ') || gen(pl.sexo);
+            const foto = pl.foto ? `<img src="${pl.foto}" alt="Foto"/>` : '<div class="ph">SIN FOTO</div>';
+            return `<div class="carnet"><div class="tri"><i></i><i></i><i></i></div>`
+                + `<div class="hd">${ESCUDO_SVG}<div class="ht"><b>ALCALDÍA · MUNICIPIO CRISTÓBAL ROJAS</b><span>Charallave · Miranda · Sala Situacional</span></div></div>`
+                + `<div class="band">Carnet de control · Hogares Solidarios — Sismo 2026</div>`
+                + `<div class="bd"><div class="foto">${foto}</div>`
+                + `<div class="data"><div class="nm">${esc(pl.nombre || '—')}</div>`
+                + `<div class="rw"><span>C.I.</span><b>${esc(pl.cedula || '—')}</b></div>`
+                + `<div class="rw"><span>Condición</span><b>${esc(pl.tipo || '—')}</b></div>`
+                + `<div class="rw"><span>Sexo/Edad</span><b>${esc(sexoEdad)}</b></div>`
+                + `<div class="rw"><span>Nº hogar</span><b>${esc(pl.n_hogar || '—')}</b></div>`
+                + `<div class="rw"><span>Ubicación</span><b>${esc(pl.ubicacion || '—')}</b></div></div>`
+                + `<div class="qr"><img src="${qr}" alt="QR"/><span>Escanee para validar</span></div></div>`
+                + `<div class="ft">Documento de control · Válido mientras exista el registro oficial · Emitido ${esc(new Date(pl.emitido_en || Date.now()).toLocaleDateString('es-VE'))}</div></div>`;
+        }
+        function imprimirCarnets(items) {
+            if (!items.length) return;
+            const w = window.open('', '_blank');
+            if (!w) { alert('Permite las ventanas emergentes para poder imprimir el carnet.'); return; }
+            const cards = items.map(it => tarjetaCarnetHTML(it.cid, it.pl)).join('');
+            const trigger = 'window.addEventListener("load",function(){var im=document.images,n=im.length,d=0;function go(){d++;if(d>=n){setTimeout(function(){window.focus();window.print();},150);}}if(!n){window.print();return;}for(var i=0;i<n;i++){if(im[i].complete){go();}else{im[i].addEventListener("load",go);im[i].addEventListener("error",go);}}});';
+            w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Carnet — Hogares Solidarios</title><style>' + CARNET_CSS + '</style></head><body>' + cards + '<scr' + 'ipt>' + trigger + '</scr' + 'ipt></body></html>');
+            w.document.close();
+        }
+        async function abrirCarnets(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const personas = [
+                ...jefesDe(r).map((p, i) => ({ p, tipo: 'jefe', idx: i })),
+                ...miembrosDe(r).map((p, i) => ({ p, tipo: 'miembro', idx: i }))
+            ];
+            if (!personas.length) { alert('Este hogar no tiene personas registradas para emitir carnet.'); return; }
+            const mapa = {};
+            personas.forEach(({ p, tipo, idx }) => { mapa[carnetIdDe(r, tipo, idx)] = payloadDe(r, p, tipo, idx); });
+            await Promise.all(Object.keys(mapa).map(async cid => {
+                try { const s = await get(ref(database, 'carnets/' + cid)); if (s.exists() && s.val().foto) mapa[cid].foto = s.val().foto; } catch (e) {}
+            }));
+            const filas = Object.keys(mapa).map(cid => {
+                const pl = mapa[cid];
+                const fh = pl.foto
+                    ? `<img class="cfoto" src="${pl.foto}" style="width:52px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;" />`
+                    : `<div class="cfoto" style="width:52px;height:64px;border:1px dashed #cbd5e1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;font-weight:700;text-align:center;">SIN<br>FOTO</div>`;
+                return `<div class="mini" style="display:flex;gap:12px;align-items:center;">${fh}`
+                    + `<div style="flex:1;min-width:0;"><b style="color:#0a2351;">${esc(pl.nombre)}</b> <span style="font-size:10.5px;color:#64748b;">${esc(pl.tipo)}</span><br>`
+                    + `<span style="font-size:12px;color:#475569;">${esc(pl.cedula)}${pl.edad !== '' ? ' · ' + pl.edad + ' años' : ''} · ${esc(gen(pl.sexo))}</span></div>`
+                    + `<div style="display:flex;flex-direction:column;gap:5px;flex:none;">`
+                    + `<label style="background:#0a6cb0;color:#fff;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;text-align:center;">📷 Foto<input type="file" accept="image/*" data-cid="${cid}" class="cfinp" style="display:none;" /></label>`
+                    + `<button class="cfprint" data-cid="${cid}" style="background:#0a2351;color:#fff;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">🪪 Imprimir</button></div></div>`;
+            }).join('');
+            $('modal').innerHTML = `<h3>🪪 Carnets — Hogar ${esc(r.n_registro || '')}</h3>`
+                + `<div style="color:#64748b;font-size:13px;margin-bottom:10px;">Sube una foto (opcional) e imprime el carnet de cada persona. El QR lleva a la página pública de validación con sus datos.</div>`
+                + filas
+                + `<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;"><button class="btn-exp cfprintall" style="background:#16a34a;">🪪 Imprimir todos</button><button class="cerrar" id="cerrarModal">Cerrar</button></div>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+            $('modal').querySelectorAll('input.cfinp').forEach(inp => inp.addEventListener('change', async () => {
+                const cid = inp.dataset.cid; if (!inp.files || !inp.files[0]) return;
+                const dataURL = await comprimir(inp.files[0]); if (!dataURL) return;
+                mapa[cid].foto = dataURL; mapa[cid].emitido_en = Date.now();
+                const ok = await emitirCarnet(cid, mapa[cid]);
+                if (ok) { const cont = inp.closest('.mini'); const holder = cont && cont.querySelector('.cfoto'); if (holder) { const img = document.createElement('img'); img.className = 'cfoto'; img.src = dataURL; img.style.cssText = 'width:52px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;'; holder.replaceWith(img); } }
+            }));
+            $('modal').querySelectorAll('button.cfprint').forEach(b => b.addEventListener('click', async () => {
+                const cid = b.dataset.cid; mapa[cid].emitido_en = mapa[cid].emitido_en || Date.now();
+                const ok = await emitirCarnet(cid, mapa[cid]); if (ok) imprimirCarnets([{ cid, pl: mapa[cid] }]);
+            }));
+            const _all = $('modal').querySelector('button.cfprintall');
+            if (_all) _all.addEventListener('click', async () => {
+                const items = [];
+                for (const cid of Object.keys(mapa)) { const ok = await emitirCarnet(cid, mapa[cid]); if (ok) items.push({ cid, pl: mapa[cid] }); }
+                imprimirCarnets(items);
+            });
+        }
 
         async function borrar(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;

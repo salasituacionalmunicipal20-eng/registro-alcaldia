@@ -122,6 +122,12 @@
         ".validate": "newData.isNumber()"
       }
     },
+    "carnets": {
+      "$cid": {
+        ".read": true,
+        ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'"
+      }
+    },
     "tickets": {
       ".read": "auth != null",
       "$ticketId": {
