@@ -39,6 +39,20 @@
         .ok-screen p { color: #475569; font-size: 15px; }
         .ok-screen button { margin-top: 22px; background: #0a2351; color: #fff; border: none; border-radius: 10px; padding: 14px 22px; font-size: 15px; font-weight: 700; cursor: pointer; }
         .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 16px; }
+    .foto-opts{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 8px}
+    .fbtn{display:inline-flex;align-items:center;gap:6px;background:#0a2351;color:#fff;border-radius:8px;padding:9px 14px;font-size:13.5px;font-weight:700;cursor:pointer}
+    .fbtn:active{opacity:.85}
+    .fbtn input{display:none}
+    .cne-ver{margin-top:6px;background:#065f46;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
+    .cne-modal{display:none;position:fixed;inset:0;background:rgba(8,15,30,.6);z-index:9999;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
+    .cne-card{background:#fff;border-radius:14px;max-width:460px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.4);overflow:hidden}
+    .cne-hd{background:#0a2351;color:#fff;padding:14px 18px;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:space-between}
+    .cne-hd button{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer}
+    .cne-bd{padding:14px 18px 20px}
+    .cne-sec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#0a6cb0;margin:12px 0 6px;border-bottom:2px solid #f4c20d;padding-bottom:4px}
+    .cne-sec:first-child{margin-top:0}
+    .cne-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13.5px}
+    .cne-row span{color:#64748b}.cne-row b{color:#0f172a;text-align:right}
     </style>
 </head>
 <body>
@@ -60,14 +74,14 @@
                     <div><label>Fecha de ingreso</label><input id="fecha_ingreso" type="date" /></div>
                     <div><label>Hora</label><input id="hora" type="time" /></div>
                 </div>
-                <label>¿De dónde vienen?</label>
-                <input id="de_donde_vienen" placeholder="Lugar de procedencia" autocomplete="off" />
                 <div class="row2">
                     <div><label>Estado</label><select id="estado"><option value="">Selecciona…</option></select></div>
                     <div><label>Municipio</label><select id="municipio"><option value="">Selecciona…</option></select></div>
                 </div>
-                <label>Comunidad / sector de procedencia</label>
-                <input id="comunidad_sector" placeholder="Comunidad o sector" autocomplete="off" />
+                <div class="row2">
+                    <div><label>Comuna de procedencia</label><input id="comuna_procedencia" placeholder="Comuna" autocomplete="off" /></div>
+                    <div><label>Comunidad / sector de procedencia</label><input id="comunidad_sector" placeholder="Comunidad o sector" autocomplete="off" /></div>
+                </div>
             </div>
 
             <!-- JEFE DE FAMILIA -->
@@ -90,6 +104,11 @@
                     <div><label>Tipo de sangre</label><select id="j_tipo_sangre"></select></div>
                     <div><label>Profesión / ocupación</label><input id="j_profesion" autocomplete="off" /></div>
                 </div>
+                <div class="row3">
+                    <div><label>Situación laboral</label><select id="j_situacion_laboral"><option value="">—</option><option>Empleado formal</option><option>Empleado informal</option><option>Desempleado</option><option>Jubilado / Pensionado</option><option>Estudiante</option><option>Ama de casa</option><option>Otro</option></select></div>
+                    <div><label>Nivel académico</label><select id="j_nivel_academico"><option value="">—</option><option>Sin estudios</option><option>Primaria</option><option>Bachillerato</option><option>Técnico / TSU</option><option>Universitario</option><option>Postgrado</option></select></div>
+                    <div><label>¿Qué estudia?</label><input id="j_estudia" placeholder="Carrera / año (si estudia)" autocomplete="off" /></div>
+                </div>
                 <label>Patología</label><input id="j_patologia" autocomplete="off" />
                 <label>Medicamento que toma</label><input id="j_medicamento" autocomplete="off" />
                 <label>Situación de salud</label><textarea id="j_situacion_salud"></textarea>
@@ -111,7 +130,10 @@
                 <label>Observaciones</label>
                 <textarea id="j_observaciones" placeholder="Notas / observaciones"></textarea>
                 <label>Foto <span class="hint">(opcional)</span></label>
-                <input id="j_foto" type="file" accept="image/*" capture="environment" />
+                <div class="foto-opts">
+                    <label class="fbtn">📷 Tomar foto<input id="j_foto_cam" type="file" accept="image/*" capture="environment" /></label>
+                    <label class="fbtn">🖼️ Subir del teléfono<input id="j_foto_file" type="file" accept="image/*" /></label>
+                </div>
                 <img id="j_foto_prev" class="prev" alt="" />
             </div>
 
@@ -218,7 +240,6 @@
             cedulaEl.addEventListener('blur', async () => {
                 const num = (cedulaEl.value || '').replace(/\D/g, '');
                 if (num.length < 4 || num.length > 10) return;
-                if (nombreEl && nombreEl.value.trim()) return; // respetar lo escrito a mano
                 const nac = (nacEl && (nacEl.value || '').toUpperCase() === 'E') ? 'E' : 'V';
                 const bg = cedulaEl.style.background, ph = cedulaEl.placeholder;
                 cedulaEl.style.background = '#fef3c7'; cedulaEl.placeholder = 'Consultando CNE…';
@@ -231,13 +252,36 @@
                         if (d && !json.error) {
                             if (nombreEl && !nombreEl.value.trim()) { nombreEl.value = [d.primer_nombre, d.segundo_nombre, d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim(); nombreEl.dispatchEvent(new Event('input', { bubbles: true })); }
                             if (fechaEl && fechaCneValida(d.fecha_nac) && !fechaEl.value) { fechaEl.value = d.fecha_nac; fechaEl.dispatchEvent(new Event('change', { bubbles: true })); }
-                            ok = true; cedulaEl.style.background = '#dcfce7'; setTimeout(() => { cedulaEl.style.background = bg; }, 1500);
+                            ok = true; cedulaEl.style.background = '#dcfce7'; setTimeout(() => { cedulaEl.style.background = bg; }, 1500); verBotonCNE(cedulaEl, d);
                         }
                     }
                 } catch (e) { /* CNE caído / no encontrado: se llena a mano */ }
                 cedulaEl.placeholder = ph;
                 if (!ok) cedulaEl.style.background = bg;
             });
+        }
+        function escCne(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+        function mostrarCNE(d) {
+            const c = d.cne || {};
+            const nombre = [d.primer_nombre, d.segundo_nombre, d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ');
+            const cedTxt = (d.nacionalidad === 'E' ? 'E' : 'V') + '-' + (d.cedula || '');
+            const fila = (k, v) => `<div class="cne-row"><span>${escCne(k)}</span><b>${escCne(v) || '—'}</b></div>`;
+            $('cneBody').innerHTML =
+                '<div class="cne-sec">Identidad</div>' +
+                fila('Nombres y apellidos', nombre) + fila('Cédula', cedTxt) +
+                fila('Nacionalidad', d.nacionalidad === 'E' ? 'Extranjero(a)' : 'Venezolano(a)') +
+                fila('Fecha de nacimiento', d.fecha_nac) + fila('RIF', d.rif) +
+                '<div class="cne-sec">Datos electorales — dónde vota</div>' +
+                fila('Estado', c.estado) + fila('Municipio', c.municipio) + fila('Parroquia', c.parroquia) + fila('Centro de votación', c.centro_electoral);
+            const m = $('cneModal'); m.style.display = 'flex';
+            $('cneClose').onclick = () => m.style.display = 'none';
+            m.onclick = (e) => { if (e.target === m) m.style.display = 'none'; };
+        }
+        function verBotonCNE(cedulaEl, d) {
+            const cont = cedulaEl.closest('div') || cedulaEl.parentElement;
+            let btn = cont.querySelector('.cne-ver');
+            if (!btn) { btn = document.createElement('button'); btn.type = 'button'; btn.className = 'cne-ver'; btn.textContent = '🗳️ Ver datos del CNE (dónde vota)'; cont.appendChild(btn); }
+            btn.onclick = () => mostrarCNE(d); btn.style.display = '';
         }
         engancharCNE($('j_cedula'), $('j_nombre'), $('j_fecha_nac'), $('j_nacionalidad'));
 
@@ -263,7 +307,9 @@
             });
         }
         let fotoJefe = '';
-        $('j_foto').addEventListener('change', async () => { fotoJefe = await comprimir($('j_foto').files[0]); if (fotoJefe) { $('j_foto_prev').src = fotoJefe; $('j_foto_prev').style.display = 'block'; } else { $('j_foto_prev').style.display = 'none'; } });
+        async function setFotoJefe(file) { fotoJefe = await comprimir(file); if (fotoJefe) { $('j_foto_prev').src = fotoJefe; $('j_foto_prev').style.display = 'block'; } else { $('j_foto_prev').style.display = 'none'; } }
+        $('j_foto_cam').addEventListener('change', e => setFotoJefe(e.target.files[0]));
+        $('j_foto_file').addEventListener('change', e => setFotoJefe(e.target.files[0]));
 
         // Miembros del grupo familiar (dinámico)
         const fotosMiembros = {};
@@ -317,12 +363,17 @@
                 </div>
                 <label>Observaciones</label><input data-f="observaciones" placeholder="Notas" autocomplete="off" />
                 <label>Foto <span class="hint">(opcional)</span></label>
-                <input type="file" accept="image/*" capture="environment" class="mb-foto" />
+                <div class="foto-opts">
+                    <label class="fbtn">📷 Tomar foto<input type="file" accept="image/*" capture="environment" class="mb-foto-cam" /></label>
+                    <label class="fbtn">🖼️ Subir del teléfono<input type="file" accept="image/*" class="mb-foto-file" /></label>
+                </div>
                 <img class="prev mb-prev" alt="" />`;
             $('miembros').appendChild(div);
             div.querySelector('.mb-del').addEventListener('click', () => { delete fotosMiembros[id]; div.remove(); actualizarCarga(); });
             div.querySelector('.fnac').addEventListener('change', (e) => { const ed = edadDeFecha(e.target.value); if (ed !== '') div.querySelector('.edad').value = ed; });
-            div.querySelector('.mb-foto').addEventListener('change', async (e) => { const u = await comprimir(e.target.files[0]); fotosMiembros[id] = u; const pv = div.querySelector('.mb-prev'); if (u) { pv.src = u; pv.style.display = 'block'; } else { pv.style.display = 'none'; } });
+            const setMbFoto = async (file) => { const u = await comprimir(file); fotosMiembros[id] = u; const pv = div.querySelector('.mb-prev'); if (u) { pv.src = u; pv.style.display = 'block'; } else { pv.style.display = 'none'; } };
+            div.querySelector('.mb-foto-cam').addEventListener('change', e => setMbFoto(e.target.files[0]));
+            div.querySelector('.mb-foto-file').addEventListener('change', e => setMbFoto(e.target.files[0]));
             engancharCNE(div.querySelector('[data-f="cedula"]'), div.querySelector('[data-f="nombre"]'), div.querySelector('[data-f="fecha_nac"]'), div.querySelector('[data-f="nacionalidad"]'));
             const modEl = div.querySelector('[data-f="modulo"]'), cubEl = div.querySelector('[data-f="cubiculo"]');
             modEl.innerHTML = moduloOpts();
@@ -360,12 +411,13 @@
 
             const payload = {
                 n_registro: v('n_registro'), fecha_ingreso: v('fecha_ingreso'), hora: v('hora'),
-                persona_receptor: v('persona_receptor'), de_donde_vienen: v('de_donde_vienen'),
-                estado: v('estado'), municipio: v('municipio'), comunidad_sector: v('comunidad_sector'),
+                persona_receptor: v('persona_receptor'),
+                estado: v('estado'), municipio: v('municipio'), comuna_procedencia: v('comuna_procedencia'), comunidad_sector: v('comunidad_sector'),
                 jefe: {
                     nombre: v('j_nombre'), nacionalidad: v('j_nacionalidad'), cedula: soloDig(v('j_cedula')),
                     telefono: soloDig(v('j_telefono')), fecha_nac: v('j_fecha_nac'), edad: v('j_edad'),
                     genero: v('j_genero'), tipo_sangre: v('j_tipo_sangre'), profesion: v('j_profesion'),
+                    situacion_laboral: v('j_situacion_laboral'), nivel_academico: v('j_nivel_academico'), estudia: v('j_estudia'),
                     patologia: v('j_patologia'), medicamento: v('j_medicamento'),
                     situacion_salud: v('j_situacion_salud'), situacion_psicologica: v('j_situacion_psicologica'),
                     afectacion: v('j_afectacion'),
@@ -401,5 +453,11 @@
         });
         $('btnOtro').addEventListener('click', () => location.reload());
     </script>
+    <div id="cneModal" class="cne-modal">
+        <div class="cne-card">
+            <div class="cne-hd"><span>🗳️ Datos del CNE</span><button type="button" id="cneClose">✕</button></div>
+            <div class="cne-bd" id="cneBody"></div>
+        </div>
+    </div>
 </body>
 </html>
