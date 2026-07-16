@@ -168,9 +168,9 @@
                     <div class="subform">
                         <div class="seclabel">Ubicación de procedencia (de dónde vienen)</div>
                         <div class="row3">
-                            <div><label>Estado *</label><select id="p_estado"><option value="">Selecciona…</option></select></div>
-                            <div><label>Municipio *</label><select id="p_municipio"><option value="">Selecciona…</option></select></div>
-                            <div><label>Parroquia *</label><input id="p_parroquia" autocomplete="off" /></div>
+                            <div><label>Estado *</label><select id="p_estado"><option value="La Guaira">La Guaira</option></select></div>
+                            <div><label>Municipio *</label><select id="p_municipio"><option value="Vargas">Vargas</option></select></div>
+                            <div><label>Parroquia *</label><select id="p_parroquia"><option value="">Selecciona…</option></select></div>
                         </div>
                         <label>Comuna</label><input id="p_comuna" autocomplete="off" />
 
@@ -363,13 +363,9 @@
         });
         $('h_consejo').addEventListener('change', () => $('wrapConsejoOtro').classList.toggle('hidden', $('h_consejo').value !== '__OTRO__'));
 
-        // ---------- Municipios nacionales (procedencia) ----------
-        const MUN = window.MUNICIPIOS || {};
-        $('p_estado').innerHTML = '<option value="">Selecciona…</option>' + Object.keys(MUN).sort((a, b) => a.localeCompare(b, 'es')).map(e => `<option>${e}</option>`).join('');
-        $('p_estado').addEventListener('change', () => {
-            const lista = MUN[$('p_estado').value] || [];
-            $('p_municipio').innerHTML = '<option value="">Selecciona…</option>' + lista.map(m => `<option>${m}</option>`).join('');
-        });
+        // ---------- Procedencia (Sismo La Guaira): Estado=La Guaira y Municipio=Vargas fijos; parroquias de Vargas ----------
+        const PARR_VARGAS = ["Catia La Mar", "Carlos Soublette", "Urimare", "Maiquetía", "La Guaira", "Macuto", "Caraballeda", "Naiguatá", "Caruao", "Carayaca", "El Junko"];
+        $('p_parroquia').innerHTML = '<option value="">Selecciona…</option>' + PARR_VARGAS.map(p => `<option>${p}</option>`).join('');
 
         // ---------- CNE ----------
         async function consultarCNE(nac, num) {
@@ -475,8 +471,7 @@
             };
         }
         function limpiarJefe() {
-            ['p_estado', 'p_municipio', 'p_parroquia', 'p_comuna', 'j_cedula', 'j_nombre', 'j_apellido', 'j_apellido2', 'j_fnac', 'j_sexo', 'j_tel', 'j_vivienda', 'j_vivienda_otro', 'j_estado_atencion', 'j_nec_detalle', 'j_patologia', 'j_medicamento', 'j_talla_camisa', 'j_talla_pantalon', 'j_talla_zapatos', 'j_observaciones'].forEach(id => $(id).value = '');
-            $('p_municipio').innerHTML = '<option value="">Selecciona…</option>';
+            ['p_parroquia', 'p_comuna', 'j_cedula', 'j_nombre', 'j_apellido', 'j_apellido2', 'j_fnac', 'j_sexo', 'j_tel', 'j_vivienda', 'j_vivienda_otro', 'j_estado_atencion', 'j_nec_detalle', 'j_patologia', 'j_medicamento', 'j_talla_camisa', 'j_talla_pantalon', 'j_talla_zapatos', 'j_observaciones'].forEach(id => $(id).value = '');
             checksSet('j_vuln', []); checksSet('j_nec', []);
             const s = document.querySelector('input[name="sit_actual"]:checked'); if (s) s.checked = false;
             $('wrapVivOtro').classList.add('hidden'); editJefe = -1; $('addJefe').textContent = '➕ Agregar jefe de familia';
@@ -502,8 +497,8 @@
         }
         function cargarJefe(i) {
             const j = JEFES[i]; editJefe = i;
-            $('p_estado').value = j.proc_estado; $('p_estado').dispatchEvent(new Event('change')); $('p_municipio').value = j.proc_municipio;
-            $('p_parroquia').value = j.proc_parroquia; $('p_comuna').value = j.proc_comuna;
+            const pp = $('p_parroquia'); if (j.proc_parroquia && ![...pp.options].some(o => o.value === j.proc_parroquia)) pp.add(new Option(j.proc_parroquia, j.proc_parroquia)); pp.value = j.proc_parroquia || '';
+            $('p_comuna').value = j.proc_comuna;
             $('j_nac').value = j.nacionalidad; $('j_cedula').value = j.cedula; $('j_nombre').value = j.primer_nombre; $('j_apellido').value = j.primer_apellido; $('j_apellido2').value = j.segundo_apellido;
             $('j_fnac').value = j.fecha_nacimiento; $('j_sexo').value = j.sexo; $('j_tel').value = j.telefono;
             if (j.situacion_actual) { const r = document.querySelector(`input[name="sit_actual"][value="${CSS.escape(j.situacion_actual)}"]`); if (r) r.checked = true; }
