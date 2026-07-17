@@ -347,6 +347,8 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
         $('tileVivienda').addEventListener('click', () => toggleTile('fVivienda', 'si'));
 
         const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val || '—')}</span></div>`;
+        const GS_VOCERO = [['comuna', 'Nombre de la comuna'], ['vocero_nombre', 'Vocero — Nombre'], ['vocero_apellido', 'Vocero — Apellidos'], ['carnet_fecha', 'Carnet Fecha N°1'], ['vocero_ci', 'C.I. del vocero'], ['vocero_tel', 'Teléfono del vocero'], ['municipio', 'Municipio (vocero)'], ['parroquia', 'Parroquia (vocero)'], ['sector', 'Sector'], ['estatus_habitacional', 'Estatus habitacional']];
+        const GS_SOLIC = [['correo', 'Correo electrónico'], ['nivel_instruccion', 'Nivel de instrucción académico'], ['carnet_patria_codigo', 'Código Carnet de la Patria'], ['carnet_patria_serial', 'Serial Carnet de la Patria'], ['lugar_trabajo', 'Lugar de trabajo'], ['cargo', 'Cargo'], ['tiempo_servicio', 'Tiempo de servicio'], ['enfermedad', '¿Sufre enfermedad?'], ['enfermedad_cual', 'Enfermedad ¿cuál?'], ['discapacidad', '¿Sufre discapacidad?'], ['discapacidad_cual', 'Discapacidad ¿cuál?'], ['ingreso_familiar', 'Ingreso familiar'], ['tiene_pareja', '¿Tiene pareja?'], ['descripcion_caso', 'Descripción del caso']];
         function verDetalle(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
             const j = r.jefe || {}, miembros = toArr(r.miembros);
@@ -355,6 +357,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
             $('modal').innerHTML = `
                 <h3>${esc(j.nombre || 'Ingreso')} <span style="font-size:13px;color:#64748b;">· ${personasDe(r)} persona(s)</span></h3>
                 <h4>Recepción</h4>${RECEP.map(c => fila(c[1], r[c[0]])).join('')}
+                <h4>Gestión social (Vivienda Miranda)</h4>${GS_VOCERO.map(c => fila(c[1], (r.gestion_social || {})[c[0]])).join('')}${GS_SOLIC.map(c => fila(c[1], j[c[0]])).join('')}
                 <h4>Jefe de familia</h4><div id="jfoto"></div>${jefeFilas}
                 <h4>Grupo familiar (${miembros.length})</h4>${miembrosHtml}
                 <button class="cerrar" id="cerrarModal">Cerrar</button>`;

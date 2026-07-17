@@ -84,6 +84,60 @@
                 </div>
             </div>
 
+            <!-- VOCERO Y COMUNIDAD (gestión social - Vivienda Miranda) -->
+            <div class="card">
+                <h2>Gestión social (Vivienda Miranda)</h2>
+                <div class="sub">Sistematización — Instituto de Vivienda de Miranda.</div>
+                <label style="color:#0a2351;margin-top:6px;font-weight:800;">Vocero y comunidad</label>
+                <label>Nombre de la comuna</label><input id="gs_comuna" autocomplete="off" />
+                <div class="row2">
+                    <div><label>Vocero — Nombre</label><input id="gs_vocero_nombre" autocomplete="off" /></div>
+                    <div><label>Vocero — Apellidos</label><input id="gs_vocero_apellido" autocomplete="off" /></div>
+                </div>
+                <div class="row3">
+                    <div><label>Carnet Fecha N°1</label><input id="gs_carnet_fecha" autocomplete="off" /></div>
+                    <div><label>C.I. del vocero</label><input id="gs_vocero_ci" inputmode="numeric" autocomplete="off" /></div>
+                    <div><label>Teléfono del vocero</label><input id="gs_vocero_tel" inputmode="tel" autocomplete="off" /></div>
+                </div>
+                <div class="row3">
+                    <div><label>Municipio</label><select id="gs_municipio"><option value="">Selecciona…</option></select></div>
+                    <div><label>Parroquia</label><select id="gs_parroquia"><option value="">Selecciona…</option></select></div>
+                    <div><label>Sector</label><input id="gs_sector" autocomplete="off" /></div>
+                </div>
+
+                <label style="color:#0a2351;margin-top:14px;font-weight:800;">Datos socioeconómicos del solicitante</label>
+                <div class="row2">
+                    <div><label>Correo electrónico</label><input id="js_correo" type="email" autocomplete="off" /></div>
+                    <div><label>Nivel de instrucción académico</label><select id="js_nivel_instruccion"><option value="">—</option><option>Educación Inicial</option><option>Educación Básica</option><option>Educación Media</option><option>Educación Superior</option></select></div>
+                </div>
+                <div class="row2">
+                    <div><label>Código del Carnet de la Patria</label><input id="js_carnet_codigo" autocomplete="off" /></div>
+                    <div><label>Serial del Carnet de la Patria</label><input id="js_carnet_serial" autocomplete="off" /></div>
+                </div>
+                <div class="row3">
+                    <div><label>Lugar de trabajo</label><input id="js_lugar_trabajo" autocomplete="off" /></div>
+                    <div><label>Cargo</label><input id="js_cargo" autocomplete="off" /></div>
+                    <div><label>Tiempo de servicio</label><input id="js_tiempo_servicio" autocomplete="off" /></div>
+                </div>
+                <div class="row2">
+                    <div><label>¿Sufre alguna enfermedad?</label><select id="js_enfermedad"><option value="">—</option><option>Sí</option><option>No</option></select></div>
+                    <div><label>¿Cuál?</label><input id="js_enfermedad_cual" autocomplete="off" /></div>
+                </div>
+                <div class="row2">
+                    <div><label>¿Sufre alguna discapacidad?</label><select id="js_discapacidad"><option value="">—</option><option>Sí</option><option>No</option></select></div>
+                    <div><label>¿Cuál?</label><input id="js_discapacidad_cual" autocomplete="off" /></div>
+                </div>
+                <div class="row2">
+                    <div><label>Ingreso familiar</label><input id="js_ingreso_familiar" autocomplete="off" /></div>
+                    <div><label>¿Tiene pareja?</label><select id="js_tiene_pareja"><option value="">—</option><option>Sí</option><option>No</option></select></div>
+                </div>
+                <label>Descripción del caso</label>
+                <textarea id="js_descripcion" placeholder="Descripción del caso social"></textarea>
+
+                <label style="margin-top:8px;">Estatus habitacional</label>
+                <select id="gs_estatus"><option value="">—</option><option>Adjudicado</option><option>Tiene Titularidad</option><option>Solicitud en Proceso</option></select>
+            </div>
+
             <!-- JEFE DE FAMILIA -->
             <div class="card">
                 <h2>Jefe de familia</h2>
@@ -205,6 +259,10 @@
             $('hora').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
             $('j_tipo_sangre').innerHTML = sangreOpts();
             $('j_modulo').innerHTML = moduloOpts();
+            const MIR_MUN = ["Acevedo", "Andrés Bello", "Baruta", "Brión", "Buroz", "Carrizal", "Chacao", "Cristóbal Rojas", "El Hatillo", "Guaicaipuro", "Independencia", "Lander", "Los Salias", "Páez", "Paz Castillo", "Pedro Gual", "Plaza", "Simón Bolívar", "Sucre", "Urdaneta", "Zamora"];
+            const MIR_PARR = ["Altagracia de la Montaña", "Araira", "Araguita", "Arévalo González", "Birongo", "Capaya", "Carrizal", "Cartanal", "Caucagua", "Caucagüita", "Cecilio Acosta", "Chacao", "Charallave", "Chirimena", "Cúa", "Cumbo", "Cúpira", "Curiepe", "El Café", "El Cafetal", "El Guapo", "El Hatillo", "El Jarillo", "Filas de Mariche", "Guatire", "Higuerote", "La Cabrera", "La Democracia", "La Dolorita", "La Mata", "Las Brisas", "Las Minas", "Leoncio Martín", "Los Teques", "Mamporal", "Marizapa", "Nuestra Señora del Rosario de Baruta", "Ocumare del Tuy", "Panaquire", "Paparo", "Paracoto", "Petare", "Ribas", "Río Chico", "San Antonio de los Altos", "San Antonio de Yare", "San Bárbara", "San Fernando Rey", "San Francisco de Yare", "San José de Barlovento", "San Pedro", "Santa Lucía del Tuy", "Santa Rita", "Siquire", "Soapire", "Tácata", "Tacarigua de Brión", "Tacarigua de la Laguna"];
+            $('gs_municipio').innerHTML = '<option value="">Selecciona…</option>' + MIR_MUN.map(m => `<option>${m}</option>`).join('');
+            $('gs_parroquia').innerHTML = '<option value="">Selecciona…</option>' + MIR_PARR.map(x => `<option>${x}</option>`).join('');
         })();
         $('j_modulo').addEventListener('change', () => poblarCubiculos($('j_modulo'), $('j_cubiculo')));
 
@@ -257,10 +315,18 @@
                     }
                 } catch (e) { /* CNE caído / no encontrado: se llena a mano */ }
                 cedulaEl.placeholder = ph;
-                if (!ok) cedulaEl.style.background = bg;
+                if (!ok) { cedulaEl.style.background = bg; verBotonDateas(cedulaEl, num); }
             });
         }
         function escCne(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+        function dateasURL(num) { return 'https://www.google.com/search?q=' + encodeURIComponent(String(num || '').replace(/\D/g, '') + ' dateas.com'); }
+        function verBotonDateas(cedulaEl, num) {
+            const cont = cedulaEl.closest('div') || cedulaEl.parentElement;
+            const cv = cont.querySelector('.cne-ver'); if (cv) cv.style.display = 'none';
+            let a = cont.querySelector('.dateas-ver');
+            if (!a) { a = document.createElement('a'); a.className = 'dateas-ver'; a.target = '_blank'; a.rel = 'noopener'; a.style.cssText = 'display:inline-block;margin-top:6px;background:#7c2d12;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;text-decoration:none'; a.textContent = '🔎 No aparece en CNE — verificar en Dateas'; cont.appendChild(a); }
+            a.href = dateasURL(num); a.style.display = '';
+        }
         function mostrarCNE(d) {
             const c = d.cne || {};
             const nombre = [d.primer_nombre, d.segundo_nombre, d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ');
@@ -272,13 +338,15 @@
                 fila('Nacionalidad', d.nacionalidad === 'E' ? 'Extranjero(a)' : 'Venezolano(a)') +
                 fila('Fecha de nacimiento', d.fecha_nac) + fila('RIF', d.rif) +
                 '<div class="cne-sec">Datos electorales — dónde vota</div>' +
-                fila('Estado', c.estado) + fila('Municipio', c.municipio) + fila('Parroquia', c.parroquia) + fila('Centro de votación', c.centro_electoral);
+                fila('Estado', c.estado) + fila('Municipio', c.municipio) + fila('Parroquia', c.parroquia) + fila('Centro de votación', c.centro_electoral) +
+                `<div style="margin-top:14px;text-align:center"><a href="${dateasURL(d.cedula)}" target="_blank" rel="noopener" style="display:inline-block;background:#065f46;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:700;text-decoration:none">🔎 Verificar también en Dateas (dónde vivía)</a></div>`;
             const m = $('cneModal'); m.style.display = 'flex';
             $('cneClose').onclick = () => m.style.display = 'none';
             m.onclick = (e) => { if (e.target === m) m.style.display = 'none'; };
         }
         function verBotonCNE(cedulaEl, d) {
             const cont = cedulaEl.closest('div') || cedulaEl.parentElement;
+            const dv = cont.querySelector('.dateas-ver'); if (dv) dv.style.display = 'none';
             let btn = cont.querySelector('.cne-ver');
             if (!btn) { btn = document.createElement('button'); btn.type = 'button'; btn.className = 'cne-ver'; btn.textContent = '🗳️ Ver datos del CNE (dónde vota)'; cont.appendChild(btn); }
             btn.onclick = () => mostrarCNE(d); btn.style.display = '';
@@ -413,6 +481,7 @@
                 n_registro: v('n_registro'), fecha_ingreso: v('fecha_ingreso'), hora: v('hora'),
                 persona_receptor: v('persona_receptor'),
                 estado: v('estado'), municipio: v('municipio'), comuna_procedencia: v('comuna_procedencia'), comunidad_sector: v('comunidad_sector'),
+                gestion_social: { comuna: v('gs_comuna'), vocero_nombre: v('gs_vocero_nombre'), vocero_apellido: v('gs_vocero_apellido'), carnet_fecha: v('gs_carnet_fecha'), vocero_ci: v('gs_vocero_ci'), vocero_tel: v('gs_vocero_tel'), municipio: v('gs_municipio'), parroquia: v('gs_parroquia'), sector: v('gs_sector'), estatus_habitacional: v('gs_estatus') },
                 jefe: {
                     nombre: v('j_nombre'), nacionalidad: v('j_nacionalidad'), cedula: soloDig(v('j_cedula')),
                     telefono: soloDig(v('j_telefono')), fecha_nac: v('j_fecha_nac'), edad: v('j_edad'),
@@ -425,6 +494,7 @@
                     modulo: v('j_modulo'), cubiculo: v('j_cubiculo'), cama: v('j_cama'),
                     talla_zapatos: v('j_talla_zapatos'), talla_camisa: v('j_talla_camisa'), talla_pantalon: v('j_talla_pantalon'),
                     observaciones: v('j_observaciones'),
+                    correo: v('js_correo'), nivel_instruccion: v('js_nivel_instruccion'), carnet_patria_codigo: v('js_carnet_codigo'), carnet_patria_serial: v('js_carnet_serial'), lugar_trabajo: v('js_lugar_trabajo'), cargo: v('js_cargo'), tiempo_servicio: v('js_tiempo_servicio'), enfermedad: v('js_enfermedad'), enfermedad_cual: v('js_enfermedad_cual'), discapacidad: v('js_discapacidad'), discapacidad_cual: v('js_discapacidad_cual'), ingreso_familiar: v('js_ingreso_familiar'), tiene_pareja: v('js_tiene_pareja'), descripcion_caso: v('js_descripcion'),
                     tiene_foto: !!fotoJefe
                 },
                 miembros: miembros,
