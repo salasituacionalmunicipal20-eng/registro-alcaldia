@@ -306,6 +306,7 @@
 
     <script src="municipios-data.js"></script>
     <script src="territorio-data.js"></script>
+    <script src="parroquias-data.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, push, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -363,9 +364,35 @@
         });
         $('h_consejo').addEventListener('change', () => $('wrapConsejoOtro').classList.toggle('hidden', $('h_consejo').value !== '__OTRO__'));
 
-        // ---------- Procedencia (Sismo La Guaira): Estado=La Guaira y Municipio=Vargas fijos; parroquias de Vargas ----------
-        const PARR_VARGAS = ["Catia La Mar", "Carlos Soublette", "Urimare", "Maiquetía", "La Guaira", "Macuto", "Caraballeda", "Naiguatá", "Caruao", "Carayaca", "El Junko"];
-        $('p_parroquia').innerHTML = '<option value="">Selecciona…</option>' + PARR_VARGAS.map(p => `<option>${p}</option>`).join('');
+        // ---------- Procedencia: cascada estado -> municipio -> parroquia (toda Venezuela) ----------
+        // La Guaira (Vargas, 11 parroquias) queda por defecto e IDÉNTICA a la original.
+        const VEDATA = window.VENEZUELA || {};
+        const PROC_EST_DEF = 'La Guaira';
+        function llenarSelProc(sel, items, ph) {
+            sel.innerHTML = `<option value="">${ph || 'Selecciona…'}</option>` + items.map(x => `<option>${x}</option>`).join('');
+        }
+        function estadosProc() {
+            const ks = Object.keys(VEDATA);
+            const resto = ks.filter(k => k !== PROC_EST_DEF).sort((a, b) => a.localeCompare(b, 'es'));
+            return VEDATA[PROC_EST_DEF] ? [PROC_EST_DEF, ...resto] : resto;
+        }
+        function pobMunProc(est, keep) {
+            const muns = (est && VEDATA[est]) ? Object.keys(VEDATA[est]).sort((a, b) => a.localeCompare(b, 'es')) : [];
+            llenarSelProc($('p_municipio'), muns, 'Municipio…');
+            if (keep) { if (!muns.includes(keep)) $('p_municipio').add(new Option(keep, keep)); $('p_municipio').value = keep; }
+        }
+        function pobParrProc(est, mun, keep) {
+            const par = (est && mun && VEDATA[est] && VEDATA[est][mun]) ? VEDATA[est][mun] : [];
+            llenarSelProc($('p_parroquia'), par, 'Selecciona…');
+            if (keep) { if (![...$('p_parroquia').options].some(o => o.value === keep)) $('p_parroquia').add(new Option(keep, keep)); $('p_parroquia').value = keep; }
+        }
+        llenarSelProc($('p_estado'), estadosProc(), 'Estado…');
+        $('p_estado').value = VEDATA[PROC_EST_DEF] ? PROC_EST_DEF : '';
+        pobMunProc($('p_estado').value);
+        $('p_municipio').value = (VEDATA[PROC_EST_DEF] ? Object.keys(VEDATA[PROC_EST_DEF])[0] : '') || '';
+        pobParrProc($('p_estado').value, $('p_municipio').value);
+        $('p_estado').addEventListener('change', () => { pobMunProc($('p_estado').value); $('p_municipio').value = ''; llenarSelProc($('p_parroquia'), [], 'Selecciona…'); });
+        $('p_municipio').addEventListener('change', () => pobParrProc($('p_estado').value, $('p_municipio').value));
 
         // ---------- CNE ----------
         async function consultarCNE(nac, num) {
@@ -497,7 +524,9 @@
         }
         function cargarJefe(i) {
             const j = JEFES[i]; editJefe = i;
-            const pp = $('p_parroquia'); if (j.proc_parroquia && ![...pp.options].some(o => o.value === j.proc_parroquia)) pp.add(new Option(j.proc_parroquia, j.proc_parroquia)); pp.value = j.proc_parroquia || '';
+            $('p_estado').value = ''; if (j.proc_estado && ![...$('p_estado').options].some(o => o.value === j.proc_estado)) $('p_estado').add(new Option(j.proc_estado, j.proc_estado)); $('p_estado').value = j.proc_estado || '';
+            pobMunProc(j.proc_estado, j.proc_municipio);
+            pobParrProc(j.proc_estado, j.proc_municipio, j.proc_parroquia);
             $('p_comuna').value = j.proc_comuna;
             $('j_nac').value = j.nacionalidad; $('j_cedula').value = j.cedula; $('j_nombre').value = j.primer_nombre; $('j_apellido').value = j.primer_apellido; $('j_apellido2').value = j.segundo_apellido;
             $('j_fnac').value = j.fecha_nacimiento; $('j_sexo').value = j.sexo; $('j_tel').value = j.telefono;
