@@ -195,9 +195,10 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
 .carnet .panel .ttl3 { font-size:1cqw; font-weight:800; color:#0a6cb0; text-transform:uppercase; letter-spacing:.15px; line-height:1.2; margin-bottom:.9cqw; padding-top:.4cqw; }
 .carnet .panel .nm { font-size:2.05cqw; font-weight:850; color:#0a2351; line-height:1.06; margin-bottom:.3cqw; }
 .carnet .panel .cond { font-size:1.18cqw; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.2px; margin-bottom:.85cqw; }
-.carnet .panel .rw { font-size:1.28cqw; line-height:1.42; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.carnet .panel .rw span { color:#5b6b82; font-weight:800; }
-.carnet .panel .rw b { color:#0f172a; font-weight:700; }
+.carnet .datos { position:absolute; left:51%; top:38%; width:33%; }
+.carnet .datos .rw { font-size:1.28cqw; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.carnet .datos .rw span { color:#5b6b82; font-weight:800; }
+.carnet .datos .rw b { color:#0f172a; font-weight:700; }
 .carnet .qr { position:absolute; right:3.2%; top:11%; width:19%; text-align:center; }
 .carnet .qr img { width:100%; display:block; background:#fff; border-radius:.7cqw; }
 .carnet .qr span { font-size:.97cqw; color:#334155; font-weight:800; display:block; margin-top:.3cqw; }
@@ -413,7 +414,8 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             return `<div class="carnet">`
                 + `<div class="foto">${foto}</div>`
                 + `<div class="panel"><div class="ttl1">Municipio Cristóbal Rojas</div><div class="ttl2">Charallave · Edo. Miranda</div><div class="ttl3">Carnet de control · Campamento Temporal · Sismo 2026</div>`
-                + `<div class="nm">${esc(pl.nombre || '—')}</div><div class="cond">${esc(pl.tipo || '')}</div>${rows}</div>`
+                + `<div class="nm">${esc(pl.nombre || '—')}</div><div class="cond">${esc(pl.tipo || '')}</div></div>`
+                + `<div class="datos">${rows}</div>`
                 + `<div class="qr"><img src="${qr}" alt="QR"/><span>Escanee para validar</span></div>`
                 + `</div>`;
         }
