@@ -185,11 +185,11 @@
         const ESCUDO_SVG = '<svg viewBox="0 0 48 56" width="26" height="30"><path d="M24 2 44 9v20c0 13-9 21-20 25C13 50 4 42 4 29V9z" fill="#123571" stroke="#f4c20d" stroke-width="2"/><path d="M24 12l2.6 5.6 6 .8-4.4 4.3 1.1 6L24 31.9 18.7 34.7l1.1-6-4.4-4.3 6-.8z" fill="#f4c20d"/></svg>';
         const CARNET_CSS = `* { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; background:#fff; padding:12px; }
-.carnet { position:relative; width:600px; aspect-ratio:2275/1438; margin:0 auto 14px; border-radius:12px; overflow:hidden; background:#fff url('${window.CARNET_FONDO || ''}') center/cover no-repeat; box-shadow:0 1px 4px rgba(0,0,0,.25); page-break-inside:avoid; }
+.carnet { position:relative; width:600px; aspect-ratio:2275/1438; margin:0 auto 14px; border-radius:12px; overflow:hidden; background:#fff url('${window.CARNET_FONDO || ''}') center/cover no-repeat; box-shadow:0 1px 4px rgba(0,0,0,.25); page-break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 .carnet .foto { position:absolute; left:9.6%; top:23.2%; width:33%; aspect-ratio:1; border-radius:50%; overflow:hidden; box-shadow:0 0 0 1.8px rgba(255,255,255,.85); }
 .carnet .foto img { width:100%; height:100%; object-fit:cover; display:block; }
 .carnet .foto .ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#eef2f7; color:#94a3b8; font-size:10px; font-weight:800; }
-.carnet .panel { position:absolute; left:45.3%; top:10.5%; width:32%; }
+.carnet .panel { position:absolute; left:44%; top:9%; width:34%; text-align:center; }
 .carnet .panel .ttl1 { font-size:9.3px; font-weight:850; color:#0a2351; line-height:1.06; text-transform:uppercase; letter-spacing:.1px; }
 .carnet .panel .ttl2 { font-size:6.7px; font-weight:700; color:#334155; line-height:1.1; }
 .carnet .panel .ttl3 { font-size:6px; font-weight:800; color:#0a6cb0; text-transform:uppercase; letter-spacing:.1px; line-height:1.2; margin-bottom:5.4px; padding-top:2.4px; }
