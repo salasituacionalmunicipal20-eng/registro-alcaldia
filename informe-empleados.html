@@ -50,7 +50,7 @@
                 <label>Nombre y apellido del empleado *</label>
                 <input id="f_nombres" placeholder="Nombre completo" autocomplete="off" />
                 <div class="row2">
-                    <div><label>Cédula</label><input id="f_cedula" placeholder="V-12345678" autocomplete="off" inputmode="numeric" /></div>
+                    <div class="cne-slot"><label>Cédula</label><input id="f_cedula" data-cne placeholder="V-12345678" autocomplete="off" inputmode="numeric" /></div>
                     <div><label>Teléfono</label><input id="f_telefono" placeholder="0414-0000000" autocomplete="off" inputmode="tel" /></div>
                 </div>
                 <div class="row2">
@@ -139,5 +139,6 @@
         });
         $('btnOtro').addEventListener('click', () => location.reload());
     </script>
+    <script src="cne-dateas.js"></script>
 </body>
 </html>

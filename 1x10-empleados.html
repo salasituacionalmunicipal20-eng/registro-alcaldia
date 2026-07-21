@@ -391,7 +391,7 @@
                                 <option value="V">V</option>
                                 <option value="E">E</option>
                             </select>
-                            <input id="jefe_cedula" type="tel" inputmode="numeric" autocomplete="off" placeholder="12345678" maxlength="10" />
+                            <input id="jefe_cedula" data-cne type="tel" inputmode="numeric" autocomplete="off" placeholder="12345678" maxlength="10" />
                         </div>
                         <span class="hint" id="hint_jefe_cedula">Al salir de la casilla buscamos tus datos en el CNE.</span>
                     </div>
@@ -1017,7 +1017,7 @@
                             <option value="V">V</option>
                             <option value="E">E</option>
                         </select>
-                        <input id="afin_cedula_${id}" type="tel" inputmode="numeric" autocomplete="off" placeholder="Cédula" maxlength="10" />
+                        <input id="afin_cedula_${id}" data-cne type="tel" inputmode="numeric" autocomplete="off" placeholder="Cédula" maxlength="10" />
                     </div>
                     <span class="label-cne" id="afin_label_${id}"></span>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
@@ -1611,5 +1611,6 @@
         chequearPaso2();
         actualizarEdadJefe();
     </script>
+    <script src="cne-dateas.js"></script>
 </body>
 </html>
