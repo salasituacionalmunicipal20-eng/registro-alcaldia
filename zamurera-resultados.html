@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="carnet-fondo.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
@@ -183,27 +184,22 @@
         const BASE_VALID = 'https://salasituacional.alcaldiadecharallave.com/validar-carnet.html';
         const ESCUDO_SVG = '<svg viewBox="0 0 48 56" width="26" height="30"><path d="M24 2 44 9v20c0 13-9 21-20 25C13 50 4 42 4 29V9z" fill="#123571" stroke="#f4c20d" stroke-width="2"/><path d="M24 12l2.6 5.6 6 .8-4.4 4.3 1.1 6L24 31.9 18.7 34.7l1.1-6-4.4-4.3 6-.8z" fill="#f4c20d"/></svg>';
         const CARNET_CSS = `* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; background: #fff; padding: 12px; }
-.carnet { width: 340px; border: 1.5px solid #0a2351; border-radius: 12px; overflow: hidden; margin: 0 auto 16px; page-break-inside: avoid; }
-.carnet .tri { height: 6px; display: flex; } .carnet .tri i { flex: 1; }
-.carnet .tri i:nth-child(1){ background:#f4c20d; } .carnet .tri i:nth-child(2){ background:#0a6cb0; } .carnet .tri i:nth-child(3){ background:#d21534; }
-.carnet .hd { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #0a2351; color: #fff; }
-.carnet .hd .ht b { display: block; font-size: 10.5px; font-weight: 800; line-height: 1.1; }
-.carnet .hd .ht span { display: block; font-size: 8.5px; color: #aebfdf; }
-.carnet .band { background: #f4c20d; color: #3a2b00; font-size: 9px; font-weight: 800; text-align: center; letter-spacing: .4px; padding: 4px 6px; text-transform: uppercase; }
-.carnet .bd { display: flex; gap: 10px; padding: 12px 10px; align-items: flex-start; }
-.carnet .foto img { width: 74px; height: 92px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; display: block; }
-.carnet .foto .ph { width: 74px; height: 92px; border: 1px dashed #cbd5e1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #94a3b8; font-weight: 700; }
-.carnet .data { flex: 1; min-width: 0; }
-.carnet .data .nm { font-size: 13px; font-weight: 850; color: #0a2351; line-height: 1.15; margin-bottom: 4px; }
-.carnet .data .rw { font-size: 9.5px; display: flex; gap: 5px; padding: 1.5px 0; }
-.carnet .data .rw span { color: #64748b; min-width: 58px; font-weight: 700; }
-.carnet .data .rw b { color: #0f172a; }
-.carnet .qr { text-align: center; flex: none; }
-.carnet .qr img { width: 66px; height: 66px; display: block; }
-.carnet .qr span { font-size: 7.5px; color: #64748b; display: block; margin-top: 2px; max-width: 66px; }
-.carnet .ft { font-size: 7.5px; color: #64748b; text-align: center; padding: 5px 8px; border-top: 1px solid #eef2f7; }
-@media print { body { padding: 0; } }`;
+body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; background:#fff; padding:12px; }
+.carnet { position:relative; width:85.6mm; aspect-ratio:2275/1438; margin:0 auto 8mm; border-radius:2cqw; overflow:hidden; container-type:inline-size; background:#fff url('${window.CARNET_FONDO || ''}') center/cover no-repeat; box-shadow:0 1px 4px rgba(0,0,0,.25); page-break-inside:avoid; }
+.carnet .foto { position:absolute; left:9.6%; top:23.2%; width:33%; aspect-ratio:1; border-radius:50%; overflow:hidden; box-shadow:0 0 0 0.3cqw rgba(255,255,255,.85); }
+.carnet .foto img { width:100%; height:100%; object-fit:cover; display:block; }
+.carnet .foto .ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#eef2f7; color:#94a3b8; font-size:1.7cqw; font-weight:800; }
+.carnet .panel { position:absolute; left:46.5%; top:14.5%; width:30%; }
+.carnet .panel .lbl { font-size:1.05cqw; font-weight:800; letter-spacing:.2px; color:#0a6cb0; text-transform:uppercase; margin-bottom:.45cqw; white-space:nowrap; }
+.carnet .panel .nm { font-size:2.25cqw; font-weight:850; color:#0a2351; line-height:1.08; margin-bottom:.3cqw; }
+.carnet .panel .cond { font-size:1.2cqw; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.2px; margin-bottom:.9cqw; }
+.carnet .panel .rw { font-size:1.32cqw; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.carnet .panel .rw span { color:#5b6b82; font-weight:800; }
+.carnet .panel .rw b { color:#0f172a; font-weight:700; }
+.carnet .qr { position:absolute; right:3.2%; top:16%; width:19.5%; text-align:center; }
+.carnet .qr img { width:100%; display:block; background:#fff; border-radius:.7cqw; }
+.carnet .qr span { font-size:.97cqw; color:#334155; font-weight:800; display:block; margin-top:.3cqw; }
+@media print { body { padding:0; } }`;
 
         function comprimir(file) {
             return new Promise((resolve) => {
@@ -406,18 +402,18 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
             const foto = pl.foto ? `<img src="${pl.foto}" alt="Foto"/>` : '<div class="ph">SIN FOTO</div>';
             const rows = [
                 ['C.I.', pl.cedula || '—'],
-                ['Condición', pl.tipo || '—'],
-                ['Sexo/Edad', sexoEdad],
+                ['Sexo/Edad', sexoEdad || '—'],
                 ['T. sangre', pl.tipo_sangre || '—'],
                 ['Ubicación', pl.campamento || '—'],
-                ['Nº ingreso', pl.n_registro || '—']
-            ].map(([k, v]) => `<div class="rw"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
-            return `<div class="carnet"><div class="tri"><i></i><i></i><i></i></div>`
-                + `<div class="hd">${ESCUDO_SVG}<div class="ht"><b>ALCALDÍA · MUNICIPIO CRISTÓBAL ROJAS</b><span>Charallave · Miranda · Sala Situacional</span></div></div>`
-                + `<div class="band">Carnet de control · Campamento Temporal — Sismo 2026</div>`
-                + `<div class="bd"><div class="foto">${foto}</div><div class="data"><div class="nm">${esc(pl.nombre || '—')}</div>${rows}</div>`
-                + `<div class="qr"><img src="${qr}" alt="QR"/><span>Escanee para validar</span></div></div>`
-                + `<div class="ft">Documento de control · Válido mientras exista el ingreso · Emitido ${esc(new Date(pl.emitido_en || Date.now()).toLocaleDateString('es-VE'))}</div></div>`;
+                ['Nº ingreso', pl.n_registro || '—'],
+                ['Procedencia', pl.procedencia || '—']
+            ].map(([k, v]) => `<div class="rw"><span>${esc(k)}:</span> <b>${esc(v)}</b></div>`).join('');
+            return `<div class="carnet">`
+                + `<div class="foto">${foto}</div>`
+                + `<div class="panel"><div class="lbl">Carnet de control · Campamento Temporal</div>`
+                + `<div class="nm">${esc(pl.nombre || '—')}</div><div class="cond">${esc(pl.tipo || '')}</div>${rows}</div>`
+                + `<div class="qr"><img src="${qr}" alt="QR"/><span>Escanee para validar</span></div>`
+                + `</div>`;
         }
         function imprimirCarnets(items) {
             if (!items.length) return;
