@@ -14,6 +14,7 @@
     <meta name="description" content="Registro de personas que llegan al Municipio Cristóbal Rojas en calidad de refugiado tras el terremoto. Alcaldía de Cristóbal Rojas." />
     <script defer src="territorio-data.js"></script>
     <script defer src="municipios-data.js"></script>
+    <script defer src="cne-dateas.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #eef2f7; color: #0f172a; line-height: 1.5; padding-bottom: 40px; }
@@ -262,7 +263,7 @@
                 const bg = ced.style.background; ced.style.background = '#fef3c7';
                 const d = await consultarCNE(num, nac);
                 ced.style.background = bg;
-                if (!d) { if (hintId) $(hintId).textContent = 'No se encontró en el CNE — escríbelo a mano.'; return; }
+                if (!d) { if (hintId) $(hintId).textContent = 'No se encontró en el CNE — escríbelo a mano.'; if (window.CNEDateas) CNEDateas.verBotones(ced, null, num); return; }
                 if (nom && !nom.value.trim()) {
                     const _n = [d.primer_nombre, d.segundo_nombre].filter(Boolean).join(' ').trim();
                     const _a = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
@@ -271,6 +272,7 @@
                 if (ape && !ape.value.trim()) ape.value = [d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim();
                 if (idFecha && $(idFecha) && !$(idFecha).value && fechaCneValida(d.fecha_nac)) { $(idFecha).value = d.fecha_nac; $(idFecha).dispatchEvent(new Event('change')); }
                 if (hintId) $(hintId).textContent = '✓ Datos encontrados en el CNE.';
+                if (window.CNEDateas) CNEDateas.verBotones(ced, d, num);
             });
         }
         engancharCNE('ref_cedula', 'ref_nombres', 'ref_apellidos', 'ref_fecha', 'ref_nacionalidad', 'ref_cne_hint');

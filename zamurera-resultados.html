@@ -189,14 +189,16 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
 .carnet .foto { position:absolute; left:9.6%; top:23.2%; width:33%; aspect-ratio:1; border-radius:50%; overflow:hidden; box-shadow:0 0 0 0.3cqw rgba(255,255,255,.85); }
 .carnet .foto img { width:100%; height:100%; object-fit:cover; display:block; }
 .carnet .foto .ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#eef2f7; color:#94a3b8; font-size:1.7cqw; font-weight:800; }
-.carnet .panel { position:absolute; left:46.5%; top:14.5%; width:30%; }
-.carnet .panel .lbl { font-size:1.05cqw; font-weight:800; letter-spacing:.2px; color:#0a6cb0; text-transform:uppercase; margin-bottom:.45cqw; white-space:nowrap; }
-.carnet .panel .nm { font-size:2.25cqw; font-weight:850; color:#0a2351; line-height:1.08; margin-bottom:.3cqw; }
-.carnet .panel .cond { font-size:1.2cqw; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.2px; margin-bottom:.9cqw; }
-.carnet .panel .rw { font-size:1.32cqw; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.carnet .panel { position:absolute; left:45.3%; top:10.5%; width:32%; }
+.carnet .panel .ttl1 { font-size:1.55cqw; font-weight:850; color:#0a2351; line-height:1.06; text-transform:uppercase; letter-spacing:.1px; }
+.carnet .panel .ttl2 { font-size:1.12cqw; font-weight:700; color:#334155; line-height:1.1; }
+.carnet .panel .ttl3 { font-size:1cqw; font-weight:800; color:#0a6cb0; text-transform:uppercase; letter-spacing:.15px; line-height:1.2; margin-bottom:.9cqw; padding-top:.4cqw; }
+.carnet .panel .nm { font-size:2.05cqw; font-weight:850; color:#0a2351; line-height:1.06; margin-bottom:.3cqw; }
+.carnet .panel .cond { font-size:1.18cqw; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.2px; margin-bottom:.85cqw; }
+.carnet .panel .rw { font-size:1.28cqw; line-height:1.42; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .carnet .panel .rw span { color:#5b6b82; font-weight:800; }
 .carnet .panel .rw b { color:#0f172a; font-weight:700; }
-.carnet .qr { position:absolute; right:3.2%; top:16%; width:19.5%; text-align:center; }
+.carnet .qr { position:absolute; right:3.2%; top:11%; width:19%; text-align:center; }
 .carnet .qr img { width:100%; display:block; background:#fff; border-radius:.7cqw; }
 .carnet .qr span { font-size:.97cqw; color:#334155; font-weight:800; display:block; margin-top:.3cqw; }
 @media print { body { padding:0; } }`;
@@ -410,7 +412,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             ].map(([k, v]) => `<div class="rw"><span>${esc(k)}:</span> <b>${esc(v)}</b></div>`).join('');
             return `<div class="carnet">`
                 + `<div class="foto">${foto}</div>`
-                + `<div class="panel"><div class="lbl">Carnet de control · Campamento Temporal</div>`
+                + `<div class="panel"><div class="ttl1">Municipio Cristóbal Rojas</div><div class="ttl2">Charallave · Edo. Miranda</div><div class="ttl3">Carnet de control · Campamento Temporal · Sismo 2026</div>`
                 + `<div class="nm">${esc(pl.nombre || '—')}</div><div class="cond">${esc(pl.tipo || '')}</div>${rows}</div>`
                 + `<div class="qr"><img src="${qr}" alt="QR"/><span>Escanee para validar</span></div>`
                 + `</div>`;

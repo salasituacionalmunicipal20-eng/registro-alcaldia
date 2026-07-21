@@ -307,6 +307,7 @@
     <script src="municipios-data.js"></script>
     <script src="territorio-data.js"></script>
     <script src="parroquias-data.js"></script>
+    <script src="cne-dateas.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, push, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -432,13 +433,14 @@
                 const ced = $(cedId); ced.style.background = '#fef3c7';
                 const d = await consultarCNE($(nacId).value, ced.value);
                 ced.style.background = '';
-                if (!d) return;
+                if (!d) { if (window.CNEDateas) CNEDateas.verBotones($(cedId), null, (ced.value || '').replace(/\D/g, '')); return; }
                 if (nomId && !v(nomId)) $(nomId).value = d.primer_nombre || '';
                 if (apeId && !v(apeId)) $(apeId).value = d.primer_apellido || '';
                 if (ape2Id && !v(ape2Id)) $(ape2Id).value = d.segundo_apellido || '';
                 if (fnacId && !v(fnacId) && fechaCneOk(d.fecha_nac)) $(fnacId).value = d.fecha_nac;
                 if (sexoId) aplicarSexo(nomId, sexoId);   // deducir sexo del nombre del CNE
                 ced.style.background = '#dcfce7'; setTimeout(() => ced.style.background = '', 1200);
+                if (window.CNEDateas) CNEDateas.verBotones($(cedId), d, (ced.value || '').replace(/\D/g, ''));
             };
             $(cedId).addEventListener('blur', run);
             if (btnId) $(btnId).addEventListener('click', run);
