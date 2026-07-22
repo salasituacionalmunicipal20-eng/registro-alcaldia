@@ -195,10 +195,13 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
 .carnet .panel .ttl3 { font-size:6px; font-weight:800; color:#0a6cb0; text-transform:uppercase; letter-spacing:.1px; line-height:1.2; margin-bottom:5.4px; padding-top:2.4px; }
 .carnet .panel .nm { font-size:12.3px; font-weight:850; color:#0a2351; line-height:1.06; margin-bottom:1.8px; }
 .carnet .panel .cond { font-size:7.1px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.2px; margin-bottom:5.1px; }
-.carnet .datos { position:absolute; left:51%; top:38%; width:33%; }
-.carnet .datos .rw { font-size:7.7px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.carnet .datos { position:absolute; left:51%; top:33%; width:35%; }
+.carnet .datos .rw { font-size:9.2px; line-height:1.42; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .carnet .datos .rw span { color:#5b6b82; font-weight:800; }
 .carnet .datos .rw b { color:#0f172a; font-weight:700; }
+.carnet .proc { position:absolute; left:5%; top:92.4%; width:58%; font-size:7.6px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:rgba(255,255,255,.82); padding:1px 5px; border-radius:4px; }
+.carnet .proc span { color:#5b6b82; font-weight:800; }
+.carnet .proc b { color:#0f172a; font-weight:700; }
 .carnet .qr { position:absolute; right:3.2%; top:11%; width:19%; text-align:center; }
 .carnet .qr img { width:100%; display:block; background:#fff; border-radius:4.2px; }
 .carnet .qr span { font-size:5.8px; color:#334155; font-weight:800; display:block; margin-top:1.8px; }
@@ -408,14 +411,14 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                 ['Sexo/Edad', sexoEdad || '—'],
                 ['T. sangre', pl.tipo_sangre || '—'],
                 ['Ubicación', pl.campamento || '—'],
-                ['Nº ingreso', pl.n_registro || '—'],
-                ['Procedencia', pl.procedencia || '—']
+                ['Nº ingreso', pl.n_registro || '—']
             ].map(([k, v]) => `<div class="rw"><span>${esc(k)}:</span> <b>${esc(v)}</b></div>`).join('');
             return `<div class="carnet">`
                 + `<div class="foto">${foto}</div>`
                 + `<div class="panel"><div class="ttl1">Municipio Cristóbal Rojas</div><div class="ttl2">Charallave · Edo. Miranda</div><div class="ttl3">Carnet de control · Campamento Temporal · Sismo 2026</div>`
                 + `<div class="nm">${esc(pl.nombre || '—')}</div><div class="cond">${esc(pl.tipo || '')}</div></div>`
                 + `<div class="datos">${rows}</div>`
+                + `<div class="proc"><span>Procedencia:</span> <b>${esc(pl.procedencia || '—')}</b></div>`
                 + `<div class="qr"><img src="${qr}" alt="QR"/><span>Escanee para validar</span></div>`
                 + `</div>`;
         }
