@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-    <script src="carnet-fondo.js?v=sinaro"></script>
+    <script src="carnet-fondo.js?v=carnet3"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
@@ -186,24 +186,24 @@
         const CARNET_CSS = `* { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; background:#fff; padding:12px; }
 .carnet { position:relative; width:600px; aspect-ratio:2275/1438; margin:0 auto 14px; border-radius:12px; overflow:hidden; background:#fff url('${window.CARNET_FONDO || ''}') center/cover no-repeat; box-shadow:0 1px 4px rgba(0,0,0,.25); page-break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.carnet .foto { position:absolute; left:6%; top:33%; width:27%; aspect-ratio:1; border-radius:8px; overflow:hidden; padding:5px; background:linear-gradient(150deg,#f4c20d 0%,#1230a8 52%,#c81a2b 100%); box-shadow:0 3px 9px rgba(0,0,0,.28); }
+.carnet .foto { position:absolute; left:6%; top:31%; width:20%; aspect-ratio:3/4; border-radius:7px; overflow:hidden; padding:4px; background:linear-gradient(150deg,#f4c20d 0%,#1230a8 52%,#c81a2b 100%); box-shadow:0 3px 9px rgba(0,0,0,.28); }
 .carnet .foto img { width:100%; height:100%; object-fit:cover; display:block; border-radius:5px; }
 .carnet .foto .ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#eef2f7; color:#94a3b8; font-size:11px; font-weight:800; border-radius:5px; }
 .carnet .titulo { position:absolute; left:5%; top:8%; width:90%; text-align:center; }
 .carnet .titulo .t1 { font-size:13px; font-weight:850; color:#0a2351; line-height:1.08; text-transform:uppercase; letter-spacing:.2px; }
 .carnet .titulo .t2 { font-size:9px; font-weight:700; color:#334155; line-height:1.15; }
 .carnet .titulo .t3 { font-size:8px; font-weight:800; color:#0a6cb0; text-transform:uppercase; line-height:1.2; margin-top:3px; }
-.carnet .nombre { position:absolute; left:35.5%; top:30%; width:62%; text-align:left; }
-.carnet .nombre .nm { font-size:13.5px; font-weight:850; color:#0a2351; line-height:1.05; }
-.carnet .nombre .cond { font-size:8.5px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.3px; margin-top:1.5px; }
-.carnet .datos { position:absolute; left:35.5%; top:42%; width:56%; }
-.carnet .datos .rw { font-size:13px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.carnet .nombre { position:absolute; left:28%; top:29%; width:69%; text-align:left; }
+.carnet .nombre .nm { font-size:14px; font-weight:850; color:#0a2351; line-height:1.05; }
+.carnet .nombre .cond { font-size:9px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.3px; margin-top:1.5px; }
+.carnet .datos { position:absolute; left:28%; top:41%; width:68%; }
+.carnet .datos .rw { font-size:14px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .carnet .datos .rw span { color:#5b6b82; font-weight:800; }
 .carnet .datos .rw b { color:#0f172a; font-weight:700; }
-.carnet .proc { position:absolute; left:6%; top:85%; width:50%; font-size:8.5px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.carnet .proc { position:absolute; left:6%; top:85%; width:52%; font-size:10px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .carnet .proc span { color:#5b6b82; font-weight:800; }
 .carnet .proc b { color:#0f172a; font-weight:700; }
-.carnet .qr { position:absolute; right:3%; bottom:3.5%; width:20%; text-align:center; background:#fff; padding:4px 4px 2px; border-radius:7px; box-shadow:0 2px 9px rgba(0,0,0,.35); }
+.carnet .qr { position:absolute; right:3%; bottom:4%; width:16%; text-align:center; background:#fff; padding:3px 3px 1px; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,.35); }
 .carnet .qr img { width:100%; display:block; }
 .carnet .qr span { font-size:5.5px; color:#334155; font-weight:800; display:block; margin-top:1px; line-height:1.1; }
 @media print { body { padding:0; } }`;
