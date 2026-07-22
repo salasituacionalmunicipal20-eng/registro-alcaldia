@@ -186,25 +186,26 @@
         const CARNET_CSS = `* { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; background:#fff; padding:12px; }
 .carnet { position:relative; width:600px; aspect-ratio:2275/1438; margin:0 auto 14px; border-radius:12px; overflow:hidden; background:#fff url('${window.CARNET_FONDO || ''}') center/cover no-repeat; box-shadow:0 1px 4px rgba(0,0,0,.25); page-break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-.carnet .foto { position:absolute; left:9.6%; top:23.2%; width:33%; aspect-ratio:1; border-radius:50%; overflow:hidden; box-shadow:0 0 0 1.8px rgba(255,255,255,.85); }
-.carnet .foto img { width:100%; height:100%; object-fit:cover; display:block; }
-.carnet .foto .ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#eef2f7; color:#94a3b8; font-size:10px; font-weight:800; }
-.carnet .panel { position:absolute; left:44%; top:9%; width:34%; text-align:center; }
-.carnet .panel .ttl1 { font-size:9.3px; font-weight:850; color:#0a2351; line-height:1.06; text-transform:uppercase; letter-spacing:.1px; }
-.carnet .panel .ttl2 { font-size:6.7px; font-weight:700; color:#334155; line-height:1.1; }
-.carnet .panel .ttl3 { font-size:6px; font-weight:800; color:#0a6cb0; text-transform:uppercase; letter-spacing:.1px; line-height:1.2; margin-bottom:5.4px; padding-top:2.4px; }
-.carnet .panel .nm { font-size:12.3px; font-weight:850; color:#0a2351; line-height:1.06; margin-bottom:1.8px; }
-.carnet .panel .cond { font-size:7.1px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.2px; margin-bottom:5.1px; }
-.carnet .datos { position:absolute; left:51%; top:43%; width:35%; }
-.carnet .datos .rw { font-size:9.2px; line-height:1.6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.carnet .foto { position:absolute; left:4.3%; top:13.5%; width:45.5%; aspect-ratio:1; border-radius:10px; overflow:hidden; padding:7px; background:linear-gradient(150deg,#f4c20d 0%,#1230a8 52%,#c81a2b 100%); box-shadow:0 3px 10px rgba(0,0,0,.3); }
+.carnet .foto img { width:100%; height:100%; object-fit:cover; display:block; border-radius:5px; }
+.carnet .foto .ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#eef2f7; color:#94a3b8; font-size:12px; font-weight:800; border-radius:5px; }
+.carnet .titulo { position:absolute; left:46%; top:8.5%; width:52%; text-align:center; }
+.carnet .titulo .t1 { font-size:12.5px; font-weight:850; color:#0a2351; line-height:1.08; text-transform:uppercase; letter-spacing:.2px; }
+.carnet .titulo .t2 { font-size:8.7px; font-weight:700; color:#334155; line-height:1.15; }
+.carnet .titulo .t3 { font-size:7.6px; font-weight:800; color:#0a6cb0; text-transform:uppercase; line-height:1.2; margin-top:3px; }
+.carnet .nombre { position:absolute; left:46%; top:31%; width:52%; text-align:center; }
+.carnet .nombre .nm { font-size:14px; font-weight:850; color:#0a2351; line-height:1.05; }
+.carnet .nombre .cond { font-size:8.2px; font-weight:800; color:#b45309; text-transform:uppercase; letter-spacing:.3px; margin-top:1.5px; }
+.carnet .datos { position:absolute; left:51%; top:43%; width:37%; }
+.carnet .datos .rw { font-size:9.8px; line-height:1.55; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .carnet .datos .rw span { color:#5b6b82; font-weight:800; }
 .carnet .datos .rw b { color:#0f172a; font-weight:700; }
-.carnet .proc { position:absolute; left:5%; top:92.4%; width:58%; font-size:7.6px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:rgba(255,255,255,.82); padding:1px 5px; border-radius:4px; }
+.carnet .proc { position:absolute; left:5%; top:92.4%; width:52%; font-size:8px; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; background:rgba(255,255,255,.82); padding:1px 5px; border-radius:4px; }
 .carnet .proc span { color:#5b6b82; font-weight:800; }
 .carnet .proc b { color:#0f172a; font-weight:700; }
-.carnet .qr { position:absolute; right:3.2%; top:11%; width:19%; text-align:center; }
-.carnet .qr img { width:100%; display:block; background:#fff; border-radius:4.2px; }
-.carnet .qr span { font-size:5.8px; color:#334155; font-weight:800; display:block; margin-top:1.8px; }
+.carnet .qr { position:absolute; right:3%; bottom:3.5%; width:20%; text-align:center; background:#fff; padding:4px 4px 2px; border-radius:7px; box-shadow:0 2px 9px rgba(0,0,0,.35); }
+.carnet .qr img { width:100%; display:block; }
+.carnet .qr span { font-size:5.5px; color:#334155; font-weight:800; display:block; margin-top:1px; line-height:1.1; }
 @media print { body { padding:0; } }`;
 
         function comprimir(file) {
@@ -415,8 +416,8 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             ].map(([k, v]) => `<div class="rw"><span>${esc(k)}:</span> <b>${esc(v)}</b></div>`).join('');
             return `<div class="carnet">`
                 + `<div class="foto">${foto}</div>`
-                + `<div class="panel"><div class="ttl1">Municipio Cristóbal Rojas</div><div class="ttl2">Charallave · Edo. Miranda</div><div class="ttl3">Carnet de control · Campamento Temporal · Sismo 2026</div>`
-                + `<div class="nm">${esc(pl.nombre || '—')}</div><div class="cond">${esc(pl.tipo || '')}</div></div>`
+                + `<div class="titulo"><div class="t1">Municipio Cristóbal Rojas</div><div class="t2">Charallave · Edo. Miranda</div><div class="t3">Carnet de control · Campamento Temporal · Sismo 2026</div></div>`
+                + `<div class="nombre"><div class="nm">${esc(pl.nombre || '—')}</div><div class="cond">${esc(pl.tipo || '')}</div></div>`
                 + `<div class="datos">${rows}</div>`
                 + `<div class="proc"><span>Procedencia:</span> <b>${esc(pl.procedencia || '—')}</b></div>`
                 + `<div class="qr"><img src="${qr}" alt="QR"/><span>Escanee para validar</span></div>`
