@@ -26,7 +26,7 @@
         .filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; align-items: end; }
         .filtros .full { grid-column: 1 / -1; }
         .stats { display: flex; gap: 14px; flex-wrap: wrap; }
-        .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 130px; }
+        .stat { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; min-width: 128px; }
         .stat-btn { cursor: pointer; transition: background .15s, border-color .15s; }
         .stat-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
         .stat-btn.activo { background: #eef2ff; border-color: #6366f1; box-shadow: 0 0 0 2px #c7d2fe inset; }
@@ -53,13 +53,18 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
         .modal-bg.show { display: flex; }
-        .modal { background: #fff; border-radius: 12px; max-width: 720px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+        .modal { background: #fff; border-radius: 12px; max-width: 760px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
         .modal h3 { color: #0a2351; font-size: 18px; margin-bottom: 4px; }
         .modal h4 { color: #16a34a; font-size: 14px; margin: 16px 0 6px; text-transform: uppercase; letter-spacing: .3px; border-bottom: 2px solid #dcfce7; padding-bottom: 3px; }
+        .modal h5 { color: #0a2351; font-size: 13px; margin: 12px 0 4px; }
         .fila { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid #eef2f7; font-size: 13.5px; }
-        .fila .k { font-weight: 700; color: #475569; min-width: 170px; }
+        .fila .k { font-weight: 700; color: #475569; min-width: 190px; }
         .fila .val { color: #0f172a; white-space: pre-wrap; }
         .foto-p { max-width: 140px; max-height: 160px; border-radius: 8px; border: 1px solid #cbd5e1; margin: 6px 0; }
+        .famblock { border: 1px solid #dbe3ee; border-radius: 10px; padding: 12px; margin-top: 10px; }
+        .famblock.dueno { border-color: #0a6cb0; background: #f5faff; }
+        .famblock .ft { font-weight: 800; color: #0a2351; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .famblock .bd { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #0a6cb0; color: #fff; }
         .mini { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-top: 8px; }
         .mini b { color: #0a2351; }
         .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; }
@@ -99,12 +104,13 @@
             <div class="card">
                 <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
                 <div class="stats">
-                    <div class="stat"><div class="num" id="stFamilias">—</div><div class="lbl">Familias / ingresos</div></div>
+                    <div class="stat"><div class="num" id="stIngresos">—</div><div class="lbl">Inmuebles / ingresos</div></div>
+                    <div class="stat"><div class="num" id="stFamilias">—</div><div class="lbl">Familias</div></div>
                     <div class="stat"><div class="num" id="stPersonas">—</div><div class="lbl">Personas totales</div></div>
                     <div class="stat"><div class="num" id="stJefes">—</div><div class="lbl">Jefes de familia</div></div>
-                    <div class="stat"><div class="num" id="stIntegrantes">—</div><div class="lbl">Integrantes (grupo familiar)</div></div>
-                    <div class="stat stat-btn" id="tilePsico" title="Clic para ver solo los que requieren ayuda psicológica"><div class="num" id="stPsico" style="color:#7c3aed;">—</div><div class="lbl">🧠 Requieren ayuda psicológica</div></div>
-                    <div class="stat stat-btn" id="tileVivienda" title="Clic para ver solo los que requieren ayuda con vivienda"><div class="num" id="stVivienda" style="color:#b45309;">—</div><div class="lbl">🏠 Requieren ayuda con vivienda</div></div>
+                    <div class="stat stat-btn" id="tileMenores" title="Ver ingresos con menores de edad"><div class="num" id="stMenores" style="color:#0a6cb0;">—</div><div class="lbl">🧒 Menores de edad</div></div>
+                    <div class="stat stat-btn" id="tilePsico" title="Requieren ayuda psicológica"><div class="num" id="stPsico" style="color:#7c3aed;">—</div><div class="lbl">🧠 Ayuda psicológica</div></div>
+                    <div class="stat stat-btn" id="tileSalud" title="Con enfermedad o discapacidad"><div class="num" id="stSalud" style="color:#b91c1c;">—</div><div class="lbl">🩺 Enfermedad / discapacidad</div></div>
                 </div>
             </div>
 
@@ -115,25 +121,31 @@
                     <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
                 </div>
                 <div class="filtros">
-                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Jefe, cédula, receptor, procedencia, Nº registro…" autocomplete="off" /></div>
+                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, receptor, procedencia, Nº registro…" autocomplete="off" /></div>
                     <div><label>Estado de procedencia</label><select id="fEstado"><option value="">Todos</option></select></div>
                     <div><label>Municipio de procedencia</label><select id="fMunicipio"><option value="">Todos</option></select></div>
-                    <div><label>Género (jefe)</label><select id="fGenero"><option value="">Todos</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="Otro">Otro</option></select></div>
-                    <div><label>Ayuda psicológica</label><select id="fPsico"><option value="">Todos</option><option value="si">Necesitan</option><option value="no">No necesitan</option></select></div>
-                    <div><label>Ayuda con vivienda</label><select id="fVivienda"><option value="">Todos</option><option value="si">Necesitan</option><option value="no">No necesitan</option></select></div>
-                    <div><label>Condición de salud</label><select id="fSalud"><option value="">Todos</option><option value="si">Con patología / medicamento</option><option value="no">Sin condición</option></select></div>
+                    <div><label>Rango de edad</label><select id="fEdad"><option value="">Todas</option><option value="0-5">0 a 5</option><option value="6-11">6 a 11</option><option value="12-17">12 a 17</option><option value="18-59">18 a 59</option><option value="60-200">60 y más</option></select></div>
+                    <div><label>Sexo</label><select id="fSexo"><option value="">Todos</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="Otro">Otro</option></select></div>
+                    <div><label>Rol</label><select id="fRol"><option value="">Todos</option><option value="dueno">Con dueño</option><option value="jefe">Jefes de familia</option><option value="integrante">Con integrantes</option></select></div>
+                    <div><label>Condición de vivienda</label><select id="fCondicion"><option value="">Todas</option><option>Propia</option><option>Alquilada</option><option>Prestada</option><option>De un familiar</option></select></div>
+                    <div><label>Salud</label><select id="fSalud"><option value="">Todos</option><option value="enfermedad">Con enfermedad</option><option value="discapacidad">Con discapacidad</option><option value="cualquiera">Enfermedad o discapacidad</option></select></div>
+                    <div><label>Ayuda psicológica</label><select id="fPsico"><option value="">Todos</option><option value="si">Requieren</option><option value="no">No requieren</option></select></div>
+                    <div><label>Necesita ropa</label><select id="fRopa"><option value="">Todos</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>Familiar desaparecido/fallecido</label><select id="fDesap"><option value="">Todos</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>Familiar en otro estado</label><select id="fOtroEst"><option value="">Todos</option><option value="si">Sí</option><option value="no">No</option></select></div>
+                    <div><label>Carnet de la patria</label><select id="fCarnet"><option value="">Todos</option><option value="si">Posee</option><option value="no">No posee</option></select></div>
                     <div><label>Con foto</label><select id="fFoto"><option value="">Todos</option><option value="si">Con foto</option><option value="no">Sin foto</option></select></div>
                     <div><label>Desde (ingreso)</label><input id="fDesde" type="date" /></div>
                     <div><label>Hasta (ingreso)</label><input id="fHasta" type="date" /></div>
-                    <div><label>Módulo</label><select id="fModulo"><option value="">Todos</option></select></div>
+                    <div><label>Planta</label><select id="fPlanta"><option value="">Todas</option></select></div>
                     <div><label>Cubículo</label><select id="fCubiculo"><option value="">Todos</option></select></div>
                     <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
                 </div>
                 <div style="font-size:12.5px;color:#64748b;margin-top:8px;" id="filtroInfo"></div>
                 <div style="overflow-x:auto; margin-top:14px;">
                     <table>
-                        <thead><tr><th>Nº reg.</th><th>Jefe de familia</th><th>Cédula</th><th>Procedencia</th><th style="text-align:center;">Personas</th><th>Ingreso</th><th>Necesita</th><th></th></tr></thead>
-                        <tbody id="tbody"><tr><td colspan="8" class="estado-box">Cargando…</td></tr></tbody>
+                        <thead><tr><th>Nº reg.</th><th>Dueño / inmueble</th><th>Cédula</th><th>Procedencia</th><th style="text-align:center;">Fam.</th><th style="text-align:center;">Pers.</th><th>Ingreso</th><th>Alerta</th><th></th></tr></thead>
+                        <tbody id="tbody"><tr><td colspan="9" class="estado-box">Cargando…</td></tr></tbody>
                     </table>
                 </div>
                 <div class="paginacion" id="paginacion"></div>
@@ -167,22 +179,71 @@
         const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
         const toArr = (x) => Array.isArray(x) ? x : (x ? Object.values(x) : []);
         const gen = (g) => g === 'F' ? 'Femenino' : g === 'M' ? 'Masculino' : (g || '—');
+        const si = (x) => x === 'Sí' || x === 'si' || x === true;
 
         const NODO = 'zamurera';
         const URL_FORM = 'https://salasituacional.alcaldiadecharallave.com/zamurera.html';
         const URL_CORTO = 'https://da.gd/a3e6a';
-        const RECEP = [['n_registro', 'Nº de registro'], ['fecha_ingreso', 'Fecha de ingreso'], ['hora', 'Hora'], ['persona_receptor', 'Persona receptor'], ['estado', 'Estado'], ['municipio', 'Municipio'], ['comuna_procedencia', 'Comuna de procedencia'], ['comunidad_sector', 'Comunidad / sector']];
-        const JEFE = [['nombre', 'Nombre y apellido'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['profesion', 'Profesión / ocupación'], ['situacion_laboral', 'Situación laboral'], ['nivel_academico', 'Nivel académico'], ['estudia', '¿Qué estudia?'], ['patologia', 'Patología'], ['medicamento', 'Medicamento que toma'], ['situacion_salud', 'Situación de salud'], ['situacion_psicologica', 'Situación psicológica'], ['afectacion', 'Afectación por el terremoto'], ['necesita_ayuda_psicologica', '¿Necesita ayuda psicológica?'], ['necesita_ayuda_vivienda', '¿Necesita ayuda con su vivienda?'], ['modulo', 'Módulo'], ['cubiculo', 'Cubículo'], ['cama', 'Cama'], ['talla_zapatos', 'Talla de zapatos'], ['talla_camisa', 'Talla de camisa'], ['talla_pantalon', 'Talla de pantalón'], ['observaciones', 'Observaciones']];
-        const MIEMBRO = [['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['estudia', '¿Estudia?'], ['profesion', 'Profesión / ocupación'], ['patologia', 'Patología'], ['medicamento', 'Medicamento que toma'], ['situacion_salud', 'Situación de salud'], ['situacion_psicologica', 'Situación psicológica'], ['necesita_ayuda_psicologica', '¿Necesita ayuda psicológica?'], ['necesita_ayuda_vivienda', '¿Necesita ayuda con su vivienda?'], ['modulo', 'Módulo'], ['cubiculo', 'Cubículo'], ['cama', 'Cama'], ['talla_zapatos', 'Talla de zapatos'], ['talla_camisa', 'Talla de camisa'], ['talla_pantalon', 'Talla de pantalón'], ['observaciones', 'Observaciones']];
-        const necesitaPsico = (r) => { const j = r.jefe || {}; return j.necesita_ayuda_psicologica === 'Sí' || toArr(r.miembros).some(m => m.necesita_ayuda_psicologica === 'Sí'); };
-        const necesitaVivienda = (r) => { const j = r.jefe || {}; return j.necesita_ayuda_vivienda === 'Sí' || toArr(r.miembros).some(m => m.necesita_ayuda_vivienda === 'Sí'); };
-        const tieneSalud = (r) => { const chk = (o) => !!((o.patologia && String(o.patologia).trim()) || (o.medicamento && String(o.medicamento).trim())); return chk(r.jefe || {}) || toArr(r.miembros).some(chk); };
+
+        // ===== Normalización: entiende registros NUEVOS (inmueble + familias[]) y VIEJOS (jefe + miembros) =====
+        function inmuebleDe(r) {
+            if (r.inmueble) return r.inmueble;
+            return { estado: r.estado || '', municipio: r.municipio || '', parroquia: '', comuna_procedencia: r.comuna_procedencia || '', comunidad: r.comunidad_sector || '', tipo_vivienda: '', condicion: '' };
+        }
+        function familiasDe(r) {
+            if (Array.isArray(r.familias) && r.familias.length) {
+                return r.familias.map(f => ({ es_dueno: f.es_dueno || 'No', jefe: f.jefe || {}, integrantes: toArr(f.integrantes) }));
+            }
+            if (Array.isArray(r.familias)) return [];
+            // viejo
+            return [{ es_dueno: 'Sí', jefe: r.jefe || {}, integrantes: toArr(r.miembros) }];
+        }
+        function duenoDe(r) {
+            const fs = familiasDe(r);
+            return (fs.find(f => si(f.es_dueno)) || fs[0] || { jefe: {}, integrantes: [] });
+        }
+        function personasArr(r) {
+            const out = [];
+            familiasDe(r).forEach((f, fi) => {
+                out.push({ ...f.jefe, _rol: 'Jefe de familia', _fi: fi, _pi: 'jefe', _planta: f.jefe.planta, _cubiculo: f.jefe.cubiculo, _cama: f.jefe.cama });
+                f.integrantes.forEach((it, ii) => out.push({ ...it, _rol: 'Integrante', _fi: fi, _pi: 'i' + ii, _planta: f.jefe.planta, _cubiculo: f.jefe.cubiculo }));
+            });
+            return out;
+        }
+        function personasDe(r) { return Number(r.total_personas) || personasArr(r).length; }
+        function procTxt(r) { const i = inmuebleDe(r); return [i.estado, i.municipio, i.parroquia, i.comuna_procedencia, i.comunidad].filter(Boolean).join(' · ') || '—'; }
+        function edadNum(p) {
+            if (p.edad !== '' && p.edad != null && !isNaN(Number(p.edad))) return Number(p.edad);
+            const f = p.fecha_nac; if (f && /^\d{4}-\d{2}-\d{2}$/.test(f)) { const [a, m, d] = f.split('-').map(Number); const h = new Date(); let e = h.getFullYear() - a; if (h.getMonth() + 1 < m || (h.getMonth() + 1 === m && h.getDate() < d)) e--; return e; }
+            return null;
+        }
+        const jefesDe = (r) => familiasDe(r).map(f => f.jefe);
+        const necesitaPsico = (r) => jefesDe(r).some(j => si(j.necesita_psico) || si(j.necesita_ayuda_psicologica));
+        const conSalud = (r) => jefesDe(r).some(j => si(j.enfermedad) || si(j.discapacidad) || (j.patologia && String(j.patologia).trim()) || (j.medicamento && String(j.medicamento).trim()));
+        const conMenores = (r) => personasArr(r).some(p => { const e = edadNum(p); return e != null && e < 18; });
+        const tieneFoto = (r) => personasArr(r).some(p => p.tiene_foto);
+
+        // ===== Etiquetas para detalle / Excel =====
+        const RECEP = [['n_registro', 'Nº de registro'], ['fecha_ingreso', 'Fecha de ingreso'], ['hora', 'Hora'], ['persona_receptor', 'Persona receptor']];
+        const INM = [['estado', 'Estado de procedencia'], ['municipio', 'Municipio'], ['parroquia', 'Parroquia'], ['comuna_procedencia', 'Comuna'], ['comunidad', 'Comunidad'], ['nombre_calle', 'Nombre de la calle'], ['tipo_vivienda', 'Tipo de vivienda'], ['numero_casa', 'Número de casa'], ['piso', 'Piso número'], ['gran_mision_vivienda', 'Gran Misión Vivienda'], ['nombre_casa_edificio', 'Nombre casa/edificio'], ['condicion', 'Condición de la vivienda'], ['_tiempo', 'Tiempo de permanencia'], ['cant_familias', 'Familias que habitaban'], ['cant_personas', 'Personas que habitaban']];
+        const JEFE = [['nombre', 'Nombre y apellido'], ['es_dueno', '¿Es el dueño del inmueble?'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['nivel_instruccion', 'Nivel de instrucción'], ['trabaja', '¿Trabaja?'], ['situacion_laboral', 'Situación laboral'], ['lugar_trabajo', 'Lugar de trabajo'], ['cargo', 'Cargo'], ['profesion', 'Profesión'], ['tiempo_servicio', 'Tiempo de servicio'], ['nivel_academico', 'Nivel académico'], ['estudia', '¿Qué estudia?'], ['tiene_pareja', '¿Tiene pareja?'], ['carnet_posee', '¿Posee carnet de la patria?'], ['carnet_codigo', 'Código carnet'], ['carnet_serial', 'Serial carnet'], ['enfermedad', '¿Sufre enfermedad?'], ['enfermedad_cual', 'Enfermedad ¿cuál?'], ['discapacidad', '¿Tiene discapacidad?'], ['discapacidad_cual', 'Discapacidad ¿cuál?'], ['toma_medicamento', '¿Toma medicamento?'], ['medicamento', 'Medicamento ¿cuál?'], ['necesita_psico', '¿Requiere ayuda psicológica?'], ['situacion_psicologica', 'Situación psicológica'], ['necesita_ropa', '¿Necesita ropa?'], ['talla_camisa', 'Talla camisa'], ['talla_pantalon', 'Talla pantalón'], ['talla_zapatos', 'Talla zapato'], ['talla_ropa_interior', 'Talla ropa interior'], ['familiar_desaparecido', '¿Familiar desaparecido/fallecido?'], ['familiar_otro_estado', '¿Familiar en otro estado?'], ['afectacion', 'Afectación por el terremoto'], ['observaciones', 'Observaciones'], ['planta', 'Planta'], ['cubiculo', 'Cubículo'], ['cama', 'Cama']];
+        const INTEG = [['es_jefe', '¿Es jefe de familia?'], ['nombre', 'Nombre y apellido'], ['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['rep_nombre', 'Representante — Nombre'], ['rep_cedula', 'Representante — Cédula'], ['rep_telefono', 'Representante — Teléfono'], ['rep_parentesco', 'Representante — Parentesco']];
+        // Retrocompat con integrantes viejos (miembros): mostrar sus campos originales si existen
+        const INTEG_VIEJO = [['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha nac.'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['estudia', '¿Estudia?'], ['profesion', 'Profesión'], ['patologia', 'Patología'], ['medicamento', 'Medicamento'], ['situacion_salud', 'Situación de salud'], ['modulo', 'Módulo'], ['cubiculo', 'Cubículo'], ['cama', 'Cama']];
+        function valJefe(j, key) {
+            if (key === 'genero') return gen(j.genero);
+            if (key === 'planta') return j.planta || j.modulo || '';
+            return j[key];
+        }
+        function valInm(i, key) {
+            if (key === '_tiempo') return [i.tiempo_permanencia_num, i.tiempo_permanencia_unidad].filter(Boolean).join(' ');
+            return i[key];
+        }
 
         let REGS = [], pagina = 1; const TAM = 30;
 
         // ---- Carnets con QR (constantes) ----
         const BASE_VALID = 'https://salasituacional.alcaldiadecharallave.com/validar-carnet.html';
-        const ESCUDO_SVG = '<svg viewBox="0 0 48 56" width="26" height="30"><path d="M24 2 44 9v20c0 13-9 21-20 25C13 50 4 42 4 29V9z" fill="#123571" stroke="#f4c20d" stroke-width="2"/><path d="M24 12l2.6 5.6 6 .8-4.4 4.3 1.1 6L24 31.9 18.7 34.7l1.1-6-4.4-4.3 6-.8z" fill="#f4c20d"/></svg>';
         const CARNET_CSS = `* { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; background:#fff; padding:12px; }
 .carnet { position:relative; width:600px; aspect-ratio:2275/1438; margin:0 auto 14px; border-radius:12px; overflow:hidden; background:#fff url('${window.CARNET_FONDO || ''}') center/cover no-repeat; box-shadow:0 1px 4px rgba(0,0,0,.25); page-break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -248,63 +309,72 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             onValue(ref(database, NODO), (snap) => {
                 const val = snap.val() || {};
                 REGS = Object.entries(val).map(([id, m]) => ({ id, ...m })).sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
-                poblarEstados(); render();
+                poblarFiltros(); render();
             }, () => { REGS = []; render(); });
         });
-        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch(e){} location.href = 'index.html'; });
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch (e) {} location.href = 'index.html'; });
 
-        function personasDe(r) { return Number(r.total_personas) || (1 + toArr(r.miembros).length); }
-        function poblarEstados() {
-            const est = [...new Set(REGS.map(r => (r.estado || '').trim()).filter(Boolean))].sort();
-            const prevE = $('fEstado').value;
-            $('fEstado').innerHTML = '<option value="">Todos</option>' + est.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
-            if (prevE) $('fEstado').value = prevE;
-            const mun = [...new Set(REGS.map(r => (r.municipio || '').trim()).filter(Boolean))].sort();
-            const prevM = $('fMunicipio').value;
-            $('fMunicipio').innerHTML = '<option value="">Todos</option>' + mun.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
-            if (prevM) $('fMunicipio').value = prevM;
-            const mods = [...new Set(REGS.flatMap(r => [r.jefe || {}].concat(toArr(r.miembros)).map(p => (p.modulo || '').trim())).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
-            const prevMod = $('fModulo').value;
-            $('fModulo').innerHTML = '<option value="">Todos</option>' + mods.map(m => `<option value="${esc(m)}">${m.startsWith('FN') ? 'Módulo ' + esc(m.slice(2)) + ' (Fam. numerosa)' : 'Módulo ' + esc(m)}</option>`).join('');
-            if (prevMod) $('fModulo').value = prevMod;
-            const cubs = [...new Set(REGS.flatMap(r => [r.jefe || {}].concat(toArr(r.miembros)).map(p => (p.cubiculo || '').trim())).filter(Boolean))].sort();
-            const prevC = $('fCubiculo').value;
-            $('fCubiculo').innerHTML = '<option value="">Todos</option>' + cubs.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
-            if (prevC) $('fCubiculo').value = prevC;
+        function poblarFiltros() {
+            const setSel = (id, arr, fmt) => { const el = $(id); const prev = el.value; el.innerHTML = '<option value="">' + (el.querySelector('option') ? el.querySelector('option').textContent : 'Todos') + '</option>' + arr.map(x => `<option value="${esc(x)}">${fmt ? fmt(x) : esc(x)}</option>`).join(''); if (prev) el.value = prev; };
+            setSel('fEstado', [...new Set(REGS.map(r => (inmuebleDe(r).estado || '').trim()).filter(Boolean))].sort());
+            setSel('fMunicipio', [...new Set(REGS.map(r => (inmuebleDe(r).municipio || '').trim()).filter(Boolean))].sort());
+            const plantas = [...new Set(REGS.flatMap(r => personasArr(r).map(p => (p._planta || p.planta || p.modulo || '').trim())).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+            setSel('fPlanta', plantas, m => m.startsWith('FN') ? 'Planta ' + m.slice(2) + ' (F.N.)' : 'Planta ' + m);
+            const cubs = [...new Set(REGS.flatMap(r => personasArr(r).map(p => (p._cubiculo || p.cubiculo || '').trim())).filter(Boolean))].sort();
+            setSel('fCubiculo', cubs);
         }
+
+        function edadEnRango(e, rango) { if (e == null || !rango) return false; const [a, b] = rango.split('-').map(Number); return e >= a && e <= b; }
         function filtrados() {
             const q = ($('fBuscar').value || '').trim().toLowerCase();
-            const fe = $('fEstado').value, fm = $('fMunicipio').value, fg = $('fGenero').value;
-            const fp = $('fPsico').value, fv = $('fVivienda').value, fs = $('fSalud').value, ff = $('fFoto').value;
-            const fd = $('fDesde').value, fh = $('fHasta').value, fmod = $('fModulo').value, fcub = $('fCubiculo').value;
+            const fe = $('fEstado').value, fm = $('fMunicipio').value, fEdad = $('fEdad').value, fSexo = $('fSexo').value, fRol = $('fRol').value;
+            const fCond = $('fCondicion').value, fSalud = $('fSalud').value, fPsico = $('fPsico').value, fRopa = $('fRopa').value;
+            const fDesap = $('fDesap').value, fOtro = $('fOtroEst').value, fCarnet = $('fCarnet').value, fFoto = $('fFoto').value;
+            const fd = $('fDesde').value, fh = $('fHasta').value, fPlanta = $('fPlanta').value, fCub = $('fCubiculo').value;
             return REGS.filter(r => {
-                const j = r.jefe || {};
-                const personas = [j].concat(toArr(r.miembros));
-                if (fmod && !personas.some(p => String(p.modulo || '') === fmod)) return false;
-                if (fcub && !personas.some(p => (p.cubiculo || '') === fcub)) return false;
-                if (fe && r.estado !== fe) return false;
-                if (fm && r.municipio !== fm) return false;
-                if (fg && (j.genero || '') !== fg) return false;
-                if (fp) { const nec = necesitaPsico(r); if (fp === 'si' && !nec) return false; if (fp === 'no' && nec) return false; }
-                if (fv) { const nec = necesitaVivienda(r); if (fv === 'si' && !nec) return false; if (fv === 'no' && nec) return false; }
-                if (fs) { const nec = tieneSalud(r); if (fs === 'si' && !nec) return false; if (fs === 'no' && nec) return false; }
-                if (ff) { const tf = !!j.tiene_foto; if (ff === 'si' && !tf) return false; if (ff === 'no' && tf) return false; }
+                const inm = inmuebleDe(r), fams = familiasDe(r), personas = personasArr(r), jefes = jefesDe(r);
+                if (fe && inm.estado !== fe) return false;
+                if (fm && inm.municipio !== fm) return false;
+                if (fCond && (inm.condicion || '') !== fCond) return false;
+                if (fPlanta && !personas.some(p => String(p._planta || p.planta || p.modulo || '') === fPlanta)) return false;
+                if (fCub && !personas.some(p => (p._cubiculo || p.cubiculo || '') === fCub)) return false;
+                if (fEdad && !personas.some(p => edadEnRango(edadNum(p), fEdad))) return false;
+                if (fSexo && !personas.some(p => (p.genero || '') === fSexo)) return false;
+                if (fRol === 'dueno' && !fams.some(f => si(f.es_dueno))) return false;
+                if (fRol === 'jefe' && !jefes.length) return false;
+                if (fRol === 'integrante' && !fams.some(f => f.integrantes.length)) return false;
+                if (fSalud) { const has = (fn) => jefes.some(fn); if (fSalud === 'enfermedad' && !has(j => si(j.enfermedad))) return false; if (fSalud === 'discapacidad' && !has(j => si(j.discapacidad))) return false; if (fSalud === 'cualquiera' && !has(j => si(j.enfermedad) || si(j.discapacidad))) return false; }
+                if (fPsico) { const nec = necesitaPsico(r); if (fPsico === 'si' && !nec) return false; if (fPsico === 'no' && nec) return false; }
+                if (fRopa) { const nec = jefes.some(j => si(j.necesita_ropa)); if (fRopa === 'si' && !nec) return false; if (fRopa === 'no' && nec) return false; }
+                if (fDesap) { const x = jefes.some(j => si(j.familiar_desaparecido)); if (fDesap === 'si' && !x) return false; if (fDesap === 'no' && x) return false; }
+                if (fOtro) { const x = jefes.some(j => si(j.familiar_otro_estado)); if (fOtro === 'si' && !x) return false; if (fOtro === 'no' && x) return false; }
+                if (fCarnet) { const x = jefes.some(j => si(j.carnet_posee)); if (fCarnet === 'si' && !x) return false; if (fCarnet === 'no' && x) return false; }
+                if (fFoto) { const tf = tieneFoto(r); if (fFoto === 'si' && !tf) return false; if (fFoto === 'no' && tf) return false; }
                 if (fd && (r.fecha_ingreso || '') < fd) return false;
                 if (fh && (r.fecha_ingreso || '') > fh) return false;
-                if (q) { const mb = toArr(r.miembros).map(m => `${m.nombre||''} ${m.cedula||''} ${m.modulo||''} ${m.cubiculo||''} ${m.cama||''}`).join(' '); const blob = `${j.nombre||''} ${j.cedula||''} ${j.modulo||''} ${j.cubiculo||''} ${j.cama||''} ${r.persona_receptor||''} ${r.estado||''} ${r.municipio||''} ${r.comunidad_sector||''} ${r.comuna_procedencia||''} ${r.n_registro||''} ${mb}`.toLowerCase(); if (!blob.includes(q)) return false; }
+                if (q) {
+                    const blob = (personas.map(p => `${p.nombre || ''} ${p.cedula || ''} ${p.rep_nombre || ''} ${p.rep_cedula || ''}`).join(' ') + ' ' +
+                        `${r.persona_receptor || ''} ${inm.estado || ''} ${inm.municipio || ''} ${inm.parroquia || ''} ${inm.comuna_procedencia || ''} ${inm.comunidad || ''} ${inm.nombre_calle || ''} ${r.n_registro || ''}`).toLowerCase();
+                    if (!blob.includes(q)) return false;
+                }
                 return true;
             });
         }
+
+        function totalFamilias() { return REGS.reduce((s, r) => s + familiasDe(r).length, 0); }
         function render() {
-            $('stFamilias').textContent = REGS.length;
+            const familiasTot = totalFamilias();
+            $('stIngresos').textContent = REGS.length;
+            $('stFamilias').textContent = familiasTot;
             const personas = REGS.reduce((s, r) => s + personasDe(r), 0);
             $('stPersonas').textContent = personas;
-            $('stJefes').textContent = REGS.length;
-            $('stIntegrantes').textContent = personas - REGS.length;
+            $('stJefes').textContent = familiasTot;
+            $('stMenores').textContent = REGS.filter(conMenores).length;
             $('stPsico').textContent = REGS.filter(necesitaPsico).length;
-            $('stVivienda').textContent = REGS.filter(necesitaVivienda).length;
+            $('stSalud').textContent = REGS.filter(conSalud).length;
             $('tilePsico').classList.toggle('activo', $('fPsico').value === 'si');
-            $('tileVivienda').classList.toggle('activo', $('fVivienda').value === 'si');
+            $('tileSalud').classList.toggle('activo', $('fSalud').value === 'cualquiera');
+            $('tileMenores').classList.toggle('activo', $('fEdad').value === '0-17');
 
             const lista = filtrados();
             const fInfo = $('filtroInfo');
@@ -313,22 +383,24 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             if (pagina > totalPag) pagina = totalPag;
             const ini = (pagina - 1) * TAM, slice = lista.slice(ini, ini + TAM);
             const tb = $('tbody');
-            if (total === 0) { tb.innerHTML = `<tr><td colspan="8" class="estado-box">${REGS.length ? 'Sin ingresos con ese filtro.' : 'Aún no hay ingresos. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
+            if (total === 0) { tb.innerHTML = `<tr><td colspan="9" class="estado-box">${REGS.length ? 'Sin ingresos con ese filtro.' : 'Aún no hay ingresos. Comparte el enlace para empezar.'}</td></tr>`; $('paginacion').innerHTML = ''; return; }
             tb.innerHTML = slice.map(r => {
-                const j = r.jefe || {};
+                const inm = inmuebleDe(r), du = duenoDe(r).jefe, fams = familiasDe(r);
                 const fecha = (r.fecha_ingreso || '') + (r.hora ? ' ' + r.hora : '') || (r.fecha_registro ? new Date(r.fecha_registro).toLocaleDateString('es-VE') : '—');
-                const proc = [r.estado, r.municipio, r.comuna_procedencia, r.comunidad_sector].filter(Boolean).join(' · ') || '—';
-                const nec = [];
-                if (necesitaPsico(r)) nec.push('<span title="Necesita ayuda psicológica" style="display:inline-block;background:#ede9fe;color:#6d28d9;border-radius:5px;padding:1px 6px;font-size:11.5px;font-weight:700;margin:1px 0;">🧠 Psico</span>');
-                if (necesitaVivienda(r)) nec.push('<span title="Necesita ayuda con vivienda" style="display:inline-block;background:#ffedd5;color:#b45309;border-radius:5px;padding:1px 6px;font-size:11.5px;font-weight:700;margin:1px 0;">🏠 Vivienda</span>');
+                const viv = [inm.tipo_vivienda, inm.condicion].filter(Boolean).join(' · ');
+                const alert = [];
+                if (conMenores(r)) alert.push('<span style="display:inline-block;background:#e0f2fe;color:#0369a1;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;margin:1px 0;">🧒 Menor</span>');
+                if (necesitaPsico(r)) alert.push('<span style="display:inline-block;background:#ede9fe;color:#6d28d9;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;margin:1px 0;">🧠 Psico</span>');
+                if (conSalud(r)) alert.push('<span style="display:inline-block;background:#fee2e2;color:#b91c1c;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;margin:1px 0;">🩺 Salud</span>');
                 return `<tr>
                     <td>${esc(r.n_registro || '—')}</td>
-                    <td><b>${esc(j.nombre || '—')}</b>${j.tiene_foto ? ' 📷' : ''}${(j.modulo||j.cubiculo||j.cama)?`<br><span style="font-size:11px;color:#64748b;">📍 ${[j.modulo?'Mód '+(String(j.modulo).startsWith('FN')?esc(String(j.modulo).slice(2))+' (F.N.)':esc(j.modulo)):'',esc(j.cubiculo||''),j.cama?'Cama '+esc(j.cama):''].filter(Boolean).join(' · ')}</span>`:''}</td>
-                    <td>${esc(j.cedula || '—')}</td>
-                    <td>${esc(proc)}</td>
+                    <td><b>${esc(du.nombre || '—')}</b>${tieneFoto(r) ? ' 📷' : ''}${viv ? `<br><span style="font-size:11px;color:#64748b;">🏠 ${esc(viv)}</span>` : ''}</td>
+                    <td>${esc((du.cedula ? ((du.nacionalidad || 'V') + '-' + du.cedula) : '—'))}</td>
+                    <td>${esc(procTxt(r))}</td>
+                    <td style="text-align:center;font-weight:800;">${fams.length}</td>
                     <td style="text-align:center;font-weight:800;">${personasDe(r)}</td>
                     <td>${esc(fecha)}</td>
-                    <td>${nec.join('<br>') || '—'}</td>
+                    <td>${alert.join('<br>') || '—'}</td>
                     <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-carnet" data-id="${esc(r.id)}" title="Carnets con QR">🪪</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
                 </tr>`;
             }).join('');
@@ -337,83 +409,84 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.id)));
             tb.querySelectorAll('button.btn-carnet').forEach(b => b.addEventListener('click', () => abrirCarnets(b.dataset.id)));
             const desde = ini + 1, hasta = Math.min(ini + TAM, total);
-            $('paginacion').innerHTML = `<button id="pgP" ${pagina<=1?'disabled':''}>← Anterior</button><span style="font-size:13px;color:#64748b;">${desde}–${hasta} de ${total}</span><button id="pgN" ${pagina>=totalPag?'disabled':''}>Siguiente →</button>`;
+            $('paginacion').innerHTML = `<button id="pgP" ${pagina <= 1 ? 'disabled' : ''}>← Anterior</button><span style="font-size:13px;color:#64748b;">${desde}–${hasta} de ${total}</span><button id="pgN" ${pagina >= totalPag ? 'disabled' : ''}>Siguiente →</button>`;
             const p = $('pgP'), n = $('pgN');
-            if (p) p.addEventListener('click', () => { if (pagina>1){ pagina--; render(); } });
-            if (n) n.addEventListener('click', () => { if (pagina<totalPag){ pagina++; render(); } });
+            if (p) p.addEventListener('click', () => { if (pagina > 1) { pagina--; render(); } });
+            if (n) n.addEventListener('click', () => { if (pagina < totalPag) { pagina++; render(); } });
         }
-        const FILTROS = ['fBuscar','fEstado','fMunicipio','fGenero','fPsico','fVivienda','fSalud','fFoto','fDesde','fHasta','fModulo','fCubiculo'];
-        FILTROS.forEach(id => { const el = $(id); if (!el) return; el.addEventListener('input', () => { pagina=1; render(); }); el.addEventListener('change', () => { pagina=1; render(); }); });
-        $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => { const el = $(id); if (el) el.value = ''; }); pagina=1; render(); });
-        function toggleTile(selId, val){ const el = $(selId); if (!el) return; el.value = (el.value === val) ? '' : val; pagina = 1; render(); const tabla = document.querySelector('table'); if (tabla) tabla.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-        $('tilePsico').addEventListener('click', () => toggleTile('fPsico', 'si'));
-        $('tileVivienda').addEventListener('click', () => toggleTile('fVivienda', 'si'));
+        const FILTROS = ['fBuscar', 'fEstado', 'fMunicipio', 'fEdad', 'fSexo', 'fRol', 'fCondicion', 'fSalud', 'fPsico', 'fRopa', 'fDesap', 'fOtroEst', 'fCarnet', 'fFoto', 'fDesde', 'fHasta', 'fPlanta', 'fCubiculo'];
+        FILTROS.forEach(id => { const el = $(id); if (!el) return; el.addEventListener('input', () => { pagina = 1; render(); }); el.addEventListener('change', () => { pagina = 1; render(); }); });
+        $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => { const el = $(id); if (el) el.value = ''; }); pagina = 1; render(); });
+        function toggleFiltro(selId, val) { const el = $(selId); if (!el) return; el.value = (el.value === val) ? '' : val; pagina = 1; render(); const t = document.querySelector('table'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        $('tilePsico').addEventListener('click', () => toggleFiltro('fPsico', 'si'));
+        $('tileSalud').addEventListener('click', () => toggleFiltro('fSalud', 'cualquiera'));
+        $('tileMenores').addEventListener('click', () => { const el = $('fEdad'); el.value = (['0-5', '6-11', '12-17'].includes(el.value)) ? '' : '12-17'; pagina = 1; render(); });
 
-        const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc(val || '—')}</span></div>`;
-        const GS_VOCERO = [['comuna', 'Nombre de la comuna'], ['vocero_nombre', 'Vocero — Nombre'], ['vocero_apellido', 'Vocero — Apellidos'], ['carnet_fecha', 'Carnet Fecha N°1'], ['vocero_ci', 'C.I. del vocero'], ['vocero_tel', 'Teléfono del vocero'], ['municipio', 'Municipio (vocero)'], ['parroquia', 'Parroquia (vocero)'], ['sector', 'Sector'], ['estatus_habitacional', 'Estatus habitacional']];
-        const GS_SOLIC = [['correo', 'Correo electrónico'], ['nivel_instruccion', 'Nivel de instrucción académico'], ['carnet_patria_codigo', 'Código Carnet de la Patria'], ['carnet_patria_serial', 'Serial Carnet de la Patria'], ['lugar_trabajo', 'Lugar de trabajo'], ['cargo', 'Cargo'], ['tiempo_servicio', 'Tiempo de servicio'], ['enfermedad', '¿Sufre enfermedad?'], ['enfermedad_cual', 'Enfermedad ¿cuál?'], ['discapacidad', '¿Sufre discapacidad?'], ['discapacidad_cual', 'Discapacidad ¿cuál?'], ['ingreso_familiar', 'Ingreso familiar'], ['tiene_pareja', '¿Tiene pareja?'], ['descripcion_caso', 'Descripción del caso']];
+        const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc((val == null || val === '') ? '—' : val)}</span></div>`;
+        const GS_VOCERO = [['comuna', 'Nombre de la comuna'], ['vocero_nombre', 'Vocero — Nombre'], ['vocero_apellido', 'Vocero — Apellidos'], ['carnet_fecha', 'Carnet Fecha N°1'], ['vocero_ci', 'C.I. del vocero'], ['vocero_tel', 'Teléfono del vocero'], ['municipio', 'Municipio (vocero)'], ['parroquia', 'Parroquia (vocero)'], ['sector', 'Sector'], ['correo', 'Correo electrónico'], ['ingreso_familiar', 'Ingreso familiar'], ['descripcion_caso', 'Descripción del caso'], ['estatus_habitacional', 'Estatus habitacional']];
         function verDetalle(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
-            const j = r.jefe || {}, miembros = toArr(r.miembros);
-            const jefeFilas = JEFE.map(c => fila(c[1], c[0] === 'genero' ? gen(j[c[0]]) : j[c[0]])).join('');
-            const miembrosHtml = miembros.length ? miembros.map((m, i) => `<div class="mini"><b>Integrante #${i + 1}: ${esc(m.nombre || '—')}</b><div id="mfoto_${i}"></div>${MIEMBRO.map(c => fila(c[1], c[0] === 'genero' ? gen(m[c[0]]) : m[c[0]])).join('')}</div>`).join('') : '<div class="fila"><span class="k">Sin integrantes adicionales</span></div>';
+            const inm = inmuebleDe(r), fams = familiasDe(r), gs = r.gestion_social || {};
+            const famsHtml = fams.map((f, fi) => {
+                const j = f.jefe || {};
+                const jefeFilas = JEFE.map(c => fila(c[1], valJefe(j, c[0]))).join('');
+                const esViejo = !Array.isArray(r.familias);
+                const integHtml = f.integrantes.length ? f.integrantes.map((m, i) => {
+                    const campos = (esViejo ? INTEG_VIEJO : INTEG).map(c => { let v = c[0] === 'genero' ? gen(m[c[0]]) : m[c[0]]; return (v != null && v !== '') ? fila(c[1], v) : ''; }).join('');
+                    return `<div class="mini"><b>Integrante #${i + 1}: ${esc(m.nombre || '—')}</b><div id="ph_${fi}_${i}"></div>${campos}</div>`;
+                }).join('') : '<div class="fila"><span class="k">Sin integrantes</span></div>';
+                return `<div class="famblock ${si(f.es_dueno) ? 'dueno' : ''}"><div class="ft">${si(f.es_dueno) ? '👑' : '👪'} Familia ${fi + 1} ${si(f.es_dueno) ? '<span class="bd">DUEÑO</span>' : ''}</div>
+                    <h5>Jefe de familia</h5><div id="ph_${fi}_jefe"></div>${jefeFilas}
+                    <h5>Integrantes (${f.integrantes.length})</h5>${integHtml}</div>`;
+            }).join('');
             $('modal').innerHTML = `
-                <h3>${esc(j.nombre || 'Ingreso')} <span style="font-size:13px;color:#64748b;">· ${personasDe(r)} persona(s)</span></h3>
+                <h3>${esc(duenoDe(r).jefe.nombre || 'Ingreso')} <span style="font-size:13px;color:#64748b;">· ${fams.length} familia(s) · ${personasDe(r)} persona(s)</span></h3>
                 <h4>Recepción</h4>${RECEP.map(c => fila(c[1], r[c[0]])).join('')}
-                <h4>Gestión social (Vivienda Miranda)</h4>${GS_VOCERO.map(c => fila(c[1], (r.gestion_social || {})[c[0]])).join('')}${GS_SOLIC.map(c => fila(c[1], j[c[0]])).join('')}
-                <h4>Jefe de familia</h4><div id="jfoto"></div>${jefeFilas}
-                <h4>Grupo familiar (${miembros.length})</h4>${miembrosHtml}
+                <h4>Inmueble (procedencia)</h4>${INM.map(c => fila(c[1], valInm(inm, c[0]))).join('')}
+                <h4>Gestión social (Vivienda Miranda)</h4>${GS_VOCERO.map(c => fila(c[1], gs[c[0]])).join('')}
+                <h4>Familias</h4>${famsHtml}
                 <button class="cerrar" id="cerrarModal">Cerrar</button>`;
             $('modalBg').classList.add('show');
             $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
-            // cargar fotos bajo demanda
+            // cargar fotos bajo demanda (nuevo esquema f{fi}_jefe / f{fi}_i{ii}; viejo esquema jefe / m{i})
             get(ref(database, 'zamurera_fotos/' + id)).then(snap => {
                 if (!snap.exists()) return; const f = snap.val() || {};
-                if (f.jefe && $('jfoto')) $('jfoto').innerHTML = `<img class="foto-p" src="${f.jefe}" alt="jefe">`;
-                miembros.forEach((m, i) => { const el = $('mfoto_' + i); if (el && f['m' + i]) el.innerHTML = `<img class="foto-p" src="${f['m' + i]}" alt="">`; });
+                fams.forEach((fam, fi) => {
+                    const jk = ('f' + fi + '_jefe' in f) ? f['f' + fi + '_jefe'] : (fi === 0 ? f.jefe : null);
+                    const jel = $('ph_' + fi + '_jefe'); if (jel && jk) jel.innerHTML = `<img class="foto-p" src="${jk}" alt="">`;
+                    fam.integrantes.forEach((m, i) => { const key = ('f' + fi + '_i' + i in f) ? f['f' + fi + '_i' + i] : (fi === 0 ? f['m' + i] : null); const el = $('ph_' + fi + '_' + i); if (el && key) el.innerHTML = `<img class="foto-p" src="${key}" alt="">`; });
+                });
             }).catch(() => {});
         }
         $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
 
-        // ---- Carnets: generación, foto (automática del formulario) e impresión ----
-        const carnetIdDe = (r, tipo, idx) => `${r.id}_${tipo === 'jefe' ? 'j' : 'm'}${idx}`;
-        function payloadDe(r, p, tipo, idx) {
-            const modRaw = (p.modulo || '').toString();
-            const modTxt = modRaw ? (modRaw.startsWith('FN') ? (modRaw.slice(2) + ' (Fam. Numerosa)') : modRaw) : '';
-            const camp = [modTxt ? 'Mód. ' + modTxt : '', p.cubiculo ? 'Cub. ' + p.cubiculo : '', p.cama ? 'Cama ' + p.cama : ''].filter(Boolean).join(' · ');
+        // ---- Carnets ----
+        function ubicTxt(p) { const pl = (p._planta || p.planta || p.modulo || '').toString(); const plTxt = pl ? (pl.startsWith('FN') ? (pl.slice(2) + ' (F.N.)') : pl) : ''; return [plTxt ? 'Planta ' + plTxt : '', (p._cubiculo || p.cubiculo) ? 'Cub. ' + (p._cubiculo || p.cubiculo) : '', p.cama ? 'Cama ' + p.cama : ''].filter(Boolean).join(' · '); }
+        function personasCarnet(r) {
+            const out = [];
+            familiasDe(r).forEach((f, fi) => {
+                out.push({ cid: `${r.id}_f${fi}_j`, fk: ('f' + fi + '_jefe'), fkOld: (fi === 0 ? 'jefe' : null), p: f.jefe, tipo: 'Jefe de familia', fam: f });
+                f.integrantes.forEach((m, i) => out.push({ cid: `${r.id}_f${fi}_i${i}`, fk: ('f' + fi + '_i' + i), fkOld: (fi === 0 ? ('m' + i) : null), p: { ...m, planta: f.jefe.planta, cubiculo: f.jefe.cubiculo }, tipo: 'Integrante del grupo familiar', fam: f }));
+            });
+            return out;
+        }
+        function payloadDe(r, item) {
+            const p = item.p;
             return {
-                reg_id: r.id,
-                n_registro: r.n_registro || '',
-                programa: 'Campamento Temporal · Sismo 2026',
-                tipo: tipo === 'jefe' ? 'Jefe de familia' : 'Integrante del grupo familiar',
-                nombre: p.nombre || '—',
-                cedula: p.cedula || '—',
-                sexo: p.genero || '',
-                edad: (p.edad != null && p.edad !== '') ? p.edad : '',
-                tipo_sangre: p.tipo_sangre || '',
-                campamento: camp,
-                procedencia: [r.estado, r.municipio, r.comuna_procedencia, r.comunidad_sector].filter(Boolean).join(' · '),
-                foto: '',
-                emitido_en: Date.now(),
-                valido: true
+                reg_id: r.id, n_registro: r.n_registro || '', programa: 'Campamento Temporal · Sismo 2026',
+                tipo: item.tipo, nombre: p.nombre || '—', cedula: p.cedula ? ((p.nacionalidad || 'V') + '-' + p.cedula) : '—',
+                sexo: p.genero || '', edad: (p.edad != null && p.edad !== '') ? p.edad : (edadNum(p) != null ? edadNum(p) : ''),
+                tipo_sangre: p.tipo_sangre || '', campamento: ubicTxt(p), procedencia: procTxt(r).replace(/^—$/, ''),
+                foto: '', emitido_en: Date.now(), valido: true
             };
         }
-        async function emitirCarnet(cid, pl) {
-            try { await set(ref(database, 'carnets/' + cid), pl); return true; }
-            catch (e) { alert('No se pudo emitir el carnet: ' + (e.message || e.code)); return false; }
-        }
+        async function emitirCarnet(cid, pl) { try { await set(ref(database, 'carnets/' + cid), pl); return true; } catch (e) { alert('No se pudo emitir el carnet: ' + (e.message || e.code)); return false; } }
         function tarjetaCarnetHTML(cid, pl) {
             const url = BASE_VALID + '?c=' + encodeURIComponent(cid);
             const qr = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=' + encodeURIComponent(url);
             const sexoEdad = [gen(pl.sexo), (pl.edad !== '' && pl.edad != null) ? (pl.edad + ' años') : ''].filter(x => x && x !== '—').join(' · ') || gen(pl.sexo);
             const foto = pl.foto ? `<img src="${pl.foto}" alt="Foto"/>` : '<div class="ph">SIN FOTO</div>';
-            const rows = [
-                ['C.I.', pl.cedula || '—'],
-                ['Sexo/Edad', sexoEdad || '—'],
-                ['T. sangre', pl.tipo_sangre || '—'],
-                ['Ubicación', pl.campamento || '—'],
-                ['Nº ingreso', pl.n_registro || '—']
-            ].map(([k, v]) => `<div class="rw"><span>${esc(k)}:</span> <b>${esc(v)}</b></div>`).join('');
+            const rows = [['C.I.', pl.cedula || '—'], ['Sexo/Edad', sexoEdad || '—'], ['T. sangre', pl.tipo_sangre || '—'], ['Ubicación', pl.campamento || '—'], ['Nº ingreso', pl.n_registro || '—']].map(([k, v]) => `<div class="rw"><span>${esc(k)}:</span> <b>${esc(v)}</b></div>`).join('');
             return `<div class="carnet">`
                 + `<div class="foto">${foto}</div>`
                 + `<div class="titulo"><div class="t1">Municipio Cristóbal Rojas</div><div class="t2">Charallave · Edo. Miranda</div><div class="t3">Carnet de control · Campamento Temporal · Sismo 2026</div></div>`
@@ -434,19 +507,16 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
         }
         async function abrirCarnets(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
-            const personas = [{ p: r.jefe || {}, tipo: 'jefe', idx: 0, fk: 'jefe' }]
-                .concat(toArr(r.miembros).map((m, i) => ({ p: m, tipo: 'miembro', idx: i, fk: 'm' + i })));
-            const mapa = {}, fkDe = {};
-            personas.forEach(({ p, tipo, idx, fk }) => { const cid = carnetIdDe(r, tipo, idx); mapa[cid] = payloadDe(r, p, tipo, idx); fkDe[cid] = fk; });
-            // Fotos: primero la ya emitida en /carnets; si no, la que capturó el formulario en /zamurera_fotos
+            const items = personasCarnet(r);
+            const mapa = {}; items.forEach(it => mapa[it.cid] = payloadDe(r, it));
             let fotosForm = {};
             try { const fs = await get(ref(database, 'zamurera_fotos/' + r.id)); if (fs.exists()) fotosForm = fs.val() || {}; } catch (e) {}
-            await Promise.all(Object.keys(mapa).map(async cid => {
-                try { const s = await get(ref(database, 'carnets/' + cid)); if (s.exists() && s.val().foto) { mapa[cid].foto = s.val().foto; return; } } catch (e) {}
-                const ff = fotosForm[fkDe[cid]]; if (ff) mapa[cid].foto = ff;
+            await Promise.all(items.map(async it => {
+                try { const s = await get(ref(database, 'carnets/' + it.cid)); if (s.exists() && s.val().foto) { mapa[it.cid].foto = s.val().foto; return; } } catch (e) {}
+                const ff = fotosForm[it.fk] || (it.fkOld ? fotosForm[it.fkOld] : null); if (ff) mapa[it.cid].foto = ff;
             }));
-            const filas = Object.keys(mapa).map(cid => {
-                const pl = mapa[cid];
+            const filas = items.map(it => {
+                const cid = it.cid, pl = mapa[cid];
                 const fh = pl.foto
                     ? `<img class="cfoto" src="${pl.foto}" style="width:52px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;" />`
                     : `<div class="cfoto" style="width:52px;height:64px;border:1px dashed #cbd5e1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;font-weight:700;text-align:center;">SIN<br>FOTO</div>`;
@@ -476,15 +546,15 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             }));
             const _all = $('modal').querySelector('button.cfprintall');
             if (_all) _all.addEventListener('click', async () => {
-                const items = [];
-                for (const cid of Object.keys(mapa)) { const ok = await emitirCarnet(cid, mapa[cid]); if (ok) items.push({ cid, pl: mapa[cid] }); }
-                imprimirCarnets(items);
+                const arr = [];
+                for (const it of items) { const ok = await emitirCarnet(it.cid, mapa[it.cid]); if (ok) arr.push({ cid: it.cid, pl: mapa[it.cid] }); }
+                imprimirCarnets(arr);
             });
         }
 
         async function borrar(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
-            if (!confirm(`¿Borrar el ingreso de "${(r.jefe && r.jefe.nombre) || ''}" y su grupo familiar?`)) return;
+            if (!confirm(`¿Borrar el ingreso de "${(duenoDe(r).jefe.nombre) || ''}" y todas sus familias?`)) return;
             try { await remove(ref(database, NODO + '/' + id)); await remove(ref(database, 'zamurera_fotos/' + id)); } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
         }
 
@@ -492,34 +562,52 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
         $('btnExcel').addEventListener('click', () => {
             if (typeof XLSX === 'undefined') { alert('SheetJS no cargó.'); return; }
             const ahora = new Date(); const fechaLarga = ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' });
-            const NAVY='0A2351', GRIS='64748B', ZEBRA='F1F5F9', TEXTO='0F172A';
-            const thin = { style:'thin', color:{rgb:'CBD5E1'} }, borde = { top:thin,bottom:thin,left:thin,right:thin };
-            const estB = { font:{bold:true,sz:15,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:NAVY}}, alignment:{horizontal:'center',vertical:'center'} };
-            const estS = { font:{italic:true,sz:10,color:{rgb:GRIS}}, alignment:{horizontal:'center',vertical:'center'} };
-            const estH = { font:{bold:true,sz:11,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:NAVY}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:borde };
+            const NAVY = '0A2351', GRIS = '64748B', ZEBRA = 'F1F5F9', TEXTO = '0F172A';
+            const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
+            const estB = { font: { bold: true, sz: 15, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const estS = { font: { italic: true, sz: 10, color: { rgb: GRIS } }, alignment: { horizontal: 'center', vertical: 'center' } };
+            const estH = { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: borde };
             const mkSheet = (titulo, header, filas, cols) => {
-                const data = [[titulo].concat(Array(header.length-1).fill('')), [`Generado ${fechaLarga} · ${filas.length} fila(s)`].concat(Array(header.length-1).fill('')), header, ...filas];
+                const data = [[titulo].concat(Array(header.length - 1).fill('')), [`Generado ${fechaLarga} · ${filas.length} fila(s)`].concat(Array(header.length - 1).fill('')), header, ...filas];
                 const ws = XLSX.utils.aoa_to_sheet(data);
-                const setS=(r,c,s)=>{const a=XLSX.utils.encode_cell({r,c}); if(!ws[a])ws[a]={t:'s',v:''}; ws[a].s=s;};
-                for (let c=0;c<header.length;c++){ setS(0,c,estB); setS(1,c,estS); setS(2,c,estH); }
-                for (let r=3;r<data.length;r++){ const fondo=(r%2===0)?{fill:{fgColor:{rgb:ZEBRA}}}:{}; for(let c=0;c<header.length;c++) setS(r,c,{font:{sz:10,color:{rgb:TEXTO}},alignment:{vertical:'top',wrapText:true},border:borde,...fondo}); }
-                ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}},{s:{r:1,c:0},e:{r:1,c:header.length-1}}];
-                ws['!cols']=cols.map(w=>({wch:w}));
+                const setS = (r, c, s) => { const a = XLSX.utils.encode_cell({ r, c }); if (!ws[a]) ws[a] = { t: 's', v: '' }; ws[a].s = s; };
+                for (let c = 0; c < header.length; c++) { setS(0, c, estB); setS(1, c, estS); setS(2, c, estH); }
+                for (let r = 3; r < data.length; r++) { const fondo = (r % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}; for (let c = 0; c < header.length; c++) setS(r, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...fondo }); }
+                ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: header.length - 1 } }];
+                ws['!cols'] = cols.map(w => ({ wch: w }));
                 return ws;
             };
-            const hdr1 = ['Nº registro','Fecha ingreso','Hora','Receptor','Estado','Municipio','Comuna procedencia','Comunidad/sector','Jefe (nombre)','Cédula','Teléfono','Edad','Género','Tipo sangre','Profesión','Situación laboral','Nivel académico','Estudia','Patología','Medicamento','Situación salud','Situación psicológica','Afectación','Necesita ayuda psicológica','Necesita ayuda vivienda','Módulo','Cubículo','Cama','Zapatos (talla)','Camisa (talla)','Pantalón (talla)','Observaciones','Carga familiar','Personas'];
-            const f1 = REGS.map(r => { const j = r.jefe || {}; return [r.n_registro||'', r.fecha_ingreso||'', r.hora||'', r.persona_receptor||'', r.estado||'', r.municipio||'', r.comuna_procedencia||'', r.comunidad_sector||'', j.nombre||'', String(j.cedula||''), String(j.telefono||''), String(j.edad||''), gen(j.genero), j.tipo_sangre||'', j.profesion||'', j.situacion_laboral||'', j.nivel_academico||'', j.estudia||'', j.patologia||'', j.medicamento||'', j.situacion_salud||'', j.situacion_psicologica||'', j.afectacion||'', j.necesita_ayuda_psicologica||'', j.necesita_ayuda_vivienda||'', j.modulo||'', j.cubiculo||'', j.cama||'', j.talla_zapatos||'', j.talla_camisa||'', j.talla_pantalon||'', j.observaciones||'', String(r.carga_familiar!=null?r.carga_familiar:toArr(r.miembros).length), String(personasDe(r))]; });
-            const hdr2 = ['Nº registro','Jefe de familia','Rol','Nombre','Parentesco','Cédula','Teléfono','Edad','Género','Tipo sangre','Estudia','Profesión','Situación laboral','Nivel académico','Patología','Medicamento','Situación salud','Situación psicológica','Necesita ayuda psicológica','Necesita ayuda vivienda','Módulo','Cubículo','Cama','Zapatos','Camisa','Pantalón','Observaciones'];
+            // Hoja 1: una fila por FAMILIA (con datos del inmueble + jefe)
+            const inmCols = INM.map(c => c[1]);
+            const jefeColsSel = ['nombre', 'es_dueno', 'cedula', 'telefono', 'edad', 'genero', 'tipo_sangre', 'nivel_instruccion', 'trabaja', 'situacion_laboral', 'profesion', 'carnet_posee', 'enfermedad', 'discapacidad', 'necesita_psico', 'necesita_ropa', 'familiar_desaparecido', 'familiar_otro_estado', 'planta', 'cubiculo', 'cama'];
+            const jefeColLbl = jefeColsSel.map(k => (JEFE.find(c => c[0] === k) || [k, k])[1]);
+            const hdr1 = ['Nº registro', 'Fecha', 'Hora', 'Receptor'].concat(inmCols).concat(jefeColLbl).concat(['Integrantes de la familia']);
+            const f1 = [];
+            REGS.forEach(r => {
+                const inm = inmuebleDe(r);
+                familiasDe(r).forEach(f => {
+                    const j = f.jefe || {};
+                    f1.push([r.n_registro || '', r.fecha_ingreso || '', r.hora || '', r.persona_receptor || '']
+                        .concat(INM.map(c => String(valInm(inm, c[0]) || '')))
+                        .concat(jefeColsSel.map(k => String(valJefe(j, k) || '')))
+                        .concat([String(f.integrantes.length)]));
+                });
+            });
+            // Hoja 2: una fila por PERSONA
+            const hdr2 = ['Nº registro', 'Familia', 'Rol', 'Dueño', 'Nombre', 'Parentesco', 'Cédula', 'Teléfono', 'Edad', 'Género', 'Tipo sangre', 'Planta', 'Cubículo', 'Cama', 'Representante (menor)'];
             const f2 = [];
             REGS.forEach(r => {
-                const j = r.jefe || {};
-                f2.push([r.n_registro||'', j.nombre||'', 'Jefe de familia', j.nombre||'', '', String(j.cedula||''), String(j.telefono||''), String(j.edad||''), gen(j.genero), j.tipo_sangre||'', j.estudia||'', j.profesion||'', j.situacion_laboral||'', j.nivel_academico||'', j.patologia||'', j.medicamento||'', j.situacion_salud||'', j.situacion_psicologica||'', j.necesita_ayuda_psicologica||'', j.necesita_ayuda_vivienda||'', j.modulo||'', j.cubiculo||'', j.cama||'', j.talla_zapatos||'', j.talla_camisa||'', j.talla_pantalon||'', j.observaciones||'']);
-                toArr(r.miembros).forEach(m => f2.push([r.n_registro||'', j.nombre||'', 'Integrante', m.nombre||'', m.parentesco||'', String(m.cedula||''), String(m.telefono||''), String(m.edad||''), gen(m.genero), m.tipo_sangre||'', m.estudia||'', m.profesion||'', m.situacion_laboral||'', m.nivel_academico||'', m.patologia||'', m.medicamento||'', m.situacion_salud||'', m.situacion_psicologica||'', m.necesita_ayuda_psicologica||'', m.necesita_ayuda_vivienda||'', m.modulo||'', m.cubiculo||'', m.cama||'', m.talla_zapatos||'', m.talla_camisa||'', m.talla_pantalon||'', m.observaciones||'']));
+                familiasDe(r).forEach((f, fi) => {
+                    const j = f.jefe || {};
+                    const ubic = [j.planta || j.modulo || '', j.cubiculo || '', j.cama || ''];
+                    f2.push([r.n_registro || '', String(fi + 1), 'Jefe de familia', (si(f.es_dueno) ? 'Sí' : 'No'), j.nombre || '', '', String(j.cedula || ''), String(j.telefono || ''), String(j.edad || ''), gen(j.genero), j.tipo_sangre || '', ubic[0], ubic[1], ubic[2], '']);
+                    f.integrantes.forEach(m => f2.push([r.n_registro || '', String(fi + 1), 'Integrante', '', m.nombre || '', m.parentesco || '', String(m.cedula || ''), String(m.telefono || ''), String(m.edad || ''), gen(m.genero), m.tipo_sangre || '', ubic[0], ubic[1], '', [m.rep_nombre, m.rep_cedula].filter(Boolean).join(' · ')]));
+                });
             });
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — INGRESOS (JEFES)', hdr1, f1, [10,14,8,18,18,14,16,20,22,12,14,7,10,10,18,22,22,26,26,26,20,20,8,10,12,12,12,12,26,10,9]), 'Ingresos');
-            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIO ZAMURERA — TODAS LAS PERSONAS', hdr2, f2, [10,22,14,22,16,12,14,7,10,10,8,18,22,22,26,26,20,20,8,10,12,12,12,12,26]), 'Personas');
-            XLSX.writeFile(wb, `campamento_temporal_${ahora.toISOString().slice(0,10)}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, mkSheet('CAMPAMENTO TEMPORAL — FAMILIAS', hdr1, f1, hdr1.map(() => 16)), 'Familias');
+            XLSX.utils.book_append_sheet(wb, mkSheet('CAMPAMENTO TEMPORAL — PERSONAS', hdr2, f2, [12, 8, 16, 8, 24, 14, 14, 14, 7, 11, 11, 10, 10, 8, 26]), 'Personas');
+            XLSX.writeFile(wb, `campamento_temporal_${ahora.toISOString().slice(0, 10)}.xlsx`);
         });
 
         // ---- Sanitizador PDF ----
@@ -541,31 +629,45 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             return out.replace(/ {2,}/g, ' ').trim();
         }
 
-        function dibujarFamilia(doc, r, drawHF) {
+        function dibujarRegistro(doc, r, drawHF) {
             const { jsPDF } = window.jspdf;
-            const j = r.jefe || {}, miembros = toArr(r.miembros);
-            const st = { font: 'helvetica', fontSize: 9, cellPadding: 1.4, textColor: [15,23,42], lineColor: [203,213,225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' };
-            const kv = (arr, obj) => arr.map(c => [_safePdf(c[1]), _safePdf(c[0] === 'genero' ? gen(obj[c[0]]) : (obj[c[0]] || '-'))]);
+            const inm = inmuebleDe(r), fams = familiasDe(r);
+            const st = { font: 'helvetica', fontSize: 9, cellPadding: 1.4, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' };
+            const kvJ = (arr, obj) => arr.map(c => [_safePdf(c[1]), _safePdf(valJefe(obj, c[0]) || '-')]);
+            const cabecera = [[{ content: _safePdf('INGRESO Nº ' + (r.n_registro || '-') + '  ·  ' + (duenoDe(r).jefe.nombre || '') + '  (' + fams.length + ' familia/s · ' + personasDe(r) + ' persona/s)'), colSpan: 2 }]];
+            const body = RECEP.map(c => [_safePdf(c[1]), _safePdf(r[c[0]] || '-')])
+                .concat([[{ content: 'INMUEBLE (PROCEDENCIA)', colSpan: 2, styles: { fillColor: [10, 108, 176], textColor: [255, 255, 255], fontStyle: 'bold' } }]])
+                .concat(INM.map(c => [_safePdf(c[1]), _safePdf(valInm(inm, c[0]) || '-')]));
             jsPDF.API.autoTable.call(doc, {
                 startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 }, showHead: 'firstPage',
-                head: [[{ content: _safePdf('INGRESO Nº ' + (r.n_registro || '-') + '  ·  ' + (j.nombre || '') + '  (' + personasDe(r) + ' persona/s)'), colSpan: 2 }]],
-                body: kv(RECEP, r).concat([['', '']]).concat([[{ content: 'JEFE DE FAMILIA', colSpan: 2, styles: { fillColor: [22,163,74], textColor: [255,255,255], fontStyle: 'bold' } }]]).concat(kv(JEFE, j)),
-                theme: 'grid', styles: st,
-                headStyles: { fillColor: [10,35,81], textColor: [255,255,255], fontStyle: 'bold', fontSize: 9.5 },
-                columnStyles: { 0: { cellWidth: 56, fontStyle: 'bold', fillColor: [241,245,249] }, 1: { cellWidth: 130 } },
+                head: cabecera, body, theme: 'grid', styles: st,
+                headStyles: { fillColor: [10, 35, 81], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9.5 },
+                columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold', fillColor: [241, 245, 249] }, 1: { cellWidth: 126 } },
                 didDrawPage: drawHF
             });
-            if (miembros.length) {
+            fams.forEach((f, fi) => {
+                const j = f.jefe || {};
                 jsPDF.API.autoTable.call(doc, {
                     startY: doc.lastAutoTable.finalY + 4, margin: { top: 55, bottom: 16, left: 14, right: 14 },
-                    head: [['#', 'Nombre', 'Parent.', 'Cédula', 'Edad', 'Gén.', 'Sangre', 'Estudia', 'Mód/Cub/Cama', 'Ropa Z/C/P', 'Patología / medic.']],
-                    body: miembros.map((m, i) => [String(i + 1), _safePdf(m.nombre || '-'), _safePdf(m.parentesco || '-'), _safePdf(String(m.cedula || '-')), _safePdf(String(m.edad || '-')), _safePdf(gen(m.genero)), _safePdf(m.tipo_sangre || '-'), _safePdf(m.estudia || '-'), _safePdf([m.modulo ? 'Mód ' + m.modulo : '', m.cubiculo || '', m.cama ? 'Cama ' + m.cama : ''].filter(Boolean).join(' · ') || '-'), _safePdf([m.talla_zapatos ? 'Z:' + m.talla_zapatos : '', m.talla_camisa ? 'C:' + m.talla_camisa : '', m.talla_pantalon ? 'P:' + m.talla_pantalon : ''].filter(Boolean).join(' ') || '-'), _safePdf([m.patologia, m.medicamento].filter(Boolean).join(' / ') || '-')]),
-                    theme: 'grid', styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.2, lineColor: [203,213,225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
-                    headStyles: { fillColor: [22,163,74], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8 },
-                    columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 30 }, 2: { cellWidth: 18 }, 3: { cellWidth: 22 }, 4: { cellWidth: 10, halign: 'center' }, 5: { cellWidth: 15 }, 6: { cellWidth: 14, halign: 'center' }, 7: { cellWidth: 12, halign: 'center' }, 8: { cellWidth: 22 }, 9: { cellWidth: 18 }, 10: { cellWidth: 17 } },
+                    head: [[{ content: _safePdf((si(f.es_dueno) ? 'FAMILIA ' + (fi + 1) + ' (DUEÑO) — ' : 'FAMILIA ' + (fi + 1) + ' — ') + (j.nombre || '')), colSpan: 2 }]],
+                    body: kvJ(JEFE, j),
+                    theme: 'grid', styles: st,
+                    headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+                    columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold', fillColor: [241, 245, 249] }, 1: { cellWidth: 126 } },
                     didDrawPage: drawHF
                 });
-            }
+                if (f.integrantes.length) {
+                    jsPDF.API.autoTable.call(doc, {
+                        startY: doc.lastAutoTable.finalY + 2, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                        head: [['#', 'Nombre', 'Parent.', 'Cédula', 'Edad', 'Gén.', 'Sangre', 'Representante (si es menor)']],
+                        body: f.integrantes.map((m, i) => [String(i + 1), _safePdf(m.nombre || '-'), _safePdf(m.parentesco || '-'), _safePdf(String((m.cedula ? (m.nacionalidad || 'V') + '-' + m.cedula : '-'))), _safePdf(String(m.edad || '-')), _safePdf(gen(m.genero)), _safePdf(m.tipo_sangre || '-'), _safePdf([m.rep_nombre, m.rep_cedula].filter(Boolean).join(' · ') || '-')]),
+                        theme: 'grid', styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.2, lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
+                        headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+                        columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 34 }, 2: { cellWidth: 20 }, 3: { cellWidth: 24 }, 4: { cellWidth: 10, halign: 'center' }, 5: { cellWidth: 16 }, 6: { cellWidth: 14, halign: 'center' }, 7: { cellWidth: 40 } },
+                        didDrawPage: drawHF
+                    });
+                }
+            });
         }
 
         $('btnPdf').addEventListener('click', () => {
@@ -575,8 +677,8 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             const lista = filtrados();
             if (!lista.length) { alert('No hay ingresos para exportar.'); return; }
             const doc = new jsPDF({ unit: 'mm', format: 'letter' });
-            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Campamento Temporal — Ingresos', subtitulo: _safePdf(lista.length + ' familia(s)') }); dibujarFooterPDF(doc); };
-            lista.forEach((r, idx) => { if (idx > 0) doc.addPage(); dibujarFamilia(doc, r, drawHF); });
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Campamento Temporal — Ingresos', subtitulo: _safePdf(lista.length + ' inmueble(s)') }); dibujarFooterPDF(doc); };
+            lista.forEach((r, idx) => { if (idx > 0) doc.addPage(); dibujarRegistro(doc, r, drawHF); });
             doc.save('campamento_temporal_' + new Date().toISOString().slice(0, 10) + '.pdf');
         });
 
@@ -586,9 +688,9 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
             const r = REGS.find(x => x.id === id); if (!r) return;
             const doc = new jsPDF({ unit: 'mm', format: 'letter' });
-            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Campamento Temporal — Ingreso', subtitulo: _safePdf(((r.jefe || {}).nombre) || '') }); dibujarFooterPDF(doc); };
-            dibujarFamilia(doc, r, drawHF);
-            const archivo = 'ingreso_' + (String((r.jefe || {}).cedula || r.n_registro || 'campamento').replace(/[^0-9A-Za-z]/g, '') || 'campamento') + '.pdf';
+            const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Campamento Temporal — Ingreso', subtitulo: _safePdf((duenoDe(r).jefe.nombre) || '') }); dibujarFooterPDF(doc); };
+            dibujarRegistro(doc, r, drawHF);
+            const archivo = 'ingreso_' + (String(duenoDe(r).jefe.cedula || r.n_registro || 'campamento').replace(/[^0-9A-Za-z]/g, '') || 'campamento') + '.pdf';
             try { doc.autoPrint(); const w = window.open(doc.output('bloburl'), '_blank'); if (!w) { doc.save(archivo); alert('El navegador bloqueó la ventana de impresión; se descargó el PDF.'); } }
             catch (e) { doc.save(archivo); }
         }

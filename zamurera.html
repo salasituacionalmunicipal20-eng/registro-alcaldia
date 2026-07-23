@@ -11,54 +11,70 @@
         .top { background: linear-gradient(135deg, #0a2351 0%, #16a34a 100%); color: #fff; padding: 22px 18px; text-align: center; }
         .top h1 { font-size: 21px; font-weight: 800; }
         .top p { font-size: 13.5px; opacity: .92; margin-top: 4px; }
-        .wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
+        .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
         .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 14px; }
         .card h2 { font-size: 14px; font-weight: 800; color: #0a2351; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
         .card .sub { font-size: 12.5px; color: #64748b; margin-bottom: 10px; }
+        .seclabel { font-size: 12px; font-weight: 800; color: #0a6cb0; text-transform: uppercase; letter-spacing: .3px; margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px dashed #cbd5e1; }
         label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin: 11px 0 4px; }
         .hint { font-weight: 400; color: #94a3b8; font-size: 11.5px; }
         input, select, textarea { width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
         input:focus, textarea:focus, select:focus { border-color: #16a34a; background: #fff; }
-        textarea { min-height: 58px; resize: vertical; }
+        textarea { min-height: 52px; resize: vertical; }
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         @media (max-width: 560px) { .row3 { grid-template-columns: 1fr 1fr; } }
         @media (max-width: 420px) { .row2, .row3 { grid-template-columns: 1fr; } }
-        .miembro { border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px; margin-top: 12px; background: #f8fafc; }
-        .mb-head { display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #0a2351; font-size: 14px; margin-bottom: 6px; }
+        .hidden { display: none !important; }
+        .radios { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 4px 0; }
+        .radios label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 600; font-size: 14px; }
+        .radios input { width: auto; }
+        .familia { border: 2px solid #0a6cb0; border-radius: 12px; padding: 14px; margin-top: 14px; background: #f5faff; }
+        .familia.otra { border: 2px dashed #16a34a; background: #f6fef9; }
+        .fam-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .fam-head .t { font-weight: 800; color: #0a2351; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+        .fam-head .badge { font-size: 10px; font-weight: 800; padding: 2px 9px; border-radius: 20px; background: #0a6cb0; color: #fff; }
+        .familia.otra .badge { background: #16a34a; }
+        .fam-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .integrante { border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-top: 10px; background: #fff; }
+        .mb-head { display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #0a2351; font-size: 13.5px; margin-bottom: 4px; }
         .mb-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
-        .btn-add { width: 100%; background: #e0e7ff; color: #3730a3; border: 1px dashed #6366f1; border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 12px; }
+        .repbox { border: 1px solid #86efac; border-radius: 10px; padding: 11px; margin-top: 10px; background: #f7fef9; }
+        .repbox .rt { font-weight: 800; color: #166534; font-size: 12.5px; margin-bottom: 2px; }
+        .btn-add { width: 100%; background: #e0e7ff; color: #3730a3; border: 1px dashed #6366f1; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 10px; }
+        .btn-add.g { background: #dcfce7; color: #166534; border-color: #16a34a; }
+        .btn-add.sm { padding: 9px; font-size: 13px; }
         .btn-enviar { width: 100%; background: #16a34a; color: #fff; border: none; border-radius: 10px; padding: 16px; font-size: 17px; font-weight: 800; cursor: pointer; margin-top: 6px; }
         .btn-enviar:disabled { opacity: .6; }
         .msg { padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-top: 12px; display: none; }
         .msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
-        .prev { max-width: 120px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 6px; display: none; }
+        .prev { max-width: 110px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 6px; display: none; }
         .ok-screen { display: none; text-align: center; padding: 40px 20px; }
         .ok-screen .check { font-size: 60px; }
         .ok-screen h2 { color: #16a34a; font-size: 24px; margin: 10px 0; }
         .ok-screen p { color: #475569; font-size: 15px; }
         .ok-screen button { margin-top: 22px; background: #0a2351; color: #fff; border: none; border-radius: 10px; padding: 14px 22px; font-size: 15px; font-weight: 700; cursor: pointer; }
         .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 16px; }
-    .foto-opts{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 8px}
-    .fbtn{display:inline-flex;align-items:center;gap:6px;background:#0a2351;color:#fff;border-radius:8px;padding:9px 14px;font-size:13.5px;font-weight:700;cursor:pointer}
-    .fbtn:active{opacity:.85}
-    .fbtn input{display:none}
-    .cne-ver{margin-top:6px;background:#065f46;color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
-    .cne-modal{display:none;position:fixed;inset:0;background:rgba(8,15,30,.6);z-index:9999;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
-    .cne-card{background:#fff;border-radius:14px;max-width:460px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.4);overflow:hidden}
-    .cne-hd{background:#0a2351;color:#fff;padding:14px 18px;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:space-between}
-    .cne-hd button{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;width:30px;height:30px;font-size:15px;cursor:pointer}
-    .cne-bd{padding:14px 18px 20px}
-    .cne-sec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#0a6cb0;margin:12px 0 6px;border-bottom:2px solid #f4c20d;padding-bottom:4px}
-    .cne-sec:first-child{margin-top:0}
-    .cne-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13.5px}
-    .cne-row span{color:#64748b}.cne-row b{color:#0f172a;text-align:right}
+        .foto-opts { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; }
+        .fbtn { display: inline-flex; align-items: center; gap: 6px; background: #0a2351; color: #fff; border-radius: 8px; padding: 9px 14px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+        .fbtn:active { opacity: .85; }
+        .fbtn input { display: none; }
+        .cne-ver { margin-top: 6px; background: #065f46; color: #fff; border: none; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+        .cne-modal { display: none; position: fixed; inset: 0; background: rgba(8,15,30,.6); z-index: 9999; align-items: flex-start; justify-content: center; padding: 18px; overflow: auto; }
+        .cne-card { background: #fff; border-radius: 14px; max-width: 460px; width: 100%; box-shadow: 0 30px 80px rgba(0,0,0,.4); overflow: hidden; }
+        .cne-hd { background: #0a2351; color: #fff; padding: 14px 18px; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: space-between; }
+        .cne-hd button { background: rgba(255,255,255,.15); border: none; color: #fff; border-radius: 8px; width: 30px; height: 30px; font-size: 15px; cursor: pointer; }
+        .cne-bd { padding: 14px 18px 20px; }
+        .cne-sec { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #0a6cb0; margin: 12px 0 6px; border-bottom: 2px solid #f4c20d; padding-bottom: 4px; }
+        .cne-sec:first-child { margin-top: 0; }
+        .cne-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13.5px; }
+        .cne-row span { color: #64748b; } .cne-row b { color: #0f172a; text-align: right; }
     </style>
 </head>
 <body>
     <div class="top">
         <h1>🏕️ Campamento Temporal — Ingreso</h1>
-        <p>Registro de personas que ingresan al Campamento · Municipio Cristóbal Rojas</p>
+        <p>Registro de familias que ingresan al Campamento · Municipio Cristóbal Rojas</p>
     </div>
 
     <div class="wrap">
@@ -74,21 +90,57 @@
                     <div><label>Fecha de ingreso</label><input id="fecha_ingreso" type="date" /></div>
                     <div><label>Hora</label><input id="hora" type="time" /></div>
                 </div>
-                <div class="row2">
-                    <div><label>Estado</label><select id="estado"><option value="">Selecciona…</option></select></div>
-                    <div><label>Municipio</label><select id="municipio"><option value="">Selecciona…</option></select></div>
+            </div>
+
+            <!-- INMUEBLE -->
+            <div class="card">
+                <h2>Datos del inmueble</h2>
+                <div class="sub">La vivienda de procedencia que perdieron. Se llena una sola vez; el inmueble tiene <b>un solo dueño</b> y pueden haber vivido varias familias.</div>
+
+                <div class="seclabel">Procedencia (de dónde viene)</div>
+                <div class="row3">
+                    <div><label>Estado de procedencia</label><select id="im_estado"><option value="">Selecciona…</option></select></div>
+                    <div><label>Municipio de procedencia</label><select id="im_municipio"><option value="">Selecciona…</option></select></div>
+                    <div><label>Parroquia</label><input id="im_parroquia" autocomplete="off" placeholder="Parroquia" /></div>
+                </div>
+                <div class="row3">
+                    <div><label>Comuna de procedencia</label><input id="im_comuna" autocomplete="off" /></div>
+                    <div><label>Comunidad de procedencia</label><input id="im_comunidad" autocomplete="off" /></div>
+                    <div><label>Nombre de la calle</label><input id="im_calle" autocomplete="off" /></div>
+                </div>
+
+                <div class="seclabel">Características del inmueble</div>
+                <label>Tipo de vivienda</label>
+                <div class="radios">
+                    <label><input type="radio" name="im_tipo" value="Casa" /> Casa</label>
+                    <label><input type="radio" name="im_tipo" value="Apartamento" /> Apartamento</label>
                 </div>
                 <div class="row2">
-                    <div><label>Comuna de procedencia</label><input id="comuna_procedencia" placeholder="Comuna" autocomplete="off" /></div>
-                    <div><label>Comunidad / sector de procedencia</label><input id="comunidad_sector" placeholder="Comunidad o sector" autocomplete="off" /></div>
+                    <div id="wrapNumeroCasa" class="hidden"><label>Número de la casa</label><input id="im_numero_casa" autocomplete="off" /></div>
+                    <div id="wrapPiso" class="hidden"><label>Piso número</label><input id="im_piso" autocomplete="off" /></div>
+                </div>
+                <div class="row2">
+                    <div><label>¿Gran Misión Vivienda Venezuela?</label><select id="im_gran_mision"><option value="">—</option><option>Sí</option><option>No</option></select></div>
+                    <div><label>Nombre de la casa o edificio</label><input id="im_nombre_edif" autocomplete="off" /></div>
+                </div>
+                <label>Condición de la vivienda</label>
+                <select id="im_condicion"><option value="">—</option><option>Propia</option><option>Alquilada</option><option>Prestada</option><option>De un familiar</option></select>
+                <div class="row3">
+                    <div><label>Tiempo de permanencia</label><input id="im_tiempo_num" type="number" min="0" inputmode="numeric" placeholder="Nº" /></div>
+                    <div><label>&nbsp;</label><select id="im_tiempo_unidad"><option value="meses">meses</option><option value="años">años</option></select></div>
+                    <div></div>
+                </div>
+                <div class="row2">
+                    <div><label>Cantidad de familias que habitaban</label><input id="im_cant_familias" type="number" min="0" inputmode="numeric" /></div>
+                    <div><label>Cantidad de personas que habitaban</label><input id="im_cant_personas" type="number" min="0" inputmode="numeric" /></div>
                 </div>
             </div>
 
-            <!-- VOCERO Y COMUNIDAD (gestión social - Vivienda Miranda) -->
+            <!-- GESTIÓN SOCIAL (Vivienda Miranda) -->
             <div class="card">
                 <h2>Gestión social (Vivienda Miranda)</h2>
-                <div class="sub">Sistematización — Instituto de Vivienda de Miranda.</div>
-                <label style="color:#0a2351;margin-top:6px;font-weight:800;">Vocero y comunidad</label>
+                <div class="sub">Sistematización — Instituto de Vivienda de Miranda (opcional).</div>
+                <div class="seclabel">Vocero y comunidad</div>
                 <label>Nombre de la comuna</label><input id="gs_comuna" autocomplete="off" />
                 <div class="row2">
                     <div><label>Vocero — Nombre</label><input id="gs_vocero_nombre" autocomplete="off" /></div>
@@ -104,97 +156,22 @@
                     <div><label>Parroquia</label><select id="gs_parroquia"><option value="">Selecciona…</option></select></div>
                     <div><label>Sector</label><input id="gs_sector" autocomplete="off" /></div>
                 </div>
-
-                <label style="color:#0a2351;margin-top:14px;font-weight:800;">Datos socioeconómicos del solicitante</label>
                 <div class="row2">
-                    <div><label>Correo electrónico</label><input id="js_correo" type="email" autocomplete="off" /></div>
-                    <div><label>Nivel de instrucción académico</label><select id="js_nivel_instruccion"><option value="">—</option><option>Educación Inicial</option><option>Educación Básica</option><option>Educación Media</option><option>Educación Superior</option></select></div>
-                </div>
-                <div class="row2">
-                    <div><label>Código del Carnet de la Patria</label><input id="js_carnet_codigo" autocomplete="off" /></div>
-                    <div><label>Serial del Carnet de la Patria</label><input id="js_carnet_serial" autocomplete="off" /></div>
-                </div>
-                <div class="row3">
-                    <div><label>Lugar de trabajo</label><input id="js_lugar_trabajo" autocomplete="off" /></div>
-                    <div><label>Cargo</label><input id="js_cargo" autocomplete="off" /></div>
-                    <div><label>Tiempo de servicio</label><input id="js_tiempo_servicio" autocomplete="off" /></div>
-                </div>
-                <div class="row2">
-                    <div><label>¿Sufre alguna enfermedad?</label><select id="js_enfermedad"><option value="">—</option><option>Sí</option><option>No</option></select></div>
-                    <div><label>¿Cuál?</label><input id="js_enfermedad_cual" autocomplete="off" /></div>
-                </div>
-                <div class="row2">
-                    <div><label>¿Sufre alguna discapacidad?</label><select id="js_discapacidad"><option value="">—</option><option>Sí</option><option>No</option></select></div>
-                    <div><label>¿Cuál?</label><input id="js_discapacidad_cual" autocomplete="off" /></div>
-                </div>
-                <div class="row2">
-                    <div><label>Ingreso familiar</label><input id="js_ingreso_familiar" autocomplete="off" /></div>
-                    <div><label>¿Tiene pareja?</label><select id="js_tiene_pareja"><option value="">—</option><option>Sí</option><option>No</option></select></div>
+                    <div><label>Correo electrónico</label><input id="gs_correo" type="email" autocomplete="off" /></div>
+                    <div><label>Ingreso familiar</label><input id="gs_ingreso_familiar" autocomplete="off" /></div>
                 </div>
                 <label>Descripción del caso</label>
-                <textarea id="js_descripcion" placeholder="Descripción del caso social"></textarea>
-
-                <label style="margin-top:8px;">Estatus habitacional</label>
+                <textarea id="gs_descripcion" placeholder="Descripción del caso social"></textarea>
+                <label>Estatus habitacional</label>
                 <select id="gs_estatus"><option value="">—</option><option>Adjudicado</option><option>Tiene Titularidad</option><option>Solicitud en Proceso</option></select>
             </div>
 
-            <!-- JEFE DE FAMILIA -->
+            <!-- FAMILIAS -->
             <div class="card">
-                <h2>Jefe de familia</h2>
-                <div class="sub">Persona de referencia principal del grupo familiar.</div>
-                <label>Nombre y apellido *</label>
-                <input id="j_nombre" placeholder="Nombre completo" autocomplete="off" />
-                <div class="row3">
-                    <div><label>Nacionalidad</label><select id="j_nacionalidad"><option value="V">V</option><option value="E">E</option></select></div>
-                    <div><label>Nº de cédula</label><input id="j_cedula" inputmode="numeric" autocomplete="off" /></div>
-                    <div><label>Teléfono</label><input id="j_telefono" inputmode="tel" autocomplete="off" /></div>
-                </div>
-                <div class="row3">
-                    <div><label>Fecha de nacimiento</label><input id="j_fecha_nac" type="date" /></div>
-                    <div><label>Edad</label><input id="j_edad" type="number" min="0" max="120" placeholder="Años" /></div>
-                    <div><label>Género</label><select id="j_genero"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="Otro">Otro</option></select></div>
-                </div>
-                <div class="row2">
-                    <div><label>Tipo de sangre</label><select id="j_tipo_sangre"></select></div>
-                    <div><label>Profesión / ocupación</label><input id="j_profesion" autocomplete="off" /></div>
-                </div>
-                <div class="row3">
-                    <div><label>Situación laboral</label><select id="j_situacion_laboral"><option value="">—</option><option>Empleado formal</option><option>Empleado informal</option><option>Desempleado</option><option>Jubilado / Pensionado</option><option>Estudiante</option><option>Ama de casa</option><option>Otro</option></select></div>
-                    <div><label>Nivel académico</label><select id="j_nivel_academico"><option value="">—</option><option>Sin estudios</option><option>Primaria</option><option>Bachillerato</option><option>Técnico / TSU</option><option>Universitario</option><option>Postgrado</option></select></div>
-                    <div><label>¿Qué estudia?</label><input id="j_estudia" placeholder="Carrera / año (si estudia)" autocomplete="off" /></div>
-                </div>
-                <label>Medicamento que toma</label><input id="j_medicamento" autocomplete="off" />
-                <label>Situación psicológica</label><textarea id="j_situacion_psicologica"></textarea>
-                <label>Afectación por el terremoto</label><textarea id="j_afectacion" placeholder="Daños / afectación sufrida"></textarea>
-                <label>¿Necesita ayuda psicológica?</label><select id="j_necesita_psico"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
-                <label style="color:#0a2351;margin-top:14px;">📍 Ubicación en el Campamento (cama asignada)</label>
-                <div class="row3">
-                    <div><label>Módulo</label><select id="j_modulo"></select></div>
-                    <div><label>Cubículo</label><select id="j_cubiculo"><option value="">—</option></select></div>
-                    <div><label>Cama</label><input id="j_cama" placeholder="Nº de cama" autocomplete="off" /></div>
-                </div>
-                <label style="color:#0a2351;margin-top:14px;">👕 Ropa que necesita (indica la talla)</label>
-                <div class="row3">
-                    <div><label>Zapatos (talla)</label><input id="j_talla_zapatos" placeholder="Ej: 40" autocomplete="off" /></div>
-                    <div><label>Camisa (talla)</label><input id="j_talla_camisa" placeholder="Ej: M" autocomplete="off" /></div>
-                    <div><label>Pantalón (talla)</label><input id="j_talla_pantalon" placeholder="Ej: 32" autocomplete="off" /></div>
-                </div>
-                <label>Observaciones</label>
-                <textarea id="j_observaciones" placeholder="Notas / observaciones"></textarea>
-                <label>Foto <span class="hint">(opcional)</span></label>
-                <div class="foto-opts">
-                    <label class="fbtn">📷 Tomar foto<input id="j_foto_cam" type="file" accept="image/*" capture="environment" /></label>
-                    <label class="fbtn">🖼️ Subir del teléfono<input id="j_foto_file" type="file" accept="image/*" /></label>
-                </div>
-                <img id="j_foto_prev" class="prev" alt="" />
-            </div>
-
-            <!-- GRUPO FAMILIAR -->
-            <div class="card">
-                <h2>Composición del grupo familiar</h2>
-                <div class="sub">Personas que ingresan junto al jefe de familia (sin incluirlo a él). <b>Carga familiar: <span id="cargaFam">0</span></b></div>
-                <div id="miembros"></div>
-                <button type="button" class="btn-add" id="btnAddMiembro">+ Agregar integrante</button>
+                <h2>Familias del inmueble</h2>
+                <div class="sub">Una es la familia del <b>dueño</b>. Si vivían otras familias en el mismo inmueble (no dueñas), agrégalas abajo. Cada familia tiene su <b>jefe de familia</b> e integrantes.</div>
+                <div id="familias"></div>
+                <button type="button" class="btn-add g" id="btnAddFamilia">+ Agregar otra familia del mismo inmueble</button>
             </div>
 
             <button class="btn-enviar" id="btnEnviar" type="button">Guardar ingreso</button>
@@ -231,54 +208,34 @@
         const $ = (id) => document.getElementById(id);
         const v = (id) => { const e = $(id); return ((e && e.value) || '').trim(); };
         const soloDig = (s) => (s || '').replace(/\D/g, '');
+        const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
         const SANGRE = ['', 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'No sabe'];
         const sangreOpts = () => SANGRE.map(s => `<option value="${s}">${s || '—'}</option>`).join('');
-        // Módulos: 1-10 y 14-18 seleccionables; 11-13 reservados. Cubículo en cascada = módulo + a/b/c.
-        const MODULOS_RESERVADOS = ['11', '12', '13'];
-        const moduloOpts = () => {
+        const GENERO_OPTS = '<option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="Otro">Otro</option>';
+        const NAC_OPTS = '<option value="V">V</option><option value="E">E</option>';
+        const SIN_LAB = ['', 'Empleado formal', 'Empleado informal', 'Desempleado', 'Jubilado / Pensionado', 'Estudiante', 'Ama de casa', 'Otro'];
+        const NIV_ACAD = ['', 'Sin estudios', 'Primaria', 'Bachillerato', 'Técnico / TSU', 'Universitario', 'Postgrado'];
+        const NIV_INSTR = ['', 'Educación Inicial', 'Educación Básica', 'Educación Media', 'Educación Superior'];
+        const PARENTESCO = ['', 'Hijo/a', 'Esposo/a', 'Madre', 'Padre', 'Hermano/a', 'Abuelo/a', 'Nieto/a', 'Otro'];
+        const optList = (arr) => arr.map(s => `<option value="${s}">${s || '—'}</option>`).join('');
+        const siNo = '<option value="">—</option><option value="Sí">Sí</option><option value="No">No</option>';
+
+        // Planta (antes "Módulo"): 1-10 y 14-18 seleccionables; 11-13 reservados. Cubículo en cascada = planta + a/b/c.
+        const PLANTAS_RESERVADAS = ['11', '12', '13'];
+        const plantaOpts = () => {
             const reg = Array.from({ length: 18 }, (_, i) => {
                 const n = String(i + 1);
-                return MODULOS_RESERVADOS.includes(n) ? `<option value="" disabled>Módulo ${n} (reservado)</option>` : `<option value="${n}">Módulo ${n}</option>`;
+                return PLANTAS_RESERVADAS.includes(n) ? `<option value="" disabled>Planta ${n} (reservada)</option>` : `<option value="${n}">Planta ${n}</option>`;
             }).join('');
-            const fn = Array.from({ length: 10 }, (_, i) => `<option value="FN${i + 1}">Módulo ${i + 1} — Familia numerosa</option>`).join('');
-            return '<option value="">—</option><optgroup label="Módulos">' + reg + '</optgroup><optgroup label="Familias numerosas (1-10)">' + fn + '</optgroup>';
+            const fn = Array.from({ length: 10 }, (_, i) => `<option value="FN${i + 1}">Planta ${i + 1} — Familia numerosa</option>`).join('');
+            return '<option value="">—</option><optgroup label="Plantas">' + reg + '</optgroup><optgroup label="Familias numerosas (1-10)">' + fn + '</optgroup>';
         };
-        function poblarCubiculos(modEl, cubEl) {
-            const m = modEl.value, prev = cubEl.value;
+        function poblarCubiculos(plEl, cubEl) {
+            const m = plEl.value, prev = cubEl.value;
             cubEl.innerHTML = '<option value="">—</option>' + (m ? ['a', 'b', 'c'].map(L => `<option value="${m}${L}">${m}${L}</option>`).join('') : '');
             cubEl.value = (prev && m && [m + 'a', m + 'b', m + 'c'].includes(prev)) ? prev : '';
         }
 
-        // Prellenar fecha/hora + tipo de sangre
-        (function () {
-            const d = new Date();
-            const p = n => String(n).padStart(2, '0');
-            $('fecha_ingreso').value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-            $('hora').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
-            $('j_tipo_sangre').innerHTML = sangreOpts();
-            $('j_modulo').innerHTML = moduloOpts();
-            const MIR_MUN = ["Acevedo", "Andrés Bello", "Baruta", "Brión", "Buroz", "Carrizal", "Chacao", "Cristóbal Rojas", "El Hatillo", "Guaicaipuro", "Independencia", "Lander", "Los Salias", "Páez", "Paz Castillo", "Pedro Gual", "Plaza", "Simón Bolívar", "Sucre", "Urdaneta", "Zamora"];
-            const MIR_PARR = ["Altagracia de la Montaña", "Araira", "Araguita", "Arévalo González", "Birongo", "Capaya", "Carrizal", "Cartanal", "Caucagua", "Caucagüita", "Cecilio Acosta", "Chacao", "Charallave", "Chirimena", "Cúa", "Cumbo", "Cúpira", "Curiepe", "El Café", "El Cafetal", "El Guapo", "El Hatillo", "El Jarillo", "Filas de Mariche", "Guatire", "Higuerote", "La Cabrera", "La Democracia", "La Dolorita", "La Mata", "Las Brisas", "Las Minas", "Leoncio Martín", "Los Teques", "Mamporal", "Marizapa", "Nuestra Señora del Rosario de Baruta", "Ocumare del Tuy", "Panaquire", "Paparo", "Paracoto", "Petare", "Ribas", "Río Chico", "San Antonio de los Altos", "San Antonio de Yare", "San Bárbara", "San Fernando Rey", "San Francisco de Yare", "San José de Barlovento", "San Pedro", "Santa Lucía del Tuy", "Santa Rita", "Siquire", "Soapire", "Tácata", "Tacarigua de Brión", "Tacarigua de la Laguna"];
-            $('gs_municipio').innerHTML = '<option value="">Selecciona…</option>' + MIR_MUN.map(m => `<option>${m}</option>`).join('');
-            $('gs_parroquia').innerHTML = '<option value="">Selecciona…</option>' + MIR_PARR.map(x => `<option>${x}</option>`).join('');
-        })();
-        $('j_modulo').addEventListener('change', () => poblarCubiculos($('j_modulo'), $('j_cubiculo')));
-
-        // Estado -> Municipio
-        function poblarEstados() {
-            const M = window.MUNICIPIOS || {};
-            $('estado').innerHTML = '<option value="">Selecciona…</option>' + Object.keys(M).map(e => `<option value="${e}">${e}</option>`).join('');
-        }
-        function poblarMunicipios() {
-            const M = window.MUNICIPIOS || {};
-            const lista = M[$('estado').value] || [];
-            $('municipio').innerHTML = '<option value="">Selecciona…</option>' + lista.map(m => `<option value="${m}">${m}</option>`).join('') + '<option value="Otro">Otro</option>';
-        }
-        window.addEventListener('DOMContentLoaded', poblarEstados);
-        if (window.MUNICIPIOS) poblarEstados();
-        $('estado').addEventListener('change', poblarMunicipios);
-
-        // Edad automática desde fecha de nacimiento
         function edadDeFecha(fecha) {
             if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return '';
             const [a, m, d] = fecha.split('-').map(Number);
@@ -286,7 +243,39 @@
             if (h.getMonth() + 1 < m || (h.getMonth() + 1 === m && h.getDate() < d)) e--;
             return (e >= 0 && e <= 120) ? e : '';
         }
-        $('j_fecha_nac').addEventListener('change', () => { const e = edadDeFecha($('j_fecha_nac').value); if (e !== '') $('j_edad').value = e; });
+
+        // Prellenar fecha/hora + selects municipio/parroquia (Miranda) de gestión social
+        (function () {
+            const d = new Date();
+            const p = n => String(n).padStart(2, '0');
+            $('fecha_ingreso').value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+            $('hora').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
+            const MIR_MUN = ["Acevedo", "Andrés Bello", "Baruta", "Brión", "Buroz", "Carrizal", "Chacao", "Cristóbal Rojas", "El Hatillo", "Guaicaipuro", "Independencia", "Lander", "Los Salias", "Páez", "Paz Castillo", "Pedro Gual", "Plaza", "Simón Bolívar", "Sucre", "Urdaneta", "Zamora"];
+            const MIR_PARR = ["Altagracia de la Montaña", "Araira", "Araguita", "Arévalo González", "Birongo", "Capaya", "Carrizal", "Cartanal", "Caucagua", "Caucagüita", "Cecilio Acosta", "Chacao", "Charallave", "Chirimena", "Cúa", "Cúpira", "Curiepe", "El Café", "El Cafetal", "El Guapo", "El Hatillo", "El Jarillo", "Guatire", "Higuerote", "La Democracia", "La Dolorita", "Los Teques", "Mamporal", "Ocumare del Tuy", "Panaquire", "Paparo", "Paracoto", "Petare", "Ribas", "Río Chico", "San Antonio de los Altos", "San Antonio de Yare", "San Fernando Rey", "San Francisco de Yare", "San José de Barlovento", "San Pedro", "Santa Lucía del Tuy", "Santa Teresa del Tuy", "Tácata", "Tacarigua de Brión", "Tacarigua de la Laguna"];
+            $('gs_municipio').innerHTML = '<option value="">Selecciona…</option>' + MIR_MUN.map(m => `<option>${m}</option>`).join('');
+            $('gs_parroquia').innerHTML = '<option value="">Selecciona…</option>' + MIR_PARR.map(x => `<option>${x}</option>`).join('');
+        })();
+
+        // Inmueble: estado -> municipio (municipios-data.js)
+        function poblarEstados() {
+            const M = window.MUNICIPIOS || {};
+            $('im_estado').innerHTML = '<option value="">Selecciona…</option>' + Object.keys(M).map(e => `<option value="${e}">${e}</option>`).join('');
+        }
+        function poblarMunicipios() {
+            const M = window.MUNICIPIOS || {};
+            const lista = M[$('im_estado').value] || [];
+            $('im_municipio').innerHTML = '<option value="">Selecciona…</option>' + lista.map(m => `<option value="${m}">${m}</option>`).join('') + '<option value="Otro">Otro</option>';
+        }
+        window.addEventListener('DOMContentLoaded', poblarEstados);
+        if (window.MUNICIPIOS) poblarEstados();
+        $('im_estado').addEventListener('change', poblarMunicipios);
+
+        // Tipo de vivienda -> número de casa / piso
+        document.querySelectorAll('input[name="im_tipo"]').forEach(r => r.addEventListener('change', () => {
+            const val = (document.querySelector('input[name="im_tipo"]:checked') || {}).value;
+            $('wrapNumeroCasa').classList.toggle('hidden', val !== 'Casa');
+            $('wrapPiso').classList.toggle('hidden', val !== 'Apartamento');
+        }));
 
         // ---- Validación CNE (autocompleta nombre + fecha; si no aparece, se llena a mano) ----
         const CNE_ENDPOINT = 'https://tfbzghjjfcaqmkzsxrrs.supabase.co/functions/v1/consultar-cedula';
@@ -316,7 +305,6 @@
                 if (!ok) { cedulaEl.style.background = bg; verBotonDateas(cedulaEl, num); }
             });
         }
-        function escCne(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
         function dateasURL(num) { return 'https://www.google.com/search?q=' + encodeURIComponent(String(num || '').replace(/\D/g, '') + ' dateas.com'); }
         function verBotonDateas(cedulaEl, num) {
             const cont = cedulaEl.closest('div') || cedulaEl.parentElement;
@@ -329,7 +317,7 @@
             const c = d.cne || {};
             const nombre = [d.primer_nombre, d.segundo_nombre, d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ');
             const cedTxt = (d.nacionalidad === 'E' ? 'E' : 'V') + '-' + (d.cedula || '');
-            const fila = (k, v) => `<div class="cne-row"><span>${escCne(k)}</span><b>${escCne(v) || '—'}</b></div>`;
+            const fila = (k, val) => `<div class="cne-row"><span>${esc(k)}</span><b>${esc(val) || '—'}</b></div>`;
             $('cneBody').innerHTML =
                 '<div class="cne-sec">Identidad</div>' +
                 fila('Nombres y apellidos', nombre) + fila('Cédula', cedTxt) +
@@ -349,7 +337,6 @@
             if (!btn) { btn = document.createElement('button'); btn.type = 'button'; btn.className = 'cne-ver'; btn.textContent = '🗳️ Ver datos del CNE (dónde vota)'; cont.appendChild(btn); }
             btn.onclick = () => mostrarCNE(d); btn.style.display = '';
         }
-        engancharCNE($('j_cedula'), $('j_nombre'), $('j_fecha_nac'), $('j_nacionalidad'));
 
         // Compresión de foto -> dataURL JPEG (máx 900px)
         function comprimir(file) {
@@ -372,138 +359,323 @@
                 reader.readAsDataURL(file);
             });
         }
-        let fotoJefe = '';
-        async function setFotoJefe(file) { fotoJefe = await comprimir(file); if (fotoJefe) { $('j_foto_prev').src = fotoJefe; $('j_foto_prev').style.display = 'block'; } else { $('j_foto_prev').style.display = 'none'; } }
-        $('j_foto_cam').addEventListener('change', e => setFotoJefe(e.target.files[0]));
-        $('j_foto_file').addEventListener('change', e => setFotoJefe(e.target.files[0]));
 
-        // Miembros del grupo familiar (dinámico)
-        const fotosMiembros = {};
-        let mbSeq = 0;
-        function actualizarCarga() {
-            const list = document.querySelectorAll('#miembros .miembro');
-            $('cargaFam').textContent = list.length;
-            list.forEach((el, i) => { el.querySelector('.mb-num').textContent = '#' + (i + 1); });
+        // ---------- Toggle condicional genérico dentro de un contenedor ----------
+        function wireCond(scope) {
+            scope.querySelectorAll('[data-cond]').forEach(sel => {
+                const box = scope.querySelector('.condbox[data-for="' + sel.dataset.cond + '"]');
+                if (!box) return;
+                const upd = () => { box.classList.toggle('hidden', sel.value !== 'Sí'); };
+                sel.addEventListener('change', upd); upd();
+            });
         }
-        function agregarMiembro() {
-            const id = 'mb_' + (++mbSeq);
-            const div = document.createElement('div');
-            div.className = 'miembro'; div.dataset.id = id;
-            div.innerHTML = `
-                <div class="mb-head">Integrante <span class="mb-num"></span> <button type="button" class="mb-del">✕ Quitar</button></div>
+
+        // ---------- Plantilla del JEFE de familia (dentro de una .familia) ----------
+        function jefeHTML() {
+            return `
+            <div class="seclabel">Jefe de familia</div>
+            <label>Nombre y apellido *</label>
+            <input data-jf="nombre" placeholder="Nombre completo" autocomplete="off" />
+            <div class="row3">
+                <div><label>Nacionalidad</label><select data-jf="nacionalidad">${NAC_OPTS}</select></div>
+                <div><label>Nº de cédula</label><input data-jf="cedula" inputmode="numeric" autocomplete="off" /></div>
+                <div><label>Teléfono</label><input data-jf="telefono" inputmode="tel" autocomplete="off" /></div>
+            </div>
+            <div class="row3">
+                <div><label>Fecha de nacimiento</label><input data-jf="fecha_nac" type="date" class="jf-fnac" /></div>
+                <div><label>Edad</label><input data-jf="edad" type="number" min="0" max="120" class="jf-edad" /></div>
+                <div><label>Género</label><select data-jf="genero">${GENERO_OPTS}</select></div>
+            </div>
+            <div class="row3">
+                <div><label>Tipo de sangre</label><select data-jf="tipo_sangre">${sangreOpts()}</select></div>
+                <div><label>Nivel de instrucción</label><select data-jf="nivel_instruccion">${optList(NIV_INSTR)}</select></div>
+                <div><label>¿Es el dueño del inmueble?</label><select data-jf="es_dueno">${siNo}</select></div>
+            </div>
+
+            <div class="seclabel">Situación laboral</div>
+            <div class="row3">
+                <div><label>¿Trabaja?</label><select data-jf="trabaja" data-cond="trabaja">${siNo}</select></div>
+                <div><label>Situación laboral</label><select data-jf="situacion_laboral">${optList(SIN_LAB)}</select></div>
+                <div><label>¿Tiene pareja?</label><select data-jf="tiene_pareja">${siNo}</select></div>
+            </div>
+            <div class="condbox hidden" data-for="trabaja">
                 <div class="row2">
-                    <div><label>Nombre y apellido</label><input data-f="nombre" autocomplete="off" /></div>
-                    <div><label>Parentesco</label><input data-f="parentesco" placeholder="Hijo/a, esposo/a…" autocomplete="off" /></div>
+                    <div><label>Lugar de trabajo</label><input data-jf="lugar_trabajo" autocomplete="off" /></div>
+                    <div><label>Cargo</label><input data-jf="cargo" autocomplete="off" /></div>
                 </div>
-                <div class="row3">
-                    <div><label>Nacionalidad</label><select data-f="nacionalidad"><option value="V">V</option><option value="E">E</option></select></div>
-                    <div><label>Cédula</label><input data-f="cedula" inputmode="numeric" autocomplete="off" /></div>
-                    <div><label>Teléfono</label><input data-f="telefono" inputmode="tel" autocomplete="off" /></div>
+                <div class="row2">
+                    <div><label>Profesión</label><input data-jf="profesion" autocomplete="off" /></div>
+                    <div><label>Tiempo de servicio</label><input data-jf="tiempo_servicio" autocomplete="off" /></div>
                 </div>
-                <div class="row3">
-                    <div><label>Fecha nacimiento</label><input type="date" data-f="fecha_nac" class="fnac" /></div>
-                    <div><label>Edad</label><input type="number" data-f="edad" class="edad" min="0" max="120" /></div>
-                    <div><label>Género</label><select data-f="genero"><option value="">—</option><option value="F">Femenino</option><option value="M">Masculino</option><option value="Otro">Otro</option></select></div>
-                </div>
-                <div class="row3">
-                    <div><label>Tipo de sangre</label><select data-f="tipo_sangre">${sangreOpts()}</select></div>
-                    <div><label>¿Estudia?</label><select data-f="estudia"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
-                    <div><label>Profesión/ocupación</label><input data-f="profesion" autocomplete="off" /></div>
-                </div>
-                <label>Patología</label><input data-f="patologia" autocomplete="off" />
-                <label>Medicamento que toma</label><input data-f="medicamento" autocomplete="off" />
-                <label>Situación de salud</label><input data-f="situacion_salud" autocomplete="off" />
-                <label>Situación psicológica</label><input data-f="situacion_psicologica" autocomplete="off" />
-                <label>¿Necesita ayuda psicológica?</label><select data-f="necesita_ayuda_psicologica"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
-                <label style="color:#0a2351;margin-top:8px;">📍 Ubicación en el Campamento</label>
-                <div class="row3">
-                    <div><label>Módulo</label><select data-f="modulo"></select></div>
-                    <div><label>Cubículo</label><select data-f="cubiculo"></select></div>
-                    <div><label>Cama</label><input data-f="cama" placeholder="Nº de cama" autocomplete="off" /></div>
-                </div>
-                <label style="color:#0a2351;margin-top:8px;">👕 Ropa que necesita (talla)</label>
-                <div class="row3">
-                    <div><label>Zapatos</label><input data-f="talla_zapatos" placeholder="Talla" autocomplete="off" /></div>
-                    <div><label>Camisa</label><input data-f="talla_camisa" placeholder="Talla" autocomplete="off" /></div>
-                    <div><label>Pantalón</label><input data-f="talla_pantalon" placeholder="Talla" autocomplete="off" /></div>
-                </div>
-                <label>Observaciones</label><input data-f="observaciones" placeholder="Notas" autocomplete="off" />
-                <label>Foto <span class="hint">(opcional)</span></label>
-                <div class="foto-opts">
-                    <label class="fbtn">📷 Tomar foto<input type="file" accept="image/*" capture="environment" class="mb-foto-cam" /></label>
-                    <label class="fbtn">🖼️ Subir del teléfono<input type="file" accept="image/*" class="mb-foto-file" /></label>
-                </div>
-                <img class="prev mb-prev" alt="" />`;
-            $('miembros').appendChild(div);
-            div.querySelector('.mb-del').addEventListener('click', () => { delete fotosMiembros[id]; div.remove(); actualizarCarga(); });
-            div.querySelector('.fnac').addEventListener('change', (e) => { const ed = edadDeFecha(e.target.value); if (ed !== '') div.querySelector('.edad').value = ed; });
-            const setMbFoto = async (file) => { const u = await comprimir(file); fotosMiembros[id] = u; const pv = div.querySelector('.mb-prev'); if (u) { pv.src = u; pv.style.display = 'block'; } else { pv.style.display = 'none'; } };
-            div.querySelector('.mb-foto-cam').addEventListener('change', e => setMbFoto(e.target.files[0]));
-            div.querySelector('.mb-foto-file').addEventListener('change', e => setMbFoto(e.target.files[0]));
-            engancharCNE(div.querySelector('[data-f="cedula"]'), div.querySelector('[data-f="nombre"]'), div.querySelector('[data-f="fecha_nac"]'), div.querySelector('[data-f="nacionalidad"]'));
-            const modEl = div.querySelector('[data-f="modulo"]'), cubEl = div.querySelector('[data-f="cubiculo"]');
-            modEl.innerHTML = moduloOpts();
-            modEl.addEventListener('change', () => poblarCubiculos(modEl, cubEl));
-            actualizarCarga();
-        }
-        $('btnAddMiembro').addEventListener('click', agregarMiembro);
+            </div>
+            <div class="row2">
+                <div><label>Nivel académico</label><select data-jf="nivel_academico">${optList(NIV_ACAD)}</select></div>
+                <div><label>¿Qué estudia?</label><input data-jf="estudia" placeholder="Carrera / año (si estudia)" autocomplete="off" /></div>
+            </div>
 
+            <div class="seclabel">Carnet de la Patria</div>
+            <label>¿Posee carnet de la patria?</label>
+            <select data-jf="carnet_posee" data-cond="carnet">${siNo}</select>
+            <div class="condbox hidden" data-for="carnet">
+                <div class="row2">
+                    <div><label>Código del carnet</label><input data-jf="carnet_codigo" autocomplete="off" /></div>
+                    <div><label>Serial del carnet</label><input data-jf="carnet_serial" autocomplete="off" /></div>
+                </div>
+            </div>
+
+            <div class="seclabel">Salud</div>
+            <div class="row2">
+                <div><label>¿Sufre alguna enfermedad?</label><select data-jf="enfermedad" data-cond="enf">${siNo}</select></div>
+                <div class="condbox hidden" data-for="enf"><label>¿Cuál?</label><input data-jf="enfermedad_cual" autocomplete="off" /></div>
+            </div>
+            <div class="row2">
+                <div><label>¿Tiene alguna discapacidad?</label><select data-jf="discapacidad" data-cond="disc">${siNo}</select></div>
+                <div class="condbox hidden" data-for="disc"><label>¿Cuál?</label><input data-jf="discapacidad_cual" autocomplete="off" /></div>
+            </div>
+            <div class="row2">
+                <div><label>¿Toma algún medicamento?</label><select data-jf="toma_medicamento" data-cond="med">${siNo}</select></div>
+                <div class="condbox hidden" data-for="med"><label>Indique cuál</label><input data-jf="medicamento" autocomplete="off" /></div>
+            </div>
+            <div class="row2">
+                <div><label>¿Requiere ayuda psicológica?</label><select data-jf="necesita_psico">${siNo}</select></div>
+                <div><label>Situación psicológica</label><input data-jf="situacion_psicologica" autocomplete="off" /></div>
+            </div>
+
+            <div class="seclabel">Ropa que necesita · Situación familiar</div>
+            <label>¿Necesita ropa?</label>
+            <select data-jf="necesita_ropa" data-cond="ropa">${siNo}</select>
+            <div class="condbox hidden" data-for="ropa">
+                <div class="row3">
+                    <div><label>Camisa (talla)</label><input data-jf="talla_camisa" autocomplete="off" /></div>
+                    <div><label>Pantalón (talla)</label><input data-jf="talla_pantalon" autocomplete="off" /></div>
+                    <div><label>Zapato (talla)</label><input data-jf="talla_zapatos" autocomplete="off" /></div>
+                </div>
+                <label>Ropa interior (talla)</label><input data-jf="talla_ropa_interior" autocomplete="off" />
+            </div>
+            <div class="row2">
+                <div><label>¿Familiar desaparecido o fallecido?</label><select data-jf="familiar_desaparecido">${siNo}</select></div>
+                <div><label>¿Familiar en otro estado?</label><select data-jf="familiar_otro_estado">${siNo}</select></div>
+            </div>
+
+            <div class="seclabel">Otros · Ubicación en el campamento</div>
+            <label>Afectación por el terremoto</label>
+            <textarea data-jf="afectacion" placeholder="Daños / afectación sufrida"></textarea>
+            <label>Observaciones</label>
+            <textarea data-jf="observaciones" placeholder="Notas / observaciones"></textarea>
+            <div class="row3">
+                <div><label>Planta</label><select data-jf="planta" class="jf-planta"></select></div>
+                <div><label>Cubículo</label><select data-jf="cubiculo" class="jf-cubiculo"><option value="">—</option></select></div>
+                <div><label>Cama</label><input data-jf="cama" placeholder="Nº de cama" autocomplete="off" /></div>
+            </div>
+            <label>Foto <span class="hint">(opcional)</span></label>
+            <div class="foto-opts">
+                <label class="fbtn">📷 Tomar foto<input type="file" accept="image/*" capture="environment" class="jf-foto-cam" /></label>
+                <label class="fbtn">🖼️ Subir del teléfono<input type="file" accept="image/*" class="jf-foto-file" /></label>
+            </div>
+            <img class="prev jf-prev" alt="" />`;
+        }
+
+        // ---------- Plantilla de un INTEGRANTE ----------
+        function integranteHTML() {
+            return `
+            <div class="mb-head">Integrante <span class="mb-num"></span> <button type="button" class="mb-del">✕ Quitar</button></div>
+            <div class="row2">
+                <div><label>¿Es jefe de esta familia?</label><select data-if="es_jefe">${siNo}</select></div>
+                <div><label>Nombre y apellido</label><input data-if="nombre" autocomplete="off" /></div>
+            </div>
+            <div class="row2">
+                <div><label>Parentesco</label><select data-if="parentesco">${optList(PARENTESCO)}</select></div>
+                <div><label>Nacionalidad</label><select data-if="nacionalidad">${NAC_OPTS}</select></div>
+            </div>
+            <div class="row3">
+                <div><label>Cédula</label><input data-if="cedula" inputmode="numeric" autocomplete="off" /></div>
+                <div><label>Teléfono</label><input data-if="telefono" inputmode="tel" autocomplete="off" /></div>
+                <div><label>Fecha de nacimiento</label><input data-if="fecha_nac" type="date" class="if-fnac" /></div>
+            </div>
+            <div class="row3">
+                <div><label>Edad</label><input data-if="edad" type="number" min="0" max="120" class="if-edad" /></div>
+                <div><label>Género</label><select data-if="genero">${GENERO_OPTS}</select></div>
+                <div><label>Tipo de sangre</label><select data-if="tipo_sangre">${sangreOpts()}</select></div>
+            </div>
+            <div class="repbox if-rep hidden">
+                <div class="rt">👤 Datos del representante</div>
+                <div class="sub" style="font-size:11.5px;color:#15803d;">El integrante es menor de edad. Al escribir la cédula del representante se cargan sus datos.</div>
+                <div class="row3">
+                    <div><label>Nacionalidad</label><select data-if="rep_nacionalidad">${NAC_OPTS}</select></div>
+                    <div><label>Cédula del representante</label><input data-if="rep_cedula" inputmode="numeric" autocomplete="off" /></div>
+                    <div><label>Nombre y apellido</label><input data-if="rep_nombre" autocomplete="off" /></div>
+                </div>
+                <div class="row2">
+                    <div><label>Teléfono</label><input data-if="rep_telefono" inputmode="tel" autocomplete="off" /></div>
+                    <div><label>Parentesco con el menor</label><select data-if="rep_parentesco">${optList(PARENTESCO)}</select></div>
+                </div>
+            </div>
+            <label>Foto <span class="hint">(opcional)</span></label>
+            <div class="foto-opts">
+                <label class="fbtn">📷 Tomar foto<input type="file" accept="image/*" capture="environment" class="if-foto-cam" /></label>
+                <label class="fbtn">🖼️ Subir del teléfono<input type="file" accept="image/*" class="if-foto-file" /></label>
+            </div>
+            <img class="prev if-prev" alt="" />`;
+        }
+
+        // ---------- Wiring de un integrante ----------
+        function wireIntegrante(row) {
+            const q = s => row.querySelector(s);
+            const ced = q('[data-if="cedula"]'), nom = q('[data-if="nombre"]'), fnac = q('.if-fnac'), edad = q('.if-edad'), nac = q('[data-if="nacionalidad"]');
+            engancharCNE(ced, nom, fnac, nac);
+            const repBox = q('.if-rep');
+            const actualizarRep = () => {
+                const e = edad.value !== '' ? Number(edad.value) : (edadDeFecha(fnac.value) === '' ? null : edadDeFecha(fnac.value));
+                repBox.classList.toggle('hidden', !(e !== null && e >= 0 && e < 18));
+            };
+            fnac.addEventListener('change', () => { const e = edadDeFecha(fnac.value); if (e !== '') edad.value = e; actualizarRep(); });
+            edad.addEventListener('input', actualizarRep);
+            // CNE del representante (autocompleta su nombre)
+            engancharCNE(q('[data-if="rep_cedula"]'), q('[data-if="rep_nombre"]'), null, q('[data-if="rep_nacionalidad"]'));
+            // Foto del integrante
+            const prev = q('.if-prev');
+            const setFoto = async (file) => { const u = await comprimir(file); row._foto = u; if (u) { prev.src = u; prev.style.display = 'block'; } else { prev.style.display = 'none'; } };
+            q('.if-foto-cam').addEventListener('change', e => setFoto(e.target.files[0]));
+            q('.if-foto-file').addEventListener('change', e => setFoto(e.target.files[0]));
+            q('.mb-del').addEventListener('click', () => { row.remove(); });
+        }
+
+        // ---------- Wiring de una familia ----------
+        function wireFamilia(card) {
+            const q = s => card.querySelector(s);
+            // Jefe: CNE + edad + planta + foto + condicionales
+            const ced = q('[data-jf="cedula"]'), nom = q('[data-jf="nombre"]'), fnac = q('.jf-fnac'), edad = q('.jf-edad'), nac = q('[data-jf="nacionalidad"]');
+            engancharCNE(ced, nom, fnac, nac);
+            fnac.addEventListener('change', () => { const e = edadDeFecha(fnac.value); if (e !== '') edad.value = e; });
+            const planta = q('.jf-planta'), cub = q('.jf-cubiculo');
+            planta.innerHTML = plantaOpts();
+            planta.addEventListener('change', () => poblarCubiculos(planta, cub));
+            const prev = q('.jf-prev');
+            const setFoto = async (file) => { const u = await comprimir(file); card._jefeFoto = u; if (u) { prev.src = u; prev.style.display = 'block'; } else { prev.style.display = 'none'; } };
+            q('.jf-foto-cam').addEventListener('change', e => setFoto(e.target.files[0]));
+            q('.jf-foto-file').addEventListener('change', e => setFoto(e.target.files[0]));
+            wireCond(card);
+            // Integrantes
+            const cont = q('.integrantes');
+            q('.btn-add-int').addEventListener('click', () => {
+                const row = document.createElement('div');
+                row.className = 'integrante';
+                row.innerHTML = integranteHTML();
+                cont.appendChild(row);
+                wireIntegrante(row);
+                renumerarInt(card);
+            });
+            const del = q('.fam-del');
+            if (del) del.addEventListener('click', () => { card.remove(); });
+        }
+        function renumerarInt(card) {
+            card.querySelectorAll('.integrante .mb-num').forEach((el, i) => el.textContent = '#' + (i + 1));
+        }
+
+        // ---------- Agregar familia ----------
+        let famSeq = 0;
+        function agregarFamilia(esDueno) {
+            famSeq++;
+            const card = document.createElement('div');
+            card.className = 'familia' + (esDueno ? '' : ' otra');
+            card.innerHTML = `
+                <div class="fam-head">
+                    <div class="t">${esDueno ? '👑' : '👪'} Familia ${famSeq} <span class="badge">${esDueno ? 'DUEÑO DEL INMUEBLE' : 'OTRA FAMILIA'}</span></div>
+                    ${esDueno ? '' : '<button type="button" class="fam-del">✕ Quitar familia</button>'}
+                </div>
+                ${jefeHTML()}
+                <div class="seclabel">Integrantes de esta familia</div>
+                <div class="integrantes"></div>
+                <button type="button" class="btn-add sm btn-add-int">+ Agregar integrante</button>`;
+            $('familias').appendChild(card);
+            wireFamilia(card);
+            // Por defecto: la primera familia es del dueño (es_dueno = Sí), las demás No.
+            const esd = card.querySelector('[data-jf="es_dueno"]');
+            if (esd) esd.value = esDueno ? 'Sí' : 'No';
+            return card;
+        }
+        agregarFamilia(true); // familia del dueño por defecto
+        $('btnAddFamilia').addEventListener('click', () => { agregarFamilia(false).scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+
+        // ---------- Guardar ----------
         function mostrarMsg(t) { const m = $('msg'); m.textContent = t; m.className = 'msg err'; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+        const JF_FIELDS = ['nombre', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'nivel_instruccion', 'es_dueno', 'trabaja', 'situacion_laboral', 'tiene_pareja', 'lugar_trabajo', 'cargo', 'profesion', 'tiempo_servicio', 'nivel_academico', 'estudia', 'carnet_posee', 'carnet_codigo', 'carnet_serial', 'enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'necesita_ropa', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'talla_ropa_interior', 'familiar_desaparecido', 'familiar_otro_estado', 'afectacion', 'observaciones', 'planta', 'cubiculo', 'cama'];
+        const IF_FIELDS = ['es_jefe', 'nombre', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'rep_nacionalidad', 'rep_cedula', 'rep_nombre', 'rep_telefono', 'rep_parentesco'];
+        const CEDULA_KEYS = { cedula: 1, telefono: 1, rep_cedula: 1, rep_telefono: 1 };
+
+        function leerJefe(card) {
+            const o = {};
+            JF_FIELDS.forEach(f => {
+                const el = card.querySelector('[data-jf="' + f + '"]');
+                let val = el ? (el.value || '').trim() : '';
+                if (CEDULA_KEYS[f]) val = soloDig(val);
+                o[f] = val;
+            });
+            o.tiene_foto = !!card._jefeFoto;
+            return o;
+        }
+        function leerIntegrante(row) {
+            const o = {};
+            IF_FIELDS.forEach(f => {
+                const el = row.querySelector('[data-if="' + f + '"]');
+                let val = el ? (el.value || '').trim() : '';
+                if (CEDULA_KEYS[f]) val = soloDig(val);
+                o[f] = val;
+            });
+            o.tiene_foto = !!row._foto;
+            return o;
+        }
 
         $('btnEnviar').addEventListener('click', async () => {
             $('msg').className = 'msg';
-            if (!v('j_nombre')) { mostrarMsg('Escribe el nombre y apellido del jefe de familia.'); return; }
+            const familiasEls = Array.from(document.querySelectorAll('#familias .familia'));
+            const jefe0 = familiasEls[0] && familiasEls[0].querySelector('[data-jf="nombre"]');
+            if (!jefe0 || !jefe0.value.trim()) { mostrarMsg('Escribe el nombre del jefe de la familia del dueño.'); return; }
 
-            const miembros = [];
             const fotos = {};
-            if (fotoJefe) fotos.jefe = fotoJefe;
-            document.querySelectorAll('#miembros .miembro').forEach((el, i) => {
-                const g = (f) => { const n = el.querySelector('[data-f="' + f + '"]'); return n ? (n.value || '').trim() : ''; };
-                if (!g('nombre') && !g('cedula')) return; // saltar integrantes vacíos
-                miembros.push({
-                    nombre: g('nombre'), parentesco: g('parentesco'), nacionalidad: g('nacionalidad'),
-                    cedula: soloDig(g('cedula')), telefono: soloDig(g('telefono')), fecha_nac: g('fecha_nac'),
-                    edad: g('edad'), genero: g('genero'), tipo_sangre: g('tipo_sangre'), estudia: g('estudia'),
-                    profesion: g('profesion'), patologia: g('patologia'), medicamento: g('medicamento'),
-                    situacion_salud: g('situacion_salud'), situacion_psicologica: g('situacion_psicologica'),
-                    necesita_ayuda_psicologica: g('necesita_ayuda_psicologica'),
-                    modulo: g('modulo'), cubiculo: g('cubiculo'), cama: g('cama'),
-                    talla_zapatos: g('talla_zapatos'), talla_camisa: g('talla_camisa'), talla_pantalon: g('talla_pantalon'),
-                    observaciones: g('observaciones')
+            let totalPersonas = 0;
+            const familias = familiasEls.map((card, fi) => {
+                const jefe = leerJefe(card);
+                if (card._jefeFoto) fotos['f' + fi + '_jefe'] = card._jefeFoto;
+                const integrantes = [];
+                card.querySelectorAll('.integrante').forEach((row) => {
+                    const it = leerIntegrante(row);
+                    if (!it.nombre && !it.cedula) return; // saltar vacíos
+                    if (row._foto) fotos['f' + fi + '_i' + integrantes.length] = row._foto;
+                    integrantes.push(it);
                 });
-                const fu = fotosMiembros[el.dataset.id];
-                if (fu) fotos['m' + (miembros.length - 1)] = fu;
+                totalPersonas += 1 + integrantes.length;
+                return { es_dueno: jefe.es_dueno || (fi === 0 ? 'Sí' : 'No'), jefe, integrantes };
             });
 
+            const inmueble = {
+                estado: v('im_estado'), municipio: v('im_municipio'), parroquia: v('im_parroquia'),
+                comuna_procedencia: v('im_comuna'), comunidad: v('im_comunidad'), nombre_calle: v('im_calle'),
+                tipo_vivienda: (document.querySelector('input[name="im_tipo"]:checked') || {}).value || '',
+                numero_casa: v('im_numero_casa'), piso: v('im_piso'),
+                gran_mision_vivienda: v('im_gran_mision'), nombre_casa_edificio: v('im_nombre_edif'),
+                condicion: v('im_condicion'),
+                tiempo_permanencia_num: v('im_tiempo_num'), tiempo_permanencia_unidad: v('im_tiempo_unidad'),
+                cant_familias: v('im_cant_familias'), cant_personas: v('im_cant_personas')
+            };
+            const gestion_social = {
+                comuna: v('gs_comuna'), vocero_nombre: v('gs_vocero_nombre'), vocero_apellido: v('gs_vocero_apellido'),
+                carnet_fecha: v('gs_carnet_fecha'), vocero_ci: soloDig(v('gs_vocero_ci')), vocero_tel: soloDig(v('gs_vocero_tel')),
+                municipio: v('gs_municipio'), parroquia: v('gs_parroquia'), sector: v('gs_sector'),
+                correo: v('gs_correo'), ingreso_familiar: v('gs_ingreso_familiar'), descripcion_caso: v('gs_descripcion'),
+                estatus_habitacional: v('gs_estatus')
+            };
+
             const payload = {
-                n_registro: v('n_registro'), fecha_ingreso: v('fecha_ingreso'), hora: v('hora'),
-                persona_receptor: v('persona_receptor'),
-                estado: v('estado'), municipio: v('municipio'), comuna_procedencia: v('comuna_procedencia'), comunidad_sector: v('comunidad_sector'),
-                gestion_social: { comuna: v('gs_comuna'), vocero_nombre: v('gs_vocero_nombre'), vocero_apellido: v('gs_vocero_apellido'), carnet_fecha: v('gs_carnet_fecha'), vocero_ci: v('gs_vocero_ci'), vocero_tel: v('gs_vocero_tel'), municipio: v('gs_municipio'), parroquia: v('gs_parroquia'), sector: v('gs_sector'), estatus_habitacional: v('gs_estatus') },
-                jefe: {
-                    nombre: v('j_nombre'), nacionalidad: v('j_nacionalidad'), cedula: soloDig(v('j_cedula')),
-                    telefono: soloDig(v('j_telefono')), fecha_nac: v('j_fecha_nac'), edad: v('j_edad'),
-                    genero: v('j_genero'), tipo_sangre: v('j_tipo_sangre'), profesion: v('j_profesion'),
-                    situacion_laboral: v('j_situacion_laboral'), nivel_academico: v('j_nivel_academico'), estudia: v('j_estudia'),
-                    medicamento: v('j_medicamento'),
-                    situacion_psicologica: v('j_situacion_psicologica'),
-                    afectacion: v('j_afectacion'),
-                    necesita_ayuda_psicologica: v('j_necesita_psico'),
-                    modulo: v('j_modulo'), cubiculo: v('j_cubiculo'), cama: v('j_cama'),
-                    talla_zapatos: v('j_talla_zapatos'), talla_camisa: v('j_talla_camisa'), talla_pantalon: v('j_talla_pantalon'),
-                    observaciones: v('j_observaciones'),
-                    correo: v('js_correo'), nivel_instruccion: v('js_nivel_instruccion'), carnet_patria_codigo: v('js_carnet_codigo'), carnet_patria_serial: v('js_carnet_serial'), lugar_trabajo: v('js_lugar_trabajo'), cargo: v('js_cargo'), tiempo_servicio: v('js_tiempo_servicio'), enfermedad: v('js_enfermedad'), enfermedad_cual: v('js_enfermedad_cual'), discapacidad: v('js_discapacidad'), discapacidad_cual: v('js_discapacidad_cual'), ingreso_familiar: v('js_ingreso_familiar'), tiene_pareja: v('js_tiene_pareja'), descripcion_caso: v('js_descripcion'),
-                    tiene_foto: !!fotoJefe
-                },
-                miembros: miembros,
-                carga_familiar: miembros.length,
-                total_personas: 1 + miembros.length,
+                n_registro: '', fecha_ingreso: v('fecha_ingreso'), hora: v('hora'), persona_receptor: v('persona_receptor'),
+                inmueble, gestion_social, familias,
+                total_familias: familias.length, total_personas: totalPersonas,
                 fecha_registro: Date.now()
             };
 
             const btn = $('btnEnviar'); btn.disabled = true; btn.textContent = 'Enviando…';
             try {
-                // Nº de registro automático y secuencial (contador atómico)
                 let numRegistro = '';
                 try { const res = await runTransaction(ref(database, 'zamurera_contador'), (cur) => (Number(cur) || 0) + 1); if (res.committed && res.snapshot.exists()) numRegistro = String(res.snapshot.val()).padStart(4, '0'); } catch (e) {}
                 payload.n_registro = numRegistro;

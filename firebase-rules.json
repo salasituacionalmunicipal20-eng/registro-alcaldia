@@ -91,7 +91,7 @@
       ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
       "$id": {
         ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
-        ".validate": "newData.hasChildren(['jefe']) && newData.child('jefe').child('nombre').isString() && newData.child('jefe').child('nombre').val().length <= 200"
+        ".validate": "(newData.child('familias/0/jefe/nombre').isString() && newData.child('familias/0/jefe/nombre').val().length <= 200) || (newData.child('jefe/nombre').isString() && newData.child('jefe/nombre').val().length <= 200)"
       }
     },
     "zamurera_fotos": {
