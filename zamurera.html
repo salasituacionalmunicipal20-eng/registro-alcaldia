@@ -163,9 +163,7 @@
                     <div><label>Nivel académico</label><select id="j_nivel_academico"><option value="">—</option><option>Sin estudios</option><option>Primaria</option><option>Bachillerato</option><option>Técnico / TSU</option><option>Universitario</option><option>Postgrado</option></select></div>
                     <div><label>¿Qué estudia?</label><input id="j_estudia" placeholder="Carrera / año (si estudia)" autocomplete="off" /></div>
                 </div>
-                <label>Patología</label><input id="j_patologia" autocomplete="off" />
                 <label>Medicamento que toma</label><input id="j_medicamento" autocomplete="off" />
-                <label>Situación de salud</label><textarea id="j_situacion_salud"></textarea>
                 <label>Situación psicológica</label><textarea id="j_situacion_psicologica"></textarea>
                 <label>Afectación por el terremoto</label><textarea id="j_afectacion" placeholder="Daños / afectación sufrida"></textarea>
                 <label>¿Necesita ayuda psicológica?</label><select id="j_necesita_psico"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
@@ -231,7 +229,7 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         const $ = (id) => document.getElementById(id);
-        const v = (id) => ($(id).value || '').trim();
+        const v = (id) => { const e = $(id); return ((e && e.value) || '').trim(); };
         const soloDig = (s) => (s || '').replace(/\D/g, '');
         const SANGRE = ['', 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'No sabe'];
         const sangreOpts = () => SANGRE.map(s => `<option value="${s}">${s || '—'}</option>`).join('');
@@ -487,8 +485,8 @@
                     telefono: soloDig(v('j_telefono')), fecha_nac: v('j_fecha_nac'), edad: v('j_edad'),
                     genero: v('j_genero'), tipo_sangre: v('j_tipo_sangre'), profesion: v('j_profesion'),
                     situacion_laboral: v('j_situacion_laboral'), nivel_academico: v('j_nivel_academico'), estudia: v('j_estudia'),
-                    patologia: v('j_patologia'), medicamento: v('j_medicamento'),
-                    situacion_salud: v('j_situacion_salud'), situacion_psicologica: v('j_situacion_psicologica'),
+                    medicamento: v('j_medicamento'),
+                    situacion_psicologica: v('j_situacion_psicologica'),
                     afectacion: v('j_afectacion'),
                     necesita_ayuda_psicologica: v('j_necesita_psico'),
                     modulo: v('j_modulo'), cubiculo: v('j_cubiculo'), cama: v('j_cama'),
