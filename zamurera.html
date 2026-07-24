@@ -174,6 +174,19 @@
                 <button type="button" class="btn-add g" id="btnAddFamilia">+ Agregar otra familia del mismo inmueble</button>
             </div>
 
+            <!-- ENTREGA DE PRODUCTOS DEL CENTRO DE ACOPIO -->
+            <div class="card">
+                <h2>📦 Entrega de productos del centro de acopio</h2>
+                <div class="sub">¿Se le entregaron productos del Centro de Acopio a este grupo? Solo se puede entregar lo que hay en stock; se descuenta del inventario.</div>
+                <label>¿Entregar productos del centro de acopio?</label>
+                <select id="acopioSiNo"><option value="">—</option><option value="Sí">Sí</option><option value="No">No</option></select>
+                <div id="acopioWrap" class="hidden" style="margin-top:10px;">
+                    <div id="acopioAviso" class="sub" style="color:#0a6cb0;"></div>
+                    <div id="productos"></div>
+                    <button type="button" class="btn-add sm" id="btnAddProducto">+ Agregar producto</button>
+                </div>
+            </div>
+
             <button class="btn-enviar" id="btnEnviar" type="button">Guardar ingreso</button>
             <div id="msg" class="msg"></div>
         </div>
@@ -191,7 +204,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, set, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, set, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -597,6 +610,71 @@
         agregarFamilia(true); // familia del dueño por defecto
         $('btnAddFamilia').addEventListener('click', () => { agregarFamilia(false).scrollIntoView({ behavior: 'smooth', block: 'center' }); });
 
+        // ---------- Entrega de productos del Centro de Acopio ----------
+        const CAT_ACOPIO = ['Alimentos', 'Agua', 'Medicinas', 'Ropa', 'Calzado', 'Colchones / cobijas', 'Artículos de higiene', 'Productos de limpieza', 'Pañales', 'Útiles escolares', 'Otro'];
+        const normA = (s) => (s == null ? '' : String(s)).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        let ACOPIO_INV = []; // [{categoria,articulo,presentacion,unidad,stock}] solo con stock > 0
+        function computarInventario(val) {
+            const map = new Map();
+            Object.values(val || {}).forEach(m => {
+                const art = (m.articulo || '').trim(); if (!art) return;
+                const key = normA(m.categoria) + '||' + normA(art) + '||' + normA(m.presentacion) + '||' + normA(m.unidad);
+                if (!map.has(key)) map.set(key, { categoria: m.categoria || '', articulo: art, presentacion: m.presentacion || '', unidad: m.unidad || '', entradas: 0, salidas: 0 });
+                const it = map.get(key), c = Number(m.cantidad) || 0;
+                if (m.tipo === 'salida') it.salidas += c; else it.entradas += c;
+            });
+            return Array.from(map.values()).map(it => ({ ...it, stock: it.entradas - it.salidas })).filter(it => it.stock > 0)
+                .sort((a, b) => a.categoria.localeCompare(b.categoria, 'es') || a.articulo.localeCompare(b.articulo, 'es'));
+        }
+        try { onValue(ref(database, 'acopio'), (snap) => { ACOPIO_INV = computarInventario(snap.val()); refrescarProductos(); actualizarAvisoAcopio(); }, () => { ACOPIO_INV = []; actualizarAvisoAcopio(); }); } catch (e) {}
+        function itemDeKey(k) { const p = (k || '').split('|||'); return ACOPIO_INV.find(it => it.categoria === p[0] && it.articulo === p[1] && it.presentacion === (p[2] || '') && it.unidad === (p[3] || '')) || null; }
+        function actualizarAvisoAcopio() { const a = $('acopioAviso'); if (a) a.textContent = ACOPIO_INV.length ? (ACOPIO_INV.length + ' artículo(s) con stock disponible.') : 'No hay artículos con stock disponible en el acopio en este momento.'; }
+        function poblarArticulos(row) {
+            const cat = row.querySelector('[data-pr="categoria"]').value;
+            const artSel = row.querySelector('[data-pr="articulo"]'), prev = artSel.value;
+            const items = ACOPIO_INV.filter(it => !cat || it.categoria === cat);
+            artSel.innerHTML = '<option value="">' + (ACOPIO_INV.length ? '— Selecciona del inventario —' : '(Sin stock disponible)') + '</option>' +
+                items.map(it => { const k = [it.categoria, it.articulo, it.presentacion, it.unidad].join('|||'); return `<option value="${esc(k)}">${esc(it.articulo)}${it.presentacion ? ' · ' + esc(it.presentacion) : ''} — ${it.stock} ${esc(it.unidad)} (${esc(it.categoria)})</option>`; }).join('');
+            if (prev && [...artSel.options].some(o => o.value === prev)) artSel.value = prev;
+            actualizarProd(row);
+        }
+        function actualizarProd(row) {
+            const it = itemDeKey(row.querySelector('[data-pr="articulo"]').value);
+            row.querySelector('[data-pr="unidad"]').value = it ? it.unidad : '';
+            row.querySelector('[data-pr="stock"]').value = it ? it.stock : '';
+            const cant = row.querySelector('[data-pr="cantidad"]');
+            if (it) cant.max = it.stock; else cant.removeAttribute('max');
+        }
+        function refrescarProductos() { document.querySelectorAll('#productos .producto').forEach(poblarArticulos); }
+        function renumerarProd() { document.querySelectorAll('#productos .producto .pr-num').forEach((el, i) => el.textContent = '#' + (i + 1)); }
+        function agregarProducto() {
+            const row = document.createElement('div');
+            row.className = 'integrante producto';
+            row.innerHTML = `
+                <div class="mb-head">Producto <span class="pr-num"></span> <button type="button" class="mb-del">✕ Quitar</button></div>
+                <div class="row2">
+                    <div><label>Categoría</label><select data-pr="categoria"><option value="">Todas</option>${CAT_ACOPIO.map(c => `<option>${c}</option>`).join('')}</select></div>
+                    <div><label>Artículo (con stock disponible)</label><select data-pr="articulo"><option value="">— Selecciona —</option></select></div>
+                </div>
+                <div class="row3">
+                    <div><label>Cantidad a entregar</label><input data-pr="cantidad" type="number" min="0" inputmode="numeric" /></div>
+                    <div><label>Unidad</label><input data-pr="unidad" readonly style="background:#eef2f7;" /></div>
+                    <div><label>Disponible</label><input data-pr="stock" readonly style="background:#eef2f7;" /></div>
+                </div>`;
+            $('productos').appendChild(row);
+            row.querySelector('[data-pr="categoria"]').addEventListener('change', () => poblarArticulos(row));
+            row.querySelector('[data-pr="articulo"]').addEventListener('change', () => actualizarProd(row));
+            row.querySelector('[data-pr="cantidad"]').addEventListener('input', () => { const it = itemDeKey(row.querySelector('[data-pr="articulo"]').value); const c = Number(row.querySelector('[data-pr="cantidad"]').value); if (it && c > it.stock) row.querySelector('[data-pr="cantidad"]').value = it.stock; });
+            row.querySelector('.mb-del').addEventListener('click', () => { row.remove(); renumerarProd(); });
+            poblarArticulos(row); renumerarProd();
+        }
+        $('acopioSiNo').addEventListener('change', () => {
+            const on = $('acopioSiNo').value === 'Sí';
+            $('acopioWrap').classList.toggle('hidden', !on);
+            if (on && !document.querySelector('#productos .producto')) agregarProducto();
+        });
+        $('btnAddProducto').addEventListener('click', agregarProducto);
+
         // ---------- Guardar ----------
         function mostrarMsg(t) { const m = $('msg'); m.textContent = t; m.className = 'msg err'; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
@@ -667,12 +745,23 @@
                 estatus_habitacional: v('gs_estatus')
             };
 
+            // Entrega de productos del centro de acopio (se descuentan del inventario desde el tablero admin)
+            const entregas = [];
+            if ($('acopioSiNo').value === 'Sí') {
+                document.querySelectorAll('#productos .producto').forEach(row => {
+                    const it = itemDeKey((row.querySelector('[data-pr="articulo"]') || {}).value);
+                    const cant = Number((row.querySelector('[data-pr="cantidad"]') || {}).value);
+                    if (it && cant > 0) entregas.push({ categoria: it.categoria, articulo: it.articulo, presentacion: it.presentacion, unidad: it.unidad, cantidad: cant });
+                });
+            }
+
             const payload = {
                 n_registro: '', fecha_ingreso: v('fecha_ingreso'), hora: v('hora'), persona_receptor: v('persona_receptor'),
                 inmueble, gestion_social, familias,
                 total_familias: familias.length, total_personas: totalPersonas,
                 fecha_registro: Date.now()
             };
+            if (entregas.length) { payload.entregas = entregas; payload.entregas_posteadas = false; }
 
             const btn = $('btnEnviar'); btn.disabled = true; btn.textContent = 'Enviando…';
             try {

@@ -158,7 +158,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, onValue, get, child, remove, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, onValue, get, child, remove, set, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
 
         const firebaseConfig = {
@@ -309,10 +309,36 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             onValue(ref(database, NODO), (snap) => {
                 const val = snap.val() || {};
                 REGS = Object.entries(val).map(([id, m]) => ({ id, ...m })).sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
-                poblarFiltros(); render();
+                poblarFiltros(); render(); postearEntregasPendientes();
             }, () => { REGS = []; render(); });
         });
         $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch (e) {} location.href = 'index.html'; });
+
+        // Registra automáticamente en /acopio las SALIDAS de las entregas hechas desde el formulario público
+        // (el form solo las anota; aquí, con permiso admin, se descuentan del inventario). Idempotente vía flag.
+        const _postingEntregas = new Set();
+        async function postearEntregasPendientes() {
+            for (const r of REGS) {
+                if (!Array.isArray(r.entregas) || !r.entregas.length || r.entregas_posteadas === true || _postingEntregas.has(r.id)) continue;
+                _postingEntregas.add(r.id);
+                try {
+                    const du = duenoDe(r).jefe || {};
+                    const contra = 'Campamento Temporal · Nº ' + (r.n_registro || '') + (du.nombre ? ' · ' + du.nombre : '');
+                    for (const e of r.entregas) {
+                        const cant = Number(e.cantidad) || 0; if (!(cant > 0) || !e.articulo) continue;
+                        await set(push(ref(database, 'acopio')), {
+                            tipo: 'salida', categoria: e.categoria || '', articulo: e.articulo || '', presentacion: e.presentacion || '',
+                            unidad: e.unidad || '', cantidad: cant, contraparte: contra,
+                            observacion: 'Entrega automática desde el Campamento Temporal (Nº ' + (r.n_registro || '') + ')',
+                            fecha_registro: Date.now(), registrado_por: 'Campamento Temporal (auto)', origen: 'campamento_temporal', ingreso_id: r.id
+                        });
+                    }
+                    await set(ref(database, NODO + '/' + r.id + '/entregas_posteadas'), true);
+                    r.entregas_posteadas = true;
+                } catch (e) { /* si falla, se reintenta en la próxima carga */ }
+                finally { _postingEntregas.delete(r.id); }
+            }
+        }
 
         function poblarFiltros() {
             const setSel = (id, arr, fmt) => { const el = $(id); const prev = el.value; el.innerHTML = '<option value="">' + (el.querySelector('option') ? el.querySelector('option').textContent : 'Todos') + '</option>' + arr.map(x => `<option value="${esc(x)}">${fmt ? fmt(x) : esc(x)}</option>`).join(''); if (prev) el.value = prev; };
@@ -444,6 +470,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                 <h4>Recepción</h4>${RECEP.map(c => fila(c[1], r[c[0]])).join('')}
                 <h4>Inmueble (procedencia)</h4>${INM.map(c => fila(c[1], valInm(inm, c[0]))).join('')}
                 <h4>Gestión social (Vivienda Miranda)</h4>${GS_VOCERO.map(c => fila(c[1], gs[c[0]])).join('')}
+                ${(Array.isArray(r.entregas) && r.entregas.length) ? ('<h4>📦 Productos entregados del acopio ' + (r.entregas_posteadas ? '<span style="font-size:11px;color:#16a34a;">✓ descontados del inventario</span>' : '<span style="font-size:11px;color:#b45309;">pendiente de descontar</span>') + '</h4>' + r.entregas.map(e => fila((e.articulo || '') + (e.presentacion ? ' · ' + e.presentacion : ''), (e.cantidad || '') + ' ' + (e.unidad || '') + (e.categoria ? ' · ' + e.categoria : ''))).join('')) : ''}
                 <h4>Familias</h4>${famsHtml}
                 <button class="cerrar" id="cerrarModal">Cerrar</button>`;
             $('modalBg').classList.add('show');

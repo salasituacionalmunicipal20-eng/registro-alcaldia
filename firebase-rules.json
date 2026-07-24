@@ -67,7 +67,7 @@
       }
     },
     "acopio": {
-      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      ".read": true,
       "$id": {
         ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
         ".validate": "newData.hasChildren(['tipo','articulo','cantidad']) && newData.child('articulo').isString() && newData.child('articulo').val().length <= 200"
