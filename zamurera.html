@@ -106,7 +106,7 @@
                 <div class="row3">
                     <div><label>Comuna de procedencia</label><input id="im_comuna" autocomplete="off" /></div>
                     <div><label>Comunidad de procedencia</label><input id="im_comunidad" autocomplete="off" /></div>
-                    <div><label>Nombre de la calle</label><input id="im_calle" autocomplete="off" /></div>
+                    <div><label>Nombre de la calle (dirección) *</label><input id="im_calle" autocomplete="off" /></div>
                 </div>
 
                 <div class="seclabel">Características del inmueble</div>
@@ -156,10 +156,7 @@
                     <div><label>Parroquia</label><select id="gs_parroquia"><option value="">Selecciona…</option></select></div>
                     <div><label>Sector</label><input id="gs_sector" autocomplete="off" /></div>
                 </div>
-                <div class="row2">
-                    <div><label>Correo electrónico</label><input id="gs_correo" type="email" autocomplete="off" /></div>
-                    <div><label>Ingreso familiar</label><input id="gs_ingreso_familiar" autocomplete="off" /></div>
-                </div>
+                <label>Correo electrónico</label><input id="gs_correo" type="email" autocomplete="off" />
                 <label>Descripción del caso</label>
                 <textarea id="gs_descripcion" placeholder="Descripción del caso social"></textarea>
                 <label>Estatus habitacional</label>
@@ -391,11 +388,11 @@
             <input data-jf="nombre" placeholder="Nombre completo" autocomplete="off" />
             <div class="row3">
                 <div><label>Nacionalidad</label><select data-jf="nacionalidad">${NAC_OPTS}</select></div>
-                <div><label>Nº de cédula</label><input data-jf="cedula" inputmode="numeric" autocomplete="off" /></div>
+                <div><label>Nº de cédula *</label><input data-jf="cedula" inputmode="numeric" autocomplete="off" /></div>
                 <div><label>Teléfono</label><input data-jf="telefono" inputmode="tel" autocomplete="off" /></div>
             </div>
             <div class="row3">
-                <div><label>Fecha de nacimiento</label><input data-jf="fecha_nac" type="date" class="jf-fnac" /></div>
+                <div><label>Fecha de nacimiento *</label><input data-jf="fecha_nac" type="date" class="jf-fnac" /></div>
                 <div><label>Edad</label><input data-jf="edad" type="number" min="0" max="120" class="jf-edad" /></div>
                 <div><label>Género</label><select data-jf="genero">${GENERO_OPTS}</select></div>
             </div>
@@ -417,8 +414,8 @@
                     <div><label>Cargo</label><input data-jf="cargo" autocomplete="off" /></div>
                 </div>
                 <div class="row2">
+                    <div><label>Tiempo laboral</label><input data-jf="tiempo_servicio" autocomplete="off" /></div>
                     <div><label>Profesión</label><input data-jf="profesion" autocomplete="off" /></div>
-                    <div><label>Tiempo de servicio</label><input data-jf="tiempo_servicio" autocomplete="off" /></div>
                 </div>
             </div>
             <div class="row2">
@@ -708,8 +705,13 @@
         $('btnEnviar').addEventListener('click', async () => {
             $('msg').className = 'msg';
             const familiasEls = Array.from(document.querySelectorAll('#familias .familia'));
-            const jefe0 = familiasEls[0] && familiasEls[0].querySelector('[data-jf="nombre"]');
-            if (!jefe0 || !jefe0.value.trim()) { mostrarMsg('Escribe el nombre del jefe de la familia del dueño.'); return; }
+            // Todo es opcional para poder avanzar, MENOS estos datos del jefe (dueño) + la dirección.
+            const card0 = familiasEls[0];
+            const reqJf = (campo, msg) => { const el = card0 && card0.querySelector('[data-jf="' + campo + '"]'); if (!el || !el.value.trim()) { mostrarMsg(msg); if (el) el.focus(); return false; } return true; };
+            if (!reqJf('nombre', 'Falta el nombre y apellido del jefe de familia (dueño).')) return;
+            if (!reqJf('cedula', 'Falta la cédula del jefe de familia (dueño).')) return;
+            if (!reqJf('fecha_nac', 'Falta la fecha de nacimiento del jefe de familia (dueño).')) return;
+            if (!v('im_calle')) { mostrarMsg('Falta la dirección (nombre de la calle) del inmueble.'); if ($('im_calle')) $('im_calle').focus(); return; }
 
             const fotos = {};
             let totalPersonas = 0;
@@ -741,7 +743,7 @@
                 comuna: v('gs_comuna'), vocero_nombre: v('gs_vocero_nombre'), vocero_apellido: v('gs_vocero_apellido'),
                 carnet_fecha: v('gs_carnet_fecha'), vocero_ci: soloDig(v('gs_vocero_ci')), vocero_tel: soloDig(v('gs_vocero_tel')),
                 municipio: v('gs_municipio'), parroquia: v('gs_parroquia'), sector: v('gs_sector'),
-                correo: v('gs_correo'), ingreso_familiar: v('gs_ingreso_familiar'), descripcion_caso: v('gs_descripcion'),
+                correo: v('gs_correo'), descripcion_caso: v('gs_descripcion'),
                 estatus_habitacional: v('gs_estatus')
             };
 
