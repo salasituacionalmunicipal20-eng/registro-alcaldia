@@ -172,7 +172,7 @@
             </div>
 
             <!-- ENTREGA DE PRODUCTOS DEL CENTRO DE ACOPIO -->
-            <div class="card">
+            <div class="card" id="cardAcopio">
                 <h2>📦 Entrega de productos del centro de acopio</h2>
                 <div class="sub">¿Se le van a entregar productos del Centro de Acopio a este grupo? Solo se puede pedir lo que hay en stock. Queda como <b>solicitud de retiro</b>: el administrador la aprueba en el tablero y ahí se descuenta del inventario.</div>
                 <label>¿Entregar productos del centro de acopio?</label>
@@ -201,7 +201,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, set, runTransaction, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, push, set, update, runTransaction, onValue, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -215,6 +216,8 @@
         };
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const auth = getAuth(app);
+        let EDIT_ID = null, EDIT_REC = null, EDIT_FOTOS_OK = false; // modo edición (?edit=<id>)
         const $ = (id) => document.getElementById(id);
         const v = (id) => { const e = $(id); return ((e && e.value) || '').trim(); };
         const soloDig = (s) => (s || '').replace(/\D/g, '');
@@ -765,8 +768,29 @@
             };
             if (entregas.length) { payload.entregas = entregas; payload.entregas_posteadas = false; }
 
-            const btn = $('btnEnviar'); btn.disabled = true; btn.textContent = 'Enviando…';
+            const btn = $('btnEnviar'); btn.disabled = true; btn.textContent = EDIT_ID ? 'Guardando…' : 'Enviando…';
             try {
+                if (EDIT_ID) {
+                    // MODO EDICIÓN: se usa update() (no set) para NO pisar entregas/entregas_posteadas — si un admin
+                    // aprobó el retiro del acopio en paralelo, esa aprobación se conserva (evita doble descuento).
+                    payload.n_registro = $('n_registro').value || (EDIT_REC && EDIT_REC.n_registro) || '';
+                    payload.fecha_registro = (EDIT_REC && EDIT_REC.fecha_registro) || Date.now();
+                    payload.editado_en = Date.now();
+                    // Borrar claves del formato viejo para que no queden duplicadas tras convertir al formato nuevo.
+                    payload.jefe = null; payload.miembros = null; payload.estado = null; payload.municipio = null; payload.comuna_procedencia = null; payload.comunidad_sector = null;
+                    await update(ref(database, 'zamurera/' + EDIT_ID), payload);
+                    // Fotos: si la carga inicial fue OK, se reemplaza el nodo completo (así se limpian las fotos de gente eliminada);
+                    // si la carga falló, no se toca para no perder las fotos existentes.
+                    if (EDIT_FOTOS_OK) { try { await set(ref(database, 'zamurera_fotos/' + EDIT_ID), fotos); } catch (e) {} }
+                    else if (Object.keys(fotos).length) { try { await set(ref(database, 'zamurera_fotos/' + EDIT_ID), fotos); } catch (e) {} }
+                    if ($('okNum')) $('okNum').textContent = payload.n_registro || '—';
+                    const h2 = document.querySelector('#okScreen h2'); if (h2) h2.textContent = '¡Cambios guardados!';
+                    if ($('btnOtro')) $('btnOtro').textContent = 'Volver al tablero';
+                    $('formWrap').style.display = 'none';
+                    $('okScreen').style.display = 'block';
+                    window.scrollTo(0, 0);
+                    return;
+                }
                 let numRegistro = '';
                 try { const res = await runTransaction(ref(database, 'zamurera_contador'), (cur) => (Number(cur) || 0) + 1); if (res.committed && res.snapshot.exists()) numRegistro = String(res.snapshot.val()).padStart(4, '0'); } catch (e) {}
                 payload.n_registro = numRegistro;
@@ -778,11 +802,98 @@
                 $('okScreen').style.display = 'block';
                 window.scrollTo(0, 0);
             } catch (e) {
-                mostrarMsg('No se pudo enviar (' + (e.message || e.code || 'error') + '). Revisa tu internet e intenta de nuevo.');
-                btn.disabled = false; btn.textContent = 'Guardar ingreso';
+                mostrarMsg('No se pudo ' + (EDIT_ID ? 'guardar' : 'enviar') + ' (' + (e.message || e.code || 'error') + '). Revisa tu internet e intenta de nuevo.');
+                btn.disabled = false; btn.textContent = EDIT_ID ? 'Guardar cambios' : 'Guardar ingreso';
             }
         });
-        $('btnOtro').addEventListener('click', () => location.reload());
+        $('btnOtro').addEventListener('click', () => { if (EDIT_ID) location.href = 'zamurera-resultados.html'; else location.reload(); });
+
+        // ================= MODO EDICIÓN (?edit=<id>) =================
+        function setVal(id, val) { const el = $(id); if (el && val != null) el.value = val; }
+        function setJf(card, f, val) { const el = card.querySelector('[data-jf="' + f + '"]'); if (el && val != null) el.value = val; }
+        function setIf(row, f, val) { const el = row.querySelector('[data-if="' + f + '"]'); if (el && val != null) el.value = val; }
+        // Compat: registros viejos usaban otros nombres de campo en el jefe. Se remapean para no perderlos al editar.
+        function normJefeCompat(j) {
+            const o = Object.assign({}, j);
+            if (o.planta == null && o.modulo != null) o.planta = o.modulo;
+            if (o.carnet_codigo == null && o.carnet_patria_codigo != null) o.carnet_codigo = o.carnet_patria_codigo;
+            if (o.carnet_serial == null && o.carnet_patria_serial != null) o.carnet_serial = o.carnet_patria_serial;
+            if (o.necesita_psico == null && o.necesita_ayuda_psicologica != null) o.necesita_psico = o.necesita_ayuda_psicologica;
+            if ((o.carnet_codigo || o.carnet_serial) && (o.carnet_posee == null || o.carnet_posee === '')) o.carnet_posee = 'Sí';
+            return o;
+        }
+        function toArrLoc(x) { return Array.isArray(x) ? x : (x ? Object.values(x) : []); }
+        function bannerEdit(txt, err) {
+            let b = $('editBanner');
+            if (!b) { b = document.createElement('div'); b.id = 'editBanner'; b.style.cssText = 'margin:0 0 12px;padding:12px 14px;border-radius:8px;font-weight:700;font-size:14px;'; $('formWrap').insertBefore(b, $('formWrap').firstChild); }
+            b.style.background = err ? '#fef2f2' : '#ecfeff'; b.style.color = err ? '#b91c1c' : '#0e7490'; b.style.border = '1px solid ' + (err ? '#fecaca' : '#a5f3fc'); b.textContent = txt;
+        }
+        async function cargarParaEditar(id, rec) {
+            EDIT_ID = id; EDIT_REC = rec;
+            setVal('n_registro', rec.n_registro); setVal('fecha_ingreso', rec.fecha_ingreso); setVal('hora', rec.hora); setVal('persona_receptor', rec.persona_receptor);
+            const esFormatoViejo = !(Array.isArray(rec.familias) && rec.familias.length);
+            // Compat: en registros viejos la procedencia estaba en el top-level, no en rec.inmueble.
+            const inm = rec.inmueble || { estado: rec.estado, municipio: rec.municipio, comuna_procedencia: rec.comuna_procedencia, comunidad: rec.comunidad_sector };
+            setVal('im_estado', inm.estado); poblarMunicipios(); setVal('im_municipio', inm.municipio);
+            setVal('im_parroquia', inm.parroquia); setVal('im_comuna', inm.comuna_procedencia); setVal('im_comunidad', inm.comunidad); setVal('im_calle', inm.nombre_calle);
+            if (inm.tipo_vivienda) { const rv = document.querySelector('input[name="im_tipo"][value="' + inm.tipo_vivienda + '"]'); if (rv) { rv.checked = true; rv.dispatchEvent(new Event('change', { bubbles: true })); } }
+            setVal('im_numero_casa', inm.numero_casa); setVal('im_piso', inm.piso); setVal('im_gran_mision', inm.gran_mision_vivienda);
+            setVal('im_nombre_edif', inm.nombre_casa_edificio); setVal('im_condicion', inm.condicion);
+            setVal('im_tiempo_num', inm.tiempo_permanencia_num); setVal('im_tiempo_unidad', inm.tiempo_permanencia_unidad);
+            setVal('im_cant_familias', inm.cant_familias); setVal('im_cant_personas', inm.cant_personas);
+            const gs = rec.gestion_social || {};
+            setVal('gs_comuna', gs.comuna); setVal('gs_vocero_nombre', gs.vocero_nombre); setVal('gs_vocero_apellido', gs.vocero_apellido);
+            setVal('gs_carnet_fecha', gs.carnet_fecha); setVal('gs_vocero_ci', gs.vocero_ci); setVal('gs_vocero_tel', gs.vocero_tel);
+            setVal('gs_municipio', gs.municipio); setVal('gs_parroquia', gs.parroquia); setVal('gs_sector', gs.sector);
+            setVal('gs_correo', gs.correo); setVal('gs_descripcion', gs.descripcion_caso); setVal('gs_estatus', gs.estatus_habitacional);
+            const fotos = {}; EDIT_FOTOS_OK = false; try { const fs = await get(ref(database, 'zamurera_fotos/' + id)); if (fs.exists()) Object.assign(fotos, fs.val()); EDIT_FOTOS_OK = true; } catch (e) { EDIT_FOTOS_OK = false; }
+            const fams = (Array.isArray(rec.familias) && rec.familias.length) ? rec.familias : [{ es_dueno: 'Sí', jefe: rec.jefe || {}, integrantes: toArrLoc(rec.miembros) }];
+            $('familias').innerHTML = ''; famSeq = 0;
+            fams.forEach((fam, fi) => {
+                const card = agregarFamilia(fi === 0);
+                const jefe = normJefeCompat(fam.jefe || {});
+                JF_FIELDS.forEach(f => setJf(card, f, jefe[f]));
+                setJf(card, 'es_dueno', fam.es_dueno || (fi === 0 ? 'Sí' : 'No'));
+                const planta = card.querySelector('.jf-planta');
+                if (jefe.planta) { planta.value = jefe.planta; planta.dispatchEvent(new Event('change', { bubbles: true })); setJf(card, 'cubiculo', jefe.cubiculo); }
+                card.querySelectorAll('[data-cond]').forEach(sel => sel.dispatchEvent(new Event('change', { bubbles: true })));
+                const jfk = fotos['f' + fi + '_jefe'] || (fi === 0 ? fotos.jefe : null);
+                if (jfk) { card._jefeFoto = jfk; const pv = card.querySelector('.jf-prev'); pv.src = jfk; pv.style.display = 'block'; }
+                const cont = card.querySelector('.integrantes');
+                toArrLoc(fam.integrantes).forEach((it, ii) => {
+                    const row = document.createElement('div'); row.className = 'integrante'; row.innerHTML = integranteHTML();
+                    cont.appendChild(row); wireIntegrante(row);
+                    IF_FIELDS.forEach(f => setIf(row, f, it[f]));
+                    const fnac = row.querySelector('.if-fnac'); if (fnac) fnac.dispatchEvent(new Event('change', { bubbles: true }));
+                    const ed = row.querySelector('.if-edad'); if (ed) ed.dispatchEvent(new Event('input', { bubbles: true }));
+                    const ifk = fotos['f' + fi + '_i' + ii] || (fi === 0 ? fotos['m' + ii] : null);
+                    if (ifk) { row._foto = ifk; const pv = row.querySelector('.if-prev'); pv.src = ifk; pv.style.display = 'block'; }
+                });
+                renumerarInt(card);
+            });
+            const ac = $('cardAcopio'); if (ac) ac.style.display = 'none';
+            try { document.querySelector('.top h1').textContent = '✏️ Editar ingreso Nº ' + (rec.n_registro || ''); } catch (e) {}
+            $('btnEnviar').textContent = 'Guardar cambios'; $('btnEnviar').disabled = false;
+            bannerEdit('Editando el ingreso Nº ' + (rec.n_registro || '') + '. Completá o corregí lo que haga falta y dale "Guardar cambios".' + (esFormatoViejo ? ' (Ingreso de formato antiguo: al guardar se pasa al formato nuevo.)' : ''));
+        }
+        if (location.protocol === 'file:') window.__cargarParaEditar = cargarParaEditar; // hook solo para pruebas locales
+        (function initEdit() {
+            const editParam = new URLSearchParams(location.search).get('edit');
+            if (!editParam) return;
+            $('btnEnviar').disabled = true; $('btnEnviar').textContent = 'Cargando…';
+            bannerEdit('Cargando el ingreso para editar…');
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) { bannerEdit('Para editar tenés que abrir "Editar" desde el tablero (con sesión de administrador).', true); return; }
+                let esAdmin = user.email === 'carlos.admin@alcaldia.com';
+                if (!esAdmin) { try { const s = await get(ref(database, 'operadores/' + user.uid)); esAdmin = s.exists() && s.val().rol === 'admin'; } catch (e) {} }
+                if (!esAdmin) { bannerEdit('No estás autorizado para editar.', true); return; }
+                try {
+                    const snap = await get(ref(database, 'zamurera/' + editParam));
+                    if (!snap.exists()) { bannerEdit('No se encontró el ingreso a editar.', true); return; }
+                    await cargarParaEditar(editParam, snap.val());
+                } catch (e) { bannerEdit('No se pudo cargar para editar: ' + (e.message || e.code), true); }
+            });
+        })();
     </script>
     <div id="cneModal" class="cne-modal">
         <div class="cne-card">

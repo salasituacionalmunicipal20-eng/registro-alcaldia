@@ -40,6 +40,7 @@
         th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
         tbody tr:hover { background: #f8fafc; }
         .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-edit { background: #f59e0b; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
         .btn-print { background: #16a34a; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
         .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
         .btn-carnet { background: #0a6cb0; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
@@ -435,10 +436,11 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                     <td style="text-align:center;font-weight:800;">${personasDe(r)}</td>
                     <td>${esc(fecha)}</td>
                     <td>${alert.join('<br>') || '—'}</td>
-                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-carnet" data-id="${esc(r.id)}" title="Carnets con QR">🪪</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
+                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-edit" data-id="${esc(r.id)}" title="Editar / completar">✏️</button><button class="btn-carnet" data-id="${esc(r.id)}" title="Carnets con QR">🪪</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
                 </tr>`;
             }).join('');
             tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+            tb.querySelectorAll('button.btn-edit').forEach(b => b.addEventListener('click', () => editar(b.dataset.id)));
             tb.querySelectorAll('button.btn-print').forEach(b => b.addEventListener('click', () => imprimirUno(b.dataset.id)));
             tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.id)));
             tb.querySelectorAll('button.btn-carnet').forEach(b => b.addEventListener('click', () => abrirCarnets(b.dataset.id)));
@@ -458,6 +460,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
 
         const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc((val == null || val === '') ? '—' : val)}</span></div>`;
         const GS_VOCERO = [['comuna', 'Nombre de la comuna'], ['vocero_nombre', 'Vocero — Nombre'], ['vocero_apellido', 'Vocero — Apellidos'], ['carnet_fecha', 'Carnet Fecha N°1'], ['vocero_ci', 'C.I. del vocero'], ['vocero_tel', 'Teléfono del vocero'], ['municipio', 'Municipio (vocero)'], ['parroquia', 'Parroquia (vocero)'], ['sector', 'Sector'], ['correo', 'Correo electrónico'], ['descripcion_caso', 'Descripción del caso'], ['estatus_habitacional', 'Estatus habitacional']];
+        function editar(id) { window.open('zamurera.html?edit=' + encodeURIComponent(id), '_blank'); }
         function verDetalle(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
             const inm = inmuebleDe(r), fams = familiasDe(r), gs = r.gestion_social || {};
@@ -480,10 +483,12 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                 <h4>Gestión social (Vivienda Miranda)</h4>${GS_VOCERO.map(c => fila(c[1], gs[c[0]])).join('')}
                 ${(Array.isArray(r.entregas) && r.entregas.length) ? ('<h4>📦 Solicitud de retiro del centro de acopio ' + (r.entregas_posteadas ? '<span style="font-size:11px;color:#16a34a;">✓ aceptada y descontada</span>' : '<span style="font-size:11px;color:#b45309;">pendiente de aprobar</span>') + '</h4>' + r.entregas.map(e => fila((e.articulo || '') + (e.presentacion ? ' · ' + e.presentacion : ''), (e.cantidad || '') + ' ' + (e.unidad || '') + (e.categoria ? ' · ' + e.categoria : ''))).join('') + ((r.entregas_posteadas !== true) ? '<button class="btn-exp" id="btnAprobarRetiro" style="background:#16a34a;margin-top:8px;">✅ Aceptar solicitud de retiro del centro de acopio</button>' : '')) : ''}
                 <h4>Familias</h4>${famsHtml}
-                <button class="cerrar" id="cerrarModal">Cerrar</button>`;
+                <button class="btn-exp" id="btnEditarDet" style="background:#f59e0b;margin-top:16px;width:100%;">✏️ Editar / completar este ingreso</button>
+                <button class="cerrar" id="cerrarModal" style="margin-top:8px;">Cerrar</button>`;
             $('modalBg').classList.add('show');
             $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
             const _bAp = $('btnAprobarRetiro'); if (_bAp) _bAp.addEventListener('click', () => aprobarRetiro(r.id));
+            const _bEd = $('btnEditarDet'); if (_bEd) _bEd.addEventListener('click', () => editar(r.id));
             // cargar fotos bajo demanda (nuevo esquema f{fi}_jefe / f{fi}_i{ii}; viejo esquema jefe / m{i})
             get(ref(database, 'zamurera_fotos/' + id)).then(snap => {
                 if (!snap.exists()) return; const f = snap.val() || {};
