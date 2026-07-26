@@ -507,7 +507,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             const out = [];
             familiasDe(r).forEach((f, fi) => {
                 out.push({ cid: `${r.id}_f${fi}_j`, fk: ('f' + fi + '_jefe'), fkOld: (fi === 0 ? 'jefe' : null), p: f.jefe, tipo: 'Jefe de familia', fam: f });
-                f.integrantes.forEach((m, i) => out.push({ cid: `${r.id}_f${fi}_i${i}`, fk: ('f' + fi + '_i' + i), fkOld: (fi === 0 ? ('m' + i) : null), p: { ...m, planta: (m.planta || f.jefe.planta), cubiculo: (m.cubiculo || f.jefe.cubiculo) }, tipo: 'Integrante del grupo familiar', fam: f }));
+                f.integrantes.forEach((m, i) => out.push({ cid: `${r.id}_f${fi}_i${i}`, fk: ('f' + fi + '_i' + i), fkOld: (fi === 0 ? ('m' + i) : null), p: { ...m, planta: (m.planta || f.jefe.planta), cubiculo: (m.cubiculo || f.jefe.cubiculo), cama: (m.cama || f.jefe.cama) }, tipo: 'Integrante del grupo familiar', fam: f }));
             });
             return out;
         }
