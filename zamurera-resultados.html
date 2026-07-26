@@ -207,7 +207,7 @@
             const out = [];
             familiasDe(r).forEach((f, fi) => {
                 out.push({ ...f.jefe, _rol: 'Jefe de familia', _fi: fi, _pi: 'jefe', _planta: f.jefe.planta, _cubiculo: f.jefe.cubiculo, _cama: f.jefe.cama });
-                f.integrantes.forEach((it, ii) => out.push({ ...it, _rol: 'Integrante', _fi: fi, _pi: 'i' + ii, _planta: f.jefe.planta, _cubiculo: f.jefe.cubiculo }));
+                f.integrantes.forEach((it, ii) => out.push({ ...it, _rol: 'Integrante', _fi: fi, _pi: 'i' + ii, _planta: (it.planta || f.jefe.planta), _cubiculo: (it.cubiculo || f.jefe.cubiculo) }));
             });
             return out;
         }
@@ -228,7 +228,7 @@
         const RECEP = [['n_registro', 'Nº de registro'], ['fecha_ingreso', 'Fecha de ingreso'], ['hora', 'Hora'], ['persona_receptor', 'Persona receptor']];
         const INM = [['estado', 'Estado de procedencia'], ['municipio', 'Municipio'], ['parroquia', 'Parroquia'], ['comuna_procedencia', 'Comuna'], ['comunidad', 'Comunidad'], ['nombre_calle', 'Nombre de la calle'], ['tipo_vivienda', 'Tipo de vivienda'], ['numero_casa', 'Número de casa'], ['piso', 'Piso número'], ['gran_mision_vivienda', 'Gran Misión Vivienda'], ['nombre_casa_edificio', 'Nombre casa/edificio'], ['condicion', 'Condición de la vivienda'], ['_tiempo', 'Tiempo de permanencia'], ['cant_familias', 'Familias que habitaban'], ['cant_personas', 'Personas que habitaban']];
         const JEFE = [['nombre', 'Nombre y apellido'], ['es_dueno', '¿Es el dueño del inmueble?'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['nivel_instruccion', 'Nivel de instrucción'], ['trabaja', '¿Trabaja?'], ['situacion_laboral', 'Situación laboral'], ['lugar_trabajo', 'Lugar de trabajo'], ['cargo', 'Cargo'], ['profesion', 'Profesión'], ['tiempo_servicio', 'Tiempo laboral'], ['nivel_academico', 'Nivel académico'], ['estudia', '¿Qué estudia?'], ['tiene_pareja', '¿Tiene pareja?'], ['carnet_posee', '¿Posee carnet de la patria?'], ['carnet_codigo', 'Código carnet'], ['carnet_serial', 'Serial carnet'], ['enfermedad', '¿Sufre enfermedad?'], ['enfermedad_cual', 'Enfermedad ¿cuál?'], ['discapacidad', '¿Tiene discapacidad?'], ['discapacidad_cual', 'Discapacidad ¿cuál?'], ['toma_medicamento', '¿Toma medicamento?'], ['medicamento', 'Medicamento ¿cuál?'], ['necesita_psico', '¿Requiere ayuda psicológica?'], ['situacion_psicologica', 'Situación psicológica'], ['necesita_ropa', '¿Necesita ropa?'], ['talla_camisa', 'Talla camisa'], ['talla_pantalon', 'Talla pantalón'], ['talla_zapatos', 'Talla zapato'], ['talla_ropa_interior', 'Talla ropa interior'], ['familiar_desaparecido', '¿Familiar desaparecido/fallecido?'], ['familiar_otro_estado', '¿Familiar en otro estado?'], ['afectacion', 'Afectación por el terremoto'], ['observaciones', 'Observaciones'], ['planta', 'Planta'], ['cubiculo', 'Cubículo'], ['cama', 'Cama']];
-        const INTEG = [['es_jefe', '¿Es jefe de familia?'], ['nombre', 'Nombre y apellido'], ['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['rep_nombre', 'Representante — Nombre'], ['rep_cedula', 'Representante — Cédula'], ['rep_telefono', 'Representante — Teléfono'], ['rep_parentesco', 'Representante — Parentesco']];
+        const INTEG = [['es_jefe', '¿Es jefe de familia?'], ['nombre', 'Nombre y apellido'], ['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['planta', 'Planta'], ['cubiculo', 'Cubículo'], ['cama', 'Cama'], ['rep_nombre', 'Representante — Nombre'], ['rep_cedula', 'Representante — Cédula'], ['rep_telefono', 'Representante — Teléfono'], ['rep_parentesco', 'Representante — Parentesco']];
         // Retrocompat con integrantes viejos (miembros): mostrar sus campos originales si existen
         const INTEG_VIEJO = [['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha nac.'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['estudia', '¿Estudia?'], ['profesion', 'Profesión'], ['patologia', 'Patología'], ['medicamento', 'Medicamento'], ['situacion_salud', 'Situación de salud'], ['modulo', 'Módulo'], ['cubiculo', 'Cubículo'], ['cama', 'Cama']];
         function valJefe(j, key) {
@@ -507,7 +507,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             const out = [];
             familiasDe(r).forEach((f, fi) => {
                 out.push({ cid: `${r.id}_f${fi}_j`, fk: ('f' + fi + '_jefe'), fkOld: (fi === 0 ? 'jefe' : null), p: f.jefe, tipo: 'Jefe de familia', fam: f });
-                f.integrantes.forEach((m, i) => out.push({ cid: `${r.id}_f${fi}_i${i}`, fk: ('f' + fi + '_i' + i), fkOld: (fi === 0 ? ('m' + i) : null), p: { ...m, planta: f.jefe.planta, cubiculo: f.jefe.cubiculo }, tipo: 'Integrante del grupo familiar', fam: f }));
+                f.integrantes.forEach((m, i) => out.push({ cid: `${r.id}_f${fi}_i${i}`, fk: ('f' + fi + '_i' + i), fkOld: (fi === 0 ? ('m' + i) : null), p: { ...m, planta: (m.planta || f.jefe.planta), cubiculo: (m.cubiculo || f.jefe.cubiculo) }, tipo: 'Integrante del grupo familiar', fam: f }));
             });
             return out;
         }
@@ -642,7 +642,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                     const j = f.jefe || {};
                     const ubic = [j.planta || j.modulo || '', j.cubiculo || '', j.cama || ''];
                     f2.push([r.n_registro || '', String(fi + 1), 'Jefe de familia', (si(f.es_dueno) ? 'Sí' : 'No'), j.nombre || '', '', String(j.cedula || ''), String(j.telefono || ''), String(j.edad || ''), gen(j.genero), j.tipo_sangre || '', ubic[0], ubic[1], ubic[2], '']);
-                    f.integrantes.forEach(m => f2.push([r.n_registro || '', String(fi + 1), 'Integrante', '', m.nombre || '', m.parentesco || '', String(m.cedula || ''), String(m.telefono || ''), String(m.edad || ''), gen(m.genero), m.tipo_sangre || '', ubic[0], ubic[1], '', [m.rep_nombre, m.rep_cedula].filter(Boolean).join(' · ')]));
+                    f.integrantes.forEach(m => f2.push([r.n_registro || '', String(fi + 1), 'Integrante', '', m.nombre || '', m.parentesco || '', String(m.cedula || ''), String(m.telefono || ''), String(m.edad || ''), gen(m.genero), m.tipo_sangre || '', (m.planta || ubic[0]), (m.cubiculo || ubic[1]), (m.cama || ''), [m.rep_nombre, m.rep_cedula].filter(Boolean).join(' · ')]));
                 });
             });
             const wb = XLSX.utils.book_new();

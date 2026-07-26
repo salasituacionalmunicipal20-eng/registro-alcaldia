@@ -523,6 +523,12 @@
                     <div><label>Parentesco con el menor</label><select data-if="rep_parentesco">${optList(PARENTESCO)}</select></div>
                 </div>
             </div>
+            <label style="color:#0a2351;margin-top:8px;">📍 Ubicación en el campamento</label>
+            <div class="row3">
+                <div><label>Planta</label><select data-if="planta" class="if-planta"></select></div>
+                <div><label>Cubículo</label><select data-if="cubiculo" class="if-cubiculo"><option value="">—</option></select></div>
+                <div><label>Cama</label><input data-if="cama" placeholder="Nº de cama" autocomplete="off" /></div>
+            </div>
             <label>Foto <span class="hint">(opcional)</span></label>
             <div class="foto-opts">
                 <label class="fbtn">📷 Tomar foto<input type="file" accept="image/*" capture="environment" class="if-foto-cam" /></label>
@@ -550,6 +556,8 @@
             const setFoto = async (file) => { const u = await comprimir(file); row._foto = u; if (u) { prev.src = u; prev.style.display = 'block'; } else { prev.style.display = 'none'; } };
             q('.if-foto-cam').addEventListener('change', e => setFoto(e.target.files[0]));
             q('.if-foto-file').addEventListener('change', e => setFoto(e.target.files[0]));
+            const ipl = q('.if-planta'), icub = q('.if-cubiculo');
+            if (ipl) { ipl.innerHTML = plantaOpts(); ipl.addEventListener('change', () => poblarCubiculos(ipl, icub)); }
             q('.mb-del').addEventListener('click', () => { row.remove(); });
         }
 
@@ -679,7 +687,7 @@
         function mostrarMsg(t) { const m = $('msg'); m.textContent = t; m.className = 'msg err'; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
         const JF_FIELDS = ['nombre', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'nivel_instruccion', 'es_dueno', 'trabaja', 'situacion_laboral', 'tiene_pareja', 'lugar_trabajo', 'cargo', 'profesion', 'tiempo_servicio', 'nivel_academico', 'estudia', 'carnet_posee', 'carnet_codigo', 'carnet_serial', 'enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'necesita_ropa', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'talla_ropa_interior', 'familiar_desaparecido', 'familiar_otro_estado', 'afectacion', 'observaciones', 'planta', 'cubiculo', 'cama'];
-        const IF_FIELDS = ['es_jefe', 'nombre', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'rep_nacionalidad', 'rep_cedula', 'rep_nombre', 'rep_telefono', 'rep_parentesco'];
+        const IF_FIELDS = ['es_jefe', 'nombre', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'planta', 'cubiculo', 'cama', 'rep_nacionalidad', 'rep_cedula', 'rep_nombre', 'rep_telefono', 'rep_parentesco'];
         const CEDULA_KEYS = { cedula: 1, telefono: 1, rep_cedula: 1, rep_telefono: 1 };
 
         function leerJefe(card) {
@@ -864,6 +872,8 @@
                     const row = document.createElement('div'); row.className = 'integrante'; row.innerHTML = integranteHTML();
                     cont.appendChild(row); wireIntegrante(row);
                     IF_FIELDS.forEach(f => setIf(row, f, it[f]));
+                    const ipl2 = row.querySelector('.if-planta');
+                    if (it.planta && ipl2) { ipl2.value = it.planta; ipl2.dispatchEvent(new Event('change', { bubbles: true })); setIf(row, 'cubiculo', it.cubiculo); }
                     const fnac = row.querySelector('.if-fnac'); if (fnac) fnac.dispatchEvent(new Event('change', { bubbles: true }));
                     const ed = row.querySelector('.if-edad'); if (ed) ed.dispatchEvent(new Event('input', { bubbles: true }));
                     const ifk = fotos['f' + fi + '_i' + ii] || (fi === 0 ? fotos['m' + ii] : null);
