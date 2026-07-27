@@ -70,6 +70,7 @@
         .cne-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13.5px; }
         .cne-row span { color: #64748b; } .cne-row b { color: #0f172a; text-align: right; }
     </style>
+    <script src="autofresh.js"></script>
 </head>
 <body>
     <div class="top">
@@ -203,23 +204,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getDatabase, ref, push, set, update, runTransaction, onValue, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-        // Auto-actualizar: al ENTRAR, si la versión publicada es más nueva que la cacheada, recarga una sola vez
-        // (compara el ETag/Last-Modified del servidor) para no quedar con cambios viejos por caché. Sin estampar versión.
-        (async function autoFresh() {
-            try {
-                const [nuevo, cache] = await Promise.all([
-                    fetch(location.pathname, { cache: 'no-store' }),
-                    fetch(location.pathname, { cache: 'force-cache' })
-                ]);
-                const tn = nuevo.headers.get('etag') || nuevo.headers.get('last-modified');
-                const tc = cache.headers.get('etag') || cache.headers.get('last-modified');
-                if (tn && tc && tn !== tc && sessionStorage.getItem('__zamCB') !== tn) {
-                    sessionStorage.setItem('__zamCB', tn);
-                    location.reload();
-                }
-            } catch (e) { /* sin conexión: se ignora */ }
-        })();
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",

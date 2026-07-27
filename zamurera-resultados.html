@@ -70,6 +70,7 @@
         .mini b { color: #0a2351; }
         .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; }
     </style>
+    <script src="autofresh.js"></script>
 </head>
 <body>
     <div class="topbar">
@@ -161,23 +162,6 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getDatabase, ref, onValue, get, child, remove, set, push } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
-
-        // Auto-actualizar: al ENTRAR, si la versión publicada es más nueva que la cacheada, recarga una sola vez
-        // (compara el ETag/Last-Modified del servidor) para no quedar con cambios viejos por caché. Sin estampar versión.
-        (async function autoFresh() {
-            try {
-                const [nuevo, cache] = await Promise.all([
-                    fetch(location.pathname, { cache: 'no-store' }),
-                    fetch(location.pathname, { cache: 'force-cache' })
-                ]);
-                const tn = nuevo.headers.get('etag') || nuevo.headers.get('last-modified');
-                const tc = cache.headers.get('etag') || cache.headers.get('last-modified');
-                if (tn && tc && tn !== tc && sessionStorage.getItem('__zamCB') !== tn) {
-                    sessionStorage.setItem('__zamCB', tn);
-                    location.reload();
-                }
-            } catch (e) { /* sin conexión: se ignora */ }
-        })();
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
