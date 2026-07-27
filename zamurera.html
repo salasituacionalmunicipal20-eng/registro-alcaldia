@@ -728,11 +728,13 @@
             let totalPersonas = 0;
             const familias = familiasEls.map((card, fi) => {
                 const jefe = leerJefe(card);
+                jefe.nro = card._jefeNro || ''; // Nº de carnet propio (se asigna abajo si es nuevo)
                 if (card._jefeFoto) fotos['f' + fi + '_jefe'] = card._jefeFoto;
                 const integrantes = [];
                 card.querySelectorAll('.integrante').forEach((row) => {
                     const it = leerIntegrante(row);
                     if (!it.nombre && !it.cedula) return; // saltar vacíos
+                    it.nro = row._nro || '';
                     if (row._foto) fotos['f' + fi + '_i' + integrantes.length] = row._foto;
                     integrantes.push(it);
                 });
@@ -778,10 +780,24 @@
 
             const btn = $('btnEnviar'); btn.disabled = true; btn.textContent = EDIT_ID ? 'Guardando…' : 'Enviando…';
             try {
+                // ---- Numeración POR PERSONA: cada persona (jefes + integrantes) lleva su propio Nº correlativo. ----
+                // El contador cuenta PERSONAS; a las que ya tienen Nº se les respeta, las nuevas toman el siguiente.
+                const personas = [];
+                familias.forEach(f => { personas.push(f.jefe); f.integrantes.forEach(it => personas.push(it)); });
+                const sinNro = personas.filter(p => !p.nro);
+                if (sinNro.length) {
+                    let base = 0;
+                    const resN = await runTransaction(ref(database, 'zamurera_contador'), (cur) => (Number(cur) || 0) + sinNro.length);
+                    if (resN.committed && resN.snapshot.exists()) base = Number(resN.snapshot.val()) - sinNro.length;
+                    sinNro.forEach((p, i) => p.nro = String(base + i + 1).padStart(4, '0'));
+                }
+                const duenoFam = familias.find(f => f.jefe.es_dueno === 'Sí') || familias[0];
+                const nroDueno = (duenoFam && duenoFam.jefe.nro) || (personas[0] && personas[0].nro) || '';
+
                 if (EDIT_ID) {
                     // MODO EDICIÓN: se usa update() (no set) para NO pisar entregas/entregas_posteadas — si un admin
                     // aprobó el retiro del acopio en paralelo, esa aprobación se conserva (evita doble descuento).
-                    payload.n_registro = $('n_registro').value || (EDIT_REC && EDIT_REC.n_registro) || '';
+                    payload.n_registro = nroDueno || $('n_registro').value || (EDIT_REC && EDIT_REC.n_registro) || '';
                     payload.fecha_registro = (EDIT_REC && EDIT_REC.fecha_registro) || Date.now();
                     payload.editado_en = Date.now();
                     // Borrar claves del formato viejo para que no queden duplicadas tras convertir al formato nuevo.
@@ -799,13 +815,11 @@
                     window.scrollTo(0, 0);
                     return;
                 }
-                let numRegistro = '';
-                try { const res = await runTransaction(ref(database, 'zamurera_contador'), (cur) => (Number(cur) || 0) + 1); if (res.committed && res.snapshot.exists()) numRegistro = String(res.snapshot.val()).padStart(4, '0'); } catch (e) {}
-                payload.n_registro = numRegistro;
+                payload.n_registro = nroDueno;
                 const nuevo = push(ref(database, 'zamurera'));
                 await set(nuevo, payload);
                 if (Object.keys(fotos).length) { try { await set(ref(database, 'zamurera_fotos/' + nuevo.key), fotos); } catch (e) {} }
-                if ($('okNum')) $('okNum').textContent = numRegistro || '—';
+                if ($('okNum')) $('okNum').textContent = nroDueno || '—';
                 $('formWrap').style.display = 'none';
                 $('okScreen').style.display = 'block';
                 window.scrollTo(0, 0);
@@ -860,6 +874,7 @@
             fams.forEach((fam, fi) => {
                 const card = agregarFamilia(fi === 0);
                 const jefe = normJefeCompat(fam.jefe || {});
+                card._jefeNro = jefe.nro || ''; // preservar Nº de carnet del jefe
                 JF_FIELDS.forEach(f => setJf(card, f, jefe[f]));
                 setJf(card, 'es_dueno', fam.es_dueno || (fi === 0 ? 'Sí' : 'No'));
                 const planta = card.querySelector('.jf-planta');
@@ -871,6 +886,7 @@
                 toArrLoc(fam.integrantes).forEach((it, ii) => {
                     const row = document.createElement('div'); row.className = 'integrante'; row.innerHTML = integranteHTML();
                     cont.appendChild(row); wireIntegrante(row);
+                    row._nro = it.nro || ''; // preservar Nº de carnet del integrante
                     IF_FIELDS.forEach(f => setIf(row, f, it[f]));
                     const ipl2 = row.querySelector('.if-planta');
                     if (it.planta && ipl2) { ipl2.value = it.planta; ipl2.dispatchEvent(new Event('change', { bubbles: true })); setIf(row, 'cubiculo', it.cubiculo); }
