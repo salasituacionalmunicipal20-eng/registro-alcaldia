@@ -40,6 +40,7 @@
         .btn-print { background: #16a34a; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
         .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
         .btn-carnet { background: #0a6cb0; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .btn-edit { background: #f59e0b; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
         .tag { display: inline-block; background: #eef2ff; color: #3730a3; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; margin: 1px; }
         .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
         .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
@@ -434,10 +435,11 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
                         ? '<span style="background:#dcfce7;color:#15803d;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;">✅ Atendida</span>'
                         : '<span style="background:#fee2e2;color:#b91c1c;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;">⏳ No atendida</span>'}<br><button class="btn-atender" data-id="${esc(r.id)}" style="margin-top:5px;background:${r.atendida ? '#fef9c3' : '#16a34a'};color:${r.atendida ? '#854d0e' : '#fff'};border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">${r.atendida ? '↩️ Marcar no atendida' : '✅ Marcar atendida'}</button></td>
                     <td>${esc(fmtFecha(r.fecha_registro))}</td>
-                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-carnet" data-id="${esc(r.id)}" title="Carnets con QR">🪪</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
+                    <td style="white-space:nowrap;"><button class="btn-ver" data-id="${esc(r.id)}">Ver</button><button class="btn-edit" data-id="${esc(r.id)}" title="Editar / agregar personas">✏️</button><button class="btn-carnet" data-id="${esc(r.id)}" title="Carnets con QR">🪪</button><button class="btn-print" data-id="${esc(r.id)}">🖨️</button><button class="btn-del" data-id="${esc(r.id)}">🗑️</button></td>
                 </tr>`;
             }).join('');
             tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+            tb.querySelectorAll('button.btn-edit').forEach(b => b.addEventListener('click', () => editar(b.dataset.id)));
             tb.querySelectorAll('button.btn-print').forEach(b => b.addEventListener('click', () => imprimirUno(b.dataset.id)));
             tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.id)));
             tb.querySelectorAll('button.btn-atender').forEach(b => b.addEventListener('click', () => toggleAtendida(b.dataset.id)));
@@ -519,10 +521,13 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
                 ${jefes}
                 <h4>Miembros de la familia (${miembrosDe(r).length})</h4>
                 ${miembros}
-                <button class="cerrar" id="cerrarModal">Cerrar</button>`;
+                <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;"><button class="btn-edit" id="editDesdeDetalle" style="padding:9px 14px;font-size:14px;">✏️ Editar / agregar personas</button><button class="cerrar" id="cerrarModal">Cerrar</button></div>`;
             $('modalBg').classList.add('show');
             $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+            const _bE = $('editDesdeDetalle'); if (_bE) _bE.addEventListener('click', () => editar(id));
         }
+        // Abre el formulario en modo edición (nueva pestaña). Ahí se pueden corregir datos y agregar más jefes/miembros.
+        function editar(id) { window.open('hogares-solidarios.html?edit=' + encodeURIComponent(id), '_blank'); }
         $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
 
         // ---- Modal: cédulas de jefe repetidas ----

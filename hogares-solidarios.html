@@ -311,7 +311,8 @@
     <script src="cne-dateas.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, push, set, update, remove, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -325,6 +326,8 @@
         };
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const auth = getAuth(app);
+        let EDIT_ID = null, EDIT_REC = null; // modo edición (?edit=<id>)
         const $ = (id) => document.getElementById(id);
         const v = (id) => ($(id).value || '').trim();
         const soloDig = (s) => (s || '').replace(/\D/g, '');
@@ -598,6 +601,8 @@
             addCed(v('r_nac'), v('r_cedula'), 'responsable (' + (v('r_nombre') + ' ' + v('r_apellido')).trim() + ')');
             JEFES.forEach((j, i) => addCed(j.nacionalidad, j.cedula, 'jefe ' + (i + 1) + (j.primer_nombre ? ' (' + (j.primer_nombre + ' ' + j.primer_apellido).trim() + ')' : '')));
             MIEMBROS.forEach((m, i) => { if (m.cedula) addCed(m.nacionalidad, m.cedula, 'miembro ' + (i + 1) + (m.primer_nombre ? ' (' + (m.primer_nombre + ' ' + m.primer_apellido).trim() + ')' : '')); });
+            // En edición, las cédulas que YA eran de este registro no cuentan como duplicado propio.
+            const ownKeys = EDIT_ID ? new Set(cedulasDeRec(EDIT_REC)) : new Set();
             // 1) Duplicados dentro del mismo registro
             const vistos = {};
             for (const c of ceds) {
@@ -607,12 +612,12 @@
             // 2) Duplicados contra registros anteriores (índice público de cédulas)
             $('enviar').disabled = true; $('enviar').textContent = 'Verificando cédulas…';
             try {
-                const claves = [...new Set(ceds.map(c => c.key))];
+                const claves = [...new Set(ceds.map(c => c.key))].filter(k => !ownKeys.has(k)); // en edición, no bloquear por las cédulas propias del registro
                 const chequeos = await Promise.all(claves.map(async k => ({ k, existe: (await get(ref(database, 'hogares_solidarios_cedulas/' + k))).exists() })));
                 const rep = chequeos.find(x => x.existe);
                 if (rep) {
                     const c = ceds.find(x => x.key === rep.k);
-                    $('enviar').disabled = false; $('enviar').textContent = 'Enviar registro ✓';
+                    $('enviar').disabled = false; $('enviar').textContent = EDIT_ID ? 'Guardar cambios ✓' : 'Enviar registro ✓';
                     return err('msg3', 'La cédula ' + c.ced + ' (' + c.etiqueta + ') ya fue registrada en otro Hogar Solidario. No se puede repetir.');
                 }
             } catch (e) { /* si no se puede verificar, no bloquear el envío */ }
@@ -634,8 +639,31 @@
                 total_jefes: JEFES.length, total_miembros: MIEMBROS.length, total_personas,
                 atendida: false, fecha_registro: Date.now(), registrado_por: 'Formulario público'
             };
-            $('enviar').disabled = true; $('enviar').textContent = 'Enviando…';
+            $('enviar').disabled = true; $('enviar').textContent = EDIT_ID ? 'Guardando…' : 'Enviando…';
             try {
+                if (EDIT_ID) {
+                    // MODO EDICIÓN: actualiza el registro. Preserva Nº, fecha y el estado "atendida" (lo maneja el tablero, con update).
+                    payload.n_registro = EDIT_REC.n_registro || '';
+                    payload.fecha_registro = EDIT_REC.fecha_registro || Date.now();
+                    payload.registrado_por = EDIT_REC.registrado_por || payload.registrado_por;
+                    payload.editado_en = Date.now();
+                    delete payload.atendida;
+                    await update(ref(database, 'hogares_solidarios/' + EDIT_ID), payload);
+                    try {
+                        const nuevasKeys = new Set(ceds.map(c => c.key));
+                        // registrar las cédulas actuales en el índice
+                        await Promise.all([...nuevasKeys].map(k => set(ref(database, 'hogares_solidarios_cedulas/' + k), payload.fecha_registro)));
+                        // liberar del índice las cédulas de personas que se quitaron en la edición (si no, quedan "tomadas")
+                        await Promise.all([...ownKeys].filter(k => !nuevasKeys.has(k)).map(k => remove(ref(database, 'hogares_solidarios_cedulas/' + k))));
+                    } catch (e) {}
+                    $('formWrap').style.display = 'none';
+                    $('okScreen').style.display = 'block';
+                    const h2 = $('okScreen').querySelector('h2'); if (h2) h2.textContent = '¡Cambios guardados!';
+                    $('okReg').textContent = payload.n_registro ? 'Nº de registro: ' + payload.n_registro : '';
+                    if ($('btnOtro')) $('btnOtro').textContent = 'Volver al tablero';
+                    window.scrollTo(0, 0);
+                    return;
+                }
                 let numRegistro = '';
                 try { const res = await runTransaction(ref(database, 'hogares_solidarios_contador'), (cur) => (Number(cur) || 0) + 1); if (res.committed && res.snapshot.exists()) numRegistro = String(res.snapshot.val()).padStart(4, '0'); } catch (e) {}
                 payload.n_registro = numRegistro;
@@ -647,11 +675,73 @@
                 $('okReg').textContent = numRegistro ? 'Nº de registro: ' + numRegistro : '';
                 window.scrollTo(0, 0);
             } catch (e) {
-                err('msg3', 'No se pudo enviar (' + (e.message || e.code || 'error') + '). Revisa tu conexión e intenta de nuevo.');
-                $('enviar').disabled = false; $('enviar').textContent = 'Enviar registro ✓';
+                err('msg3', 'No se pudo ' + (EDIT_ID ? 'guardar' : 'enviar') + ' (' + (e.message || e.code || 'error') + '). Revisa tu conexión e intenta de nuevo.');
+                $('enviar').disabled = false; $('enviar').textContent = EDIT_ID ? 'Guardar cambios ✓' : 'Enviar registro ✓';
             }
         });
-        $('btnOtro').addEventListener('click', () => location.reload());
+        $('btnOtro').addEventListener('click', () => { if (EDIT_ID) location.href = 'hogares-solidarios-resultados.html'; else location.reload(); });
+
+        // ================= MODO EDICIÓN (?edit=<id>) =================
+        // Junta todas las cédulas del registro (responsable + jefes + miembros) para NO bloquearse a sí mismo en el chequeo de duplicados.
+        function cedulasDeRec(rec) {
+            if (!rec) return [];
+            const out = [];
+            const add = (nac, ced) => { const d = soloDig(ced); if (d) out.push((nac || 'V') + d); };
+            if (rec.responsable) add(rec.responsable.nacionalidad, rec.responsable.cedula);
+            (rec.jefes || []).forEach(j => add(j.nacionalidad, j.cedula));
+            (rec.miembros || []).forEach(m => { if (m.cedula) add(m.nacionalidad, m.cedula); });
+            return out;
+        }
+        function setSelOpt(id, val) {
+            const s = $(id); if (!s) return; val = val || '';
+            if (val && ![...s.options].some(o => o.value === val)) s.add(new Option(val, val));
+            s.value = val;
+        }
+        function cargarParaEditar(rec) {
+            // Relación
+            setSelOpt('relacion', rec.relacion || ''); $('relacion').dispatchEvent(new Event('change'));
+            if (rec.que_familiar) setSelOpt('que_familiar', rec.que_familiar);
+            // Responsable del hogar
+            const r = rec.responsable || {};
+            $('r_nac').value = r.nacionalidad || 'V'; $('r_cedula').value = r.cedula || '';
+            $('r_nombre').value = r.primer_nombre || ''; $('r_apellido').value = r.primer_apellido || ''; $('r_apellido2').value = r.segundo_apellido || '';
+            $('r_fnac').value = r.fecha_nacimiento || ''; setSelOpt('r_sexo', r.sexo || ''); $('r_tel').value = r.telefono || '';
+            // Ubicación del hogar (cascada parroquia → comuna → consejo)
+            const h = rec.hogar || {};
+            setSelOpt('h_parroquia', h.parroquia || ''); $('h_parroquia').dispatchEvent(new Event('change'));
+            setSelOpt('h_comuna', h.comuna || ''); $('h_comuna').dispatchEvent(new Event('change'));
+            if (h.consejo_comunal) {
+                if ([...$('h_consejo').options].some(o => o.value === h.consejo_comunal)) { $('h_consejo').value = h.consejo_comunal; $('wrapConsejoOtro').classList.add('hidden'); }
+                else { $('h_consejo').value = '__OTRO__'; $('wrapConsejoOtro').classList.remove('hidden'); $('h_consejo_otro').value = h.consejo_comunal; }
+            }
+            $('h_direccion').value = h.direccion || '';
+            if (h.tipo_vivienda) { const rv = document.querySelector(`input[name="tipo_viv"][value="${CSS.escape(h.tipo_vivienda)}"]`); if (rv) rv.checked = true; }
+            $('h_numero').value = h.numero_casa || ''; $('h_habitantes').value = h.cantidad_habitantes || ''; $('h_lat').value = h.lat || ''; $('h_lng').value = h.lng || '';
+            // Jefes y miembros (arrays completos; se pueden agregar/editar/eliminar como siempre)
+            JEFES = Array.isArray(rec.jefes) ? rec.jefes.map(j => ({ ...j })) : [];
+            MIEMBROS = Array.isArray(rec.miembros) ? rec.miembros.map(m => ({ ...m })) : [];
+            renderJefes(); renderMiembros();
+            // UI de edición
+            $('enviar').textContent = 'Guardar cambios ✓';
+            const h1 = document.querySelector('.top h1'); if (h1) h1.textContent = '✏️ Editar Hogar Solidario';
+            setStep(1);
+        }
+        async function initEdit() {
+            const id = new URLSearchParams(location.search).get('edit');
+            if (!id) return;
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) { alert('Para editar un Hogar Solidario debes iniciar sesión en el panel.'); location.href = 'index.html'; return; }
+                try {
+                    const snap = await get(ref(database, 'hogares_solidarios/' + id));
+                    if (!snap.exists()) { alert('El registro no existe o fue eliminado.'); location.href = 'hogares-solidarios-resultados.html'; return; }
+                    EDIT_ID = id; EDIT_REC = snap.val();
+                    cargarParaEditar(EDIT_REC);
+                } catch (e) { alert('No se pudo cargar el registro para editar: ' + (e.message || e.code || 'error')); }
+            });
+        }
+        initEdit();
+        // Hook solo-local para pruebas (puppeteer) sin auth:
+        if (location.protocol === 'file:') { window.__cargarParaEditar = (rec) => { EDIT_ID = '__test__'; EDIT_REC = rec; cargarParaEditar(rec); }; }
     </script>
 </body>
 </html>
