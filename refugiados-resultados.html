@@ -574,6 +574,25 @@
                 toArr(r.grupo_familiar).forEach(g => f2.push(['Acompañante', g.nombres||'', g.apellidos||'', String(g.cedula||''), String(g.edad||''), g.sexo||'', ref, (r.procedencia||'') + (r.municipio_origen?(' / '+r.municipio_origen):''), donde]));
             });
             const wb = XLSX.utils.book_new();
+
+            // ===== HOJA 1: TODOS LOS DATOS — una fila por PERSONA (principal + acompañantes), TODOS los campos =====
+            const hdrT = ['Fecha registro','Estado','Reporta','Anónimo','Reporta nombre','Reporta cédula','Reporta teléfono','Reporta parentesco','Reporta UBCH','Procedencia','Municipio origen','Dirección','Centro médico','Parroquia','Circuito','Comunidad','Vulnerabilidad','Necesidades','Detalle necesidades','Patología','Observación','¿Tiene foto?','Total personas','Rol','Nacionalidad','Cédula','Nombres','Apellidos','Sexo','Fecha de nacimiento','Edad','Teléfono'];
+            const fT = [];
+            listaExcel.forEach(r => {
+                const ctx = [
+                    r.fecha_registro ? new Date(r.fecha_registro).toLocaleString('es-VE') : '',
+                    estadoAtencionTxt(r),
+                    r.reporta_tipo || '', ((r.reporta_anonimo || r.reporta_tipo === 'anonimo') ? 'Sí' : 'No'),
+                    r.reporta_nombre || '', String(r.reporta_cedula || ''), String(r.reporta_telefono || ''), r.reporta_parentesco || '', r.reporta_ubch || '',
+                    r.procedencia || '', r.municipio_origen || '', r.direccion || '', r.direccion_centro_medico || '', r.parroquia || '', r.circuito || '', r.comunidad_nombre || '',
+                    toArr(r.vulnerabilidad).join(', '), toArr(r.necesidades).join(', '), r.necesidades_detalle || '', r.patologia || '', r.observacion || '',
+                    (r.tiene_foto ? 'Sí' : 'No'), String(r.total_personas || (1 + toArr(r.grupo_familiar).length))
+                ];
+                fT.push(ctx.concat(['Principal', r.nacionalidad || 'V', String(r.cedula || ''), r.nombres || '', r.apellidos || '', r.sexo || '', r.fecha_nacimiento || '', String(edadDe(r.fecha_nacimiento) || ''), String(r.telefono || '')]));
+                toArr(r.grupo_familiar).forEach(g => fT.push(ctx.concat(['Acompañante', g.nacionalidad || 'V', String(g.cedula || ''), g.nombres || '', g.apellidos || '', g.sexo || '', '', String(g.edad || ''), ''])));
+            });
+            XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — TODOS LOS DATOS', hdrT, fT, [20,12,10,8,18,13,13,16,16,16,16,30,24,16,16,18,24,24,28,22,30,9,9,14,11,13,18,18,8,15,6,13]), 'Todos los datos');
+
             XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — REPORTES', hdr1, f1, [20,18,18,12,7,7,14,22,30,16,16,18,9,14,24,24,24,30,24]), 'Reportes');
             XLSX.utils.book_append_sheet(wb, mkSheet('REFUGIADOS — TODAS LAS PERSONAS', hdr2, f2, [13,18,18,12,7,7,24,18,34]), 'Todas las personas');
             XLSX.writeFile(wb, `refugiados_${ahora.toISOString().slice(0,10)}.xlsx`);
