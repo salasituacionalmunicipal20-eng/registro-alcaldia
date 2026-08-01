@@ -146,7 +146,7 @@
                 <h2>Reportes</h2>
                 <div>
                     <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
-                    <button id="btnPdf" class="btn-exp" style="background:#b91c1c;">📄 Descargar PDF</button>
+                    <button id="btnPdf" class="btn-exp" style="background:#b91c1c;">🧾 Fichas completas (PDF)</button>
                 </div>
                 <div class="filtros">
                     <div><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, dirección…" autocomplete="off" /></div>
@@ -639,6 +639,7 @@
                 body: _filasReporte(r), theme: 'grid', styles: stMain,
                 headStyles: { fillColor: [127,29,29], textColor: [255,255,255], fontStyle: 'bold', fontSize: cmp ? 8.5 : 9.5 },
                 columnStyles: { 0: { cellWidth: 46, fontStyle: 'bold', fillColor: [254,242,242] }, 1: { cellWidth: 140 } },
+                didParseCell: (d) => { if (d.section === 'body' && d.column.index === 1) { const v = String(d.cell.raw || '').toUpperCase(); if (v.indexOf('NO ATENDID') === 0) { d.cell.styles.fillColor = [254, 226, 226]; d.cell.styles.textColor = [153, 27, 27]; d.cell.styles.fontStyle = 'bold'; } else if (v.indexOf('ATENDID') === 0) { d.cell.styles.fillColor = [220, 252, 231]; d.cell.styles.textColor = [22, 101, 52]; d.cell.styles.fontStyle = 'bold'; } } },
                 didDrawPage: drawHF
             });
             const grupo = toArr(r.grupo_familiar);

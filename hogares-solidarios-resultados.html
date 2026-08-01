@@ -139,6 +139,7 @@
                 <h2>Hogares solidarios registrados</h2>
                 <div>
                     <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnFichas" class="btn-exp" style="background:#0a6cb0;">🧾 Fichas completas (PDF)</button>
                     <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Reporte general (PDF)</button>
                 </div>
                 <div class="filtros">
@@ -727,16 +728,16 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
             doc.save('hogares_solidarios_' + new Date().toISOString().slice(0, 10) + '.pdf');
         });
 
-        // ---- PDF por registro (imprimir directo) ----
-        function imprimirUno(id) {
-            const r = REGS.find(x => x.id === id); if (!r) return;
+        // ---- Ficha completa de UN hogar (dibuja en el doc actual; se reutiliza para imprimir uno o descargar todos) ----
+        function fichaHogarPDF(doc, r) {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
             const h = r.hogar || {}, o = r.responsable || {};
             const drawHF = () => { dibujarHeaderPDF(doc, { titulo: 'Hogar Solidario - Sismo 2026', subtitulo: _s('Nº ' + (r.n_registro || '-') + ' · ' + nombreResp(o)) }); dibujarFooterPDF(doc); };
             const rel = r.relacion === 'Familiar' ? 'Familiar' + (r.que_familiar ? ' (' + r.que_familiar + ')' : '') : (r.relacion || '-');
+            // Colorea la fila de "Atencion": verde si atendida, rojo si no.
+            const colorEstado = (d) => { if (d.section === 'body' && d.column.index === 1) { const v = String(d.cell.raw || '').toUpperCase(); if (v.indexOf('NO ATENDID') === 0) { d.cell.styles.fillColor = [254, 226, 226]; d.cell.styles.textColor = [153, 27, 27]; d.cell.styles.fontStyle = 'bold'; } else if (v.indexOf('ATENDID') === 0) { d.cell.styles.fillColor = [220, 252, 231]; d.cell.styles.textColor = [22, 101, 52]; d.cell.styles.fontStyle = 'bold'; } } };
             jsPDF.API.autoTable.call(doc, {
-                startY: 58, margin: { top: 58, bottom: 16, left: 14, right: 14 }, theme: 'grid',
+                startY: 58, margin: { top: 58, bottom: 16, left: 14, right: 14 }, theme: 'grid', didParseCell: colorEstado,
                 head: [[{ content: _s('RESPONSABLE Y HOGAR SOLIDARIO'), colSpan: 2 }]],
                 body: [
                     ['Atencion de la familia', _s(r.atendida ? 'ATENDIDA' : 'NO ATENDIDA')],
@@ -771,9 +772,26 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
                 columnStyles: { 0: { cellWidth: 64, fontStyle: 'bold', fillColor: [255, 247, 237] }, 1: { cellWidth: 120 } },
                 didDrawPage: drawHF
             }));
+        }
+        // ---- PDF por registro (imprimir directo) ----
+        function imprimirUno(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            fichaHogarPDF(doc, r);
             doc.autoPrint();
             window.open(doc.output('bloburl'), '_blank');
         }
+        // ---- PDF con TODAS las fichas completas (descarga, una por registro) ----
+        $('btnFichas').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay registros para exportar.'); return; }
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            lista.forEach((r, i) => { if (i > 0) doc.addPage(); fichaHogarPDF(doc, r); });
+            doc.save('hogares_solidarios_fichas_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        });
     </script>
 </body>
 </html>
