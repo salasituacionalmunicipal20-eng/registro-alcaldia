@@ -460,7 +460,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
         $('tileMenores').addEventListener('click', () => { const el = $('fEdad'); el.value = (['0-5', '6-11', '12-17'].includes(el.value)) ? '' : '12-17'; pagina = 1; render(); });
 
         const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc((val == null || val === '') ? '—' : val)}</span></div>`;
-        const GS_VOCERO = [['comuna', 'Nombre de la comuna'], ['vocero_nombre', 'Vocero — Nombre'], ['vocero_apellido', 'Vocero — Apellidos'], ['carnet_fecha', 'Carnet Fecha N°1'], ['vocero_ci', 'C.I. del vocero'], ['vocero_tel', 'Teléfono del vocero'], ['municipio', 'Municipio (vocero)'], ['parroquia', 'Parroquia (vocero)'], ['sector', 'Sector'], ['correo', 'Correo electrónico'], ['descripcion_caso', 'Descripción del caso'], ['estatus_habitacional', 'Estatus habitacional']];
+        const GS_COMUNIDAD = [['descripcion_caso', 'Descripción del caso'], ['estatus_habitacional', 'Estatus habitacional']];
         function editar(id) { window.open('zamurera.html?edit=' + encodeURIComponent(id), '_blank'); }
         function verDetalle(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
@@ -481,7 +481,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                 <h3>${esc(duenoDe(r).jefe.nombre || 'Ingreso')} <span style="font-size:13px;color:#64748b;">· ${fams.length} familia(s) · ${personasDe(r)} persona(s)</span></h3>
                 <h4>Recepción</h4>${RECEP.map(c => fila(c[1], r[c[0]])).join('')}
                 <h4>Inmueble (procedencia)</h4>${INM.map(c => fila(c[1], valInm(inm, c[0]))).join('')}
-                <h4>Gestión social (Vivienda Miranda)</h4>${GS_VOCERO.map(c => fila(c[1], gs[c[0]])).join('')}
+                <h4>Gestión social (Vivienda Miranda)</h4>${GS_COMUNIDAD.map(c => fila(c[1], gs[c[0]])).join('')}
                 ${(Array.isArray(r.entregas) && r.entregas.length) ? ('<h4>📦 Solicitud de retiro del centro de acopio ' + (r.entregas_posteadas ? '<span style="font-size:11px;color:#16a34a;">✓ aceptada y descontada</span>' : '<span style="font-size:11px;color:#b45309;">pendiente de aprobar</span>') + '</h4>' + r.entregas.map(e => fila((e.articulo || '') + (e.presentacion ? ' · ' + e.presentacion : ''), (e.cantidad || '') + ' ' + (e.unidad || '') + (e.categoria ? ' · ' + e.categoria : ''))).join('') + ((r.entregas_posteadas !== true) ? '<button class="btn-exp" id="btnAprobarRetiro" style="background:#16a34a;margin-top:8px;">✅ Aceptar solicitud de retiro del centro de acopio</button>' : '')) : ''}
                 <h4>Familias</h4>${famsHtml}
                 <button class="btn-exp" id="btnEditarDet" style="background:#f59e0b;margin-top:16px;width:100%;">✏️ Editar / completar este ingreso</button>

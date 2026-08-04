@@ -140,24 +140,7 @@
             <!-- GESTIÓN SOCIAL (Vivienda Miranda) -->
             <div class="card">
                 <h2>Gestión social (Vivienda Miranda)</h2>
-                <div class="sub">Sistematización — Instituto de Vivienda de Miranda (opcional).</div>
-                <div class="seclabel">Vocero y comunidad</div>
-                <label>Nombre de la comuna</label><input id="gs_comuna" autocomplete="off" />
-                <div class="row2">
-                    <div><label>Vocero — Nombre</label><input id="gs_vocero_nombre" autocomplete="off" /></div>
-                    <div><label>Vocero — Apellidos</label><input id="gs_vocero_apellido" autocomplete="off" /></div>
-                </div>
-                <div class="row3">
-                    <div><label>Carnet Fecha N°1</label><input id="gs_carnet_fecha" autocomplete="off" /></div>
-                    <div><label>C.I. del vocero</label><input id="gs_vocero_ci" inputmode="numeric" autocomplete="off" /></div>
-                    <div><label>Teléfono del vocero</label><input id="gs_vocero_tel" inputmode="tel" autocomplete="off" /></div>
-                </div>
-                <div class="row3">
-                    <div><label>Municipio</label><select id="gs_municipio"><option value="">Selecciona…</option></select></div>
-                    <div><label>Parroquia</label><select id="gs_parroquia"><option value="">Selecciona…</option></select></div>
-                    <div><label>Sector</label><input id="gs_sector" autocomplete="off" /></div>
-                </div>
-                <label>Correo electrónico</label><input id="gs_correo" type="email" autocomplete="off" />
+                <div class="sub">Sistematización — Instituto de Vivienda de Miranda (opcional). El resto de los datos ya se registra en las secciones de arriba.</div>
                 <label>Descripción del caso</label>
                 <textarea id="gs_descripcion" placeholder="Descripción del caso social"></textarea>
                 <label>Estatus habitacional</label>
@@ -258,16 +241,12 @@
             return (e >= 0 && e <= 120) ? e : '';
         }
 
-        // Prellenar fecha/hora + selects municipio/parroquia (Miranda) de gestión social
+        // Prellenar fecha/hora de ingreso
         (function () {
             const d = new Date();
             const p = n => String(n).padStart(2, '0');
             $('fecha_ingreso').value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
             $('hora').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
-            const MIR_MUN = ["Acevedo", "Andrés Bello", "Baruta", "Brión", "Buroz", "Carrizal", "Chacao", "Cristóbal Rojas", "El Hatillo", "Guaicaipuro", "Independencia", "Lander", "Los Salias", "Páez", "Paz Castillo", "Pedro Gual", "Plaza", "Simón Bolívar", "Sucre", "Urdaneta", "Zamora"];
-            const MIR_PARR = ["Altagracia de la Montaña", "Araira", "Araguita", "Arévalo González", "Birongo", "Capaya", "Carrizal", "Cartanal", "Caucagua", "Caucagüita", "Cecilio Acosta", "Chacao", "Charallave", "Chirimena", "Cúa", "Cúpira", "Curiepe", "El Café", "El Cafetal", "El Guapo", "El Hatillo", "El Jarillo", "Guatire", "Higuerote", "La Democracia", "La Dolorita", "Los Teques", "Mamporal", "Ocumare del Tuy", "Panaquire", "Paparo", "Paracoto", "Petare", "Ribas", "Río Chico", "San Antonio de los Altos", "San Antonio de Yare", "San Fernando Rey", "San Francisco de Yare", "San José de Barlovento", "San Pedro", "Santa Lucía del Tuy", "Santa Teresa del Tuy", "Tácata", "Tacarigua de Brión", "Tacarigua de la Laguna"];
-            $('gs_municipio').innerHTML = '<option value="">Selecciona…</option>' + MIR_MUN.map(m => `<option>${m}</option>`).join('');
-            $('gs_parroquia').innerHTML = '<option value="">Selecciona…</option>' + MIR_PARR.map(x => `<option>${x}</option>`).join('');
         })();
 
         // Inmueble: estado -> municipio (municipios-data.js)
@@ -754,10 +733,7 @@
                 cant_familias: v('im_cant_familias'), cant_personas: v('im_cant_personas')
             };
             const gestion_social = {
-                comuna: v('gs_comuna'), vocero_nombre: v('gs_vocero_nombre'), vocero_apellido: v('gs_vocero_apellido'),
-                carnet_fecha: v('gs_carnet_fecha'), vocero_ci: soloDig(v('gs_vocero_ci')), vocero_tel: soloDig(v('gs_vocero_tel')),
-                municipio: v('gs_municipio'), parroquia: v('gs_parroquia'), sector: v('gs_sector'),
-                correo: v('gs_correo'), descripcion_caso: v('gs_descripcion'),
+                descripcion_caso: v('gs_descripcion'),
                 estatus_habitacional: v('gs_estatus')
             };
 
@@ -865,10 +841,7 @@
             setVal('im_tiempo_num', inm.tiempo_permanencia_num); setVal('im_tiempo_unidad', inm.tiempo_permanencia_unidad);
             setVal('im_cant_familias', inm.cant_familias); setVal('im_cant_personas', inm.cant_personas);
             const gs = rec.gestion_social || {};
-            setVal('gs_comuna', gs.comuna); setVal('gs_vocero_nombre', gs.vocero_nombre); setVal('gs_vocero_apellido', gs.vocero_apellido);
-            setVal('gs_carnet_fecha', gs.carnet_fecha); setVal('gs_vocero_ci', gs.vocero_ci); setVal('gs_vocero_tel', gs.vocero_tel);
-            setVal('gs_municipio', gs.municipio); setVal('gs_parroquia', gs.parroquia); setVal('gs_sector', gs.sector);
-            setVal('gs_correo', gs.correo); setVal('gs_descripcion', gs.descripcion_caso); setVal('gs_estatus', gs.estatus_habitacional);
+            setVal('gs_descripcion', gs.descripcion_caso); setVal('gs_estatus', gs.estatus_habitacional);
             const fotos = {}; EDIT_FOTOS_OK = false; try { const fs = await get(ref(database, 'zamurera_fotos/' + id)); if (fs.exists()) Object.assign(fotos, fs.val()); EDIT_FOTOS_OK = true; } catch (e) { EDIT_FOTOS_OK = false; }
             const fams = (Array.isArray(rec.familias) && rec.familias.length) ? rec.familias : [{ es_dueno: 'Sí', jefe: rec.jefe || {}, integrantes: toArrLoc(rec.miembros) }];
             $('familias').innerHTML = ''; famSeq = 0;
