@@ -503,6 +503,12 @@
                     <div><label>Parentesco con el menor</label><select data-if="rep_parentesco">${optList(PARENTESCO)}</select></div>
                 </div>
             </div>
+            <label style="color:#0a2351;margin-top:8px;">👕 Tallas de ropa</label>
+            <div class="row3">
+                <div><label>Camisa (talla)</label><input data-if="talla_camisa" autocomplete="off" /></div>
+                <div><label>Pantalón (talla)</label><input data-if="talla_pantalon" autocomplete="off" /></div>
+                <div><label>Zapato (talla)</label><input data-if="talla_zapatos" autocomplete="off" /></div>
+            </div>
             <label style="color:#0a2351;margin-top:8px;">📍 Ubicación en el campamento</label>
             <div class="row3">
                 <div><label>Planta</label><select data-if="planta" class="if-planta"></select></div>
@@ -667,7 +673,7 @@
         function mostrarMsg(t) { const m = $('msg'); m.textContent = t; m.className = 'msg err'; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
         const JF_FIELDS = ['nombre', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'nivel_instruccion', 'es_dueno', 'trabaja', 'situacion_laboral', 'tiene_pareja', 'lugar_trabajo', 'cargo', 'profesion', 'tiempo_servicio', 'nivel_academico', 'estudia', 'carnet_posee', 'carnet_codigo', 'carnet_serial', 'enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'necesita_ropa', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'talla_ropa_interior', 'familiar_desaparecido', 'familiar_otro_estado', 'afectacion', 'observaciones', 'planta', 'cubiculo', 'cama'];
-        const IF_FIELDS = ['es_jefe', 'nombre', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'planta', 'cubiculo', 'cama', 'rep_nacionalidad', 'rep_cedula', 'rep_nombre', 'rep_telefono', 'rep_parentesco'];
+        const IF_FIELDS = ['es_jefe', 'nombre', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'planta', 'cubiculo', 'cama', 'rep_nacionalidad', 'rep_cedula', 'rep_nombre', 'rep_telefono', 'rep_parentesco'];
         const CEDULA_KEYS = { cedula: 1, telefono: 1, rep_cedula: 1, rep_telefono: 1 };
 
         function leerJefe(card) {

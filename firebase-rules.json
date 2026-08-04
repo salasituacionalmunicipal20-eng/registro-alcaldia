@@ -102,7 +102,7 @@
     },
     "zamurera_contador": {
       ".read": true,
-      ".write": "(newData.isNumber() && ((!data.exists() && newData.val() === 1) || newData.val() === data.val() + 1)) || auth.token.email === 'carlos.admin@alcaldia.com'"
+      ".write": "(newData.isNumber() && newData.val() > 0 && ((!data.exists() && newData.val() <= 200) || (newData.val() > data.val() && newData.val() <= data.val() + 200))) || auth.token.email === 'carlos.admin@alcaldia.com'"
     },
     "hogares_solidarios": {
       ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
