@@ -177,6 +177,9 @@
             <h2>¡Ingreso registrado!</h2>
             <p>La información fue guardada correctamente.</p>
             <p style="font-size:18px;margin-top:6px;">Nº de registro: <b id="okNum" style="color:#0a2351;">—</b></p>
+            <div id="okAviso" style="display:none;text-align:left;background:#fef3c7;border:1px solid #f59e0b;border-left:5px solid #f59e0b;border-radius:10px;padding:12px 14px;margin:14px auto 0;max-width:520px;font-size:14px;line-height:1.5;color:#7c2d12;"></div>
+            <p id="okTip" style="font-size:13.5px;color:#475569;margin-top:14px;">¿Faltó un integrante o una foto? Puedes completarlo ahora sin registrar de nuevo.</p>
+            <button id="btnEditarOk" type="button" style="display:none;background:#f59e0b;">✏️ Editar / agregar integrante o foto</button>
             <button id="btnOtro" type="button">Registrar otro ingreso</button>
         </div>
     </div>
@@ -777,6 +780,14 @@
                 const duenoFam = familias.find(f => f.jefe.es_dueno === 'Sí') || familias[0];
                 const nroDueno = (duenoFam && duenoFam.jefe.nro) || (personas[0] && personas[0].nro) || '';
 
+                // Guarda las fotos y DEVUELVE el error si falla. Antes esto se tragaba la excepción en silencio y
+                // el operador veía "registrado" aunque las fotos no hubieran subido.
+                const guardarFotos = async (id) => {
+                    if (!Object.keys(fotos).length && !EDIT_ID) return '';
+                    try { await set(ref(database, 'zamurera_fotos/' + id), fotos); return ''; }
+                    catch (e) { return (e && (e.message || e.code)) || 'error desconocido'; }
+                };
+
                 if (EDIT_ID) {
                     // MODO EDICIÓN: se usa update() (no set) para NO pisar entregas/entregas_posteadas — si un admin
                     // aprobó el retiro del acopio en paralelo, esa aprobación se conserva (evita doble descuento).
@@ -787,31 +798,71 @@
                     payload.jefe = null; payload.miembros = null; payload.estado = null; payload.municipio = null; payload.comuna_procedencia = null; payload.comunidad_sector = null;
                     await update(ref(database, 'zamurera/' + EDIT_ID), payload);
                     // Fotos: si la carga inicial fue OK, se reemplaza el nodo completo (así se limpian las fotos de gente eliminada);
-                    // si la carga falló, no se toca para no perder las fotos existentes.
-                    if (EDIT_FOTOS_OK) { try { await set(ref(database, 'zamurera_fotos/' + EDIT_ID), fotos); } catch (e) {} }
-                    else if (Object.keys(fotos).length) { try { await set(ref(database, 'zamurera_fotos/' + EDIT_ID), fotos); } catch (e) {} }
+                    // si la carga falló, solo se escribe cuando hay algo que guardar, para no borrar las existentes.
+                    let errF = '';
+                    if (EDIT_FOTOS_OK || Object.keys(fotos).length) errF = await guardarFotos(EDIT_ID);
                     if ($('okNum')) $('okNum').textContent = payload.n_registro || '—';
                     const h2 = document.querySelector('#okScreen h2'); if (h2) h2.textContent = '¡Cambios guardados!';
                     if ($('btnOtro')) $('btnOtro').textContent = 'Volver al tablero';
-                    $('formWrap').style.display = 'none';
-                    $('okScreen').style.display = 'block';
-                    window.scrollTo(0, 0);
+                    mostrarOk(EDIT_ID, errF, Object.keys(fotos).length);
                     return;
                 }
                 payload.n_registro = nroDueno;
                 const nuevo = push(ref(database, 'zamurera'));
                 await set(nuevo, payload);
-                if (Object.keys(fotos).length) { try { await set(ref(database, 'zamurera_fotos/' + nuevo.key), fotos); } catch (e) {} }
+                const errFotos = await guardarFotos(nuevo.key);
                 if ($('okNum')) $('okNum').textContent = nroDueno || '—';
-                $('formWrap').style.display = 'none';
-                $('okScreen').style.display = 'block';
-                window.scrollTo(0, 0);
+                mostrarOk(nuevo.key, errFotos, Object.keys(fotos).length);
             } catch (e) {
                 mostrarMsg('No se pudo ' + (EDIT_ID ? 'guardar' : 'enviar') + ' (' + (e.message || e.code || 'error') + '). Revisa tu internet e intenta de nuevo.');
                 btn.disabled = false; btn.textContent = EDIT_ID ? 'Guardar cambios' : 'Guardar ingreso';
             }
         });
         $('btnOtro').addEventListener('click', () => { if (EDIT_ID) location.href = 'zamurera-resultados.html'; else location.reload(); });
+
+        // El formulario se llena SIN sesión (es público), pero editar exige admin. Se resuelve al cargar para no
+        // ofrecerle el botón "Editar" a alguien que después chocaría con "No estás autorizado".
+        let PUEDE_EDITAR = false;
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { PUEDE_EDITAR = false; return; }
+            if (user.email === 'carlos.admin@alcaldia.com') { PUEDE_EDITAR = true; return; }
+            try { const s = await get(ref(database, 'operadores/' + user.uid)); PUEDE_EDITAR = s.exists() && s.val().rol === 'admin'; }
+            catch (e) { PUEDE_EDITAR = false; }
+        });
+
+        // Pantalla final: deja abierta la puerta para completar el ingreso (agregar un integrante que faltó o
+        // reintentar una foto que no subió) sin tener que registrarlo todo otra vez.
+        function mostrarOk(id, errFotos, nFotos) {
+            const aviso = $('okAviso'), btnEd = $('btnEditarOk'), tip = $('okTip');
+            if (errFotos) {
+                aviso.textContent = '';
+                const t1 = document.createElement('b');
+                t1.textContent = '⚠️ El ingreso se guardó, pero ' + (nFotos === 1 ? 'la foto no se pudo subir' : 'las ' + nFotos + ' fotos no se pudieron subir') + '.';
+                const t2 = document.createElement('div');
+                t2.style.cssText = 'margin-top:6px;font-size:13px;';
+                t2.textContent = 'Motivo: ' + errFotos + '. Los demás datos SÍ quedaron guardados. Usa el botón de abajo para volver a intentar la foto.';
+                aviso.appendChild(t1); aviso.appendChild(t2);
+                aviso.style.display = 'block';
+                if (tip) tip.style.display = 'none';
+            } else {
+                aviso.style.display = 'none';
+                if (tip) tip.style.display = '';
+            }
+            if (id && PUEDE_EDITAR) {
+                btnEd.dataset.id = id; btnEd.style.display = '';
+            } else if (tip) {
+                // Sin sesión de administrador no se puede editar: se le dice qué hacer en vez de dejarlo sin salida.
+                tip.style.display = '';
+                tip.textContent = '¿Faltó un integrante o una foto? Anota el Nº de registro y pídele a un administrador que lo complete desde el tablero.';
+            }
+            $('formWrap').style.display = 'none';
+            $('okScreen').style.display = 'block';
+            window.scrollTo(0, 0);
+        }
+        $('btnEditarOk').addEventListener('click', () => {
+            const id = $('btnEditarOk').dataset.id;
+            if (id) location.href = 'zamurera.html?edit=' + encodeURIComponent(id);
+        });
 
         // ================= MODO EDICIÓN (?edit=<id>) =================
         function setVal(id, val) { const el = $(id); if (el && val != null) el.value = val; }
