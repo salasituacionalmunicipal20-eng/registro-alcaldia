@@ -600,6 +600,41 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             try { await remove(ref(database, NODO + '/' + id)); await remove(ref(database, 'zamurera_fotos/' + id)); } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
         }
 
+        // xlsx-js-style NO sabe escribir paneles congelados: su escritor solo emite <sheetView workbookViewId>.
+        // Como la hoja "Personas" tiene 26 columnas, al desplazarse se perdían los encabezados. Solución: se genera
+        // el archivo en memoria, se abre el zip con XLSX.CFB, se le inyecta el <pane> a cada hoja y se vuelve a cerrar.
+        // Verificado: conserva filtros, celdas combinadas, anchos, estilos y acentos, y no oculta ninguna fila.
+        // Si algo fallara, cae al guardado normal — el Excel siempre sale, con o sin encabezados congelados.
+        function guardarXlsx(wb, nombre) {
+            const PANE = '<pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/>'
+                + '<selection pane="bottomLeft" activeCell="A4" sqref="A4"/>';
+            try {
+                const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const cfb = XLSX.CFB.read(new Uint8Array(buf), { type: 'array' });
+                let n = 0;
+                (cfb.FullPaths || []).forEach((ruta, i) => {
+                    if (!/\/xl\/worksheets\/sheet\d+\.xml$/.test(ruta)) return;
+                    const ent = cfb.FileIndex[i];
+                    if (!ent || !ent.content) return;
+                    let xml = new TextDecoder('utf-8').decode(new Uint8Array(ent.content));
+                    const antes = xml;
+                    xml = xml.replace(/(<sheetView[^>]*?)\/>/, '$1>' + PANE + '</sheetView>');
+                    if (xml === antes) return;
+                    const b = new TextEncoder().encode(xml);
+                    ent.content = b; ent.size = b.length; n++;
+                });
+                if (!n) throw new Error('no se pudo inyectar el congelado');
+                const blob = new Blob([XLSX.CFB.write(cfb, { type: 'array', fileType: 'zip' })],
+                    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = nombre;
+                document.body.appendChild(a); a.click();
+                setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+            } catch (e) {
+                XLSX.writeFile(wb, nombre);
+            }
+        }
+
         // ---- Excel (2 hojas) ----
         $('btnExcel').addEventListener('click', () => {
             if (typeof XLSX === 'undefined') { alert('SheetJS no cargó.'); return; }
@@ -652,7 +687,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, mkSheet('CAMPAMENTO TEMPORAL — FAMILIAS', hdr1, f1, hdr1.map(() => 16)), 'Familias');
             XLSX.utils.book_append_sheet(wb, mkSheet('CAMPAMENTO TEMPORAL — PERSONAS', hdr2, f2, [12, 8, 16, 8, 24, 14, 14, 14, 7, 11, 11, 13, 22, 15, 22, 18, 22, 18, 22, 12, 13, 12, 10, 10, 8, 26]), 'Personas');
-            XLSX.writeFile(wb, `campamento_temporal_${ahora.toISOString().slice(0, 10)}.xlsx`);
+            guardarXlsx(wb, `campamento_temporal_${ahora.toISOString().slice(0, 10)}.xlsx`);
         });
 
         // ---- Sanitizador PDF ----
