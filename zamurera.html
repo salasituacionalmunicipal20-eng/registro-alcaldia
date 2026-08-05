@@ -512,6 +512,14 @@
                 <div class="condbox hidden" data-for="ienf"><label>¿Cuál?</label><input data-if="enfermedad_cual" autocomplete="off" /></div>
             </div>
             <div class="row2">
+                <div><label>¿Tiene alguna discapacidad?</label><select data-if="discapacidad" data-cond="idisc">${siNo}</select></div>
+                <div class="condbox hidden" data-for="idisc"><label>¿Cuál?</label><input data-if="discapacidad_cual" autocomplete="off" /></div>
+            </div>
+            <div class="row2">
+                <div><label>¿Toma algún medicamento?</label><select data-if="toma_medicamento" data-cond="imed">${siNo}</select></div>
+                <div class="condbox hidden" data-for="imed"><label>Indique cuál</label><input data-if="medicamento" autocomplete="off" /></div>
+            </div>
+            <div class="row2">
                 <div><label>¿Requiere ayuda psicológica?</label><select data-if="necesita_psico">${siNo}</select></div>
                 <div><label>Situación psicológica</label><input data-if="situacion_psicologica" autocomplete="off" /></div>
             </div>
@@ -688,7 +696,7 @@
         function mostrarMsg(t) { const m = $('msg'); m.textContent = t; m.className = 'msg err'; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
         const JF_FIELDS = ['nombre', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'nivel_instruccion', 'es_dueno', 'trabaja', 'situacion_laboral', 'tiene_pareja', 'lugar_trabajo', 'cargo', 'profesion', 'tiempo_servicio', 'nivel_academico', 'estudia', 'carnet_posee', 'carnet_codigo', 'carnet_serial', 'enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'necesita_ropa', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'talla_ropa_interior', 'familiar_desaparecido', 'familiar_otro_estado', 'afectacion', 'observaciones', 'planta', 'cubiculo', 'cama'];
-        const IF_FIELDS = ['es_jefe', 'nombre', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'enfermedad', 'enfermedad_cual', 'necesita_psico', 'situacion_psicologica', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'planta', 'cubiculo', 'cama', 'rep_nacionalidad', 'rep_cedula', 'rep_nombre', 'rep_telefono', 'rep_parentesco'];
+        const IF_FIELDS = ['es_jefe', 'nombre', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'planta', 'cubiculo', 'cama', 'rep_nacionalidad', 'rep_cedula', 'rep_nombre', 'rep_telefono', 'rep_parentesco'];
         const CEDULA_KEYS = { cedula: 1, telefono: 1, rep_cedula: 1, rep_telefono: 1 };
 
         function leerJefe(card) {
