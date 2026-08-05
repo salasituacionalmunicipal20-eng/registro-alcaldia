@@ -617,6 +617,9 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                 for (let r = 3; r < data.length; r++) { const fondo = (r % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}; for (let c = 0; c < header.length; c++) setS(r, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...fondo }); }
                 ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: header.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: header.length - 1 } }];
                 ws['!cols'] = cols.map(w => ({ wch: w }));
+                // Filtros en la fila de encabezados (fila 3). Solo agrega las flechitas para poder filtrar a mano:
+                // NO oculta ni recorta nada, el archivo sigue trayendo todas las filas y columnas como el PDF.
+                if (filas.length) ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: header.length - 1 } }) };
                 return ws;
             };
             // Hoja 1: una fila por FAMILIA (con datos del inmueble + jefe)
@@ -708,6 +711,24 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                         columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 34 }, 2: { cellWidth: 20 }, 3: { cellWidth: 24 }, 4: { cellWidth: 10, halign: 'center' }, 5: { cellWidth: 16 }, 6: { cellWidth: 14, halign: 'center' }, 7: { cellWidth: 40 } },
                         didDrawPage: drawHF
                     });
+                    // Segunda tabla: salud y tallas de cada integrante. Van aparte porque metiendo 8 columnas más
+                    // en la tabla de arriba quedaría ilegible. Solo se dibuja si al menos uno tiene algo cargado.
+                    const sn = (v, cual) => { const s = String(v || '').trim(); if (!s) return '-'; const c = String(cual || '').trim(); return (s === 'Sí' && c) ? 'Sí — ' + c : s; };
+                    const CAMPOS_SALUD = ['enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'talla_camisa', 'talla_pantalon', 'talla_zapatos'];
+                    if (f.integrantes.some(m => CAMPOS_SALUD.some(k => m[k]))) {
+                        jsPDF.API.autoTable.call(doc, {
+                            startY: doc.lastAutoTable.finalY + 2, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                            head: [['#', 'Nombre', 'Enfermedad', 'Discapacidad', 'Medicamento', 'Ayuda psicológica', 'Tallas C/P/Z']],
+                            body: f.integrantes.map((m, i) => [String(i + 1), _safePdf(m.nombre || '-'),
+                            _safePdf(sn(m.enfermedad, m.enfermedad_cual)), _safePdf(sn(m.discapacidad, m.discapacidad_cual)),
+                            _safePdf(sn(m.toma_medicamento, m.medicamento)), _safePdf(sn(m.necesita_psico, m.situacion_psicologica)),
+                            _safePdf([m.talla_camisa, m.talla_pantalon, m.talla_zapatos].map(x => x || '-').join(' / '))]),
+                            theme: 'grid', styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.2, lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
+                            headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+                            columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 32 }, 2: { cellWidth: 30 }, 3: { cellWidth: 30 }, 4: { cellWidth: 30 }, 5: { cellWidth: 26 }, 6: { cellWidth: 24, halign: 'center' } },
+                            didDrawPage: drawHF
+                        });
+                    }
                 }
             });
         }
