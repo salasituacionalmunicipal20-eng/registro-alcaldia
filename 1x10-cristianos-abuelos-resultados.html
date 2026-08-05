@@ -1870,12 +1870,6 @@
                 { wch: 22 }, { wch: 20 }, { wch: 26 }, { wch: 32 },
                 { wch: 14 }, { wch: 9 }, { wch: 18 }
             ];
-            // SheetJS community ignora la clave propietaria '!freeze'. La API real
-            // para congelar fila 1 es '!sheetView' (state='frozen' + topLeftCell)
-            // mas wb.Workbook.Views[*]. Configuramos ambos para compatibilidad
-            // amplia (Excel real y LibreOffice).
-            wsJefes['!sheetView'] = [{ state: 'frozen', topLeftCell: 'A2', xSplit: 0, ySplit: 1 }];
-            wsJefes['!freeze'] = { xSplit: 0, ySplit: 1 }; // (legacy, por si algun viewer la respeta)
             // Ahora son 15 columnas (A..O) tras agregar Fecha Nac + Edad — actualizar autofilter.
             wsJefes['!autofilter'] = { ref: `A1:O${filasJefes.length + 1}` };
             XLSX.utils.book_append_sheet(wb, wsJefes, 'Jefes 1x10');
@@ -1921,9 +1915,6 @@
                 { wch: 7 }, { wch: 14 }, { wch: 22 }, { wch: 22 },
                 { wch: 14 }, { wch: 7 }, { wch: 12 }, { wch: 6 }, { wch: 6 }, { wch: 18 }
             ];
-            // Misma estrategia que wsJefes: API real '!sheetView' + legacy '!freeze'.
-            wsAfines['!sheetView'] = [{ state: 'frozen', topLeftCell: 'A2', xSplit: 0, ySplit: 1 }];
-            wsAfines['!freeze'] = { xSplit: 0, ySplit: 1 };
             // Ahora son 14 columnas (A..N) en vez de 13 (A..M) — actualizar autofilter.
             wsAfines['!autofilter'] = { ref: `A1:N${filasAfines.length + 1}` };
             XLSX.utils.book_append_sheet(wb, wsAfines, 'Afines');
@@ -1982,12 +1973,12 @@
             wsMov['!merges'] = merges;
             XLSX.utils.book_append_sheet(wb, wsMov, 'Movilizacion por Centro');
 
-            // Configurar Workbook.Views para que las hojas que usan '!sheetView'
-            // (Jefes 1x10 y Afines) realmente abran con freeze pane aplicado.
+            // Workbook.Views: el escritor solo lee de aqui la marca RTL. El congelado de
+            // encabezados NO sale de aca, lo aplica guardarXlsx() al final.
             wb.Workbook = wb.Workbook || {};
             wb.Workbook.Views = [{ RTL: false }];
 
-            XLSX.writeFile(wb, `1x10_movilizacion_${fechaSlug}.xlsx`);
+            guardarXlsx(wb, `1x10_movilizacion_${fechaSlug}.xlsx`);
         }
 
         // ──────────────────────────────────────────────────────────
@@ -2577,6 +2568,51 @@
                 _mouseDownOnBackdrop = false;
             });
         })();
-    </script>
+    
+        // Los escritores de SheetJS / xlsx-js-style NO saben congelar paneles: solo emiten
+        // <sheetView workbookViewId>, nunca <pane>. Por eso asignar ws['!freeze'] no hace absolutamente nada.
+        // Aquí se genera el archivo, se abre el zip con XLSX.CFB, se le inyecta el <pane> a cada hoja y se
+        // vuelve a cerrar. La fila donde congelar se deduce del filtro (!autofilter) de cada hoja, así cada
+        // una queda bien aunque tengan distinta cantidad de filas de título.
+        // Si algo fallara, cae al guardado normal: el Excel siempre sale, con o sin encabezados congelados.
+        function guardarXlsx(wb, nombre) {
+            try {
+                const filaHdr = (wb.SheetNames || []).map(function (n) {
+                    const ws = (wb.Sheets || {})[n] || {};
+                    const ref = ws['!autofilter'] && ws['!autofilter'].ref;
+                    const m = ref && /^[A-Za-z]+(\d+)/.exec(String(ref));
+                    return m ? Number(m[1]) : 0;
+                });
+                if (!filaHdr.some(Boolean)) throw new Error('ninguna hoja tiene filtro de referencia');
+                const cfb = XLSX.CFB.read(new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })), { type: 'array' });
+                let n = 0;
+                (cfb.FullPaths || []).forEach(function (ruta, i) {
+                    const mh = /\/xl\/worksheets\/sheet(\d+)\.xml$/.exec(ruta);
+                    if (!mh) return;
+                    const y = filaHdr[Number(mh[1]) - 1];
+                    const ent = cfb.FileIndex[i];
+                    if (!y || !ent || !ent.content) return;
+                    const celda = 'A' + (y + 1);
+                    const pane = '<pane ySplit="' + y + '" topLeftCell="' + celda + '" activePane="bottomLeft" state="frozen"/>'
+                        + '<selection pane="bottomLeft" activeCell="' + celda + '" sqref="' + celda + '"/>';
+                    let xml = new TextDecoder('utf-8').decode(new Uint8Array(ent.content));
+                    const antes = xml;
+                    xml = xml.replace(/(<sheetView[^>]*?)\/>/, '$1>' + pane + '</sheetView>');
+                    if (xml === antes) return;
+                    const b = new TextEncoder().encode(xml);
+                    ent.content = b; ent.size = b.length; n++;
+                });
+                if (!n) throw new Error('no se pudo inyectar el congelado');
+                const blob = new Blob([XLSX.CFB.write(cfb, { type: 'array', fileType: 'zip' })],
+                    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = nombre;
+                document.body.appendChild(a); a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+            } catch (e) {
+                XLSX.writeFile(wb, nombre);
+            }
+        }
+</script>
 </body>
 </html>

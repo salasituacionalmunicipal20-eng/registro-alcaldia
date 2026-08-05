@@ -667,6 +667,9 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
             ws['!cols'] = (anchos || hdr.map(() => 18)).map(w => ({ wch: w }));
             const rng = XLSX.utils.decode_range(ws['!ref']);
             for (let c = rng.s.c; c <= rng.e.c; c++) { const ref2 = XLSX.utils.encode_cell({ r: 0, c }); if (ws[ref2]) ws[ref2].s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '0A2351' } }, alignment: { horizontal: 'center' } }; }
+            // Filtro en el encabezado (fila 1). No oculta nada; además guardarXlsx() lo usa para saber
+            // hasta qué fila congelar.
+            if (filas.length) ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: filas.length, c: hdr.length - 1 } }) };
             return ws;
         }
         $('btnExcel').addEventListener('click', () => {
@@ -702,7 +705,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
             lista.forEach(r => { const o = r.responsable || {}; miembrosDe(r).forEach(m => f3.push([r.n_registro || '', nombreResp(o), nombreResp(m), m.cedula ? cedDe(m) : 'sin documento', gen(m.sexo), edadDe(m.fecha_nacimiento), m.tipo || '', m.patologia || '', m.medicamento || '', m.talla_camisa || '', m.talla_pantalon || '', m.talla_zapatos || '', m.observaciones || ''])); });
             XLSX.utils.book_append_sheet(wb, mkSheet(h3, f3, [8, 24, 24, 14, 10, 6, 22, 22, 20, 12, 12, 12, 30]), 'Miembros');
 
-            XLSX.writeFile(wb, `hogares_solidarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
+            guardarXlsx(wb, `hogares_solidarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
         });
 
         // ---- PDF helpers ----
@@ -792,6 +795,51 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color: #0f172a; ba
             lista.forEach((r, i) => { if (i > 0) doc.addPage(); fichaHogarPDF(doc, r); });
             doc.save('hogares_solidarios_fichas_' + new Date().toISOString().slice(0, 10) + '.pdf');
         });
-    </script>
+    
+        // Los escritores de SheetJS / xlsx-js-style NO saben congelar paneles: solo emiten
+        // <sheetView workbookViewId>, nunca <pane>. Por eso asignar ws['!freeze'] no hace absolutamente nada.
+        // Aquí se genera el archivo, se abre el zip con XLSX.CFB, se le inyecta el <pane> a cada hoja y se
+        // vuelve a cerrar. La fila donde congelar se deduce del filtro (!autofilter) de cada hoja, así cada
+        // una queda bien aunque tengan distinta cantidad de filas de título.
+        // Si algo fallara, cae al guardado normal: el Excel siempre sale, con o sin encabezados congelados.
+        function guardarXlsx(wb, nombre) {
+            try {
+                const filaHdr = (wb.SheetNames || []).map(function (n) {
+                    const ws = (wb.Sheets || {})[n] || {};
+                    const ref = ws['!autofilter'] && ws['!autofilter'].ref;
+                    const m = ref && /^[A-Za-z]+(\d+)/.exec(String(ref));
+                    return m ? Number(m[1]) : 0;
+                });
+                if (!filaHdr.some(Boolean)) throw new Error('ninguna hoja tiene filtro de referencia');
+                const cfb = XLSX.CFB.read(new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })), { type: 'array' });
+                let n = 0;
+                (cfb.FullPaths || []).forEach(function (ruta, i) {
+                    const mh = /\/xl\/worksheets\/sheet(\d+)\.xml$/.exec(ruta);
+                    if (!mh) return;
+                    const y = filaHdr[Number(mh[1]) - 1];
+                    const ent = cfb.FileIndex[i];
+                    if (!y || !ent || !ent.content) return;
+                    const celda = 'A' + (y + 1);
+                    const pane = '<pane ySplit="' + y + '" topLeftCell="' + celda + '" activePane="bottomLeft" state="frozen"/>'
+                        + '<selection pane="bottomLeft" activeCell="' + celda + '" sqref="' + celda + '"/>';
+                    let xml = new TextDecoder('utf-8').decode(new Uint8Array(ent.content));
+                    const antes = xml;
+                    xml = xml.replace(/(<sheetView[^>]*?)\/>/, '$1>' + pane + '</sheetView>');
+                    if (xml === antes) return;
+                    const b = new TextEncoder().encode(xml);
+                    ent.content = b; ent.size = b.length; n++;
+                });
+                if (!n) throw new Error('no se pudo inyectar el congelado');
+                const blob = new Blob([XLSX.CFB.write(cfb, { type: 'array', fileType: 'zip' })],
+                    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = nombre;
+                document.body.appendChild(a); a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+            } catch (e) {
+                XLSX.writeFile(wb, nombre);
+            }
+        }
+</script>
 </body>
 </html>

@@ -600,25 +600,35 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             try { await remove(ref(database, NODO + '/' + id)); await remove(ref(database, 'zamurera_fotos/' + id)); } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
         }
 
-        // xlsx-js-style NO sabe escribir paneles congelados: su escritor solo emite <sheetView workbookViewId>.
-        // Como la hoja "Personas" tiene 26 columnas, al desplazarse se perdían los encabezados. Solución: se genera
-        // el archivo en memoria, se abre el zip con XLSX.CFB, se le inyecta el <pane> a cada hoja y se vuelve a cerrar.
-        // Verificado: conserva filtros, celdas combinadas, anchos, estilos y acentos, y no oculta ninguna fila.
-        // Si algo fallara, cae al guardado normal — el Excel siempre sale, con o sin encabezados congelados.
+        // Los escritores de SheetJS / xlsx-js-style NO saben congelar paneles: solo emiten
+        // <sheetView workbookViewId>, nunca <pane>. Por eso asignar ws['!freeze'] no hace absolutamente nada.
+        // Aquí se genera el archivo, se abre el zip con XLSX.CFB, se le inyecta el <pane> a cada hoja y se
+        // vuelve a cerrar. La fila donde congelar se deduce del filtro (!autofilter) de cada hoja, así cada
+        // una queda bien aunque tengan distinta cantidad de filas de título.
+        // Si algo fallara, cae al guardado normal: el Excel siempre sale, con o sin encabezados congelados.
         function guardarXlsx(wb, nombre) {
-            const PANE = '<pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/>'
-                + '<selection pane="bottomLeft" activeCell="A4" sqref="A4"/>';
             try {
-                const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                const cfb = XLSX.CFB.read(new Uint8Array(buf), { type: 'array' });
+                const filaHdr = (wb.SheetNames || []).map(function (n) {
+                    const ws = (wb.Sheets || {})[n] || {};
+                    const ref = ws['!autofilter'] && ws['!autofilter'].ref;
+                    const m = ref && /^[A-Za-z]+(\d+)/.exec(String(ref));
+                    return m ? Number(m[1]) : 0;
+                });
+                if (!filaHdr.some(Boolean)) throw new Error('ninguna hoja tiene filtro de referencia');
+                const cfb = XLSX.CFB.read(new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })), { type: 'array' });
                 let n = 0;
-                (cfb.FullPaths || []).forEach((ruta, i) => {
-                    if (!/\/xl\/worksheets\/sheet\d+\.xml$/.test(ruta)) return;
+                (cfb.FullPaths || []).forEach(function (ruta, i) {
+                    const mh = /\/xl\/worksheets\/sheet(\d+)\.xml$/.exec(ruta);
+                    if (!mh) return;
+                    const y = filaHdr[Number(mh[1]) - 1];
                     const ent = cfb.FileIndex[i];
-                    if (!ent || !ent.content) return;
+                    if (!y || !ent || !ent.content) return;
+                    const celda = 'A' + (y + 1);
+                    const pane = '<pane ySplit="' + y + '" topLeftCell="' + celda + '" activePane="bottomLeft" state="frozen"/>'
+                        + '<selection pane="bottomLeft" activeCell="' + celda + '" sqref="' + celda + '"/>';
                     let xml = new TextDecoder('utf-8').decode(new Uint8Array(ent.content));
                     const antes = xml;
-                    xml = xml.replace(/(<sheetView[^>]*?)\/>/, '$1>' + PANE + '</sheetView>');
+                    xml = xml.replace(/(<sheetView[^>]*?)\/>/, '$1>' + pane + '</sheetView>');
                     if (xml === antes) return;
                     const b = new TextEncoder().encode(xml);
                     ent.content = b; ent.size = b.length; n++;
@@ -629,7 +639,7 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob); a.download = nombre;
                 document.body.appendChild(a); a.click();
-                setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
             } catch (e) {
                 XLSX.writeFile(wb, nombre);
             }
