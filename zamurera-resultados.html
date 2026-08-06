@@ -245,18 +245,6 @@
             return out;
         })();
 
-        // Reparte una lista de pares clave/valor en filas de DOS columnas (4 celdas).
-        // Así el PDF sale completo sin volverse eterno: la misma información ocupa
-        // la mitad de las páginas.
-        function enParejas(pares) {
-            const filas = [];
-            for (let i = 0; i < pares.length; i += 2) {
-                const a = pares[i], b = pares[i + 1];
-                filas.push([a[0], a[1], b ? b[0] : '', b ? b[1] : '']);
-            }
-            return filas;
-        }
-
         function valJefe(j, key) {
             if (key === 'genero') return gen(j.genero);
             if (key === 'planta') return j.planta || j.modulo || '';
@@ -775,31 +763,30 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                     columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold', fillColor: [241, 245, 249] }, 1: { cellWidth: 126 } },
                     didDrawPage: drawHF
                 });
-                // Cada integrante lleva su propio bloque con TODOS sus campos. Antes iban
-                // en dos tablas resumidas que dejaban fuera Nº de carnet, teléfono, fecha
-                // de nacimiento, ubicación en el campamento y la mitad de los datos del
-                // representante. Se usa layout de 2 columnas para no duplicar las páginas.
+                // Cada integrante se dibuja EXACTAMENTE igual que el jefe de familia:
+                // una fila por campo, a ancho completo y con el mismo tamaño de letra.
+                // Antes iba en dos columnas apretadas y se leía como un resumen.
+                //
+                // La lista arranca siempre con la completa (INTEG_PDF) y, si el registro
+                // es del formato viejo, se le suman los campos que solo existen allá
+                // (módulo, patología, situación de salud) para no perder nada.
                 const esViejo = !Array.isArray(r.familias);
-                const LISTA_INT = esViejo ? INTEG_VIEJO : INTEG_PDF;
+                const LISTA_INT = esViejo
+                    ? INTEG_PDF.concat(INTEG_VIEJO.filter(v => !INTEG_PDF.some(x => x[0] === v[0])))
+                    : INTEG_PDF;
                 if (f.integrantes.length) {
                     f.integrantes.forEach((m, i) => {
-                        const pares = LISTA_INT.map(c => {
+                        const filas = LISTA_INT.map(c => {
                             const v = (c[0] === 'genero') ? gen(m[c[0]]) : m[c[0]];
                             return [_safePdf(c[1]), _safePdf((v == null || v === '') ? '-' : v)];
                         });
                         jsPDF.API.autoTable.call(doc, {
-                            startY: doc.lastAutoTable.finalY + 2, margin: { top: 55, bottom: 16, left: 14, right: 14 },
-                            head: [[{ content: _safePdf('INTEGRANTE ' + (i + 1) + ' — ' + (m.nombre || 's/n')), colSpan: 4 }]],
-                            body: enParejas(pares),
-                            theme: 'grid',
-                            styles: { font: 'helvetica', fontSize: 7.6, cellPadding: 1.1, lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
-                            headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
-                            columnStyles: {
-                                0: { cellWidth: 44, fontStyle: 'bold', fillColor: [241, 245, 249] },
-                                1: { cellWidth: 50 },
-                                2: { cellWidth: 44, fontStyle: 'bold', fillColor: [241, 245, 249] },
-                                3: { cellWidth: 50 }
-                            },
+                            startY: doc.lastAutoTable.finalY + 3, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                            head: [[{ content: _safePdf('INTEGRANTE ' + (i + 1) + ' — ' + (m.nombre || 's/n')), colSpan: 2 }]],
+                            body: filas,
+                            theme: 'grid', styles: st,
+                            headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+                            columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold', fillColor: [241, 245, 249] }, 1: { cellWidth: 126 } },
                             didDrawPage: drawHF
                         });
                     });
