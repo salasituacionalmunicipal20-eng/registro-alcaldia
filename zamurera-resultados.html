@@ -232,6 +232,31 @@
         const INTEG = [['nro', 'Nº de carnet'], ['es_jefe', '¿Es jefe de familia?'], ['nombre', 'Nombre y apellido'], ['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['enfermedad', '¿Sufre enfermedad?'], ['enfermedad_cual', 'Enfermedad ¿cuál?'], ['discapacidad', '¿Tiene discapacidad?'], ['discapacidad_cual', 'Discapacidad ¿cuál?'], ['toma_medicamento', '¿Toma medicamento?'], ['medicamento', 'Medicamento ¿cuál?'], ['necesita_psico', '¿Requiere ayuda psicológica?'], ['situacion_psicologica', 'Situación psicológica'], ['talla_camisa', 'Talla camisa'], ['talla_pantalon', 'Talla pantalón'], ['talla_zapatos', 'Talla zapato'], ['planta', 'Planta'], ['cubiculo', 'Cubículo'], ['cama', 'Cama'], ['rep_nombre', 'Representante — Nombre'], ['rep_cedula', 'Representante — Cédula'], ['rep_telefono', 'Representante — Teléfono'], ['rep_parentesco', 'Representante — Parentesco']];
         // Retrocompat con integrantes viejos (miembros): mostrar sus campos originales si existen
         const INTEG_VIEJO = [['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha nac.'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['estudia', '¿Estudia?'], ['profesion', 'Profesión'], ['patologia', 'Patología'], ['medicamento', 'Medicamento'], ['situacion_salud', 'Situación de salud'], ['modulo', 'Módulo'], ['cubiculo', 'Cubículo'], ['cama', 'Cama']];
+        // Lista COMPLETA de campos del integrante para el PDF. Es INTEG más las dos
+        // nacionalidades, que la ficha web no lista. El PDF tiene que salir sin
+        // omitir nada, así que se arma a partir de INTEG para no quedar desfasada.
+        const INTEG_PDF = (() => {
+            const out = [];
+            for (const c of INTEG) {
+                if (c[0] === 'cedula') out.push(['nacionalidad', 'Nacionalidad']);
+                if (c[0] === 'rep_cedula') out.push(['rep_nacionalidad', 'Representante — Nacionalidad']);
+                out.push(c);
+            }
+            return out;
+        })();
+
+        // Reparte una lista de pares clave/valor en filas de DOS columnas (4 celdas).
+        // Así el PDF sale completo sin volverse eterno: la misma información ocupa
+        // la mitad de las páginas.
+        function enParejas(pares) {
+            const filas = [];
+            for (let i = 0; i < pares.length; i += 2) {
+                const a = pares[i], b = pares[i + 1];
+                filas.push([a[0], a[1], b ? b[0] : '', b ? b[1] : '']);
+            }
+            return filas;
+        }
+
         function valJefe(j, key) {
             if (key === 'genero') return gen(j.genero);
             if (key === 'planta') return j.planta || j.modulo || '';
@@ -725,9 +750,13 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             const st = { font: 'helvetica', fontSize: 9, cellPadding: 1.4, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' };
             const kvJ = (arr, obj) => arr.map(c => [_safePdf(c[1]), _safePdf(valJefe(obj, c[0]) || '-')]);
             const cabecera = [[{ content: _safePdf('INGRESO Nº ' + (r.n_registro || '-') + '  ·  ' + (duenoDe(r).jefe.nombre || '') + '  (' + fams.length + ' familia/s · ' + personasDe(r) + ' persona/s)'), colSpan: 2 }]];
+            const gs = r.gestion_social || {};
             const body = RECEP.map(c => [_safePdf(c[1]), _safePdf(r[c[0]] || '-')])
                 .concat([[{ content: 'INMUEBLE (PROCEDENCIA)', colSpan: 2, styles: { fillColor: [10, 108, 176], textColor: [255, 255, 255], fontStyle: 'bold' } }]])
-                .concat(INM.map(c => [_safePdf(c[1]), _safePdf(valInm(inm, c[0]) || '-')]));
+                .concat(INM.map(c => [_safePdf(c[1]), _safePdf(valInm(inm, c[0]) || '-')]))
+                // Gestión social: no salía en el PDF y sí está en la ficha.
+                .concat([[{ content: 'GESTIÓN SOCIAL (VIVIENDA MIRANDA)', colSpan: 2, styles: { fillColor: [10, 108, 176], textColor: [255, 255, 255], fontStyle: 'bold' } }]])
+                .concat(GS_COMUNIDAD.map(c => [_safePdf(c[1]), _safePdf(gs[c[0]] || '-')]));
             jsPDF.API.autoTable.call(doc, {
                 startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 }, showHead: 'firstPage',
                 head: cabecera, body, theme: 'grid', styles: st,
@@ -746,36 +775,62 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                     columnStyles: { 0: { cellWidth: 60, fontStyle: 'bold', fillColor: [241, 245, 249] }, 1: { cellWidth: 126 } },
                     didDrawPage: drawHF
                 });
+                // Cada integrante lleva su propio bloque con TODOS sus campos. Antes iban
+                // en dos tablas resumidas que dejaban fuera Nº de carnet, teléfono, fecha
+                // de nacimiento, ubicación en el campamento y la mitad de los datos del
+                // representante. Se usa layout de 2 columnas para no duplicar las páginas.
+                const esViejo = !Array.isArray(r.familias);
+                const LISTA_INT = esViejo ? INTEG_VIEJO : INTEG_PDF;
                 if (f.integrantes.length) {
-                    jsPDF.API.autoTable.call(doc, {
-                        startY: doc.lastAutoTable.finalY + 2, margin: { top: 55, bottom: 16, left: 14, right: 14 },
-                        head: [['#', 'Nombre', 'Parent.', 'Cédula', 'Edad', 'Gén.', 'Sangre', 'Representante (si es menor)']],
-                        body: f.integrantes.map((m, i) => [String(i + 1), _safePdf(m.nombre || '-'), _safePdf(m.parentesco || '-'), _safePdf(String((m.cedula ? (m.nacionalidad || 'V') + '-' + m.cedula : '-'))), _safePdf(String(m.edad || '-')), _safePdf(gen(m.genero)), _safePdf(m.tipo_sangre || '-'), _safePdf([m.rep_nombre, m.rep_cedula].filter(Boolean).join(' · ') || '-')]),
-                        theme: 'grid', styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.2, lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
-                        headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
-                        columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 34 }, 2: { cellWidth: 20 }, 3: { cellWidth: 24 }, 4: { cellWidth: 10, halign: 'center' }, 5: { cellWidth: 16 }, 6: { cellWidth: 14, halign: 'center' }, 7: { cellWidth: 40 } },
-                        didDrawPage: drawHF
-                    });
-                    // Segunda tabla: salud y tallas de cada integrante. Van aparte porque metiendo 8 columnas más
-                    // en la tabla de arriba quedaría ilegible. Solo se dibuja si al menos uno tiene algo cargado.
-                    const sn = (v, cual) => { const s = String(v || '').trim(); if (!s) return '-'; const c = String(cual || '').trim(); return (s === 'Sí' && c) ? 'Sí — ' + c : s; };
-                    const CAMPOS_SALUD = ['enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'talla_camisa', 'talla_pantalon', 'talla_zapatos'];
-                    if (f.integrantes.some(m => CAMPOS_SALUD.some(k => m[k]))) {
+                    f.integrantes.forEach((m, i) => {
+                        const pares = LISTA_INT.map(c => {
+                            const v = (c[0] === 'genero') ? gen(m[c[0]]) : m[c[0]];
+                            return [_safePdf(c[1]), _safePdf((v == null || v === '') ? '-' : v)];
+                        });
                         jsPDF.API.autoTable.call(doc, {
                             startY: doc.lastAutoTable.finalY + 2, margin: { top: 55, bottom: 16, left: 14, right: 14 },
-                            head: [['#', 'Nombre', 'Enfermedad', 'Discapacidad', 'Medicamento', 'Ayuda psicológica', 'Tallas C/P/Z']],
-                            body: f.integrantes.map((m, i) => [String(i + 1), _safePdf(m.nombre || '-'),
-                            _safePdf(sn(m.enfermedad, m.enfermedad_cual)), _safePdf(sn(m.discapacidad, m.discapacidad_cual)),
-                            _safePdf(sn(m.toma_medicamento, m.medicamento)), _safePdf(sn(m.necesita_psico, m.situacion_psicologica)),
-                            _safePdf([m.talla_camisa, m.talla_pantalon, m.talla_zapatos].map(x => x || '-').join(' / '))]),
-                            theme: 'grid', styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.2, lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
-                            headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
-                            columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 32 }, 2: { cellWidth: 30 }, 3: { cellWidth: 30 }, 4: { cellWidth: 30 }, 5: { cellWidth: 26 }, 6: { cellWidth: 24, halign: 'center' } },
+                            head: [[{ content: _safePdf('INTEGRANTE ' + (i + 1) + ' — ' + (m.nombre || 's/n')), colSpan: 4 }]],
+                            body: enParejas(pares),
+                            theme: 'grid',
+                            styles: { font: 'helvetica', fontSize: 7.6, cellPadding: 1.1, lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
+                            headStyles: { fillColor: [51, 65, 85], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+                            columnStyles: {
+                                0: { cellWidth: 44, fontStyle: 'bold', fillColor: [241, 245, 249] },
+                                1: { cellWidth: 50 },
+                                2: { cellWidth: 44, fontStyle: 'bold', fillColor: [241, 245, 249] },
+                                3: { cellWidth: 50 }
+                            },
                             didDrawPage: drawHF
                         });
-                    }
+                    });
+                } else {
+                    jsPDF.API.autoTable.call(doc, {
+                        startY: doc.lastAutoTable.finalY + 2, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                        body: [['Sin integrantes registrados en esta familia']],
+                        theme: 'grid', styles: { ...st, fontSize: 8, textColor: [100, 116, 139] },
+                        columnStyles: { 0: { cellWidth: 186 } },
+                        didDrawPage: drawHF
+                    });
                 }
             });
+
+            // Entregas del centro de acopio: no salían en el PDF y son parte del registro.
+            if (Array.isArray(r.entregas) && r.entregas.length) {
+                jsPDF.API.autoTable.call(doc, {
+                    startY: doc.lastAutoTable.finalY + 4, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                    head: [[{ content: _safePdf('ENTREGAS DEL CENTRO DE ACOPIO — ' + (r.entregas_posteadas ? 'aceptada y descontada del inventario' : 'pendiente de aprobar')), colSpan: 5 }]],
+                    body: [['Artículo', 'Presentación', 'Cantidad', 'Unidad', 'Categoría'].map(x => ({ content: x, styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } }))]
+                        .concat(r.entregas.map(e => [
+                            _safePdf(e.articulo || '-'), _safePdf(e.presentacion || '-'),
+                            _safePdf(String(e.cantidad == null ? '-' : e.cantidad)),
+                            _safePdf(e.unidad || '-'), _safePdf(e.categoria || '-')
+                        ])),
+                    theme: 'grid', styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.3, lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
+                    headStyles: { fillColor: [180, 83, 9], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+                    columnStyles: { 0: { cellWidth: 56 }, 1: { cellWidth: 40 }, 2: { cellWidth: 22, halign: 'center' }, 3: { cellWidth: 26 }, 4: { cellWidth: 42 } },
+                    didDrawPage: drawHF
+                });
+            }
         }
 
         $('btnPdf').addEventListener('click', () => {
