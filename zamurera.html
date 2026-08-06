@@ -506,6 +506,13 @@
                     <div><label>Parentesco con el menor</label><select data-if="rep_parentesco">${optList(PARENTESCO)}</select></div>
                 </div>
             </div>
+            <label style="color:#0a2351;margin-top:8px;">🎓 Escolaridad</label>
+            <div class="row2">
+                <div><label>Nivel de instrucción</label><select data-if="nivel_instruccion">${optList(NIV_INSTR)}</select></div>
+                <div><label>Nivel académico <span class="hint">(hasta dónde llegó)</span></label><select data-if="nivel_academico">${optList(NIV_ACAD)}</select></div>
+            </div>
+            <label>¿Qué estudia?</label>
+            <input data-if="estudia" placeholder="Carrera / año (si estudia actualmente)" autocomplete="off" />
             <label style="color:#0a2351;margin-top:8px;">🩺 Salud</label>
             <div class="row2">
                 <div><label>¿Sufre alguna enfermedad?</label><select data-if="enfermedad" data-cond="ienf">${siNo}</select></div>
@@ -698,7 +705,7 @@
         function mostrarMsg(t) { const m = $('msg'); m.textContent = t; m.className = 'msg err'; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
 
         const JF_FIELDS = ['nombre', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'nivel_instruccion', 'es_dueno', 'trabaja', 'situacion_laboral', 'tiene_pareja', 'lugar_trabajo', 'cargo', 'profesion', 'tiempo_servicio', 'nivel_academico', 'estudia', 'carnet_posee', 'carnet_codigo', 'carnet_serial', 'enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'necesita_ropa', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'talla_ropa_interior', 'familiar_desaparecido', 'familiar_otro_estado', 'afectacion', 'observaciones', 'planta', 'cubiculo', 'cama'];
-        const IF_FIELDS = ['es_jefe', 'nombre', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'planta', 'cubiculo', 'cama', 'observaciones', 'rep_nacionalidad', 'rep_cedula', 'rep_nombre', 'rep_telefono', 'rep_parentesco'];
+        const IF_FIELDS = ['es_jefe', 'nombre', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre', 'nivel_instruccion', 'nivel_academico', 'estudia', 'enfermedad', 'enfermedad_cual', 'discapacidad', 'discapacidad_cual', 'toma_medicamento', 'medicamento', 'necesita_psico', 'situacion_psicologica', 'talla_camisa', 'talla_pantalon', 'talla_zapatos', 'planta', 'cubiculo', 'cama', 'observaciones', 'rep_nacionalidad', 'rep_cedula', 'rep_nombre', 'rep_telefono', 'rep_parentesco'];
         const CEDULA_KEYS = { cedula: 1, telefono: 1, rep_cedula: 1, rep_telefono: 1 };
 
         function leerJefe(card) {
