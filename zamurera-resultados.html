@@ -117,6 +117,49 @@
             </div>
 
             <div class="card">
+                <h2>📊 Tabla dinámica de patologías</h2>
+                <div class="sub" style="color:#475569;font-size:13px;margin-bottom:10px;">
+                    Cuenta <b>personas</b>, no ingresos. Quien tenga dos condiciones aparece en las dos filas,
+                    por eso la suma de la columna puede pasar del total de personas afectadas.
+                </div>
+                <div class="filtros" style="margin-bottom:12px;">
+                    <div>
+                        <label>Qué contar</label>
+                        <select id="pvQue">
+                            <option value="enfermedad">Enfermedades</option>
+                            <option value="discapacidad">Discapacidades</option>
+                            <option value="medicamento">Medicamentos</option>
+                            <option value="psico">Situación psicológica</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Cruzar con</label>
+                        <select id="pvCruce">
+                            <option value="">Sin cruce (solo total)</option>
+                            <option value="sexo">Sexo</option>
+                            <option value="rol">Rol (jefe / integrante)</option>
+                            <option value="edad">Rango de edad</option>
+                            <option value="planta">Planta</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Agrupar textos parecidos</label>
+                        <select id="pvAgrupar">
+                            <option value="1">Sí — juntar variantes de lo mismo</option>
+                            <option value="0">No — tal cual se escribió</option>
+                        </select>
+                    </div>
+                    <div><label>&nbsp;</label><button id="btnPivotExcel" class="btn-exp" style="background:#16a34a;width:100%;margin:0;">📊 Exportar esta tabla</button></div>
+                </div>
+                <div id="pvAviso" style="font-size:12.5px;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:9px 12px;margin-bottom:10px;display:none;"></div>
+                <div style="overflow-x:auto;"><table id="pvTabla" class="tabla"></table></div>
+                <details id="pvDetalle" style="margin-top:12px;font-size:13px;">
+                    <summary style="cursor:pointer;color:#0a2351;font-weight:700;">Ver qué se agrupó con qué</summary>
+                    <div id="pvDetalleBody" style="margin-top:8px;"></div>
+                </details>
+            </div>
+
+            <div class="card">
                 <h2>Ingresos registrados</h2>
                 <div>
                     <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
@@ -213,6 +256,217 @@
             return out;
         }
         function personasDe(r) { return Number(r.total_personas) || personasArr(r).length; }
+
+        // ===================== TABLA DINÁMICA DE PATOLOGÍAS =====================
+        // El campo se llena a mano, así que llega "ALERGIAS", "ALERGIA", "ASMATICO"
+        // y "ASMA AGUDA" para lo mismo. Sin agrupar, la tabla infla el número de
+        // patologías distintas y ninguna fila refleja el peso real.
+        //
+        // Se agrupa por raíz de palabra, NUNCA por parecido general: solo se une lo
+        // que es la misma condición escrita distinto. Un texto que no calce en
+        // ningún grupo se respeta tal cual, para no perderlo ni meterlo a la fuerza.
+        const GRUPOS_PATOLOGIA = [
+            { grupo: 'Hipertensión', claves: ['HIPERTENS', 'TENSION ALTA', 'PRESION ALTA'] },
+            { grupo: 'Diabetes', claves: ['DIABET'] },
+            { grupo: 'Asma', claves: ['ASMA', 'ASMATIC'] },
+            { grupo: 'Alergias', claves: ['ALERGI'] },
+            { grupo: 'Gastritis / úlcera', claves: ['ULCERA', 'GASTRIT', 'GASTRIC', 'REFLUJO'] },
+            { grupo: 'Ansiedad / pánico', claves: ['ANSIEDAD', 'PANICO'] },
+            { grupo: 'Depresión', claves: ['DEPRESI', 'DEPRIM'] },
+            { grupo: 'Estrés', claves: ['ESTRES'] },
+            { grupo: 'Cardíaca', claves: ['CARDIA', 'CORAZON', 'INFARTO'] },
+            { grupo: 'Respiratoria', claves: ['BRONQUI', 'NEUMON', 'RESPIRATOR'] },
+            { grupo: 'Tiroides', claves: ['TIROID'] },
+            { grupo: 'Artritis / artrosis', claves: ['ARTRITIS', 'ARTROSIS', 'REUMA'] },
+            { grupo: 'Renal', claves: ['RENAL', 'RIÑON', 'RINON'] },
+            { grupo: 'Epilepsia / convulsiones', claves: ['EPILEP', 'CONVULS'] },
+            { grupo: 'Visual', claves: ['VISUAL', 'CEGUE', 'VISTA', 'MIOPIA'] },
+            { grupo: 'Auditiva', claves: ['AUDITIV', 'SORD'] },
+            { grupo: 'Motora', claves: ['MOTOR', 'MOTRIZ', 'PARALI', 'SILLA DE RUEDA'] }
+        ];
+
+        // Los medicamentos se agrupan por PRINCIPIO ACTIVO, no por presentación: sirve
+        // para saber a cuánta gente hay que surtir de losartán, sin importar si uno toma
+        // 40 mg y otro 50 mg. Las dosis NO se pierden: siguen visibles en el detalle de
+        // abajo, que muestra el texto tal cual lo escribieron.
+        const GRUPOS_MEDICAMENTO = [
+            { grupo: 'Losartán', claves: ['LOSART'] },
+            { grupo: 'Valsartán', claves: ['VALSART'] },
+            { grupo: 'Amlodipina', claves: ['AMLODIP'] },
+            { grupo: 'Captopril', claves: ['CAPTOPRIL'] },
+            { grupo: 'Enalapril', claves: ['ENALAPRIL'] },
+            { grupo: 'Salbutamol', claves: ['SALBUTAMOL'] },
+            { grupo: 'Budesonida', claves: ['BUDESON', 'BUDECOR'] },
+            { grupo: 'Omeprazol', claves: ['OMEPRAZOL'] },
+            { grupo: 'Loratadina / desloratadina', claves: ['LORATADINA'] },
+            { grupo: 'Metformina', claves: ['METFORMIN'] },
+            { grupo: 'Insulina', claves: ['INSULINA'] },
+            { grupo: 'Acetaminofén', claves: ['ACETAMINOF', 'PARACETAMOL'] },
+            { grupo: 'Ibuprofeno', claves: ['IBUPROFEN'] },
+            { grupo: 'Levotiroxina', claves: ['LEVOTIROX', 'EUTIROX'] },
+            { grupo: 'Carbamazepina', claves: ['CARBAMAZEP'] },
+            { grupo: 'Ácido valproico', claves: ['VALPROIC', 'VALPROATO'] }
+        ];
+
+        const normTexto = (s) => String(s || '')
+            .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+            .toUpperCase().replace(/\s+/g, ' ').trim();
+
+        // Devuelve las categorías de un texto. Puede devolver varias: alguien que
+        // escribió "hipertensa y diabética" tiene que contar en las dos.
+        function categoriasDe(texto, agrupar, lista) {
+            const t = normTexto(texto);
+            if (!t) return [];
+            if (!agrupar) {
+                // Sin agrupar: se separa por comas para no mezclar dos cosas en una fila.
+                return t.split(/\s*[,;]\s*|\s+Y\s+/).map(x => x.trim()).filter(Boolean);
+            }
+            const encontrados = (lista || GRUPOS_PATOLOGIA).filter(g => g.claves.some(k => t.includes(k))).map(g => g.grupo);
+            // Sin coincidencias se conserva el texto original: no se pierde ni se fuerza.
+            return encontrados.length ? [...new Set(encontrados)] : [t];
+        }
+
+        const CAMPO_PIVOT = {
+            enfermedad: { texto: 'enfermedad_cual', marca: 'enfermedad', titulo: 'Enfermedad' },
+            discapacidad: { texto: 'discapacidad_cual', marca: 'discapacidad', titulo: 'Discapacidad' },
+            medicamento: { texto: 'medicamento', marca: 'toma_medicamento', titulo: 'Medicamento' },
+            psico: { texto: 'situacion_psicologica', marca: 'necesita_psico', titulo: 'Situación psicológica' }
+        };
+
+        const RANGOS_EDAD = [[0, 5, '0 a 5'], [6, 11, '6 a 11'], [12, 17, '12 a 17'], [18, 59, '18 a 59'], [60, 200, '60 y más']];
+        function valorCruce(p, cruce) {
+            if (cruce === 'sexo') return gen(p.genero) || 'Sin indicar';
+            if (cruce === 'rol') return p._rol || 'Sin indicar';
+            if (cruce === 'planta') return p._planta ? ('Planta ' + p._planta) : 'Sin indicar';
+            if (cruce === 'edad') {
+                const e = edadNum(p);
+                if (e == null) return 'Sin indicar';
+                const r = RANGOS_EDAD.find(x => e >= x[0] && e <= x[1]);
+                return r ? r[2] : 'Sin indicar';
+            }
+            return 'Total';
+        }
+
+        // Arma la tabla a partir de los ingresos ya filtrados, para que respete los
+        // filtros de arriba y no muestre un universo distinto al de la lista.
+        function calcularPivot() {
+            const que = $('pvQue').value, cruce = $('pvCruce').value, agrupar = $('pvAgrupar').value === '1';
+            const cfg = CAMPO_PIVOT[que];
+            // Los medicamentos usan su propia lista (principios activos), el resto la de patologías.
+            const listaGrupos = (que === 'medicamento') ? GRUPOS_MEDICAMENTO : GRUPOS_PATOLOGIA;
+            const conteo = new Map();      // patologia -> Map(columna -> nº personas)
+            const columnas = new Set();
+            const origenes = new Map();    // patologia -> Set(textos tal cual se escribieron)
+            let personasAfectadas = 0, sinDetalle = 0;
+
+            filtrados().forEach(r => {
+                personasArr(r).forEach(p => {
+                    const txt = String(p[cfg.texto] || '').trim();
+                    if (!txt) {
+                        // Marcó que sí tiene la condición pero no escribió cuál.
+                        if (si(p[cfg.marca])) { sinDetalle++; personasAfectadas++; }
+                        return;
+                    }
+                    personasAfectadas++;
+                    const col = valorCruce(p, cruce);
+                    columnas.add(col);
+                    categoriasDe(txt, agrupar, listaGrupos).forEach(cat => {
+                        if (!conteo.has(cat)) { conteo.set(cat, new Map()); origenes.set(cat, new Set()); }
+                        origenes.get(cat).add(normTexto(txt));
+                        const m = conteo.get(cat);
+                        m.set(col, (m.get(col) || 0) + 1);
+                    });
+                });
+            });
+
+            const cols = [...columnas].sort((a, b) => a === 'Sin indicar' ? 1 : b === 'Sin indicar' ? -1 : a.localeCompare(b, 'es'));
+            const filas = [...conteo.entries()]
+                .map(([cat, m]) => ({ cat, m, total: [...m.values()].reduce((a, b) => a + b, 0) }))
+                .sort((a, b) => b.total - a.total || a.cat.localeCompare(b.cat, 'es'));
+            return { titulo: cfg.titulo, cols, filas, personasAfectadas, sinDetalle, origenes, agrupar };
+        }
+
+        function renderPivot() {
+            const d = calcularPivot();
+            const t = $('pvTabla');
+
+            if (!d.filas.length) {
+                t.innerHTML = '<tbody><tr><td style="padding:22px;text-align:center;color:#94a3b8;">Nadie tiene ' +
+                    esc(d.titulo.toLowerCase()) + ' registrada con los filtros actuales.</td></tr></tbody>';
+                $('pvDetalleBody').innerHTML = '';
+                $('pvAviso').style.display = 'none';
+                return;
+            }
+
+            const totalCol = {};
+            d.cols.forEach(c => { totalCol[c] = d.filas.reduce((a, f) => a + (f.m.get(c) || 0), 0); });
+            const granTotal = d.filas.reduce((a, f) => a + f.total, 0);
+
+            t.innerHTML =
+                '<thead><tr><th style="text-align:left;">' + esc(d.titulo) + '</th>' +
+                d.cols.map(c => '<th style="text-align:center;">' + esc(c) + '</th>').join('') +
+                '<th style="text-align:center;">Total</th><th style="text-align:center;">%</th></tr></thead>' +
+                '<tbody>' + d.filas.map(f =>
+                    '<tr><td style="font-weight:600;">' + esc(f.cat) + '</td>' +
+                    d.cols.map(c => { const v = f.m.get(c) || 0; return '<td style="text-align:center;color:' + (v ? '#0f172a' : '#cbd5e1') + ';">' + (v || '—') + '</td>'; }).join('') +
+                    '<td style="text-align:center;font-weight:800;color:#b91c1c;">' + f.total + '</td>' +
+                    '<td style="text-align:center;color:#64748b;">' + Math.round(f.total * 100 / granTotal) + '%</td></tr>'
+                ).join('') + '</tbody>' +
+                '<tfoot><tr style="background:#f1f5f9;font-weight:800;"><td>Total</td>' +
+                d.cols.map(c => '<td style="text-align:center;">' + totalCol[c] + '</td>').join('') +
+                '<td style="text-align:center;color:#b91c1c;">' + granTotal + '</td><td></td></tr></tfoot>';
+
+            // Aviso honesto: hay gente marcada con la condición pero sin escribir cuál,
+            // y esa gente no puede aparecer en ninguna fila.
+            const av = $('pvAviso');
+            if (d.sinDetalle) {
+                av.style.display = '';
+                av.innerHTML = '⚠️ <b>' + d.sinDetalle + ' persona(s)</b> marcaron que sí, pero no escribieron cuál, ' +
+                    'así que no salen en ninguna fila. Personas afectadas en total: <b>' + d.personasAfectadas + '</b>.';
+            } else { av.style.display = 'none'; }
+
+            // Transparencia: qué textos originales quedaron dentro de cada fila.
+            $('pvDetalleBody').innerHTML = d.agrupar
+                ? d.filas.map(f => '<div style="margin-bottom:6px;"><b>' + esc(f.cat) + '</b> ← ' +
+                    [...d.origenes.get(f.cat)].map(x => '<span style="background:#f1f5f9;border-radius:4px;padding:1px 6px;margin-right:4px;">' + esc(x) + '</span>').join('') + '</div>').join('')
+                : '<div style="color:#64748b;">Estás viendo los textos tal cual se escribieron, sin agrupar.</div>';
+        }
+
+        function exportarPivotExcel() {
+            const d = calcularPivot();
+            if (!d.filas.length) { alert('No hay nada que exportar con los filtros actuales.'); return; }
+            const hdr = [d.titulo, ...d.cols, 'Total'];
+            const body = d.filas.map(f => [f.cat, ...d.cols.map(c => f.m.get(c) || 0), f.total]);
+            body.push(['Total', ...d.cols.map(c => d.filas.reduce((a, f) => a + (f.m.get(c) || 0), 0)), d.filas.reduce((a, f) => a + f.total, 0)]);
+            if (d.sinDetalle) body.push([], ['Marcaron que sí pero no escribieron cuál', d.sinDetalle]);
+
+            // Hoja con el mismo aire institucional que el resto de exportaciones.
+            const NAVY = '0A2351', ZEBRA = 'F1F5F9', TEXTO = '0F172A';
+            const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
+            const titulo = 'CAMPAMENTO TEMPORAL — ' + d.titulo.toUpperCase();
+            const data = [
+                [titulo].concat(Array(hdr.length - 1).fill('')),
+                ['Generado ' + new Date().toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' }) + ' · ' + d.personasAfectadas + ' persona(s) afectada(s)'].concat(Array(hdr.length - 1).fill('')),
+                hdr, ...body
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const setS = (r, c, s) => { const a = XLSX.utils.encode_cell({ r, c }); if (!ws[a]) ws[a] = { t: 's', v: '' }; ws[a].s = s; };
+            for (let c = 0; c < hdr.length; c++) {
+                setS(0, c, { font: { bold: true, sz: 15, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center' } });
+                setS(1, c, { font: { italic: true, sz: 10, color: { rgb: '64748B' } }, alignment: { horizontal: 'center' } });
+                setS(2, c, { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', wrapText: true }, border: borde });
+            }
+            for (let r = 3; r < data.length; r++) for (let c = 0; c < hdr.length; c++) {
+                setS(r, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top' }, border: borde, ...((r % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}) });
+            }
+            ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr.length - 1 } }];
+            ws['!cols'] = [{ wch: 34 }].concat(d.cols.map(() => ({ wch: 14 })), [{ wch: 12 }]);
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Patologias');
+            guardarXlsx(wb, 'patologias_' + $('pvQue').value + '_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+        }
+        // ======================= FIN TABLA DINÁMICA =======================
         function procTxt(r) { const i = inmuebleDe(r); return [i.estado, i.municipio, i.parroquia, i.comuna_procedencia, i.comunidad].filter(Boolean).join(' · ') || '—'; }
         function edadNum(p) {
             if (p.edad !== '' && p.edad != null && !isNaN(Number(p.edad))) return Number(p.edad);
@@ -424,6 +678,10 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
             $('tileSalud').classList.toggle('activo', $('fSalud').value === 'cualquiera');
             $('tileMenores').classList.toggle('activo', $('fEdad').value === '0-17');
 
+            // La tabla dinámica se recalcula con cada refresco para que respete los
+            // mismos filtros que la lista y no muestre un universo distinto.
+            try { renderPivot(); } catch (e) { console.error('pivot:', e); }
+
             const lista = filtrados();
             const fInfo = $('filtroInfo');
             if (fInfo) fInfo.textContent = (lista.length === REGS.length) ? `Mostrando los ${REGS.length} ingreso(s).` : `Mostrando ${lista.length} de ${REGS.length} ingreso(s) con los filtros aplicados.`;
@@ -467,6 +725,12 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
         const FILTROS = ['fBuscar', 'fEstado', 'fMunicipio', 'fEdad', 'fSexo', 'fRol', 'fCondicion', 'fSalud', 'fPsico', 'fRopa', 'fDesap', 'fOtroEst', 'fCarnet', 'fFoto', 'fDesde', 'fHasta', 'fPlanta', 'fCubiculo'];
         FILTROS.forEach(id => { const el = $(id); if (!el) return; el.addEventListener('input', () => { pagina = 1; render(); }); el.addEventListener('change', () => { pagina = 1; render(); }); });
         $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => { const el = $(id); if (el) el.value = ''; }); pagina = 1; render(); });
+
+        // Tabla dinámica: cualquier cambio de sus selectores la redibuja al instante.
+        ['pvQue', 'pvCruce', 'pvAgrupar'].forEach(id => {
+            const el = $(id); if (el) el.addEventListener('change', () => { try { renderPivot(); } catch (e) { console.error('pivot:', e); } });
+        });
+        if ($('btnPivotExcel')) $('btnPivotExcel').addEventListener('click', exportarPivotExcel);
         function toggleFiltro(selId, val) { const el = $(selId); if (!el) return; el.value = (el.value === val) ? '' : val; pagina = 1; render(); const t = document.querySelector('table'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         $('tilePsico').addEventListener('click', () => toggleFiltro('fPsico', 'si'));
         $('tileSalud').addEventListener('click', () => toggleFiltro('fSalud', 'cualquiera'));
