@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alerta Temprana — Resultados</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #0a2351; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-nav:hover { background: rgba(255,255,255,0.25); }
+        .wrap { max-width: 1240px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card.share { border-top: 5px solid #ea580c; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 8px 0; color: #fff; }
+        .filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; align-items: end; }
+        .filtros .full { grid-column: 1 / -1; }
+        .stats-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .stat { display: inline-block; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; }
+        .stat .num { font-size: 22px; font-weight: 800; color: #0a2351; }
+        .stat-btn { cursor: pointer; transition: background .15s, border-color .15s; }
+        .stat-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+        .stat-btn.activo { background: #eef2ff; border-color: #6366f1; box-shadow: 0 0 0 2px #c7d2fe inset; }
+        .live { font-size: 12px; font-weight: 700; color: #16a34a; }
+        .live .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
+        tbody tr:hover { background: #f8fafc; }
+        .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-ok { background: #dcfce7; color: #166534; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .pill { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+        .p-leve { background: #dbeafe; color: #1e40af; }
+        .p-alerta { background: #fef3c7; color: #92400e; }
+        .p-grave { background: #fee2e2; color: #991b1b; }
+        .p-ok { background: #dcfce7; color: #166534; }
+        .p-pend { background: #f1f5f9; color: #475569; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #0a2351; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #fff; border-radius: 12px; max-width: 700px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+        .modal h3 { color: #0a2351; font-size: 18px; margin-bottom: 12px; }
+        .modal h4 { color: #0a6cb0; font-size: 13px; text-transform: uppercase; letter-spacing: .3px; margin: 16px 0 6px; }
+        .fila { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid #eef2f7; font-size: 14px; }
+        .fila .k { font-weight: 700; color: #475569; min-width: 180px; }
+        .fila .val { color: #0f172a; white-space: pre-wrap; }
+        .fotos-det { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+        .fotos-det img { width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; }
+    </style>
+    <script src="autofresh.js"></script>
+</head>
+<body>
+    <div class="topbar">
+        <h1>🚨 Alerta Temprana — Resultados</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden"><h2 style="color:#b91c1c;">Acceso restringido</h2><p>Solo para administradores.</p></div>
+
+        <div id="contenido" class="hidden">
+            <div class="card share">
+                <h2>📣 Compartir el formulario</h2>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
+                    <img id="qr" width="150" height="150" style="border:1px solid #e2e8f0;border-radius:8px;" alt="QR" />
+                    <div style="flex:1;min-width:240px;">
+                        <p style="color:#475569;font-size:14px;margin-bottom:8px;">Comparte este enlace o el QR con los enlaces comunales para que reporten novedades desde el territorio:</p>
+                        <div style="font-size:22px;font-weight:800;color:#ea580c;margin-bottom:10px;" id="shortTxt">—</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button id="btnCopiar" class="btn-exp" style="background:#0a2351;">📋 Copiar enlace</button>
+                            <a id="btnWa" class="btn-exp" style="background:#16a34a;text-decoration:none;display:inline-block;" target="_blank" rel="noopener">💬 WhatsApp</a>
+                            <a id="btnQrDl" class="btn-exp" style="background:#ea580c;text-decoration:none;display:inline-block;" download="qr-alerta-temprana.png">⬇️ Descargar QR</a>
+                        </div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Enlace completo: <span id="fullTxt"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
+                <div class="stats-row">
+                    <div class="stat"><span class="num" id="stTotal">—</span> <span style="color:#64748b;font-size:12px;">reportes</span></div>
+                    <div class="stat stat-btn" id="tileHoy" title="Ver solo los de hoy"><span class="num" id="stHoy" style="color:#0a6cb0;">—</span> <span style="color:#64748b;font-size:12px;">📅 hoy</span></div>
+                    <div class="stat stat-btn" id="tileGraves" title="Ver solo los graves"><span class="num" id="stGraves" style="color:#b91c1c;">—</span> <span style="color:#64748b;font-size:12px;">🔴 graves</span></div>
+                    <div class="stat stat-btn" id="tilePend" title="Ver solo los pendientes"><span class="num" id="stPend" style="color:#b45309;">—</span> <span style="color:#64748b;font-size:12px;">⏳ pendientes</span></div>
+                    <div class="stat"><span class="num" id="stComunidades" style="color:#7c3aed;">—</span> <span style="color:#64748b;font-size:12px;">📍 comunidades</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Reportes recibidos</h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
+                </div>
+                <div class="filtros">
+                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Comunidad, calle, quien reporta, descripción…" autocomplete="off" /></div>
+                    <div><label>Desde</label><input id="fDesde" type="date" /></div>
+                    <div><label>Hasta</label><input id="fHasta" type="date" /></div>
+                    <div><label>Parroquia</label><select id="fParroquia"><option value="">Todas</option></select></div>
+                    <div><label>Comuna</label><select id="fComuna"><option value="">Todas</option></select></div>
+                    <div><label>Condición del tiempo</label><select id="fTiempo"><option value="">Todas</option><option>Lluvia leve</option><option>Lluvia fuerte</option><option>Tormenta</option><option>Despejándose</option></select></div>
+                    <div><label>Nivel de cauces</label><select id="fCauces"><option value="">Todos</option><option>Normal</option><option>Alerta</option><option>Desbordado</option></select></div>
+                    <div><label>Novedad</label><select id="fNovedad"><option value="">Todas</option><option value="__con">Con novedad</option><option value="__sin">Sin novedades</option><option>Árboles caídos / En riesgo</option><option>Desprendimiento de tierra / Deslizamiento</option><option>Anegación de viviendas</option><option>Obstrucción de vías o alcantarillado</option></select></div>
+                    <div><label>Estado</label><select id="fAtendido"><option value="">Todos</option><option value="pend">Pendientes</option><option value="ok">Atendidos</option></select></div>
+                    <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
+                </div>
+                <p id="filtroInfo" style="font-size:12.5px;color:#64748b;margin:10px 0;"></p>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha / hora</th><th>Ubicación</th><th>Reporta</th>
+                                <th>Tiempo</th><th>Cauces</th><th>Novedades</th><th>Estado</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+        const NODO = 'alerta_temprana';
+        const NODO_FOTOS = 'alerta_temprana_fotos';
+        const URL_FORM = 'https://salasituacional.alcaldiadecharallave.com/alerta-temprana.html';
+        const URL_CORTO = 'https://da.gd/HdS2p';
+
+        // Gravedad: manda lo peor que traiga el reporte. Sirve para ordenar la
+        // atención y para pintar la fila, no es un dato que llene quien reporta.
+        const GRAVES = ['Tormenta', 'Desbordado', 'Desprendimiento de tierra / Deslizamiento', 'Anegación de viviendas'];
+        const ALERTAS = ['Lluvia fuerte', 'Alerta', 'Sin luz', 'Árboles caídos / En riesgo', 'Obstrucción de vías o alcantarillado'];
+        function nivelDe(r) {
+            const vals = [r.condicion_tiempo, r.nivel_cauces, r.falla_servicios].concat(novedadesDe(r));
+            if (vals.some(v => GRAVES.includes(v))) return 'grave';
+            if (vals.some(v => ALERTAS.includes(v))) return 'alerta';
+            return 'leve';
+        }
+        const novedadesDe = (r) => Array.isArray(r.novedades) ? r.novedades : (r.novedades ? Object.values(r.novedades) : []);
+        const sinNovedad = (r) => { const n = novedadesDe(r); return !n.length || (n.length === 1 && n[0] === 'Sin novedades que lamentar'); };
+        const lugarDe = (r) => [r.comunidad, r.comuna, r.parroquia].filter(Boolean).filter(x => x !== 'OTRO').join(' · ') || (r.otro_lugar || '—');
+        const hoyISO = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+
+        const CAMPOS_PDF = [
+            ['fecha', 'Fecha'], ['hora', 'Hora'], ['parroquia', 'Parroquia'], ['comuna', 'Comuna'],
+            ['comunidad', 'Comunidad'], ['otro_lugar', 'Otro lugar'], ['calle', 'Calle / sector'],
+            ['nombre', 'Reportado por'], ['telefono', 'Teléfono'], ['responsabilidad', 'Responsabilidad'],
+            ['condicion_tiempo', 'Condición del tiempo'], ['nivel_cauces', 'Nivel de cauces'],
+            ['falla_servicios', 'Falla de servicios'], ['descripcion', 'Descripción de la novedad']
+        ];
+
+        let REGS = [], pagina = 1; const TAM = 30;
+
+        // ---- Compartir ----
+        $('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(URL_CORTO)}`;
+        $('shortTxt').textContent = URL_CORTO.replace('https://', '');
+        $('fullTxt').textContent = URL_FORM;
+        $('btnWa').href = `https://wa.me/?text=${encodeURIComponent('🚨 ALERTA TEMPRANA Y MONITOREO METEOROLÓGICO — Reporta aquí las novedades de tu territorio (Sala Situacional, Cristóbal Rojas): ' + URL_CORTO)}`;
+        $('btnQrDl').href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&download=1&data=${encodeURIComponent(URL_CORTO)}`;
+        $('btnCopiar').addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(URL_CORTO); $('btnCopiar').textContent = '✓ Copiado'; setTimeout(() => $('btnCopiar').textContent = '📋 Copiar enlace', 1800); }
+            catch (e) { prompt('Copia el enlace:', URL_CORTO); }
+        });
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch (e) {} location.href = 'index.html'; });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuper;
+            if (!esSuper) {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    permitido = snap.exists() && snap.val().rol === 'admin';
+                } catch (e) { permitido = false; }
+            }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            onValue(ref(database, NODO), (snap) => {
+                const val = snap.val() || {};
+                REGS = Object.entries(val).map(([id, m]) => ({ id, ...m }))
+                    .sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
+                poblarFiltros(); render();
+            }, () => { REGS = []; render(); });
+        });
+
+        // ---- Filtros ----
+        const FILTROS = ['fBuscar', 'fDesde', 'fHasta', 'fParroquia', 'fComuna', 'fTiempo', 'fCauces', 'fNovedad', 'fAtendido'];
+        FILTROS.forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
+        $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => $(id).value = ''); pagina = 1; render(); });
+        $('tileHoy').addEventListener('click', () => { const h = hoyISO(); const act = $('fDesde').value === h && $('fHasta').value === h; $('fDesde').value = act ? '' : h; $('fHasta').value = act ? '' : h; pagina = 1; render(); });
+        $('tileGraves').addEventListener('click', () => { $('fNovedad').value = $('fNovedad').value === '__con' ? '' : '__con'; pagina = 1; render(); });
+        $('tilePend').addEventListener('click', () => { $('fAtendido').value = $('fAtendido').value === 'pend' ? '' : 'pend'; pagina = 1; render(); });
+
+        function poblarFiltros() {
+            const setSel = (id, arr) => {
+                const el = $(id), prev = el.value, ph = el.querySelector('option').textContent;
+                el.innerHTML = `<option value="">${ph}</option>` + arr.map(x => `<option>${esc(x)}</option>`).join('');
+                if (prev) el.value = prev;
+            };
+            setSel('fParroquia', [...new Set(REGS.map(r => r.parroquia).filter(Boolean))].sort());
+            setSel('fComuna', [...new Set(REGS.map(r => r.comuna).filter(Boolean))].sort());
+        }
+
+        function filtrados() {
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const desde = $('fDesde').value, hasta = $('fHasta').value;
+            const par = $('fParroquia').value, com = $('fComuna').value;
+            const tie = $('fTiempo').value, cau = $('fCauces').value;
+            const nov = $('fNovedad').value, ate = $('fAtendido').value;
+            return REGS.filter(r => {
+                if (desde && (r.fecha || '') < desde) return false;
+                if (hasta && (r.fecha || '') > hasta) return false;
+                if (par && r.parroquia !== par) return false;
+                if (com && r.comuna !== com) return false;
+                if (tie && r.condicion_tiempo !== tie) return false;
+                if (cau && r.nivel_cauces !== cau) return false;
+                if (ate === 'ok' && !r.atendido) return false;
+                if (ate === 'pend' && r.atendido) return false;
+                if (nov === '__con' && sinNovedad(r)) return false;
+                if (nov === '__sin' && !sinNovedad(r)) return false;
+                if (nov && nov !== '__con' && nov !== '__sin' && !novedadesDe(r).includes(nov)) return false;
+                if (q) {
+                    const txt = [r.comunidad, r.comuna, r.parroquia, r.otro_lugar, r.calle, r.nombre,
+                                 r.telefono, r.responsabilidad, r.descripcion].concat(novedadesDe(r))
+                        .filter(Boolean).join(' ').toLowerCase();
+                    if (!txt.includes(q)) return false;
+                }
+                return true;
+            });
+        }
+
+        function render() {
+            const h = hoyISO();
+            $('stTotal').textContent = REGS.length;
+            $('stHoy').textContent = REGS.filter(r => r.fecha === h).length;
+            $('stGraves').textContent = REGS.filter(r => nivelDe(r) === 'grave').length;
+            $('stPend').textContent = REGS.filter(r => !r.atendido && !sinNovedad(r)).length;
+            $('stComunidades').textContent = new Set(REGS.map(r => r.comunidad || r.otro_lugar).filter(Boolean)).size;
+            $('tileHoy').classList.toggle('activo', $('fDesde').value === h && $('fHasta').value === h);
+            $('tileGraves').classList.toggle('activo', $('fNovedad').value === '__con');
+            $('tilePend').classList.toggle('activo', $('fAtendido').value === 'pend');
+
+            const lista = filtrados();
+            $('filtroInfo').textContent = (lista.length === REGS.length)
+                ? `Mostrando los ${REGS.length} reporte(s).`
+                : `Mostrando ${lista.length} de ${REGS.length} reporte(s) con los filtros aplicados.`;
+
+            const tot = Math.max(1, Math.ceil(lista.length / TAM));
+            if (pagina > tot) pagina = tot;
+            const pag = lista.slice((pagina - 1) * TAM, pagina * TAM);
+            const tb = $('tbody');
+
+            if (!pag.length) {
+                tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:34px;color:#94a3b8;">Sin reportes con estos filtros.</td></tr>';
+            } else {
+                tb.innerHTML = pag.map(r => {
+                    const n = nivelDe(r);
+                    const novs = novedadesDe(r);
+                    return `<tr>
+                        <td><b>${esc(r.fecha || '—')}</b><br /><span style="color:#64748b;font-size:12px;">${esc(r.hora || '')}</span></td>
+                        <td><b>${esc(lugarDe(r))}</b><br /><span style="color:#64748b;font-size:12px;">${esc(r.calle || '')}</span></td>
+                        <td>${esc(r.nombre || '—')}<br /><span style="color:#64748b;font-size:12px;">${esc(r.telefono || '')}</span></td>
+                        <td><span class="pill p-${n}">${esc(r.condicion_tiempo || '—')}</span></td>
+                        <td>${esc(r.nivel_cauces || '—')}</td>
+                        <td style="font-size:12.5px;">${novs.length ? novs.map(x => esc(x)).join('<br />') : '—'}</td>
+                        <td><span class="pill ${r.atendido ? 'p-ok' : 'p-pend'}">${r.atendido ? '✓ Atendido' : 'Pendiente'}</span></td>
+                        <td style="white-space:nowrap;">
+                            <button class="btn-ver" data-id="${esc(r.id)}">Ver</button>
+                            <button class="btn-ok" data-ok="${esc(r.id)}" title="${r.atendido ? 'Marcar como pendiente' : 'Marcar como atendido'}">${r.atendido ? '↺' : '✓'}</button>
+                            <button class="btn-del" data-del="${esc(r.id)}">🗑️</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+                tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+                tb.querySelectorAll('button.btn-ok').forEach(b => b.addEventListener('click', () => alternarAtendido(b.dataset.ok)));
+                tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.del)));
+            }
+
+            const pg = $('paginacion');
+            pg.innerHTML = tot <= 1 ? '' :
+                `<button ${pagina === 1 ? 'disabled' : ''} id="pgPrev">‹ Anterior</button>
+                 <span style="font-size:13px;color:#475569;">Página ${pagina} de ${tot}</span>
+                 <button ${pagina === tot ? 'disabled' : ''} id="pgNext">Siguiente ›</button>`;
+            if ($('pgPrev')) $('pgPrev').addEventListener('click', () => { pagina--; render(); });
+            if ($('pgNext')) $('pgNext').addEventListener('click', () => { pagina++; render(); });
+        }
+
+        async function alternarAtendido(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            try { await update(ref(database, NODO + '/' + id), { atendido: !r.atendido, atendido_en: Date.now() }); }
+            catch (e) { alert('No se pudo actualizar: ' + (e.message || e.code)); }
+        }
+
+        async function borrar(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            if (!confirm(`¿Borrar el reporte de "${r.nombre || ''}" del ${r.fecha || ''}?`)) return;
+            try { await remove(ref(database, NODO + '/' + id)); await remove(ref(database, NODO_FOTOS + '/' + id)); }
+            catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
+        }
+
+        async function verDetalle(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc((val == null || val === '') ? '—' : val)}</span></div>`;
+            const novs = novedadesDe(r);
+            $('modal').innerHTML = `
+                <h3>Reporte del ${esc(r.fecha || '')} ${esc(r.hora || '')}</h3>
+                <div><span class="pill p-${nivelDe(r)}">${nivelDe(r) === 'grave' ? '🔴 Grave' : nivelDe(r) === 'alerta' ? '🟠 Alerta' : '🔵 Leve'}</span>
+                     <span class="pill ${r.atendido ? 'p-ok' : 'p-pend'}">${r.atendido ? '✓ Atendido' : 'Pendiente'}</span></div>
+                <h4>Ubicación</h4>
+                ${fila('Parroquia', r.parroquia)}${fila('Comuna', r.comuna)}${fila('Comunidad', r.comunidad)}
+                ${r.otro_lugar ? fila('Otro lugar', r.otro_lugar) : ''}${fila('Calle / sector', r.calle)}
+                <h4>Reportado por</h4>
+                ${fila('Nombre y apellido', r.nombre)}${fila('Teléfono', r.telefono)}${fila('Responsabilidad', r.responsabilidad)}
+                <h4>Estado climático</h4>
+                ${fila('Condición del tiempo', r.condicion_tiempo)}${fila('Nivel de cauces', r.nivel_cauces)}${fila('Falla de servicios', r.falla_servicios)}
+                <h4>Novedades detectadas</h4>
+                ${novs.length ? novs.map(x => fila('•', x)).join('') : fila('', 'Sin novedades')}
+                ${fila('Descripción', r.descripcion)}
+                <h4>Memoria fotográfica</h4>
+                <div id="fotosDet" style="color:#94a3b8;font-size:13px;">${r.tiene_fotos ? 'Cargando fotos…' : 'Sin fotos'}</div>
+                <button class="cerrar" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+
+            if (r.tiene_fotos) {
+                try {
+                    const s = await get(ref(database, NODO_FOTOS + '/' + id));
+                    const f = s.val() || {};
+                    const imgs = [f.foto1, f.foto2].filter(Boolean);
+                    $('fotosDet').innerHTML = imgs.length
+                        ? `<div class="fotos-det">${imgs.map(u => `<img src="${u}" alt="Foto del reporte" />`).join('')}</div>`
+                        : 'Sin fotos';
+                } catch (e) { $('fotosDet').textContent = 'No se pudieron cargar las fotos.'; }
+            }
+        }
+        $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        // ---------------------------------------------------------------- EXCEL
+        $('btnExcel').addEventListener('click', () => {
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay reportes que exportar con los filtros actuales.'); return; }
+            const ahora = new Date();
+            const NAVY = '0A2351', GRIS = '64748B', ZEBRA = 'F1F5F9', TEXTO = '0F172A';
+            const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
+
+            const hdr = ['Fecha', 'Hora', 'Nivel', 'Estado', 'Parroquia', 'Comuna', 'Comunidad', 'Otro lugar',
+                'Calle / sector', 'Reportado por', 'Teléfono', 'Responsabilidad', 'Condición del tiempo',
+                'Nivel de cauces', 'Falla de servicios', 'Novedades detectadas', 'Descripción', '¿Tiene fotos?'];
+            const filas = lista.map(r => [
+                r.fecha || '', r.hora || '',
+                nivelDe(r) === 'grave' ? 'Grave' : nivelDe(r) === 'alerta' ? 'Alerta' : 'Leve',
+                r.atendido ? 'Atendido' : 'Pendiente',
+                r.parroquia || '', r.comuna || '', r.comunidad || '', r.otro_lugar || '', r.calle || '',
+                r.nombre || '', r.telefono || '', r.responsabilidad || '',
+                r.condicion_tiempo || '', r.nivel_cauces || '', r.falla_servicios || '',
+                novedadesDe(r).join(' · '), r.descripcion || '', r.tiene_fotos ? 'Sí' : 'No'
+            ]);
+
+            const titulo = 'ALERTA TEMPRANA Y MONITOREO METEOROLÓGICO';
+            const data = [
+                [titulo].concat(Array(hdr.length - 1).fill('')),
+                [`Generado ${ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' })} · ${filas.length} reporte(s)`].concat(Array(hdr.length - 1).fill('')),
+                hdr, ...filas
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const setS = (rr, c, s) => { const a = XLSX.utils.encode_cell({ r: rr, c }); if (!ws[a]) ws[a] = { t: 's', v: '' }; ws[a].s = s; };
+            for (let c = 0; c < hdr.length; c++) {
+                setS(0, c, { font: { bold: true, sz: 15, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center' } });
+                setS(1, c, { font: { italic: true, sz: 10, color: { rgb: GRIS } }, alignment: { horizontal: 'center' } });
+                setS(2, c, { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', wrapText: true }, border: borde });
+            }
+            for (let rr = 3; rr < data.length; rr++) for (let c = 0; c < hdr.length; c++) {
+                setS(rr, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...((rr % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}) });
+            }
+            ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr.length - 1 } }];
+            ws['!cols'] = [12, 8, 9, 11, 16, 24, 24, 20, 26, 22, 14, 20, 18, 14, 15, 40, 46, 10].map(w => ({ wch: w }));
+            ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: hdr.length - 1 } }) };
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Reportes');
+            guardarXlsx(wb, `alerta_temprana_${ahora.toISOString().slice(0, 10)}.xlsx`);
+        });
+
+        // ------------------------------------------------------------------ PDF
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s); try { t = t.normalize('NFC'); } catch (e) {}
+            let out = '';
+            for (const ch of t) {
+                const c = ch.codePointAt(0);
+                if (c === 0x201C || c === 0x201D || c === 0x2033) out += '"';
+                else if (c === 0x2018 || c === 0x2019 || c === 0x2032) out += "'";
+                else if (c === 0x2013 || c === 0x2014) out += '-';
+                else if (c === 0x2026) out += '...';
+                else if (c === 0x00A0) out += ' ';
+                else if (c < 32 || c === 127) out += ' ';
+                else if (c <= 255) out += ch;
+                else out += '';
+            }
+            return out.replace(/ {2,}/g, ' ').trim();
+        }
+
+        $('btnPdf').addEventListener('click', async () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay reportes que exportar con los filtros actuales.'); return; }
+
+            const btn = $('btnPdf'), txt = btn.textContent;
+            btn.disabled = true; btn.textContent = 'Generando…';
+            try {
+                const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+                const drawHF = () => {
+                    dibujarHeaderPDF(doc, { titulo: 'Alerta Temprana y Monitoreo Meteorologico', subtitulo: _safePdf(lista.length + ' reporte(s)') });
+                    dibujarFooterPDF(doc);
+                };
+                drawHF();
+
+                const st = { font: 'helvetica', fontSize: 9, cellPadding: 1.5, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' };
+                for (let i = 0; i < lista.length; i++) {
+                    const r = lista[i];
+                    if (i > 0) doc.addPage();
+                    const niv = nivelDe(r);
+                    const color = niv === 'grave' ? [185, 28, 28] : niv === 'alerta' ? [180, 83, 9] : [10, 108, 176];
+                    const cab = _safePdf('REPORTE ' + (i + 1) + ' de ' + lista.length + '  -  ' + (r.fecha || '') + ' ' + (r.hora || '') +
+                        '  -  ' + (niv === 'grave' ? 'GRAVE' : niv === 'alerta' ? 'ALERTA' : 'LEVE') +
+                        '  -  ' + (r.atendido ? 'ATENDIDO' : 'PENDIENTE'));
+
+                    const cuerpo = CAMPOS_PDF
+                        .filter(c => !(c[0] === 'otro_lugar' && !r.otro_lugar))
+                        .map(c => [_safePdf(c[1]), _safePdf(r[c[0]] || '-')]);
+                    const novs = novedadesDe(r);
+                    cuerpo.push([_safePdf('Novedades detectadas'), _safePdf(novs.length ? novs.join('\n') : 'Ninguna')]);
+
+                    jsPDF.API.autoTable.call(doc, {
+                        startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                        head: [[{ content: cab, colSpan: 2 }]],
+                        body: cuerpo, theme: 'grid', styles: st,
+                        headStyles: { fillColor: color, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9.5 },
+                        columnStyles: { 0: { cellWidth: 55, fontStyle: 'bold', fillColor: [241, 245, 249] }, 1: { cellWidth: 131 } },
+                        didDrawPage: drawHF
+                    });
+
+                    // Memoria fotográfica: se traen del nodo aparte solo si el reporte las tiene.
+                    if (r.tiene_fotos) {
+                        try {
+                            const s = await get(ref(database, NODO_FOTOS + '/' + r.id));
+                            const f = s.val() || {};
+                            const imgs = [f.foto1, f.foto2].filter(Boolean);
+                            if (imgs.length) {
+                                let y = doc.lastAutoTable.finalY + 6;
+                                if (y > 200) { doc.addPage(); drawHF(); y = 55; }
+                                doc.setFontSize(9.5); doc.setTextColor(10, 35, 81); doc.setFont('helvetica', 'bold');
+                                doc.text('Memoria fotografica', 14, y); y += 3;
+                                const w = 88, h = 66;
+                                imgs.slice(0, 2).forEach((u, k) => {
+                                    try { doc.addImage(u, 'JPEG', 14 + k * (w + 10), y, w, h); } catch (e) {}
+                                });
+                            }
+                        } catch (e) { /* si las fotos no cargan, el reporte igual sale completo */ }
+                    }
+                }
+                doc.save('alerta_temprana_' + new Date().toISOString().slice(0, 10) + '.pdf');
+            } catch (e) {
+                alert('No se pudo generar el PDF: ' + (e.message || e));
+            } finally { btn.disabled = false; btn.textContent = txt; }
+        });
+
+        // Los escritores de SheetJS / xlsx-js-style NO saben congelar paneles: solo emiten
+        // <sheetView workbookViewId>, nunca <pane>. Aquí se abre el zip generado, se le inyecta
+        // el <pane> a cada hoja y se vuelve a cerrar. Si algo falla, cae al guardado normal.
+        function guardarXlsx(wb, nombre) {
+            try {
+                const filaHdr = (wb.SheetNames || []).map(function (n) {
+                    const ws = (wb.Sheets || {})[n] || {};
+                    const rf = ws['!autofilter'] && ws['!autofilter'].ref;
+                    const m = rf && /^[A-Za-z]+(\d+)/.exec(String(rf));
+                    return m ? Number(m[1]) : 0;
+                });
+                if (!filaHdr.some(Boolean)) throw new Error('ninguna hoja tiene filtro de referencia');
+                const cfb = XLSX.CFB.read(new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })), { type: 'array' });
+                let n = 0;
+                (cfb.FullPaths || []).forEach(function (ruta, i) {
+                    const mh = /\/xl\/worksheets\/sheet(\d+)\.xml$/.exec(ruta);
+                    if (!mh) return;
+                    const y = filaHdr[Number(mh[1]) - 1];
+                    const ent = cfb.FileIndex[i];
+                    if (!y || !ent || !ent.content) return;
+                    const celda = 'A' + (y + 1);
+                    const pane = '<pane ySplit="' + y + '" topLeftCell="' + celda + '" activePane="bottomLeft" state="frozen"/>'
+                        + '<selection pane="bottomLeft" activeCell="' + celda + '" sqref="' + celda + '"/>';
+                    let xml = new TextDecoder('utf-8').decode(new Uint8Array(ent.content));
+                    const antes = xml;
+                    xml = xml.replace(/(<sheetView[^>]*?)\/>/, '$1>' + pane + '</sheetView>');
+                    if (xml === antes) return;
+                    const b = new TextEncoder().encode(xml);
+                    ent.content = b; ent.size = b.length; n++;
+                });
+                if (!n) throw new Error('no se pudo inyectar el congelado');
+                const blob = new Blob([XLSX.CFB.write(cfb, { type: 'array', fileType: 'zip' })],
+                    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = nombre;
+                document.body.appendChild(a); a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+            } catch (e) {
+                XLSX.writeFile(wb, nombre);
+            }
+        }
+    </script>
+</body>
+</html>

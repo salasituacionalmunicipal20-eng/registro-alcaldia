@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alerta Temprana y Monitoreo Meteorológico | Cristóbal Rojas</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #eef2f7; color: #0f172a; line-height: 1.55; }
+        .top { background: linear-gradient(135deg, #0a2351 0%, #0a6cb0 100%); color: #fff; padding: 22px 18px; text-align: center; }
+        .top h1 { font-size: 20px; font-weight: 800; }
+        .top p { font-size: 13px; opacity: .92; margin-top: 5px; }
+        .wrap { max-width: 680px; margin: 0 auto; padding: 16px; }
+        .intro { background: #fff7ed; border: 1px solid #fed7aa; border-left: 5px solid #ea580c; border-radius: 10px; padding: 13px 15px; font-size: 13px; color: #7c2d12; margin-bottom: 14px; line-height: 1.6; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 14px; }
+        .card h2 { font-size: 14px; font-weight: 800; color: #0a2351; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        .card .sub { font-size: 12.5px; color: #64748b; margin-bottom: 12px; }
+        label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin: 12px 0 4px; }
+        label:first-of-type { margin-top: 0; }
+        .hint { font-weight: 400; color: #94a3b8; font-size: 11.5px; }
+        input, select, textarea { width: 100%; padding: 12px 13px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        input:focus, textarea:focus, select:focus { border-color: #0a6cb0; background: #fff; }
+        textarea { min-height: 80px; resize: vertical; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+        .hidden { display: none; }
+        /* Opciones tipo "marcar con una X": botones grandes, cómodos en el teléfono */
+        .ops { display: grid; gap: 8px; margin-top: 4px; }
+        .ops.dos { grid-template-columns: 1fr 1fr; }
+        @media (max-width: 520px) { .ops.dos { grid-template-columns: 1fr; } }
+        .op { display: flex; align-items: center; gap: 10px; padding: 12px 13px; border: 1.5px solid #cbd5e1; border-radius: 9px; background: #f8fafc; cursor: pointer; font-size: 14.5px; font-weight: 600; color: #334155; }
+        .op input { width: 19px; height: 19px; flex: none; accent-color: #0a6cb0; padding: 0; }
+        .op.sel { border-color: #0a6cb0; background: #eff6ff; color: #0a2351; }
+        .op.sel.alerta { border-color: #ea580c; background: #fff7ed; color: #7c2d12; }
+        .op.sel.grave { border-color: #b91c1c; background: #fef2f2; color: #7f1d1d; }
+        .fotos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 520px) { .fotos { grid-template-columns: 1fr; } }
+        .fbox { border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; background: #f8fafc; }
+        .fbox .fbtn { display: block; background: #0a6cb0; color: #fff; border-radius: 8px; padding: 10px; font-size: 13.5px; font-weight: 700; cursor: pointer; margin-bottom: 6px; }
+        .fbox .fbtn input { display: none; }
+        .fbox img { width: 100%; max-height: 150px; object-fit: cover; border-radius: 8px; display: none; margin-top: 6px; }
+        .btn-enviar { width: 100%; background: #0a6cb0; color: #fff; border: none; border-radius: 10px; padding: 16px; font-size: 17px; font-weight: 800; cursor: pointer; margin-top: 6px; }
+        .btn-enviar:disabled { opacity: .6; }
+        .msg { padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-top: 12px; display: none; }
+        .msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
+        .ok-screen { display: none; text-align: center; padding: 40px 20px; }
+        .ok-screen .check { font-size: 60px; }
+        .ok-screen h2 { color: #16a34a; font-size: 24px; margin: 10px 0; }
+        .ok-screen p { color: #475569; font-size: 15px; }
+        .ok-screen .contacto { background: #fff; border-radius: 12px; padding: 16px; margin-top: 20px; text-align: left; font-size: 13.5px; color: #475569; line-height: 1.65; }
+        .ok-screen button { margin-top: 20px; background: #0a2351; color: #fff; border: none; border-radius: 10px; padding: 14px 22px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 16px; }
+    </style>
+    <script defer src="territorio-data.js"></script>
+    <script src="autofresh.js"></script>
+</head>
+<body>
+    <div class="top">
+        <h1>🚨 Alerta Temprana y Monitoreo Meteorológico 🚨</h1>
+        <p>Sala Situacional · Municipio Cristóbal Rojas</p>
+    </div>
+
+    <div class="wrap">
+        <div id="formWrap">
+            <div class="intro">
+                Siguiendo instrucciones de nuestra <b>Alcaldesa Yuhismar Hernández</b>, la Sala Situacional se
+                mantiene en <b>alerta permanente y monitoreo activo</b> ante el paso de las fuertes lluvias en
+                nuestro municipio.
+            </div>
+
+            <div class="card">
+                <h2>📌 Reporte de novedades en territorio</h2>
+                <div class="sub">La fecha y la hora se llenan solas con el momento actual. Puedes cambiarlas si el reporte es de antes.</div>
+                <div class="row2">
+                    <div><label>🗓 Fecha</label><input id="f_fecha" type="date" /></div>
+                    <div><label>⏰ Hora</label><input id="f_hora" type="time" /></div>
+                </div>
+                <label>📍 Parroquia</label>
+                <select id="f_parroquia"><option value="">Selecciona la parroquia</option></select>
+                <div id="campoComuna" class="hidden">
+                    <label>📍 Comuna</label>
+                    <select id="f_comuna"><option value="">Selecciona la comuna</option></select>
+                </div>
+                <div id="campoComunidad" class="hidden">
+                    <label>📍 Comunidad</label>
+                    <select id="f_comunidad"><option value="">Selecciona la comunidad</option></select>
+                </div>
+                <div id="campoOtro" class="hidden">
+                    <label>📍 Escribe la comuna y comunidad <span class="hint">(no aparece en la lista)</span></label>
+                    <input id="f_otro_lugar" placeholder="Comuna / comunidad" autocomplete="off" />
+                </div>
+                <label>📍 Calle o sector puntual *</label>
+                <input id="f_calle" placeholder="Calle, avenida, sector o punto de referencia" autocomplete="off" />
+            </div>
+
+            <div class="card">
+                <h2>👤 Reportado por</h2>
+                <label>📌 Nombre y apellido *</label>
+                <input id="f_nombre" placeholder="Quién reporta" autocomplete="off" />
+                <div class="row2">
+                    <div><label>📌 Teléfono</label><input id="f_telefono" placeholder="0414-0000000" autocomplete="off" inputmode="tel" /></div>
+                    <div><label>📌 Responsabilidad</label><input id="f_responsabilidad" placeholder="Cargo o rol que ocupa" autocomplete="off" /></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🌧 Estado climático y situación actual</h2>
+
+                <label>Condición del tiempo</label>
+                <div class="ops dos" id="grpTiempo">
+                    <label class="op"><input type="radio" name="tiempo" value="Lluvia leve" /> Lluvia leve</label>
+                    <label class="op"><input type="radio" name="tiempo" value="Lluvia fuerte" data-nivel="alerta" /> Lluvia fuerte</label>
+                    <label class="op"><input type="radio" name="tiempo" value="Tormenta" data-nivel="grave" /> Tormenta</label>
+                    <label class="op"><input type="radio" name="tiempo" value="Despejándose" /> Despejándose</label>
+                </div>
+
+                <label style="margin-top:16px;">Nivel de cauces <span class="hint">(quebradas, ríos)</span></label>
+                <div class="ops" id="grpCauces">
+                    <label class="op"><input type="radio" name="cauces" value="Normal" /> Normal</label>
+                    <label class="op"><input type="radio" name="cauces" value="Alerta" data-nivel="alerta" /> Alerta</label>
+                    <label class="op"><input type="radio" name="cauces" value="Desbordado" data-nivel="grave" /> Desbordado</label>
+                </div>
+
+                <label style="margin-top:16px;">Falla de servicios</label>
+                <div class="ops dos" id="grpServicios">
+                    <label class="op"><input type="radio" name="servicios" value="Sin novedad" /> Sin novedad</label>
+                    <label class="op"><input type="radio" name="servicios" value="Sin luz" data-nivel="alerta" /> Sin luz</label>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>⚠️ Novedades detectadas</h2>
+                <div class="sub">Marca todas las que apliquen. Si no hay nada que reportar, marca la última.</div>
+                <div class="ops" id="grpNovedades">
+                    <label class="op"><input type="checkbox" name="nov" value="Árboles caídos / En riesgo" data-nivel="alerta" /> Árboles caídos / En riesgo</label>
+                    <label class="op"><input type="checkbox" name="nov" value="Desprendimiento de tierra / Deslizamiento" data-nivel="grave" /> Desprendimiento de tierra / Deslizamiento</label>
+                    <label class="op"><input type="checkbox" name="nov" value="Anegación de viviendas" data-nivel="grave" /> Anegación de viviendas</label>
+                    <label class="op"><input type="checkbox" name="nov" value="Obstrucción de vías o alcantarillado" data-nivel="alerta" /> Obstrucción de vías o alcantarillado</label>
+                    <label class="op"><input type="checkbox" name="nov" value="Sin novedades que lamentar" id="chkSinNovedad" /> Sin novedades que lamentar</label>
+                </div>
+
+                <label style="margin-top:16px;">📝 Descripción breve de la novedad</label>
+                <textarea id="f_descripcion" placeholder="Escribe aquí los detalles de la situación, si aplica"></textarea>
+            </div>
+
+            <div class="card">
+                <h2>📷 Memoria fotográfica</h2>
+                <div class="sub">Hasta dos fotos del sitio. Se comprimen solas para que suban rápido.</div>
+                <div class="fotos">
+                    <div class="fbox">
+                        <label class="fbtn">📷 Foto 1<input type="file" accept="image/*" id="foto1" /></label>
+                        <img id="prev1" alt="" />
+                    </div>
+                    <div class="fbox">
+                        <label class="fbtn">📷 Foto 2<input type="file" accept="image/*" id="foto2" /></label>
+                        <img id="prev2" alt="" />
+                    </div>
+                </div>
+                <button class="btn-enviar" id="btnEnviar" type="button">Enviar reporte</button>
+                <div id="msg" class="msg"></div>
+            </div>
+        </div>
+
+        <div class="ok-screen" id="okScreen">
+            <div class="check">✅</div>
+            <h2>¡Reporte enviado!</h2>
+            <p>La Sala Situacional ya tiene tu novedad.</p>
+            <div class="contacto">
+                <b>📞 Atención integral</b><br />
+                La Sala Situacional se pone a la entera orden para atender cualquier novedad suscitada en cada
+                territorio. Garantizamos el enlace directo con los <b>cuerpos de seguridad, gestión de riesgo y
+                protección civil</b>.
+                <div style="margin-top:12px;text-align:center;font-weight:800;color:#0a2351;">
+                    🚩 SALA SITUACIONAL PSUV<br />MUNICIPIO CRISTÓBAL ROJAS 🚩
+                </div>
+            </div>
+            <button id="btnOtro" type="button">Enviar otro reporte</button>
+        </div>
+    </div>
+
+    <div class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const $ = (id) => document.getElementById(id);
+        const v = (id) => ($(id).value || '').trim();
+
+        // ---- Fecha y hora del momento, editables por si el reporte es de antes ----
+        (function () {
+            const d = new Date(), p = n => String(n).padStart(2, '0');
+            $('f_fecha').value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+            $('f_hora').value = `${p(d.getHours())}:${p(d.getMinutes())}`;
+        })();
+
+        // ---- Cascada territorial: parroquia -> comuna -> comunidad ----
+        const T = () => (window.TERRITORIO && window.TERRITORIO.comunidades) ? window.TERRITORIO.comunidades : {};
+        const parroquias = () => [...new Set(Object.values(T()).filter(c => c.activo).map(c => c.parroquia))].sort();
+        const comunasDe = (par) => [...new Set(Object.values(T()).filter(c => c.activo && c.parroquia === par).map(c => c.circuito_comunal))].filter(Boolean).sort();
+        const comunidadesDe = (par, com) => Object.values(T()).filter(c => c.activo && c.parroquia === par && c.circuito_comunal === com).map(c => c.nombre).sort((a, b) => a.localeCompare(b, 'es'));
+        const opts = (sel, arr, ph) => { sel.innerHTML = `<option value="">${ph}</option>` + arr.map(x => `<option>${x}</option>`).join('') + '<option value="OTRO">OTRO / No aparece</option>'; };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            opts($('f_parroquia'), parroquias(), 'Selecciona la parroquia');
+        });
+
+        $('f_parroquia').addEventListener('change', () => {
+            const par = v('f_parroquia');
+            $('campoComuna').classList.toggle('hidden', !par);
+            $('campoComunidad').classList.add('hidden');
+            $('campoOtro').classList.toggle('hidden', par !== 'OTRO');
+            if (par && par !== 'OTRO') opts($('f_comuna'), comunasDe(par), 'Selecciona la comuna');
+        });
+
+        $('f_comuna').addEventListener('change', () => {
+            const par = v('f_parroquia'), com = v('f_comuna');
+            const otro = (com === 'OTRO');
+            $('campoOtro').classList.toggle('hidden', !otro);
+            $('campoComunidad').classList.toggle('hidden', !com || otro);
+            if (com && !otro) opts($('f_comunidad'), comunidadesDe(par, com), 'Selecciona la comunidad');
+        });
+
+        $('f_comunidad').addEventListener('change', () => {
+            $('campoOtro').classList.toggle('hidden', v('f_comunidad') !== 'OTRO');
+        });
+
+        // ---- Marcado visual de las opciones + color según gravedad ----
+        function pintar(grupo) {
+            $(grupo).querySelectorAll('.op').forEach(op => {
+                const inp = op.querySelector('input');
+                op.classList.toggle('sel', inp.checked);
+                op.classList.remove('alerta', 'grave');
+                if (inp.checked && inp.dataset.nivel) op.classList.add(inp.dataset.nivel);
+            });
+        }
+        ['grpTiempo', 'grpCauces', 'grpServicios', 'grpNovedades'].forEach(g => {
+            $(g).addEventListener('change', () => pintar(g));
+        });
+
+        // "Sin novedades que lamentar" es excluyente: no tiene sentido junto a un árbol caído.
+        $('grpNovedades').addEventListener('change', (e) => {
+            const chks = [...$('grpNovedades').querySelectorAll('input[name="nov"]')];
+            const sinNov = $('chkSinNovedad');
+            if (e.target === sinNov && sinNov.checked) chks.forEach(c => { if (c !== sinNov) c.checked = false; });
+            else if (e.target !== sinNov && e.target.checked) sinNov.checked = false;
+            pintar('grpNovedades');
+        });
+
+        // ---- Fotos: se comprimen antes de subir ----
+        const FOTOS = { foto1: '', foto2: '' };
+        function comprimir(file) {
+            return new Promise((resolve) => {
+                if (!file || !file.type || file.type.indexOf('image/') !== 0) { resolve(''); return; }
+                const rd = new FileReader();
+                rd.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const MAX = 900; let w = img.width, h = img.height;
+                        if (w >= h && w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+                        else if (h > w && h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+                        const c = document.createElement('canvas'); c.width = w; c.height = h;
+                        c.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(c.toDataURL('image/jpeg', 0.6));
+                    };
+                    img.onerror = () => resolve('');
+                    img.src = ev.target.result;
+                };
+                rd.readAsDataURL(file);
+            });
+        }
+        [['foto1', 'prev1'], ['foto2', 'prev2']].forEach(([inp, prev]) => {
+            $(inp).addEventListener('change', async (e) => {
+                const u = await comprimir(e.target.files && e.target.files[0]);
+                FOTOS[inp] = u;
+                const im = $(prev);
+                if (u) { im.src = u; im.style.display = 'block'; } else { im.style.display = 'none'; }
+            });
+        });
+
+        const marcado = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
+        const marcados = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(x => x.value);
+
+        $('btnEnviar').addEventListener('click', async () => {
+            const m = $('msg');
+            const err = (t, foco) => { m.textContent = t; m.className = 'msg err'; if (foco) $(foco).focus(); };
+
+            const nombre = v('f_nombre');
+            const calle = v('f_calle');
+            if (!calle) { err('Escribe la calle o el sector donde ocurre la novedad.', 'f_calle'); return; }
+            if (!nombre) { err('Escribe el nombre de quien reporta.', 'f_nombre'); return; }
+
+            const payload = {
+                fecha: v('f_fecha'), hora: v('f_hora'),
+                parroquia: v('f_parroquia'), comuna: v('f_comuna'), comunidad: v('f_comunidad'),
+                otro_lugar: v('f_otro_lugar'), calle,
+                nombre, telefono: v('f_telefono'), responsabilidad: v('f_responsabilidad'),
+                condicion_tiempo: marcado('tiempo'), nivel_cauces: marcado('cauces'), falla_servicios: marcado('servicios'),
+                novedades: marcados('nov'),
+                descripcion: v('f_descripcion'),
+                tiene_fotos: !!(FOTOS.foto1 || FOTOS.foto2),
+                atendido: false,
+                fecha_registro: Date.now(), registrado_por: 'Formulario público'
+            };
+
+            $('btnEnviar').disabled = true; $('btnEnviar').textContent = 'Enviando…';
+            try {
+                const nuevo = push(ref(database, 'alerta_temprana'));
+                await set(nuevo, payload);
+                // Las fotos van en su propio nodo para no engordar la lista del tablero.
+                if (payload.tiene_fotos) {
+                    try { await set(ref(database, 'alerta_temprana_fotos/' + nuevo.key), { foto1: FOTOS.foto1 || null, foto2: FOTOS.foto2 || null }); }
+                    catch (e) { /* el reporte ya quedó guardado; las fotos se pueden cargar luego al editar */ }
+                }
+                $('formWrap').style.display = 'none';
+                $('okScreen').style.display = 'block';
+                window.scrollTo(0, 0);
+            } catch (e) {
+                err('No se pudo enviar (' + (e.message || e.code || 'error') + '). Revisa tu conexión e intenta de nuevo.');
+                $('btnEnviar').disabled = false; $('btnEnviar').textContent = 'Enviar reporte';
+            }
+        });
+
+        $('btnOtro').addEventListener('click', () => location.reload());
+    </script>
+</body>
+</html>

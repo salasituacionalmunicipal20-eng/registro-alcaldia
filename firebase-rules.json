@@ -80,6 +80,19 @@
         ".validate": "newData.hasChildren(['nombres']) && newData.child('nombres').isString() && newData.child('nombres').val().length <= 200"
       }
     },
+    "alerta_temprana": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      "$id": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "newData.hasChildren(['nombre','calle']) && newData.child('nombre').isString() && newData.child('nombre').val().length <= 200 && newData.child('calle').val().length <= 300"
+      }
+    },
+    "alerta_temprana_fotos": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      "$id": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'"
+      }
+    },
     "refugiados_cedulas": {
       "$cedula": {
         ".read": true,
