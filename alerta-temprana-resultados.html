@@ -172,7 +172,11 @@
         const NODO = 'alerta_temprana';
         const NODO_FOTOS = 'alerta_temprana_fotos';
         const URL_FORM = 'https://salasituacional.alcaldiadecharallave.com/alerta-temprana.html';
-        const URL_CORTO = 'https://da.gd/HdS2p';
+        // Se usa TinyURL con alias propio, no da.gd: da.gd le muestra a cada visitante
+        // nuevo de un enlace recién creado una pantalla de advertencia sobre phishing
+        // antes de redirigir, y eso espanta a quien escanea el QR de un canal oficial.
+        // Además "alertacharallave" se lee y se dicta, un código aleatorio no.
+        const URL_CORTO = 'https://tinyurl.com/alertacharallave';
 
         // Gravedad: manda lo peor que traiga el reporte. Sirve para ordenar la
         // atención y para pintar la fila, no es un dato que llene quien reporta.
