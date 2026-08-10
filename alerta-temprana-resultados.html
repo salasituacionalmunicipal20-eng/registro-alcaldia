@@ -116,7 +116,7 @@
                     <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
                 </div>
                 <div class="filtros">
-                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Comunidad, calle, quien reporta, descripción…" autocomplete="off" /></div>
+                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Comunidad, calle, cédula, quien reporta, descripción…" autocomplete="off" /></div>
                     <div><label>Desde</label><input id="fDesde" type="date" /></div>
                     <div><label>Hasta</label><input id="fHasta" type="date" /></div>
                     <div><label>Parroquia</label><select id="fParroquia"><option value="">Todas</option></select></div>
@@ -196,7 +196,7 @@
         const CAMPOS_PDF = [
             ['fecha', 'Fecha'], ['hora', 'Hora'], ['parroquia', 'Parroquia'], ['comuna', 'Comuna'],
             ['comunidad', 'Comunidad'], ['otro_lugar', 'Otro lugar'], ['calle', 'Calle / sector'],
-            ['nombre', 'Reportado por'], ['telefono', 'Teléfono'], ['responsabilidad', 'Responsabilidad'],
+            ['nombre', 'Reportado por'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['responsabilidad', 'Responsabilidad'],
             ['condicion_tiempo', 'Condición del tiempo'], ['nivel_cauces', 'Nivel de cauces'],
             ['falla_servicios', 'Falla de servicios'], ['descripcion', 'Descripción de la novedad']
         ];
@@ -274,7 +274,7 @@
                 if (nov && nov !== '__con' && nov !== '__sin' && !novedadesDe(r).includes(nov)) return false;
                 if (q) {
                     const txt = [r.comunidad, r.comuna, r.parroquia, r.otro_lugar, r.calle, r.nombre,
-                                 r.telefono, r.responsabilidad, r.descripcion].concat(novedadesDe(r))
+                                 r.cedula, r.telefono, r.responsabilidad, r.descripcion].concat(novedadesDe(r))
                         .filter(Boolean).join(' ').toLowerCase();
                     if (!txt.includes(q)) return false;
                 }
@@ -312,7 +312,7 @@
                     return `<tr>
                         <td><b>${esc(r.fecha || '—')}</b><br /><span style="color:#64748b;font-size:12px;">${esc(r.hora || '')}</span></td>
                         <td><b>${esc(lugarDe(r))}</b><br /><span style="color:#64748b;font-size:12px;">${esc(r.calle || '')}</span></td>
-                        <td>${esc(r.nombre || '—')}<br /><span style="color:#64748b;font-size:12px;">${esc(r.telefono || '')}</span></td>
+                        <td>${esc(r.nombre || '—')}<br /><span style="color:#64748b;font-size:12px;">${[r.cedula, r.telefono].filter(Boolean).map(x => esc(x)).join(' · ')}</span></td>
                         <td><span class="pill p-${n}">${esc(r.condicion_tiempo || '—')}</span></td>
                         <td>${esc(r.nivel_cauces || '—')}</td>
                         <td style="font-size:12.5px;">${novs.length ? novs.map(x => esc(x)).join('<br />') : '—'}</td>
@@ -363,7 +363,7 @@
                 ${fila('Parroquia', r.parroquia)}${fila('Comuna', r.comuna)}${fila('Comunidad', r.comunidad)}
                 ${r.otro_lugar ? fila('Otro lugar', r.otro_lugar) : ''}${fila('Calle / sector', r.calle)}
                 <h4>Reportado por</h4>
-                ${fila('Nombre y apellido', r.nombre)}${fila('Teléfono', r.telefono)}${fila('Responsabilidad', r.responsabilidad)}
+                ${fila('Nombre y apellido', r.nombre)}${fila('Cédula', r.cedula)}${fila('Teléfono', r.telefono)}${fila('Responsabilidad', r.responsabilidad)}
                 <h4>Estado climático</h4>
                 ${fila('Condición del tiempo', r.condicion_tiempo)}${fila('Nivel de cauces', r.nivel_cauces)}${fila('Falla de servicios', r.falla_servicios)}
                 <h4>Novedades detectadas</h4>
@@ -397,14 +397,14 @@
             const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
 
             const hdr = ['Fecha', 'Hora', 'Nivel', 'Estado', 'Parroquia', 'Comuna', 'Comunidad', 'Otro lugar',
-                'Calle / sector', 'Reportado por', 'Teléfono', 'Responsabilidad', 'Condición del tiempo',
+                'Calle / sector', 'Reportado por', 'Cédula', 'Teléfono', 'Responsabilidad', 'Condición del tiempo',
                 'Nivel de cauces', 'Falla de servicios', 'Novedades detectadas', 'Descripción', '¿Tiene fotos?'];
             const filas = lista.map(r => [
                 r.fecha || '', r.hora || '',
                 nivelDe(r) === 'grave' ? 'Grave' : nivelDe(r) === 'alerta' ? 'Alerta' : 'Leve',
                 r.atendido ? 'Atendido' : 'Pendiente',
                 r.parroquia || '', r.comuna || '', r.comunidad || '', r.otro_lugar || '', r.calle || '',
-                r.nombre || '', r.telefono || '', r.responsabilidad || '',
+                r.nombre || '', r.cedula || '', r.telefono || '', r.responsabilidad || '',
                 r.condicion_tiempo || '', r.nivel_cauces || '', r.falla_servicios || '',
                 novedadesDe(r).join(' · '), r.descripcion || '', r.tiene_fotos ? 'Sí' : 'No'
             ]);
@@ -426,7 +426,7 @@
                 setS(rr, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...((rr % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}) });
             }
             ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr.length - 1 } }];
-            ws['!cols'] = [12, 8, 9, 11, 16, 24, 24, 20, 26, 22, 14, 20, 18, 14, 15, 40, 46, 10].map(w => ({ wch: w }));
+            ws['!cols'] = [12, 8, 9, 11, 16, 24, 24, 20, 26, 22, 13, 14, 20, 18, 14, 15, 40, 46, 10].map(w => ({ wch: w }));
             ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: hdr.length - 1 } }) };
 
             const wb = XLSX.utils.book_new();

@@ -95,6 +95,11 @@
 
             <div class="card">
                 <h2>👤 Reportado por</h2>
+                <div class="sub">Escribe primero la cédula: si aparece en el CNE, el nombre se llena solo.</div>
+                <div class="cne-slot">
+                    <label>📌 Cédula</label>
+                    <input id="f_cedula" data-cne data-cne-nombre="#f_nombre" placeholder="12345678" autocomplete="off" inputmode="numeric" />
+                </div>
                 <label>📌 Nombre y apellido *</label>
                 <input id="f_nombre" placeholder="Quién reporta" autocomplete="off" />
                 <div class="row2">
@@ -306,7 +311,7 @@
                 fecha: v('f_fecha'), hora: v('f_hora'),
                 parroquia: v('f_parroquia'), comuna: v('f_comuna'), comunidad: v('f_comunidad'),
                 otro_lugar: v('f_otro_lugar'), calle,
-                nombre, telefono: v('f_telefono'), responsabilidad: v('f_responsabilidad'),
+                nombre, cedula: v('f_cedula'), telefono: v('f_telefono'), responsabilidad: v('f_responsabilidad'),
                 condicion_tiempo: marcado('tiempo'), nivel_cauces: marcado('cauces'), falla_servicios: marcado('servicios'),
                 novedades: marcados('nov'),
                 descripcion: v('f_descripcion'),
@@ -335,5 +340,6 @@
 
         $('btnOtro').addEventListener('click', () => location.reload());
     </script>
+    <script src="cne-dateas.js"></script>
 </body>
 </html>
