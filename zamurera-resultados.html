@@ -482,22 +482,14 @@
         // ===== Etiquetas para detalle / Excel =====
         const RECEP = [['n_registro', 'Nº de registro'], ['fecha_ingreso', 'Fecha de ingreso'], ['hora', 'Hora'], ['persona_receptor', 'Persona receptor']];
         const INM = [['estado', 'Estado de procedencia'], ['municipio', 'Municipio'], ['parroquia', 'Parroquia'], ['comuna_procedencia', 'Comuna'], ['comunidad', 'Comunidad'], ['nombre_calle', 'Nombre de la calle'], ['tipo_vivienda', 'Tipo de vivienda'], ['numero_casa', 'Número de casa'], ['piso', 'Piso número'], ['gran_mision_vivienda', 'Gran Misión Vivienda'], ['nombre_casa_edificio', 'Nombre casa/edificio'], ['condicion', 'Condición de la vivienda'], ['_tiempo', 'Tiempo de permanencia'], ['cant_familias', 'Familias que habitaban'], ['cant_personas', 'Personas que habitaban']];
-        const JEFE = [['nro', 'Nº de carnet'], ['nombre', 'Nombre y apellido'], ['es_dueno', '¿Es el dueño del inmueble?'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['nivel_instruccion', 'Nivel de instrucción'], ['trabaja', '¿Trabaja?'], ['situacion_laboral', 'Situación laboral'], ['lugar_trabajo', 'Lugar de trabajo'], ['cargo', 'Cargo'], ['profesion', 'Profesión'], ['tiempo_servicio', 'Tiempo laboral'], ['nivel_academico', 'Nivel académico'], ['estudia', '¿Qué estudia?'], ['tiene_pareja', '¿Tiene pareja?'], ['carnet_posee', '¿Posee carnet de la patria?'], ['carnet_codigo', 'Código carnet'], ['carnet_serial', 'Serial carnet'], ['enfermedad', '¿Sufre enfermedad?'], ['enfermedad_cual', 'Enfermedad ¿cuál?'], ['discapacidad', '¿Tiene discapacidad?'], ['discapacidad_cual', 'Discapacidad ¿cuál?'], ['toma_medicamento', '¿Toma medicamento?'], ['medicamento', 'Medicamento ¿cuál?'], ['necesita_psico', '¿Requiere ayuda psicológica?'], ['situacion_psicologica', 'Situación psicológica'], ['necesita_ropa', '¿Necesita ropa?'], ['talla_camisa', 'Talla camisa'], ['talla_pantalon', 'Talla pantalón'], ['talla_zapatos', 'Talla zapato'], ['talla_ropa_interior', 'Talla ropa interior'], ['familiar_desaparecido', '¿Familiar desaparecido/fallecido?'], ['familiar_otro_estado', '¿Familiar en otro estado?'], ['afectacion', 'Afectación por el terremoto'], ['observaciones', 'Observaciones'], ['planta', 'Planta'], ['cubiculo', 'Cubículo'], ['cama', 'Cama']];
-        const INTEG = [['nro', 'Nº de carnet'], ['es_jefe', '¿Es jefe de familia?'], ['nombre', 'Nombre y apellido'], ['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['nivel_instruccion', 'Nivel de instrucción'], ['nivel_academico', 'Nivel académico'], ['estudia', '¿Qué estudia?'], ['enfermedad', '¿Sufre enfermedad?'], ['enfermedad_cual', 'Enfermedad ¿cuál?'], ['discapacidad', '¿Tiene discapacidad?'], ['discapacidad_cual', 'Discapacidad ¿cuál?'], ['toma_medicamento', '¿Toma medicamento?'], ['medicamento', 'Medicamento ¿cuál?'], ['necesita_psico', '¿Requiere ayuda psicológica?'], ['situacion_psicologica', 'Situación psicológica'], ['talla_camisa', 'Talla camisa'], ['talla_pantalon', 'Talla pantalón'], ['talla_zapatos', 'Talla zapato'], ['planta', 'Planta'], ['cubiculo', 'Cubículo'], ['cama', 'Cama'], ['observaciones', 'Observaciones'], ['rep_nombre', 'Representante — Nombre'], ['rep_cedula', 'Representante — Cédula'], ['rep_telefono', 'Representante — Teléfono'], ['rep_parentesco', 'Representante — Parentesco']];
+        const JEFE = [['nro', 'Nº de carnet'], ['nombre', 'Nombre y apellido'], ['es_dueno', '¿Es el dueño del inmueble?'], ['nacionalidad', 'Nacionalidad'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['nivel_instruccion', 'Nivel de instrucción'], ['trabaja', '¿Trabaja?'], ['situacion_laboral', 'Situación laboral'], ['lugar_trabajo', 'Lugar de trabajo'], ['cargo', 'Cargo'], ['profesion', 'Profesión'], ['tiempo_servicio', 'Tiempo laboral'], ['nivel_academico', 'Nivel académico'], ['estudia', '¿Qué estudia?'], ['tiene_pareja', '¿Tiene pareja?'], ['carnet_posee', '¿Posee carnet de la patria?'], ['carnet_codigo', 'Código carnet'], ['carnet_serial', 'Serial carnet'], ['enfermedad', '¿Sufre enfermedad?'], ['enfermedad_cual', 'Enfermedad ¿cuál?'], ['discapacidad', '¿Tiene discapacidad?'], ['discapacidad_cual', 'Discapacidad ¿cuál?'], ['toma_medicamento', '¿Toma medicamento?'], ['medicamento', 'Medicamento ¿cuál?'], ['necesita_psico', '¿Requiere ayuda psicológica?'], ['situacion_psicologica', 'Situación psicológica'], ['necesita_ropa', '¿Necesita ropa?'], ['talla_camisa', 'Talla camisa'], ['talla_pantalon', 'Talla pantalón'], ['talla_zapatos', 'Talla zapato'], ['talla_ropa_interior', 'Talla ropa interior'], ['familiar_desaparecido', '¿Familiar desaparecido/fallecido?'], ['familiar_otro_estado', '¿Familiar en otro estado?'], ['afectacion', 'Afectación por el terremoto'], ['observaciones', 'Observaciones'], ['planta', 'Planta'], ['cubiculo', 'Cubículo'], ['cama', 'Cama']];
+        const INTEG = [['nro', 'Nº de carnet'], ['es_jefe', '¿Es jefe de familia?'], ['nombre', 'Nombre y apellido'], ['parentesco', 'Parentesco'], ['nacionalidad', 'Nacionalidad'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha de nacimiento'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['nivel_instruccion', 'Nivel de instrucción'], ['nivel_academico', 'Nivel académico'], ['estudia', '¿Qué estudia?'], ['enfermedad', '¿Sufre enfermedad?'], ['enfermedad_cual', 'Enfermedad ¿cuál?'], ['discapacidad', '¿Tiene discapacidad?'], ['discapacidad_cual', 'Discapacidad ¿cuál?'], ['toma_medicamento', '¿Toma medicamento?'], ['medicamento', 'Medicamento ¿cuál?'], ['necesita_psico', '¿Requiere ayuda psicológica?'], ['situacion_psicologica', 'Situación psicológica'], ['talla_camisa', 'Talla camisa'], ['talla_pantalon', 'Talla pantalón'], ['talla_zapatos', 'Talla zapato'], ['planta', 'Planta'], ['cubiculo', 'Cubículo'], ['cama', 'Cama'], ['observaciones', 'Observaciones'], ['rep_nacionalidad', 'Representante — Nacionalidad'], ['rep_cedula', 'Representante — Cédula'], ['rep_nombre', 'Representante — Nombre'], ['rep_telefono', 'Representante — Teléfono'], ['rep_parentesco', 'Representante — Parentesco']];
         // Retrocompat con integrantes viejos (miembros): mostrar sus campos originales si existen
         const INTEG_VIEJO = [['parentesco', 'Parentesco'], ['cedula', 'Cédula'], ['telefono', 'Teléfono'], ['fecha_nac', 'Fecha nac.'], ['edad', 'Edad'], ['genero', 'Género'], ['tipo_sangre', 'Tipo de sangre'], ['estudia', '¿Estudia?'], ['profesion', 'Profesión'], ['patologia', 'Patología'], ['medicamento', 'Medicamento'], ['situacion_salud', 'Situación de salud'], ['modulo', 'Módulo'], ['cubiculo', 'Cubículo'], ['cama', 'Cama']];
-        // Lista COMPLETA de campos del integrante para el PDF. Es INTEG más las dos
-        // nacionalidades, que la ficha web no lista. El PDF tiene que salir sin
-        // omitir nada, así que se arma a partir de INTEG para no quedar desfasada.
-        const INTEG_PDF = (() => {
-            const out = [];
-            for (const c of INTEG) {
-                if (c[0] === 'cedula') out.push(['nacionalidad', 'Nacionalidad']);
-                if (c[0] === 'rep_cedula') out.push(['rep_nacionalidad', 'Representante — Nacionalidad']);
-                out.push(c);
-            }
-            return out;
-        })();
+        // El PDF usa la misma lista que la ficha: las dos nacionalidades ya viven
+        // dentro de INTEG, así que no hay que parchear nada aparte. Se deja el alias
+        // para no tocar el resto del código que lo llama.
+        const INTEG_PDF = INTEG;
 
         function valJefe(j, key) {
             if (key === 'genero') return gen(j.genero);
@@ -944,36 +936,81 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
                 if (filas.length) ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: header.length - 1 } }) };
                 return ws;
             };
-            // Hoja 1: una fila por FAMILIA (con datos del inmueble + jefe)
-            const inmCols = INM.map(c => c[1]);
-            const jefeColsSel = ['nombre', 'es_dueno', 'cedula', 'telefono', 'edad', 'genero', 'tipo_sangre', 'nivel_instruccion', 'trabaja', 'situacion_laboral', 'profesion', 'carnet_posee', 'enfermedad', 'discapacidad', 'necesita_psico', 'necesita_ropa', 'familiar_desaparecido', 'familiar_otro_estado', 'planta', 'cubiculo', 'cama'];
-            const jefeColLbl = jefeColsSel.map(k => (JEFE.find(c => c[0] === k) || [k, k])[1]);
-            const hdr1 = ['Nº registro', 'Fecha', 'Hora', 'Receptor'].concat(inmCols).concat(jefeColLbl).concat(['Integrantes de la familia']);
+            // Las columnas se DERIVAN de las mismas listas que usan la ficha y el PDF
+            // (JEFE, INTEG, INM, GS_COMUNIDAD). Antes iban escritas a mano y se fueron
+            // desfasando: la hoja de personas llegó a exportar 21 de los 42 campos del
+            // jefe y se perdían cosas como la fecha de nacimiento. Derivándolas, todo
+             // campo que se agregue a una lista aparece solo en el Excel.
+
+            // Hoja 1: una fila por FAMILIA — inmueble + gestión social + jefe COMPLETO
+            const hdr1 = ['Nº registro', 'Fecha', 'Hora', 'Receptor']
+                .concat(INM.map(c => c[1]))
+                .concat(GS_COMUNIDAD.map(c => 'GS · ' + c[1]))
+                .concat(JEFE.map(c => 'Jefe · ' + c[1]))
+                .concat(['Integrantes de la familia', 'Entregas del acopio']);
             const f1 = [];
             REGS.forEach(r => {
-                const inm = inmuebleDe(r);
+                const inm = inmuebleDe(r), gs = r.gestion_social || {};
+                const ent = (Array.isArray(r.entregas) ? r.entregas : [])
+                    .map(e => [e.articulo, e.presentacion, (e.cantidad != null ? e.cantidad + ' ' + (e.unidad || '') : '')].filter(Boolean).join(' · '))
+                    .join(' | ');
                 familiasDe(r).forEach(f => {
                     const j = f.jefe || {};
                     f1.push([r.n_registro || '', r.fecha_ingreso || '', r.hora || '', r.persona_receptor || '']
-                        .concat(INM.map(c => String(valInm(inm, c[0]) || '')))
-                        .concat(jefeColsSel.map(k => String(valJefe(j, k) || '')))
-                        .concat([String(f.integrantes.length)]));
+                        .concat(INM.map(c => String(valInm(inm, c[0]) ?? '')))
+                        .concat(GS_COMUNIDAD.map(c => String(gs[c[0]] ?? '')))
+                        .concat(JEFE.map(c => String(valJefe(j, c[0]) ?? '')))
+                        .concat([String(f.integrantes.length), ent]));
                 });
             });
-            // Hoja 2: una fila por PERSONA
-            const hdr2 = ['Nº registro', 'Familia', 'Rol', 'Dueño', 'Nombre', 'Parentesco', 'Cédula', 'Teléfono', 'Edad', 'Género', 'Tipo sangre', 'Nivel de instrucción', 'Nivel académico', '¿Qué estudia?', '¿Enfermedad?', 'Enfermedad ¿cuál?', '¿Discapacidad?', 'Discapacidad ¿cuál?', '¿Toma medicamento?', 'Medicamento ¿cuál?', '¿Ayuda psicológica?', 'Situación psicológica', 'Talla camisa', 'Talla pantalón', 'Talla zapato', 'Planta', 'Cubículo', 'Cama', 'Observaciones', 'Representante (menor)'];
+
+            // Hoja 2: una fila por PERSONA, con la UNIÓN de los campos del jefe y del
+            // integrante. Cada quien llena los suyos y deja en blanco los que no le
+            // aplican, así ninguna persona sale recortada.
+            // Los campos de identidad van de primeros aunque unos vengan de la lista
+            // del jefe y otros de la del integrante: si no, "Parentesco" termina en la
+            // columna 50 y la hoja se vuelve incómoda de leer.
+            const ORDEN_ID = ['nro', 'nombre', 'es_jefe', 'es_dueno', 'parentesco', 'nacionalidad', 'cedula', 'telefono', 'fecha_nac', 'edad', 'genero', 'tipo_sangre'];
+            const TODOS = [];
+            const vistos = new Set();
+            [...JEFE, ...INTEG].forEach(c => { if (!vistos.has(c[0])) { vistos.add(c[0]); TODOS.push(c); } });
+            const UNION = ORDEN_ID.map(k => TODOS.find(c => c[0] === k)).filter(Boolean)
+                .concat(TODOS.filter(c => !ORDEN_ID.includes(c[0])));
+            const hdr2 = ['Nº registro', 'Familia', 'Rol', 'Dueño de la familia'].concat(UNION.map(c => c[1]));
             const f2 = [];
             REGS.forEach(r => {
                 familiasDe(r).forEach((f, fi) => {
                     const j = f.jefe || {};
-                    const ubic = [j.planta || j.modulo || '', j.cubiculo || '', j.cama || ''];
-                    f2.push([r.n_registro || '', String(fi + 1), 'Jefe de familia', (si(f.es_dueno) ? 'Sí' : 'No'), j.nombre || '', '', String(j.cedula || ''), String(j.telefono || ''), String(j.edad || ''), gen(j.genero), j.tipo_sangre || '', j.nivel_instruccion || '', j.nivel_academico || '', j.estudia || '', j.enfermedad || '', j.enfermedad_cual || '', j.discapacidad || '', j.discapacidad_cual || '', j.toma_medicamento || '', j.medicamento || '', j.necesita_psico || '', j.situacion_psicologica || '', j.talla_camisa || '', j.talla_pantalon || '', j.talla_zapatos || '', ubic[0], ubic[1], ubic[2], j.observaciones || '', '']);
-                    f.integrantes.forEach(m => f2.push([r.n_registro || '', String(fi + 1), 'Integrante', '', m.nombre || '', m.parentesco || '', String(m.cedula || ''), String(m.telefono || ''), String(m.edad || ''), gen(m.genero), m.tipo_sangre || '', m.nivel_instruccion || '', m.nivel_academico || '', m.estudia || '', m.enfermedad || '', m.enfermedad_cual || '', m.discapacidad || '', m.discapacidad_cual || '', m.toma_medicamento || '', m.medicamento || '', m.necesita_psico || '', m.situacion_psicologica || '', m.talla_camisa || '', m.talla_pantalon || '', m.talla_zapatos || '', (m.planta || ubic[0]), (m.cubiculo || ubic[1]), (m.cama || ''), m.observaciones || '', [m.rep_nombre, m.rep_cedula].filter(Boolean).join(' · ')]));
+                    const base = [r.n_registro || '', String(fi + 1)];
+                    f2.push(base.concat(['Jefe de familia', si(f.es_dueno) ? 'Sí' : 'No'])
+                        .concat(UNION.map(c => String(valJefe(j, c[0]) ?? ''))));
+                    f.integrantes.forEach(m => {
+                        // Ubicación heredada del jefe cuando el integrante no trae la suya.
+                        const con = { ...m };
+                        if (!con.planta) con.planta = j.planta || j.modulo || '';
+                        if (!con.cubiculo) con.cubiculo = j.cubiculo || '';
+                        f2.push(base.concat(['Integrante', ''])
+                            .concat(UNION.map(c => String((c[0] === 'genero' ? gen(con.genero) : con[c[0]]) ?? ''))));
+                    });
                 });
             });
+
+            // Hoja 3: una fila por ARTÍCULO entregado del centro de acopio.
+            const hdr3 = ['Nº registro', 'Jefe de familia (dueño)', 'Estado del retiro', 'Artículo', 'Presentación', 'Cantidad', 'Unidad', 'Categoría'];
+            const f3 = [];
+            REGS.forEach(r => {
+                (Array.isArray(r.entregas) ? r.entregas : []).forEach(e => {
+                    f3.push([r.n_registro || '', (duenoDe(r).jefe.nombre || ''),
+                        r.entregas_posteadas ? 'Aceptado y descontado' : 'Pendiente de aprobar',
+                        e.articulo || '', e.presentacion || '',
+                        String(e.cantidad ?? ''), e.unidad || '', e.categoria || '']);
+                });
+            });
+
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, mkSheet('CAMPAMENTO TEMPORAL — FAMILIAS', hdr1, f1, hdr1.map(() => 16)), 'Familias');
-            XLSX.utils.book_append_sheet(wb, mkSheet('CAMPAMENTO TEMPORAL — PERSONAS', hdr2, f2, [12, 8, 16, 8, 24, 14, 14, 14, 7, 11, 11, 20, 18, 22, 13, 22, 15, 22, 18, 22, 18, 22, 12, 13, 12, 10, 10, 8, 30, 26]), 'Personas');
+            XLSX.utils.book_append_sheet(wb, mkSheet('CAMPAMENTO TEMPORAL — FAMILIAS', hdr1, f1, hdr1.map(() => 18)), 'Familias');
+            XLSX.utils.book_append_sheet(wb, mkSheet('CAMPAMENTO TEMPORAL — PERSONAS', hdr2, f2, hdr2.map((h, i) => i < 4 ? 13 : Math.min(30, Math.max(12, h.length + 3)))), 'Personas');
+            if (f3.length) XLSX.utils.book_append_sheet(wb, mkSheet('CAMPAMENTO TEMPORAL — ENTREGAS DEL ACOPIO', hdr3, f3, [12, 28, 22, 30, 20, 10, 12, 20]), 'Entregas acopio');
             guardarXlsx(wb, `campamento_temporal_${ahora.toISOString().slice(0, 10)}.xlsx`);
         });
 
