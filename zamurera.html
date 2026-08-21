@@ -220,13 +220,9 @@
         const optList = (arr) => arr.map(s => `<option value="${s}">${s || '—'}</option>`).join('');
         const siNo = '<option value="">—</option><option value="Sí">Sí</option><option value="No">No</option>';
 
-        // Planta (antes "Módulo"): 1-10 y 14-18 seleccionables; 11-13 reservados. Cubículo en cascada = planta + a/b/c.
-        const PLANTAS_RESERVADAS = ['11', '12', '13'];
+        // Cubículo en cascada = planta + a/b/c.
         const plantaOpts = () => {
-            const reg = Array.from({ length: 18 }, (_, i) => {
-                const n = String(i + 1);
-                return PLANTAS_RESERVADAS.includes(n) ? `<option value="" disabled>Planta ${n} (reservada)</option>` : `<option value="${n}">Planta ${n}</option>`;
-            }).join('');
+            const reg = Array.from({ length: 18 }, (_, i) => `<option value="${i + 1}">Planta ${i + 1}</option>`).join('');
             const fn = Array.from({ length: 10 }, (_, i) => `<option value="FN${i + 1}">Planta ${i + 1} — Familia numerosa</option>`).join('');
             return '<option value="">—</option><optgroup label="Plantas">' + reg + '</optgroup><optgroup label="Familias numerosas (1-10)">' + fn + '</optgroup>';
         };

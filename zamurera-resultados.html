@@ -92,13 +92,12 @@
                     <img id="qr" width="150" height="150" style="border:1px solid #e2e8f0;border-radius:8px;" alt="QR" />
                     <div style="flex:1;min-width:240px;">
                         <p style="color:#475569;font-size:14px;margin-bottom:8px;">Comparte este enlace o el QR para registrar ingresos al Campamento:</p>
-                        <div style="font-size:22px;font-weight:800;color:#16a34a;margin-bottom:10px;" id="shortTxt">da.gd/a3e6a</div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             <button id="btnCopiar" class="btn-exp" style="background:#0a2351;">📋 Copiar enlace</button>
                             <a id="btnWa" class="btn-exp" style="background:#16a34a;text-decoration:none;display:inline-block;" target="_blank" rel="noopener">💬 WhatsApp</a>
                             <a id="btnQrDl" class="btn-exp" style="background:#0a6cb0;text-decoration:none;display:inline-block;" download="qr-campamento-temporal.png">⬇️ Descargar QR</a>
                         </div>
-                        <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Enlace completo: <span id="fullTxt"></span></div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:8px;word-break:break-all;">Enlace: <span id="fullTxt"></span></div>
                     </div>
                 </div>
             </div>
@@ -228,7 +227,6 @@
 
         const NODO = 'zamurera';
         const URL_FORM = 'https://salasituacional.alcaldiadecharallave.com/zamurera.html';
-        const URL_CORTO = 'https://da.gd/a3e6a';
 
         // ===== Normalización: entiende registros NUEVOS (inmueble + familias[]) y VIEJOS (jefe + miembros) =====
         function inmuebleDe(r) {
@@ -552,12 +550,11 @@ body { font-family: "Segoe UI", system-ui, Arial, sans-serif; color:#0f172a; bac
         }
 
         // ---- Compartir ----
-        $('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(URL_CORTO)}`;
-        $('shortTxt').textContent = URL_CORTO.replace('https://', '');
+        $('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(URL_FORM)}`;
         $('fullTxt').textContent = URL_FORM;
-        $('btnWa').href = `https://wa.me/?text=${encodeURIComponent('Registro de ingreso al Campamento Temporal - Cristóbal Rojas: ' + URL_CORTO)}`;
-        $('btnQrDl').href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&download=1&data=${encodeURIComponent(URL_CORTO)}`;
-        $('btnCopiar').addEventListener('click', async () => { try { await navigator.clipboard.writeText(URL_CORTO); $('btnCopiar').textContent = '✓ Copiado'; setTimeout(() => $('btnCopiar').textContent = '📋 Copiar enlace', 1800); } catch (e) { prompt('Copia el enlace:', URL_CORTO); } });
+        $('btnWa').href = `https://wa.me/?text=${encodeURIComponent('Registro de ingreso al Campamento Temporal - Cristóbal Rojas: ' + URL_FORM)}`;
+        $('btnQrDl').href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&download=1&data=${encodeURIComponent(URL_FORM)}`;
+        $('btnCopiar').addEventListener('click', async () => { try { await navigator.clipboard.writeText(URL_FORM); $('btnCopiar').textContent = '✓ Copiado'; setTimeout(() => $('btnCopiar').textContent = '📋 Copiar enlace', 1800); } catch (e) { prompt('Copia el enlace:', URL_FORM); } });
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) { location.href = 'index.html'; return; }
