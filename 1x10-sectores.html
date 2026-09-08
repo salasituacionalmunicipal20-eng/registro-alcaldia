@@ -63,6 +63,23 @@ h2{font-size:16px;font-weight:800;margin:0 0 12px}
 .sec a.ver:hover{background:#eef2f9}
 .sec.vacio{opacity:.72}
 
+/* El conmutador "Por jefe / Con los afines": mismo patron que el resto
+   del sistema para elegir entre dos vistas de una misma tabla. */
+.conmuta{display:inline-flex;border:1px solid var(--linea);border-radius:9px;
+  overflow:hidden;margin-bottom:12px}
+.conmuta button{font:inherit;font-size:13px;font-weight:700;padding:9px 14px;
+  min-height:40px;border:0;background:var(--card);color:var(--tinta-2);cursor:pointer}
+.conmuta button.on{background:var(--navy);color:#fff}
+.conmuta button:not(.on):hover{background:var(--fondo)}
+.conmuta button+button{border-left:1px solid var(--linea)}
+.pag-detalle{display:flex;align-items:center;justify-content:center;gap:12px;
+  margin-top:12px}
+.pag-detalle button{font:inherit;font-size:13px;font-weight:700;min-height:40px;
+  padding:0 14px;border-radius:9px;border:1px solid var(--linea);background:var(--card);
+  color:var(--navy);cursor:pointer}
+.pag-detalle button:disabled{opacity:.4;cursor:default}
+.pag-detalle span{font-size:12.5px;color:var(--tinta-2)}
+
 .filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
 .campo{display:flex;flex-direction:column;gap:4px;min-width:180px;flex:1 1 200px}
 .campo label{font-size:12px;font-weight:700;color:var(--tinta-2)}
@@ -143,9 +160,14 @@ footer{color:var(--tinta-3);font-size:12.5px;padding:18px 0 40px;text-align:cent
     </div>
 
     <div class="tarjeta">
-      <h2>El detalle, jefe por jefe</h2>
+      <h2>El detalle</h2>
       <p class="sub">Para ver quién va completo y a quién le falta. Se puede acotar por sector,
       parroquia o comuna, y descargar tal como se ve.</p>
+
+      <div class="conmuta" role="tablist">
+        <button type="button" class="on" data-vista="jefes">Por jefe</button>
+        <button type="button" data-vista="personas">Con los afines (a quién pertenece cada uno)</button>
+      </div>
 
       <div class="filtros">
         <div class="campo">
@@ -184,20 +206,11 @@ footer{color:var(--tinta-3);font-size:12.5px;padding:18px 0 40px;text-align:cent
       <p class="sub" id="conteo"></p>
       <div class="tabla-caja">
         <table>
-          <thead><tr>
-            <th data-orden="sector">Sector</th>
-            <th data-orden="nombre">Jefe de patrulla</th>
-            <th data-orden="cedula">Cédula</th>
-            <th data-orden="telefono">Teléfono</th>
-            <th data-orden="parroquia">Parroquia</th>
-            <th data-orden="comuna">Comuna</th>
-            <th data-orden="comunidad">Comunidad</th>
-            <th class="der" data-orden="afines">Cargados</th>
-            <th data-orden="afines">Cómo va</th>
-          </tr></thead>
+          <thead><tr id="filaCabecera"></tr></thead>
           <tbody id="cuerpo"></tbody>
         </table>
       </div>
+      <div class="pag-detalle oculto" id="paginadorDetalle"></div>
     </div>
 
   </div>
@@ -263,11 +276,37 @@ const META = 10;
 /* Lo que se va leyendo de la base, sector por sector. */
 const datos = {};        // { [id]: { jefes:{}, afines:{} } }
 let filas = [];          // una fila por jefe, ya aplanada
+/* Una fila por PERSONA: el jefe y, debajo, cada uno de sus afines. El
+   afin no guarda su propio sector, parroquia ni comuna en la base —
+   los hereda del jefe con el que se cargo—, asi que aqui se le pegan. */
+let filasPersonas = [];
 let orden = { campo: 'sector', asc: true };
+/* Que tabla se esta viendo: 'jefes' (una fila por jefe, con su conteo) o
+   'personas' (el jefe y cada uno de sus afines, uno por fila). */
+let vista = 'jefes';
+/* La vista "personas" puede pasar de 11.000 filas: sin paginar, el
+   telefono se quedaria pintando una tabla enorme de una sola vez. */
+const POR_PAGINA_DETALLE = 200;
+let paginaDetalle = 0;
 
 const esc = (t) => String(t == null ? '' : t)
   .replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num = (n) => (Number(n) || 0).toLocaleString('es-VE');
+
+/* Calcula la edad a partir de "YYYY-MM-DD" sin pasar por new Date()
+   directo (adelanta/atrasa un dia por la zona horaria). Es la misma
+   funcion que usan las planillas del 1x10 para sus propios KPI. */
+function calcularEdad(fechaNacStr) {
+  if (!fechaNacStr || !/^\d{4}-\d{2}-\d{2}$/.test(fechaNacStr)) return null;
+  const [anio, mesTxt, diaTxt] = fechaNacStr.split('-');
+  const mes = parseInt(mesTxt, 10) - 1, dia = parseInt(diaTxt, 10);
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - parseInt(anio, 10);
+  const cumpleEsteAnio = (hoy.getMonth() > mes) || (hoy.getMonth() === mes && hoy.getDate() >= dia);
+  if (!cumpleEsteAnio) edad--;
+  return (edad >= 0 && edad <= 120) ? edad : null;
+}
+const fmtGenero = (g) => g === 'M' ? 'Masculino' : (g === 'F' ? 'Femenino' : '\u2014');
 
 /* ──────────────────────────────────────────────────────────
    ACCESO — el mismo patrón de todos los tableros
@@ -322,28 +361,79 @@ function escuchar() {
   });
 }
 
-/* Aplana los catorce nodos en una lista de jefes con su cuenta de gente. */
+/* En qué estado va un jefe, según cuánta gente lleva cargada. Se calcula
+   una sola vez aquí y lo comparten las dos vistas: en "personas" cada
+   afín hereda el estado del jefe al que pertenece, para poder filtrar
+   "solo los completos" y que salga el grupo entero, no la mitad. */
+function estadoDe(cargados) {
+  if (cargados >= META) return 'completo';
+  if (cargados > 0) return 'medias';
+  return 'cero';
+}
+
+/* Aplana los catorce nodos en dos listas: una por jefe (con su conteo) y
+   otra por PERSONA —el jefe y, debajo, cada uno de sus afines—. El afín
+   no trae en la base ni sector ni parroquia ni comuna: aquí se le pegan
+   las del jefe con el que se cargó. */
 function rearmar() {
   filas = [];
+  filasPersonas = [];
   SECTORES.forEach(s => {
     const d = datos[s.id];
     if (!d || d.jefes === null) return;          // ese sector todavía no llegó
     const af = d.afines || {};
     Object.entries(d.jefes).forEach(([id, j]) => {
-      const cargados = Object.keys(af[id] || {}).length;
+      const susAfines = af[id] || {};
+      const cargados = Object.keys(susAfines).length;
+      const estado = estadoDe(cargados);
+      const nombreJefe = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '(sin nombre)';
+      const comun = {
+        sectorId: s.id, sector: s.nombre,
+        parroquia: j.parroquia || '', comuna: j.circuito || '',
+        comunidad: j.comunidad_nombre || '', centro: j.centro_electoral || '',
+        estado
+      };
+
+      /* El id de Firebase de un jefe ES su cedula, y una misma persona
+         puede ser jefe de patrulla en mas de un sector a la vez (11
+         casos hoy: alguien inscrito en el 1x10 general Y en el de
+         Empleados, por ejemplo). El sector va delante del id para que
+         esos dos registros nunca se confundan como si fueran uno. */
+      const idFila = s.id + '/' + id;
+
       filas.push({
-        id,
-        sectorId: s.id,
-        sector: s.nombre,
-        nombre: `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '(sin nombre)',
+        id: idFila, ...comun,
+        nombre: nombreJefe,
         cedula: (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
         telefono: j.telefono || '',
-        parroquia: j.parroquia || '',
-        comuna: j.circuito || '',
-        comunidad: j.comunidad_nombre || '',
-        centro: j.centro_electoral || '',
         afines: cargados
       });
+
+      filasPersonas.push({
+        ...comun, id: idFila,
+        tipo: 'Jefe', tipoOrden: 0,
+        nombre: nombreJefe,
+        cedula: (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
+        telefono: j.telefono || '',
+        genero: fmtGenero(j.genero),
+        edad: calcularEdad(j.fecha_nacimiento),
+        perteneceA: '\u2014'
+      });
+
+      Object.entries(susAfines)
+        .sort((a, b) => (a[1].orden || 0) - (b[1].orden || 0))
+        .forEach(([aid, a]) => {
+          filasPersonas.push({
+            ...comun, id: idFila + '/' + aid,
+            tipo: 'Af\u00edn', tipoOrden: 1,
+            nombre: `${(a.nombres || '').trim()} ${(a.apellidos || '').trim()}`.trim() || '(sin nombre)',
+            cedula: (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || ''),
+            telefono: a.telefono || '',
+            genero: fmtGenero(a.genero),
+            edad: calcularEdad(a.fecha_nacimiento),
+            perteneceA: nombreJefe
+          });
+        });
     });
   });
   pintarTotales();
@@ -438,6 +528,20 @@ function prepararFiltros() {
   });
   $('btnExcel').addEventListener('click', bajarExcel);
   $('btnPdf').addEventListener('click', bajarPdf);
+
+  document.querySelectorAll('.conmuta [data-vista]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (b.dataset.vista === vista) return;
+      vista = b.dataset.vista;
+      /* Cambiar de vista cambia que columnas hay: el orden y la pagina
+         de la vista anterior no tendrian sentido en la nueva. */
+      orden = { campo: 'sector', asc: true };
+      paginaDetalle = 0;
+      document.querySelectorAll('.conmuta [data-vista]').forEach(x =>
+        x.classList.toggle('on', x === b));
+      pintarTabla();
+    });
+  });
 }
 
 /* Las listas de parroquia y comuna salen de lo que hay cargado, no de un
@@ -459,17 +563,17 @@ function aplicarFiltros() {
   const s = $('fSector').value, p = $('fParroquia').value, c = $('fComuna').value;
   const e = $('fEstado').value;
   const q = $('fBusca').value.trim().toLowerCase();
+  const base = vista === 'personas' ? filasPersonas : filas;
   /* filter() siempre devuelve una copia: la lista de origen no se toca ni
      se reordena por debajo. */
-  return filas.filter(f => {
+  return base.filter(f => {
     if (s && f.sectorId !== s) return false;
     if (p && f.parroquia !== p) return false;
     if (c && f.comuna !== c) return false;
-    if (e === 'completo' && f.afines < META) return false;
-    if (e === 'medias' && !(f.afines > 0 && f.afines < META)) return false;
-    if (e === 'cero' && f.afines !== 0) return false;
+    if (e && f.estado !== e) return false;
     if (q) {
-      const heno = [f.nombre, f.cedula, f.telefono, f.comunidad, f.centro, f.comuna, f.parroquia]
+      const heno = [f.nombre, f.cedula, f.telefono, f.comunidad, f.centro, f.comuna, f.parroquia,
+                    f.perteneceA]
         .join(' ').toLowerCase();
       if (!heno.includes(q)) return false;
     }
@@ -487,18 +591,47 @@ function ordenar(lista) {
 }
 
 function comoVa(n) {
-  if (n >= META) return '<span class="pill ok">Completo</span>';
+  if (n >= META) return `<span class="pill ok">Completo</span>`;
   if (n > 0) return `<span class="pill ojo">Le faltan ${META - n}</span>`;
-  return '<span class="pill mal">Sin nadie</span>';
+  return `<span class="pill mal">Sin nadie</span>`;
+}
+const comoVaEstado = (e) =>
+  e === 'completo' ? `<span class="pill ok">Completo</span>`
+  : e === 'medias'  ? `<span class="pill ojo">A medias</span>`
+                    : `<span class="pill mal">Sin nadie</span>`;
+
+/* Las columnas de la cabecera cambian con la vista: la de jefes cuenta
+   cuánta gente trae cada uno; la de personas dice, fila por fila, de
+   quién se trata y a quién pertenece. */
+const COLUMNAS = {
+  jefes: [
+    ['sector', 'Sector'], ['nombre', 'Jefe de patrulla'], ['cedula', 'Cédula'],
+    ['telefono', 'Teléfono'], ['parroquia', 'Parroquia'], ['comuna', 'Comuna'],
+    ['comunidad', 'Comunidad'], ['afines', 'Cargados', 'der'], ['afines', 'Cómo va']
+  ],
+  personas: [
+    ['tipoOrden', 'Tipo'], ['sector', 'Sector'], ['nombre', 'Nombre'], ['cedula', 'Cédula'],
+    ['telefono', 'Teléfono'], ['genero', 'Género'], ['edad', 'Edad', 'der'],
+    ['parroquia', 'Parroquia'], ['comuna', 'Comuna'], ['comunidad', 'Comunidad'],
+    ['perteneceA', 'Pertenece a']
+  ]
+};
+
+function pintarCabecera() {
+  $('filaCabecera').innerHTML = COLUMNAS[vista].map(([campo, texto, clase]) =>
+    `<th${clase ? ' class="' + clase + '"' : ''} data-orden="${campo}">${esc(texto)}</th>`).join('');
+  document.querySelectorAll('#filaCabecera th[data-orden]').forEach(th => {
+    th.addEventListener('click', () => {
+      const c = th.dataset.orden;
+      orden = { campo: c, asc: orden.campo === c ? !orden.asc : true };
+      paginaDetalle = 0;
+      pintarTabla();
+    });
+  });
 }
 
-function pintarTabla() {
-  const lista = ordenar(aplicarFiltros());
-  const r = resumenDe(lista);
-  $('conteo').textContent =
-    `${num(lista.length)} ${lista.length === 1 ? 'jefe' : 'jefes'} · ` +
-    `${num(r.afines)} personas cargadas · ${num(r.completos)} completos`;
-  $('cuerpo').innerHTML = lista.map(f => `<tr>
+function filaJefe(f) {
+  return `<tr>
     <td>${esc(f.sector)}</td>
     <td><b>${esc(f.nombre)}</b>${f.centro ? `<br><span style="font-size:11.5px;color:var(--tinta-3)">${esc(f.centro)}</span>` : ''}</td>
     <td>${esc(f.cedula)}</td>
@@ -508,9 +641,70 @@ function pintarTabla() {
     <td>${esc(f.comunidad)}</td>
     <td class="der"><b>${num(f.afines)}</b></td>
     <td>${comoVa(f.afines)}</td>
-  </tr>`).join('') ||
-    '<tr><td colspan="9" style="text-align:center;color:var(--tinta-3);padding:26px">' +
-    'No hay ningún jefe con esos filtros.</td></tr>';
+  </tr>`;
+}
+function filaPersona(f) {
+  return `<tr>
+    <td>${f.tipo === 'Jefe' ? '<b>Jefe</b>' : 'Af\u00edn'}</td>
+    <td>${esc(f.sector)}</td>
+    <td><b>${esc(f.nombre)}</b></td>
+    <td>${esc(f.cedula)}</td>
+    <td>${esc(f.telefono)}</td>
+    <td>${esc(f.genero)}</td>
+    <td class="der">${f.edad == null ? '\u2014' : f.edad}</td>
+    <td>${esc(f.parroquia)}</td>
+    <td>${esc(f.comuna)}</td>
+    <td>${esc(f.comunidad)}</td>
+    <td>${esc(f.perteneceA)}</td>
+  </tr>`;
+}
+
+function pintarTabla() {
+  pintarCabecera();
+  const todas = ordenar(aplicarFiltros());
+  const r = resumenDe(vista === 'personas' ? filas.filter(f => todas.some(x => x.id === f.id || x.id.startsWith(f.id + '/'))) : todas);
+
+  if (vista === 'jefes') {
+    $('conteo').textContent =
+      `${num(todas.length)} ${todas.length === 1 ? 'jefe' : 'jefes'} · ` +
+      `${num(r.afines)} personas cargadas · ${num(r.completos)} completos`;
+    $('cuerpo').innerHTML = todas.map(filaJefe).join('') ||
+      '<tr><td colspan="9" style="text-align:center;color:var(--tinta-3);padding:26px">' +
+      'No hay ningún jefe con esos filtros.</td></tr>';
+    $('paginadorDetalle').classList.add('oculto');
+    return;
+  }
+
+  /* La vista de personas puede tener miles de filas: se pagina para que
+     el teléfono no tenga que pintar una tabla entera de una sola vez. */
+  const jefesDeLote = new Set(todas.filter(f => f.tipo === 'Jefe').map(f => f.id));
+  const afinesDeLote = todas.filter(f => f.tipo === 'Af\u00edn').length;
+  $('conteo').textContent =
+    `${num(jefesDeLote.size)} ${jefesDeLote.size === 1 ? 'jefe' : 'jefes'} · ` +
+    `${num(afinesDeLote)} af\u00edn${afinesDeLote === 1 ? '' : 'es'} · ` +
+    `${num(todas.length)} filas en total`;
+
+  const paginas = Math.max(1, Math.ceil(todas.length / POR_PAGINA_DETALLE));
+  if (paginaDetalle >= paginas) paginaDetalle = paginas - 1;
+  const desde = paginaDetalle * POR_PAGINA_DETALLE;
+  const pagina = todas.slice(desde, desde + POR_PAGINA_DETALLE);
+
+  $('cuerpo').innerHTML = pagina.map(filaPersona).join('') ||
+    '<tr><td colspan="11" style="text-align:center;color:var(--tinta-3);padding:26px">' +
+    'No hay nadie con esos filtros.</td></tr>';
+
+  const pd = $('paginadorDetalle');
+  if (todas.length <= POR_PAGINA_DETALLE) {
+    pd.classList.add('oculto');
+  } else {
+    pd.classList.remove('oculto');
+    pd.innerHTML =
+      `<button type="button" id="btnDetAnt"${paginaDetalle === 0 ? ' disabled' : ''}>\u2190 Anteriores</button>` +
+      `<span>${desde + 1}\u2013${Math.min(desde + POR_PAGINA_DETALLE, todas.length)} de ${num(todas.length)}</span>` +
+      `<button type="button" id="btnDetSig"${paginaDetalle >= paginas - 1 ? ' disabled' : ''}>Siguientes \u2192</button>`;
+    $('btnDetAnt').addEventListener('click', () => { paginaDetalle--; pintarTabla(); });
+    $('btnDetSig').addEventListener('click', () => { paginaDetalle++; pintarTabla(); });
+  }
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -530,21 +724,32 @@ function rotuloFiltros() {
   return p.length ? p.join(' · ') : 'Todos los sectores, sin filtros';
 }
 
-const CABECERAS = ['Sector', 'Jefe de patrulla', 'Cedula', 'Telefono', 'Parroquia',
+const CABECERAS_JEFES = ['Sector', 'Jefe de patrulla', 'Cedula', 'Telefono', 'Parroquia',
                    'Comuna', 'Comunidad', 'Centro electoral', 'Cargados', 'Como va'];
-const ANCHOS = [18, 32, 13, 14, 16, 26, 26, 34, 10, 14];
+const ANCHOS_JEFES = [18, 32, 13, 14, 16, 26, 26, 34, 10, 14];
+
+const CABECERAS_PERSONAS = ['Tipo', 'Sector', 'Nombre', 'Cedula', 'Telefono', 'Genero',
+                   'Edad', 'Parroquia', 'Comuna', 'Comunidad', 'Pertenece a'];
+/* Carta horizontal deja unos 251 mm utiles: 16+22+38+19+21+10+10+22+30+30+33 = 251. */
+const ANCHOS_PERSONAS = [16, 22, 38, 19, 21, 10, 10, 22, 30, 30, 33];
 
 function comoVaTexto(n) {
   return n >= META ? 'Completo' : n > 0 ? `Le faltan ${META - n}` : 'Sin nadie';
 }
 function aFilas(lista) {
+  if (vista === 'personas') {
+    return lista.map(f => [f.tipo, f.sector, f.nombre, f.cedula, f.telefono, f.genero,
+                           f.edad == null ? '' : f.edad, f.parroquia, f.comuna, f.comunidad,
+                           f.perteneceA]);
+  }
   return lista.map(f => [f.sector, f.nombre, f.cedula, f.telefono, f.parroquia,
                          f.comuna, f.comunidad, f.centro, f.afines, comoVaTexto(f.afines)]);
 }
 
 function bajarExcel() {
   const lista = ordenar(aplicarFiltros());
-  const r = resumenDe(lista);
+  const CABECERAS = vista === 'personas' ? CABECERAS_PERSONAS : CABECERAS_JEFES;
+  const ANCHOS = vista === 'personas' ? ANCHOS_PERSONAS : ANCHOS_JEFES;
   const cuerpo = aFilas(lista);
   /* Encabezados, filas y anchos tienen que tener la MISMA cantidad de
      columnas: si no, el Excel sale con los datos corridos y sin avisar. */
@@ -554,10 +759,16 @@ function bajarExcel() {
     return;
   }
   const hoy = new Date();
+  const resumenTxt = vista === 'personas'
+    ? `${lista.filter(f => f.tipo === 'Jefe').length} jefes · ` +
+      `${lista.filter(f => f.tipo === 'Af\u00edn').length} af\u00ednes · ${lista.length} filas`
+    : (() => { const r = resumenDe(lista);
+        return `${lista.length} jefes · ${r.afines} personas cargadas · ${r.completos} completos`; })();
   const aoa = [
-    ['1x10 POR SECTORES - ALCALDIA DE CRISTOBAL ROJAS'],
+    ['1x10 POR SECTORES - ALCALDIA DE CRISTOBAL ROJAS' +
+      (vista === 'personas' ? ' (CON LOS AFINES)' : '')],
     ['Generado el ' + hoy.toLocaleString('es-VE') + ' · ' + rotuloFiltros()],
-    [`${lista.length} jefes · ${r.afines} personas cargadas · ${r.completos} completos`],
+    [resumenTxt],
     [],
     CABECERAS,
     ...cuerpo
@@ -568,7 +779,7 @@ function bajarExcel() {
     s: { r: 4, c: 0 }, e: { r: 4 + cuerpo.length, c: CABECERAS.length - 1 } }) };
   ws['!freeze'] = { xSplit: 0, ySplit: 5 };
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '1x10 por sectores');
+  XLSX.utils.book_append_sheet(wb, ws, vista === 'personas' ? '1x10 con afines' : '1x10 por sectores');
 
   /* Una segunda hoja con el resumen: es lo que se mira primero. */
   const res = [['Sector', 'Jefes', 'Cargados', 'Promedio por jefe', 'Completos',
