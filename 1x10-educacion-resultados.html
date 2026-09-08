@@ -498,6 +498,8 @@
                     <button class="btn-export" id="btnExportarExcel" type="button" style="background:#16a34a;">📗 Excel .xlsx organizado</button>
                     <button class="btn-export" id="btnPdfAsistencia" type="button" style="background:#7c3aed;">📝 PDF Hoja de Asistencia (firmas)</button>
                     <button class="btn-export" id="btnPdfAsistenciaCentro" type="button" style="background:#5b21b6;">🏛️ PDF Asistencia por Centro Electoral</button>
+                    <button class="btn-export" id="btnPdfFichas" type="button" style="background:#0f766e;">🗂️ PDF Fichas (una por hoja)</button>
+                    <button class="btn-export" id="btnPdfResumen" type="button" style="background:#b45309;">📊 PDF Resumen</button>
                 </div>
             </div>
 
@@ -1089,6 +1091,7 @@
                         <td>${escapeHtml(fmtFechaCorta(j.fecha_registro))}</td>
                         <td>
                             <button class="btn-fila ver" data-action="ver" data-ced="${escapeHtml(j.cedula || '')}">Ver Afines</button>
+                            <button class="btn-fila" data-action="ficha" data-ced="${escapeHtml(j.cedula || '')}" style="background:#0f766e;color:#fff;">Ficha</button>
                             <button class="btn-fila del" data-action="del" data-ced="${escapeHtml(j.cedula || '')}">Eliminar</button>
                         </td>
                     </tr>
@@ -1101,6 +1104,7 @@
                     const ced = btn.dataset.ced;
                     const act = btn.dataset.action;
                     if (act === 'ver') abrirModalAfines(ced);
+                    else if (act === 'ficha') fichaDeUnJefe(ced);
                     else if (act === 'del') eliminarJefe(ced);
                 });
             });
@@ -1987,6 +1991,512 @@
         // a mano (el flujo original tipico). Si tiene mas de 20 afines, se pagina:
         // la pagina siguiente reabre con cabecera "(continuacion)" + datos del jefe.
         // ──────────────────────────────────────────────────────────
+        // Prefijo de los archivos que se bajan desde esta pagina.
+        const ARCHIVO_1x10 = '1x10_educacion';
+
+        // ──────────────────────────────────────────────────────────
+        // FICHAS 1x1 Y RESUMEN
+        //
+        // Los PDF que ya habia sacan todo seguido: sirven para tener el
+        // plan entero, pero no para leer un registro ni para darselo a
+        // alguien. Estos tres son para eso:
+        //
+        //   · Ficha de UN jefe        - el boton de cada renglon de la tabla.
+        //   · Fichas de todos, 1x1    - la misma ficha, una por hoja.
+        //   · Resumen                 - las cifras, sin listar a nadie.
+        //
+        // La ficha lleva los datos completos y legibles, no casillas de
+        // firma: para firmas ya esta la Hoja de Asistencia.
+        // ──────────────────────────────────────────────────────────
+
+        // Tres variantes (educacion, empleados y salud) traen un campo mas,
+        // con distinto nombre en cada una. Se lee del encabezado de la tabla
+        // en vez de escribir siete versiones de esto.
+        function _etiquetaExtra() {
+            const th = document.querySelector('#tablaJefes thead th:nth-child(4)');
+            const t = th ? th.textContent.trim() : '';
+            return /fecha\s*nac/i.test(t) ? '' : t;
+        }
+
+        function _resumenFiltros() {
+            // Solo se nombran los filtros que de verdad existen en esta pagina:
+            // las variantes no tienen todas los mismos.
+            const val = (id) => { const e = $(id); return e ? (e.value || '').trim() : ''; };
+            const partes = [];
+            const pon = (id, texto) => { const v = val(id); if (v) partes.push(texto + ' ' + v); };
+            pon('filtroBusqueda', 'busqueda');
+            pon('filtroParroquia', 'parroquia');
+            pon('filtroCircuito', 'comuna');
+            pon('filtroComunidad', 'comunidad');
+            pon('filtroCentro', 'centro');
+            pon('filtroGenero', 'genero');
+            pon('filtroAfines', 'afines');
+            if (filtroEdadActivo()) {
+                partes.push('edad del afin ' + (val('filtroEdadMin') || '0') + '-' +
+                            (val('filtroEdadMax') || '120') + ' anos');
+            }
+            return partes.length ? partes.join('; ') : 'ninguno (se exporta todo lo registrado)';
+        }
+
+        // ── LA FICHA: una hoja por jefe ───────────────────────────
+        function generarPdfFichas(lista, nombreArchivo) {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            if (!lista || lista.length === 0) {
+                alert('No hay jefes 1x10 para imprimir con los filtros actuales.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const pageW = 216, pageH = 279;
+            const margenX = 12;
+            const anchoUtil = pageW - margenX * 2;   // 192 mm
+            const etiquetaExtra = _etiquetaExtra();
+
+            // Anchos de columna: suman 192. Ninguno baja de lo que necesita su
+            // propio titulo, o el encabezado se parte en dos lineas.
+            const col = { num: 9, ced: 28, nom: 70, tel: 28, nac: 40, gen: 17 };
+            const xNum = margenX;
+            const xCed = xNum + col.num;
+            const xNom = xCed + col.ced;
+            const xTel = xNom + col.nom;
+            const xNac = xTel + col.tel;
+            const xGen = xNac + col.nac;
+            const filaH = 8;
+            const AFINES_POR_PAGINA = 18;
+
+            const fechaHumana = new Date().toLocaleString('es-VE', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            function cabecera(j, numFicha, esContinuacion) {
+                doc.setFillColor(227, 6, 19);
+                doc.rect(0, 0, pageW, 10, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(_safePdf('ALCALDIA DE CRISTOBAL ROJAS - MOVILIZACION 1x10'), pageW / 2, 6.8, { align: 'center' });
+
+                let y = 17;
+                doc.setTextColor(10, 35, 81);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(14);
+                doc.text(_safePdf('Ficha de registro 1x10' + (esContinuacion ? ' (continuacion)' : '')), margenX, y);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                doc.setTextColor(110, 110, 110);
+                doc.text(_safePdf(numFicha), margenX + anchoUtil, y, { align: 'right' });
+                y += 6;
+
+                // ── Recuadro del jefe ──
+                const lineas = [];
+                const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '-');
+                const nombre = ((j.nombres || '') + ' ' + (j.apellidos || '')).trim() || '-';
+                const edad = calcularEdad(j.fecha_nacimiento);
+                const nac = fmtFechaNacimiento(j.fecha_nacimiento);
+                lineas.push(['Cedula', ced, 'Genero', j.genero === 'M' ? 'Masculino' : (j.genero === 'F' ? 'Femenino' : 'No indicado')]);
+                lineas.push(['Nombre', nombre, null, null]);
+                lineas.push(['Telefono', j.telefono || '-', 'Nacimiento',
+                             nac ? (nac + (edad !== null ? ' (' + edad + ' anos)' : '')) : 'No indicado']);
+                if (etiquetaExtra) lineas.push([etiquetaExtra, j.direccion_secretaria || '-', null, null]);
+                lineas.push(['Parroquia', j.parroquia || '-', 'Comuna', j.circuito || '-']);
+                lineas.push(['Comunidad', j.comunidad_nombre || '-', null, null]);
+                lineas.push(['Centro electoral', j.centro_electoral || '-', 'Mesas', j.mesas || '-']);
+                lineas.push(['Registrado', fmtFechaCorta(j.fecha_registro) || '-', null, null]);
+
+                const altoCaja = 7 + lineas.length * 5.4;
+                doc.setFillColor(241, 245, 252);
+                doc.setDrawColor(203, 213, 229);
+                doc.setLineWidth(0.3);
+                doc.rect(margenX, y, anchoUtil, altoCaja, 'FD');
+
+                doc.setFillColor(10, 35, 81);
+                doc.rect(margenX, y, anchoUtil, 6, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(9);
+                doc.text(_safePdf('JEFE 1x10'), margenX + 2, y + 4.2);
+
+                let yy = y + 10.5;
+                // El ancho de la columna de rotulos sale del rotulo mas largo:
+                // "Profesion / Area de Salud" no cabe en lo que basta para
+                // "Cedula", y antes se le montaba encima al valor.
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                const labW = Math.min(52, Math.max.apply(null,
+                    lineas.map(function (l) { return doc.getTextWidth(_safePdf(l[0] + ':')); })) + 3);
+                const col2X = margenX + anchoUtil / 2 + 10;
+                lineas.forEach(([l1, v1, l2, v2]) => {
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(100, 116, 139);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(_safePdf(l1 + ':'), margenX + 3, yy);
+                    doc.setTextColor(15, 23, 42);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(_safePdf(String(v1)), margenX + 3 + labW, yy,
+                             { maxWidth: (l2 ? anchoUtil / 2 - labW - 8 : anchoUtil - labW - 8) });
+                    if (l2) {
+                        doc.setTextColor(100, 116, 139);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(_safePdf(l2 + ':'), col2X, yy);
+                        doc.setTextColor(15, 23, 42);
+                        doc.setFont('helvetica', 'normal');
+                        doc.text(_safePdf(String(v2)), col2X + 24, yy,
+                                 { maxWidth: anchoUtil / 2 - 30 });
+                    }
+                    yy += 5.4;
+                });
+                return y + altoCaja + 7;
+            }
+
+            function cabeceraTabla(y, cuantos, deCuantos) {
+                doc.setTextColor(10, 35, 81);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.text(_safePdf('SUS AFINES  (' + (cuantos > deCuantos
+                    ? cuantos + ' registrados'
+                    : cuantos + ' de ' + deCuantos) + ')'), margenX, y);
+                y += 3;
+
+                doc.setFillColor(10, 35, 81);
+                doc.rect(margenX, y, anchoUtil, 7, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(8);
+                doc.text(_safePdf('#'), xNum + col.num / 2, y + 4.8, { align: 'center' });
+                doc.text(_safePdf('CEDULA'), xCed + 2, y + 4.8);
+                doc.text(_safePdf('NOMBRE Y APELLIDO'), xNom + 2, y + 4.8);
+                doc.text(_safePdf('TELEFONO'), xTel + 2, y + 4.8);
+                doc.text(_safePdf('NACIMIENTO (EDAD)'), xNac + 2, y + 4.8);
+                doc.text(_safePdf('GEN'), xGen + col.gen / 2, y + 4.8, { align: 'center' });
+                return y + 7;
+            }
+
+            function fila(y, numero, a, impar) {
+                if (impar) {
+                    doc.setFillColor(248, 250, 253);
+                    doc.rect(margenX, y, anchoUtil, filaH, 'F');
+                }
+                doc.setDrawColor(226, 232, 240);
+                doc.setLineWidth(0.2);
+                doc.line(margenX, y + filaH, margenX + anchoUtil, y + filaH);
+                [xCed, xNom, xTel, xNac, xGen].forEach(x => doc.line(x, y, x, y + filaH));
+                doc.line(margenX, y, margenX, y + filaH);
+                doc.line(margenX + anchoUtil, y, margenX + anchoUtil, y + filaH);
+
+                doc.setTextColor(60, 60, 60);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8.5);
+                doc.text(String(numero), xNum + col.num / 2, y + 5.4, { align: 'center' });
+
+                if (!a) {
+                    // Renglon en blanco: el jefe todavia no lo registro. Se deja
+                    // la linea para poder anotarlo a mano en la calle.
+                    doc.setFont('helvetica', 'italic');
+                    doc.setFontSize(7.5);
+                    doc.setTextColor(170, 180, 195);
+                    doc.text(_safePdf('(por registrar)'), xCed + 2, y + 5.4);
+                    return;
+                }
+                const ced = (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || '-');
+                const nom = ((a.nombres || '') + ' ' + (a.apellidos || '')).trim() || '-';
+                const ed = calcularEdad(a.fecha_nacimiento);
+                const nc = fmtFechaNacimiento(a.fecha_nacimiento);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(20, 20, 20);
+                // Cabe en UNA linea siempre: si el nombre es largo se encoge la
+                // letra. Partirlo en dos se salia del renglon; cortarlo perderia
+                // un apellido, que es un dato de una persona.
+                const enUnaLinea = function (txt, x, ancho) {
+                    let t = 8.5;
+                    doc.setFontSize(t);
+                    while (t > 5.6 && doc.getTextWidth(txt) > ancho) { t -= 0.25; doc.setFontSize(t); }
+                    doc.text(txt, x, y + 5.4);
+                    doc.setFontSize(8.5);
+                };
+                enUnaLinea(_safePdf(ced), xCed + 2, col.ced - 3);
+                enUnaLinea(_safePdf(nom), xNom + 2, col.nom - 3);
+                enUnaLinea(_safePdf(a.telefono || '-'), xTel + 2, col.tel - 3);
+                enUnaLinea(_safePdf(nc ? (nc + '  (' + (ed !== null ? ed : '?') + ')') : '-'),
+                           xNac + 2, col.nac - 3);
+                doc.text(_safePdf(a.genero === 'M' ? 'M' : (a.genero === 'F' ? 'F' : '-')),
+                         xGen + col.gen / 2, y + 5.4, { align: 'center' });
+            }
+
+            function pie(y) {
+                const yy = Math.min(Math.max(y + 10, 250), pageH - 22);
+                doc.setDrawColor(203, 213, 229);
+                doc.setLineWidth(0.3);
+                doc.line(margenX, yy, margenX + anchoUtil, yy);
+                doc.setTextColor(100, 116, 139);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(8);
+                doc.text(_safePdf('Exportado: ' + fechaHumana), margenX, yy + 5);
+                doc.text(_safePdf('Filtros: ' + _resumenFiltros()), margenX, yy + 9.5,
+                         { maxWidth: anchoUtil });
+            }
+
+            lista.forEach((j, idx) => {
+                if (idx > 0) doc.addPage();
+                const afinesTodos = j._afines || [];
+                const afines = afinesTodos.filter(a => pasaFiltroEdad(a.fecha_nacimiento));
+                const excluidos = afinesTodos.length - afines.length;
+                // Si tiene menos de 10, se completan renglones en blanco hasta
+                // 10: la ficha sirve tambien para salir a buscar los que faltan.
+                const totalFilas = Math.max(afines.length, 10);
+
+                let y = cabecera(j, 'Ficha ' + (idx + 1) + ' de ' + lista.length, false);
+                y = cabeceraTabla(y, afines.length, 10);
+
+                let i = 0, enPagina = 0;
+                while (i < totalFilas) {
+                    if (enPagina >= AFINES_POR_PAGINA) {
+                        pie(y);
+                        doc.addPage();
+                        y = cabecera(j, 'Ficha ' + (idx + 1) + ' de ' + lista.length, true);
+                        y = cabeceraTabla(y, afines.length, 10);
+                        enPagina = 0;
+                    }
+                    fila(y, i + 1, afines[i] || null, i % 2 === 1);
+                    y += filaH;
+                    i++; enPagina++;
+                }
+
+                if (excluidos > 0 && filtroEdadActivo()) {
+                    doc.setTextColor(146, 64, 14);
+                    doc.setFont('helvetica', 'italic');
+                    doc.setFontSize(8);
+                    doc.text(_safePdf('Nota: ' + excluidos + ' afin(es) quedan fuera del rango de edad activo y no se listan.'),
+                             margenX, y + 5);
+                    y += 7;
+                }
+                pie(y);
+            });
+
+            const total = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= total; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(_safePdf('Pagina ' + i + ' de ' + total), pageW / 2, pageH - 6, { align: 'center' });
+            }
+            doc.save(nombreArchivo);
+        }
+
+        function fichaDeUnJefe(cedula) {
+            const j = getJefesArray().find(x => String(x.cedula) === String(cedula));
+            if (!j) { alert('No se encontró ese jefe 1x10.'); return; }
+            const slug = String(j.cedula || 'jefe').replace(/[^0-9A-Za-z]/g, '');
+            generarPdfFichas([j], ARCHIVO_1x10 + '_ficha_' + slug + '.pdf');
+        }
+
+        function fichasDeTodos() {
+            const filtrados = aplicarFiltros(getJefesArray()).sort((a, b) => {
+                const an = ((a.apellidos || '') + ' ' + (a.nombres || '')).trim();
+                const bn = ((b.apellidos || '') + ' ' + (b.nombres || '')).trim();
+                return an.localeCompare(bn, 'es');
+            });
+            generarPdfFichas(filtrados,
+                ARCHIVO_1x10 + '_fichas_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        }
+
+        // ── EL RESUMEN: solo cifras, sin listar a nadie ───────────
+        function generarPdfResumen() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
+                return;
+            }
+            const filtrados = aplicarFiltros(getJefesArray());
+            if (filtrados.length === 0) { alert('No hay jefes 1x10 con los filtros actuales.'); return; }
+
+            const afinesDe = new Map();
+            filtrados.forEach(j => afinesDe.set(j, (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento))));
+            const totalAfines = filtrados.reduce((s, j) => s + afinesDe.get(j).length, 0);
+
+            const completos = filtrados.filter(j => afinesDe.get(j).length >= 10).length;
+            const sinNinguno = filtrados.filter(j => afinesDe.get(j).length === 0).length;
+            const parciales = filtrados.length - completos - sinNinguno;
+
+            const agrupar = (clave) => {
+                const m = new Map();
+                filtrados.forEach(j => {
+                    const k = (j[clave] || '(sin indicar)').toString().trim() || '(sin indicar)';
+                    if (!m.has(k)) m.set(k, { jefes: 0, afines: 0 });
+                    const g = m.get(k);
+                    g.jefes++; g.afines += afinesDe.get(j).length;
+                });
+                return [...m.entries()]
+                    .map(([k, v]) => [k, v.jefes, v.afines, v.jefes + v.afines])
+                    .sort((a, b) => b[3] - a[3] || a[0].localeCompare(b[0], 'es'));
+            };
+
+            const genero = (g) => {
+                let jm = 0, jf = 0, jn = 0, am = 0, af = 0, an = 0;
+                filtrados.forEach(j => {
+                    if (j.genero === 'M') jm++; else if (j.genero === 'F') jf++; else jn++;
+                    afinesDe.get(j).forEach(a => {
+                        if (a.genero === 'M') am++; else if (a.genero === 'F') af++; else an++;
+                    });
+                });
+                return [['Masculino', jm, am, jm + am], ['Femenino', jf, af, jf + af],
+                        ['No indicado', jn, an, jn + an]];
+            };
+
+            const RANGOS = [[0, 17, 'Menores de 18'], [18, 29, 'De 18 a 29'], [30, 44, 'De 30 a 44'],
+                            [45, 59, 'De 45 a 59'], [60, 200, 'De 60 en adelante']];
+            const porEdad = () => {
+                const filas = RANGOS.map(([a, b, txt]) => [txt, 0, 0, 0]);
+                let sinFecha = 0;
+                const meter = (fn, col) => {
+                    const e = calcularEdad(fn);
+                    if (e === null) { sinFecha++; return; }
+                    for (let i = 0; i < RANGOS.length; i++) {
+                        if (e >= RANGOS[i][0] && e <= RANGOS[i][1]) { filas[i][col]++; filas[i][3]++; return; }
+                    }
+                };
+                filtrados.forEach(j => {
+                    meter(j.fecha_nacimiento, 1);
+                    afinesDe.get(j).forEach(a => meter(a.fecha_nacimiento, 2));
+                });
+                if (sinFecha) filas.push(['Sin fecha de nacimiento', 0, 0, sinFecha]);
+                return filas;
+            };
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const pageW = 216, pageH = 279, margenX = 12, anchoUtil = 192;
+            let y = 0;
+
+            const nuevaPagina = (primera) => {
+                if (!primera) doc.addPage();
+                doc.setFillColor(227, 6, 19);
+                doc.rect(0, 0, pageW, 10, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(_safePdf('ALCALDIA DE CRISTOBAL ROJAS - MOVILIZACION 1x10'), pageW / 2, 6.8, { align: 'center' });
+                y = 18;
+            };
+            const sitio = (alto) => { if (y + alto > pageH - 16) nuevaPagina(false); };
+
+            const titulo = (t, sub) => {
+                sitio(16);
+                doc.setTextColor(10, 35, 81);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text(_safePdf(t), margenX, y);
+                y += 4.5;
+                if (sub) {
+                    doc.setFont('helvetica', 'italic');
+                    doc.setFontSize(8);
+                    doc.setTextColor(110, 116, 139);
+                    doc.text(_safePdf(sub), margenX, y, { maxWidth: anchoUtil });
+                    y += 4.5;
+                }
+                y += 1;
+            };
+
+            const tabla = (encabezados, filas, anchos) => {
+                sitio(14);
+                doc.setFillColor(10, 35, 81);
+                doc.rect(margenX, y, anchoUtil, 7, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(8);
+                let x = margenX;
+                encabezados.forEach((h, i) => {
+                    doc.text(_safePdf(h), i === 0 ? x + 2 : x + anchos[i] - 2, y + 4.8,
+                             { align: i === 0 ? 'left' : 'right' });
+                    x += anchos[i];
+                });
+                y += 7;
+                filas.forEach((f, n) => {
+                    sitio(7);
+                    if (n % 2 === 1) {
+                        doc.setFillColor(248, 250, 253);
+                        doc.rect(margenX, y, anchoUtil, 6.4, 'F');
+                    }
+                    doc.setTextColor(30, 41, 59);
+                    doc.setFont('helvetica', n === filas.length - 1 && f[0] === 'TOTAL' ? 'bold' : 'normal');
+                    doc.setFontSize(8.5);
+                    let xx = margenX;
+                    f.forEach((c, i) => {
+                        const v = typeof c === 'number' ? c.toLocaleString('es-VE') : String(c);
+                        doc.text(_safePdf(v), i === 0 ? xx + 2 : xx + anchos[i] - 2, y + 4.4,
+                                 { align: i === 0 ? 'left' : 'right', maxWidth: anchos[i] - 4 });
+                        xx += anchos[i];
+                    });
+                    y += 6.4;
+                });
+                y += 6;
+            };
+
+            nuevaPagina(true);
+            doc.setTextColor(10, 35, 81);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.text(_safePdf('Resumen de la movilizacion 1x10'), margenX, y);
+            y += 7;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text(_safePdf('Exportado: ' + new Date().toLocaleString('es-VE', {
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            })), margenX, y);
+            y += 4.5;
+            doc.text(_safePdf('Filtros aplicados: ' + _resumenFiltros()), margenX, y, { maxWidth: anchoUtil });
+            y += 9;
+
+            titulo('Cifras generales',
+                'Se cuenta lo que hay en pantalla con los filtros de arriba. Un "afin" es cada persona que un jefe inscribio.');
+            tabla(['Concepto', 'Cantidad'], [
+                ['Jefes 1x10 registrados', filtrados.length],
+                ['Afines registrados', totalAfines],
+                ['Total de personas (jefes + afines)', filtrados.length + totalAfines],
+                ['Promedio de afines por jefe', (totalAfines / filtrados.length).toFixed(1).replace('.', ',')],
+                ['Meta si todos llegaran a 10', filtrados.length * 10],
+                ['Afines que faltan para la meta', Math.max(0, filtrados.length * 10 - totalAfines)]
+            ], [150, 42]);
+
+            titulo('Como van los jefes',
+                'Completo = 10 o mas afines. Parcial = entre 1 y 9. Sin ninguno = todavia no inscribio a nadie.');
+            const pc = (n) => filtrados.length ? (n * 100 / filtrados.length).toFixed(1).replace('.', ',') + '%' : '-';
+            tabla(['Estado', 'Jefes', 'Porcentaje'], [
+                ['Completos (10 o mas)', completos, pc(completos)],
+                ['Parciales (1 a 9)', parciales, pc(parciales)],
+                ['Sin ningun afin', sinNinguno, pc(sinNinguno)],
+                ['TOTAL', filtrados.length, '100%']
+            ], [120, 36, 36]);
+
+            titulo('Por parroquia', 'Ordenado por total de personas.');
+            tabla(['Parroquia', 'Jefes', 'Afines', 'Personas'], agrupar('parroquia'), [96, 32, 32, 32]);
+
+            titulo('Por comuna (circuito)', 'Ordenado por total de personas.');
+            tabla(['Comuna', 'Jefes', 'Afines', 'Personas'], agrupar('circuito'), [96, 32, 32, 32]);
+
+            titulo('Por centro electoral', 'Donde vota cada jefe segun su registro. Ordenado por total de personas.');
+            tabla(['Centro electoral', 'Jefes', 'Afines', 'Personas'], agrupar('centro_electoral'), [96, 32, 32, 32]);
+
+            titulo('Por genero', 'Jefes y afines contados por separado.');
+            tabla(['Genero', 'Jefes', 'Afines', 'Personas'], genero(), [96, 32, 32, 32]);
+
+            titulo('Por edad',
+                'Se calcula con la fecha de nacimiento registrada. Quien no la tiene se cuenta aparte.');
+            tabla(['Rango de edad', 'Jefes', 'Afines', 'Personas'], porEdad(), [96, 32, 32, 32]);
+
+            const total = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= total; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text(_safePdf('Pagina ' + i + ' de ' + total), pageW / 2, pageH - 6, { align: 'center' });
+            }
+            doc.save(ARCHIVO_1x10 + '_resumen_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        }
+
         function generarPdfHojaAsistencia() {
             if (!window.jspdf || !window.jspdf.jsPDF) {
                 alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
@@ -2575,6 +3085,8 @@
         $('btnExportarExcel').addEventListener('click', exportarExcelOrganizado);
         $('btnPdfAsistencia').addEventListener('click', generarPdfHojaAsistencia);
         $('btnPdfAsistenciaCentro').addEventListener('click', generarPdfAsistenciaPorCentro);
+        $('btnPdfFichas').addEventListener('click', fichasDeTodos);
+        $('btnPdfResumen').addEventListener('click', generarPdfResumen);
 
         // ── Tecla ESC cierra el modal
         document.addEventListener('keydown', (e) => {

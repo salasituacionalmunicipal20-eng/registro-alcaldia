@@ -16,6 +16,14 @@ Thumbs.db
 
 # Node (por si en algún momento se agrega)
 node_modules/
+# El proyecto no usa npm: si aparece un package.json es de una prueba local
+# (por ejemplo correr jsPDF en Node para revisar un PDF antes de publicarlo).
+package.json
+package-lock.json
+
+# PDF que sueltan las pruebas al correr los generadores fuera del navegador.
+# Llevan datos inventados, pero no pintan nada en el repositorio.
+1x10_*.pdf
 
 # Cliente de escritorio (Electron) - artefactos pesados de build
 escritorio/node_modules/
