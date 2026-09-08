@@ -45,3 +45,6 @@ habitantes-export-*.json
 serviceAccount*.json
 *-sa.json
 .firebase/
+
+# Metadatos de la herramienta de codigo, no son del proyecto
+.serena/

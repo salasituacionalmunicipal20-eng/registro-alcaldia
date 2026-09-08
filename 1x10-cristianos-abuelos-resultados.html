@@ -1335,6 +1335,73 @@
         }
 
         // ──────────────────────────────────────────────────────────
+        // RECUADRO DE DATOS QUE NO SE MONTA
+        //
+        // Los valores se pintan con `maxWidth`, y con eso jsPDF parte el
+        // texto en varias lineas sin decir nada: el renglon siguiente se
+        // seguia pintando 5 mm mas abajo y se montaba encima. Un nombre
+        // como "YAJAIRA COROMOTO CARRASQUEL MARTINEZ" tapaba el telefono.
+        //
+        // Aqui se MIDE primero: cada fila avanza lo que de verdad ocupa y
+        // el recuadro crece con ella. Devuelve la altura que ocupo.
+        //
+        // filas: [{ e1, v1, e2, v2, entera }]
+        //   e1/v1 = etiqueta y valor de la columna izquierda
+        //   e2/v2 = los de la derecha (si no hay, la fila es de una sola)
+        //   entera = el valor ocupa el ancho completo del recuadro
+        // ──────────────────────────────────────────────────────────
+        function _recuadroDatos(doc, opts) {
+            const ALTO = 5, labelW = 26;
+            const x = opts.x, y = opts.y, ancho = opts.ancho, c = opts.color;
+            const col1X = x + 2;
+            const col2X = x + ancho / 2 + 2;
+            const anchoMedia = ancho / 2 - labelW - 4;
+            const anchoEntera = ancho - labelW - 4;
+
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            const parte = (v, w) => doc.splitTextToSize(
+                _safePdf(v === null || v === undefined || v === '' ? '-' : String(v)), w);
+
+            let despl = 11;
+            const puestas = opts.filas.map(f => {
+                const a = parte(f.v1, f.entera ? anchoEntera : anchoMedia);
+                const b = f.e2 ? parte(f.v2, anchoMedia) : [];
+                const fila = { f: f, a: a, b: b, base: despl };
+                despl += Math.max(a.length, b.length, 1) * ALTO;
+                return fila;
+            });
+            const alto = despl - ALTO + 2;   // la ultima fila no necesita su hueco entero
+
+            doc.setDrawColor(c[0], c[1], c[2]);
+            doc.setLineWidth(0.4);
+            doc.rect(x, y, ancho, alto);
+            doc.setFillColor(c[0], c[1], c[2]);
+            doc.rect(x, y, ancho, 6, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9.5);
+            doc.text(_safePdf(opts.titulo), x + 2, y + 4.2);
+
+            doc.setTextColor(30, 41, 59);
+            doc.setFontSize(9);
+            puestas.forEach(p => {
+                const yb = y + p.base;
+                doc.setFont('helvetica', 'bold');
+                doc.text(_safePdf(p.f.e1), col1X, yb);
+                doc.setFont('helvetica', 'normal');
+                p.a.forEach((ln, k) => doc.text(ln, col1X + labelW, yb + k * ALTO));
+                if (p.f.e2) {
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(_safePdf(p.f.e2), col2X, yb);
+                    doc.setFont('helvetica', 'normal');
+                    p.b.forEach((ln, k) => doc.text(ln, col2X + labelW, yb + k * ALTO));
+                }
+            });
+            return alto;
+        }
+
+        // ──────────────────────────────────────────────────────────
         // PDF: Movilizacion agrupada (por centro electoral o por comuna)
         // ──────────────────────────────────────────────────────────
         function generarPdfMovilizacion(modo) {
@@ -2575,43 +2642,17 @@
                 const centro = j.centro_electoral || '-';
                 const mesas = j.mesas || '-';
 
-                doc.setDrawColor(10, 35, 81);
-                doc.setLineWidth(0.4);
-                const recH = 28;
-                doc.rect(margenX, y, anchoUtil, recH);
-                doc.setFillColor(10, 35, 81);
-                doc.rect(margenX, y, anchoUtil, 6, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(9.5);
-                doc.text(_safePdf('DATOS DEL JEFE DE PATRULLA'), margenX + 2, y + 4.2);
-
-                doc.setTextColor(30, 41, 59);
-                doc.setFontSize(9);
-                doc.setFont('helvetica', 'normal');
-                const labelW = 26;
-                const col1X = margenX + 2;
-                const col2X = margenX + anchoUtil / 2 + 2;
-                let yy = y + 11;
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Nombre:'), col1X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(nombre), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Cedula:'), col2X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(ced), col2X + labelW, yy);
-                yy += 5;
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Telefono:'), col1X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(tel), col1X + labelW, yy);
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Parroquia:'), col2X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(parroquia), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
-                yy += 5;
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Comuna:'), col1X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(comuna), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Comunidad:'), col2X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(comunidad), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
-                yy += 5;
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Centro:'), col1X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(centro), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Mesas:'), col2X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(mesas), col2X + labelW, yy);
+                const filasJefe = [
+                    { e1: 'Nombre:',   v1: nombre, e2: 'Cedula:',    v2: ced },
+                    { e1: 'Telefono:', v1: tel,    e2: 'Parroquia:', v2: parroquia },
+                    { e1: 'Comuna:',   v1: comuna, e2: 'Comunidad:', v2: comunidad },
+                    { e1: 'Centro:',   v1: centro, e2: 'Mesas:',     v2: mesas }
+                ];
+                const recH = _recuadroDatos(doc, {
+                    x: margenX, y: y, ancho: anchoUtil,
+                    titulo: 'DATOS DEL JEFE DE PATRULLA',
+                    color: [10, 35, 81], filas: filasJefe
+                });
 
                 y += recH + 5;
 
@@ -2876,42 +2917,22 @@
                 y += 7;
 
                 // Recuadro datos del centro
-                doc.setDrawColor(91, 33, 182);
-                doc.setLineWidth(0.4);
-                const recH = 26;
-                doc.rect(margenX, y, anchoUtil, recH);
-                doc.setFillColor(91, 33, 182);
-                doc.rect(margenX, y, anchoUtil, 6, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(9.5);
-                doc.text(_safePdf('DATOS DEL CENTRO ELECTORAL'), margenX + 2, y + 4.2);
-
-                doc.setTextColor(30, 41, 59);
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
-                const labelW = 26;
-                const col1X = margenX + 2;
-                const col2X = margenX + anchoUtil / 2 + 2;
-                let yy = y + 11;
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Centro:'), col1X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.nombre), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Mesas:'), col2X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.mesas), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
-                yy += 5;
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Parroquia(s):'), col1X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.parroquias), col1X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('Comuna(s):'), col2X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(infoCentro.comunas), col2X + labelW, yy, { maxWidth: anchoUtil / 2 - labelW - 4 });
-                yy += 5;
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf('# de jefes:'), col1X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(String(infoCentro.nJefes)), col1X + labelW, yy);
                 // En las hojas de continuacion, aclarar que el total se refiere al
                 // centro completo (no solo a las personas que caben en esa pagina),
                 // para no confundir al coordinador.
                 const labelTotal = esContinuacion ? 'Total (centro):' : 'Total personas:';
-                doc.setFont('helvetica', 'bold'); doc.text(_safePdf(labelTotal), col2X, yy);
-                doc.setFont('helvetica', 'normal'); doc.text(_safePdf(String(infoCentro.nPersonas)), col2X + labelW, yy);
+                const recH = _recuadroDatos(doc, {
+                    x: margenX, y: y, ancho: anchoUtil,
+                    titulo: 'DATOS DEL CENTRO ELECTORAL',
+                    color: [91, 33, 182], filas: [
+                        { e1: 'Centro:',       v1: infoCentro.nombre,
+                          e2: 'Mesas:',        v2: infoCentro.mesas },
+                        { e1: 'Parroquia(s):', v1: infoCentro.parroquias,
+                          e2: 'Comuna(s):',    v2: infoCentro.comunas },
+                        { e1: '# de jefes:',   v1: infoCentro.nJefes,
+                          e2: labelTotal,      v2: infoCentro.nPersonas }
+                    ]
+                });
 
                 y += recH + 5;
 

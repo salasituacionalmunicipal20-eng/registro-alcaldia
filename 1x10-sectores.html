@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1x10 por sectores — Alcaldía de Cristóbal Rojas</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --navy:#0a2351; --navy-2:#14346f; --gold:#c9a227;
+  --fondo:#f4f6fb; --card:#ffffff; --linea:#dfe5f0;
+  --tinta:#111827; --tinta-2:#475569; --tinta-3:#94a3b8;
+  --ok:#166534; --ok-bg:#dcfce7; --ok-linea:#bbf7d0;
+  --ojo:#92400e; --ojo-bg:#fef3c7; --ojo-linea:#fde68a;
+  --mal:#991b1b; --mal-bg:#fee2e2; --mal-linea:#fecaca;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.barra{background:var(--navy);color:#fff;padding:14px 0}
+header.barra .wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+header.barra b{font-size:17px;font-weight:800;letter-spacing:.01em}
+header.barra span{font-size:13px;opacity:.85}
+header.barra .der{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+header.barra a.btn, header.barra button.btn{
+  background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);
+  border-radius:9px;padding:8px 13px;font:inherit;font-size:13px;font-weight:650;
+  cursor:pointer;text-decoration:none;min-height:40px;display:inline-flex;align-items:center}
+header.barra a.btn:hover, header.barra button.btn:hover{background:rgba(255,255,255,.22)}
+main{padding:22px 0 60px}
+h1{font-size:22px;font-weight:800;margin:0 0 4px}
+.sub{color:var(--tinta-2);font-size:14px;margin:0 0 18px;max-width:80ch}
+.tarjeta{background:var(--card);border:1px solid var(--linea);border-radius:14px;
+  padding:18px;margin-bottom:18px}
+h2{font-size:16px;font-weight:800;margin:0 0 12px}
+
+.totales{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.tot{background:var(--card);border:1px solid var(--linea);border-radius:13px;padding:14px 16px}
+.tot b{display:block;font-size:26px;font-weight:850;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;line-height:1.1}
+.tot span{display:block;font-size:12px;color:var(--tinta-2);margin-top:3px}
+.tot.destaca{background:var(--navy);border-color:var(--navy);color:#fff}
+.tot.destaca span{color:rgba(255,255,255,.8)}
+
+.sectores{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:13px}
+.sec{background:var(--card);border:1px solid var(--linea);border-radius:13px;padding:15px;
+  display:flex;flex-direction:column;gap:9px}
+.sec-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
+.sec-nom{font-size:15px;font-weight:800;line-height:1.25}
+.sec-nom em{display:block;font-style:normal;font-size:11.5px;font-weight:600;
+  color:var(--tinta-3);margin-top:2px}
+.sec-cifras{display:flex;gap:14px;flex-wrap:wrap}
+.sec-cifra b{display:block;font-size:20px;font-weight:850;font-variant-numeric:tabular-nums;line-height:1.1}
+.sec-cifra span{display:block;font-size:11px;color:var(--tinta-2)}
+.barra-prog{height:9px;border-radius:99px;background:var(--fondo);overflow:hidden;
+  border:1px solid var(--linea)}
+.barra-prog i{display:block;height:100%;background:var(--navy-2)}
+.sec-pie{font-size:12px;color:var(--tinta-2);display:flex;justify-content:space-between;gap:8px}
+.sec a.ver{margin-top:2px;display:inline-flex;align-items:center;justify-content:center;
+  min-height:40px;border:1px solid var(--linea);border-radius:9px;text-decoration:none;
+  color:var(--navy);font-size:13px;font-weight:700;background:var(--fondo)}
+.sec a.ver:hover{background:#eef2f9}
+.sec.vacio{opacity:.72}
+
+.filtros{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.campo{display:flex;flex-direction:column;gap:4px;min-width:180px;flex:1 1 200px}
+.campo label{font-size:12px;font-weight:700;color:var(--tinta-2)}
+select,input[type=search]{font:inherit;font-size:15px;padding:9px 11px;min-height:44px;
+  border:1px solid var(--linea);border-radius:9px;background:var(--card);color:var(--tinta);width:100%}
+.acciones{display:flex;gap:8px;flex-wrap:wrap}
+.acciones button{font:inherit;font-size:13.5px;font-weight:700;min-height:44px;padding:0 15px;
+  border-radius:9px;border:1px solid var(--linea);background:var(--card);color:var(--navy);cursor:pointer}
+.acciones button.principal{background:var(--navy);border-color:var(--navy);color:#fff}
+.acciones button:hover{filter:brightness(.97)}
+
+.tabla-caja{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:700px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--linea);text-align:left;vertical-align:top}
+th{background:var(--fondo);font-weight:750;font-size:12px;color:var(--tinta-2);
+  text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;cursor:pointer;user-select:none}
+th.der,td.der{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:hover{background:#fafbfe}
+td b{font-weight:750}
+.pill{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;
+  border:1px solid}
+.pill.ok{background:var(--ok-bg);color:var(--ok);border-color:var(--ok-linea)}
+.pill.ojo{background:var(--ojo-bg);color:var(--ojo);border-color:var(--ojo-linea)}
+.pill.mal{background:var(--mal-bg);color:var(--mal);border-color:var(--mal-linea)}
+.pill.gris{background:var(--fondo);color:var(--tinta-3);border-color:var(--linea)}
+
+.aviso{border-radius:11px;padding:12px 14px;margin-bottom:14px;font-size:13.5px;
+  border:1px solid var(--ojo-linea);background:var(--ojo-bg);color:var(--ojo)}
+.aviso b{display:block;margin-bottom:2px}
+.cargando{padding:30px;text-align:center;color:var(--tinta-3)}
+.oculto{display:none}
+footer{color:var(--tinta-3);font-size:12.5px;padding:18px 0 40px;text-align:center}
+
+@media (max-width:560px){
+  .sec-cifras{gap:10px}
+  header.barra .der{width:100%}
+  header.barra a.btn, header.barra button.btn{flex:1 1 auto;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <div class="wrap">
+    <b>1x10 por sectores</b>
+    <span>Alcaldía de Cristóbal Rojas</span>
+    <div class="der">
+      <a class="btn" href="admin.html">← Volver al panel</a>
+      <button class="btn" id="btnSalir" type="button">Cerrar sesión</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div id="loader" class="cargando">Cargando…</div>
+
+  <div id="acceso-restringido" class="oculto">
+    <div class="tarjeta">
+      <h2>No tienes acceso a esta pantalla</h2>
+      <p class="sub">Este resumen es solo para administradores. Si crees que deberías verlo,
+      pídeselo a quien lleva el sistema.</p>
+    </div>
+  </div>
+
+  <div id="contenido" class="oculto">
+
+    <h1>Cómo va cargado el 1x10, sector por sector</h1>
+    <p class="sub">Cada sector se llena en su propia planilla y hasta ahora había que abrir las
+    siete para saber cómo iban. Aquí están todas juntas, en vivo: cuántos jefes de patrulla hay,
+    cuánta gente llevan cargada y a cuántos les falta completar sus diez.</p>
+
+    <div class="totales" id="totales"></div>
+
+    <div class="tarjeta">
+      <h2>Cada sector</h2>
+      <div class="sectores" id="sectores"></div>
+    </div>
+
+    <div class="tarjeta">
+      <h2>El detalle, jefe por jefe</h2>
+      <p class="sub">Para ver quién va completo y a quién le falta. Se puede acotar por sector,
+      parroquia o comuna, y descargar tal como se ve.</p>
+
+      <div class="filtros">
+        <div class="campo">
+          <label for="fSector">Sector</label>
+          <select id="fSector"></select>
+        </div>
+        <div class="campo">
+          <label for="fParroquia">Parroquia</label>
+          <select id="fParroquia"></select>
+        </div>
+        <div class="campo">
+          <label for="fComuna">Comuna</label>
+          <select id="fComuna"></select>
+        </div>
+        <div class="campo">
+          <label for="fEstado">Cómo va</label>
+          <select id="fEstado">
+            <option value="">Todos</option>
+            <option value="completo">Completos (10 o más)</option>
+            <option value="medias">A medias (1 a 9)</option>
+            <option value="cero">Sin nadie cargado</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="fBusca">Buscar</label>
+          <input id="fBusca" type="search" placeholder="Nombre, cédula, comunidad o centro…">
+        </div>
+      </div>
+
+      <div class="acciones" style="margin-bottom:14px">
+        <button type="button" class="principal" id="btnExcel">Descargar en Excel</button>
+        <button type="button" id="btnPdf">Descargar en PDF</button>
+        <button type="button" id="btnLimpiar">Quitar los filtros</button>
+      </div>
+
+      <p class="sub" id="conteo"></p>
+      <div class="tabla-caja">
+        <table>
+          <thead><tr>
+            <th data-orden="sector">Sector</th>
+            <th data-orden="nombre">Jefe de patrulla</th>
+            <th data-orden="cedula">Cédula</th>
+            <th data-orden="telefono">Teléfono</th>
+            <th data-orden="parroquia">Parroquia</th>
+            <th data-orden="comuna">Comuna</th>
+            <th data-orden="comunidad">Comunidad</th>
+            <th class="der" data-orden="afines">Cargados</th>
+            <th data-orden="afines">Cómo va</th>
+          </tr></thead>
+          <tbody id="cuerpo"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="wrap">Alcaldía Bolivariana del municipio Cristóbal Rojas · Sala Situacional</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="logos-base64.js"></script>
+<script src="pdf-header.js"></script>
+<script src="autofresh.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, onValue, get, child }
+  from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+    authDomain: "alcaldia-admin.firebaseapp.com",
+    databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+    projectId: "alcaldia-admin",
+    storageBucket: "alcaldia-admin.firebasestorage.app",
+    messagingSenderId: "945828226894",
+    appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+    measurementId: "G-P4QSQR0XGE"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const database = getDatabase(app);
+const $ = (id) => document.getElementById(id);
+
+/* ──────────────────────────────────────────────────────────
+   LOS SIETE SECTORES
+
+   Cada uno se llena en su propia planilla y guarda en su propio par de
+   nodos. El sufijo vacío es el 1x10 general, el de toda la vida.
+   ────────────────────────────────────────────────────────── */
+const SECTORES = [
+  { id: 'general',            suf: '',                     nombre: 'General',
+    detalle: 'El 1x10 de siempre',        pagina: '1x10-resultados.html' },
+  { id: 'salud',              suf: '_salud',               nombre: 'Salud',
+    detalle: 'Personal de salud',         pagina: '1x10-salud-resultados.html' },
+  { id: 'educacion',          suf: '_educacion',           nombre: 'Educación',
+    detalle: 'Personal de educación',     pagina: '1x10-educacion-resultados.html' },
+  { id: 'empleados',          suf: '_empleados',           nombre: 'Empleados',
+    detalle: 'Empleados de la Alcaldía',  pagina: '1x10-empleados-resultados.html' },
+  { id: 'cristianos',         suf: '_cristianos',          nombre: 'Cristianos',
+    detalle: 'Movimiento cristiano',      pagina: '1x10-cristianos-resultados.html' },
+  { id: 'abuelos',            suf: '_abuelos',             nombre: 'Abuelos',
+    detalle: 'Adultos mayores',           pagina: '1x10-abuelos-resultados.html' },
+  { id: 'cristianos_abuelos', suf: '_cristianos_abuelos',  nombre: 'Cristianos abuelos',
+    detalle: 'Adultos mayores cristianos', pagina: '1x10-cristianos-abuelos-resultados.html' }
+];
+
+/* La meta de un jefe de patrulla: diez personas. De ahí sale el "cómo va". */
+const META = 10;
+
+/* Lo que se va leyendo de la base, sector por sector. */
+const datos = {};        // { [id]: { jefes:{}, afines:{} } }
+let filas = [];          // una fila por jefe, ya aplanada
+let orden = { campo: 'sector', asc: true };
+
+const esc = (t) => String(t == null ? '' : t)
+  .replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = (n) => (Number(n) || 0).toLocaleString('es-VE');
+
+/* ──────────────────────────────────────────────────────────
+   ACCESO — el mismo patrón de todos los tableros
+   ────────────────────────────────────────────────────────── */
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = 'index.html'; return; }
+  const esSuper = user.email === 'carlos.admin@alcaldia.com';
+  let permitido = esSuper;
+  if (!esSuper) {
+    try {
+      const snap = await get(child(ref(database), `operadores/${user.uid}`));
+      permitido = snap.exists() && snap.val().rol === 'admin';
+    } catch (e) { permitido = false; }
+  }
+  $('loader').classList.add('oculto');
+  if (!permitido) { $('acceso-restringido').classList.remove('oculto'); return; }
+  $('contenido').classList.remove('oculto');
+  prepararFiltros();
+  escuchar();
+});
+
+$('btnSalir').addEventListener('click', () => signOut(auth).then(() => location.href = 'index.html'));
+
+/* ──────────────────────────────────────────────────────────
+   LECTURA EN VIVO
+
+   Se abre un listener por nodo: catorce en total (jefes y afines de cada
+   sector). Cada vez que llega algo se vuelve a armar la tabla, así el
+   panel refleja lo que se está cargando en este momento.
+   ────────────────────────────────────────────────────────── */
+function escuchar() {
+  SECTORES.forEach(s => {
+    datos[s.id] = { jefes: null, afines: null };
+    onValue(ref(database, 'jefes_1x10' + s.suf), (snap) => {
+      datos[s.id].jefes = snap.val() || {};
+      rearmar();
+    }, (err) => {
+      console.error('No se pudo leer jefes_1x10' + s.suf, err);
+      datos[s.id].jefes = datos[s.id].jefes || {};
+      datos[s.id].error = err && err.message ? err.message : 'sin permiso';
+      rearmar();
+    });
+    onValue(ref(database, 'afines_1x10' + s.suf), (snap) => {
+      datos[s.id].afines = snap.val() || {};
+      rearmar();
+    }, (err) => {
+      console.error('No se pudo leer afines_1x10' + s.suf, err);
+      datos[s.id].afines = datos[s.id].afines || {};
+      datos[s.id].error = err && err.message ? err.message : 'sin permiso';
+      rearmar();
+    });
+  });
+}
+
+/* Aplana los catorce nodos en una lista de jefes con su cuenta de gente. */
+function rearmar() {
+  filas = [];
+  SECTORES.forEach(s => {
+    const d = datos[s.id];
+    if (!d || d.jefes === null) return;          // ese sector todavía no llegó
+    const af = d.afines || {};
+    Object.entries(d.jefes).forEach(([id, j]) => {
+      const cargados = Object.keys(af[id] || {}).length;
+      filas.push({
+        id,
+        sectorId: s.id,
+        sector: s.nombre,
+        nombre: `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '(sin nombre)',
+        cedula: (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
+        telefono: j.telefono || '',
+        parroquia: j.parroquia || '',
+        comuna: j.circuito || '',
+        comunidad: j.comunidad_nombre || '',
+        centro: j.centro_electoral || '',
+        afines: cargados
+      });
+    });
+  });
+  pintarTotales();
+  pintarSectores();
+  refrescarOpciones();
+  pintarTabla();
+}
+
+/* ──────────────────────────────────────────────────────────
+   LAS CIFRAS DE ARRIBA
+   ────────────────────────────────────────────────────────── */
+function resumenDe(lista) {
+  const jefes = lista.length;
+  const afines = lista.reduce((t, f) => t + f.afines, 0);
+  const completos = lista.filter(f => f.afines >= META).length;
+  const medias = lista.filter(f => f.afines > 0 && f.afines < META).length;
+  const ceros = lista.filter(f => f.afines === 0).length;
+  return {
+    jefes, afines, completos, medias, ceros,
+    total: jefes + afines,
+    promedio: jefes ? afines / jefes : 0,
+    /* El avance se mide contra la meta: cada jefe debería llevar diez.
+       Se recorta al 100 % para que un jefe con cincuenta no tape a los
+       que van por dos. */
+    avance: jefes ? Math.min(100, Math.round((afines / (jefes * META)) * 100)) : 0
+  };
+}
+
+function pintarTotales() {
+  const r = resumenDe(filas);
+  $('totales').innerHTML =
+    tarjeta(num(r.total), 'personas en el 1x10', 'destaca') +
+    tarjeta(num(r.jefes), 'jefes de patrulla') +
+    tarjeta(num(r.afines), 'gente cargada') +
+    tarjeta(num(r.completos), 'jefes con sus 10 completos') +
+    tarjeta(r.avance + '%', 'de la meta (10 por jefe)');
+}
+const tarjeta = (b, s, cl) =>
+  `<div class="tot ${cl || ''}"><b>${esc(b)}</b><span>${esc(s)}</span></div>`;
+
+function pintarSectores() {
+  $('sectores').innerHTML = SECTORES.map(s => {
+    const lista = filas.filter(f => f.sectorId === s.id);
+    const r = resumenDe(lista);
+    const d = datos[s.id] || {};
+    const cargando = d.jefes === null;
+    return `<div class="sec${r.jefes ? '' : ' vacio'}">
+      <div class="sec-cab">
+        <div class="sec-nom">${esc(s.nombre)}<em>${esc(s.detalle)}</em></div>
+        ${cargando ? '<span class="pill gris">Cargando</span>'
+          : d.error ? '<span class="pill mal">No se pudo leer</span>'
+          : r.jefes ? `<span class="pill ${r.avance >= 80 ? 'ok' : r.avance >= 40 ? 'ojo' : 'mal'}">${r.avance}%</span>`
+          : '<span class="pill gris">Sin cargar</span>'}
+      </div>
+      <div class="sec-cifras">
+        <div class="sec-cifra"><b>${num(r.jefes)}</b><span>jefes</span></div>
+        <div class="sec-cifra"><b>${num(r.afines)}</b><span>cargados</span></div>
+        <div class="sec-cifra"><b>${r.jefes ? r.promedio.toFixed(1) : '—'}</b><span>por jefe</span></div>
+      </div>
+      <div class="barra-prog"><i style="width:${r.avance}%"></i></div>
+      <div class="sec-pie">
+        <span>${num(r.completos)} completos</span>
+        <span>${num(r.medias + r.ceros)} sin completar</span>
+      </div>
+      <a class="ver" href="${esc(s.pagina)}">Abrir su planilla</a>
+    </div>`;
+  }).join('');
+}
+
+/* ──────────────────────────────────────────────────────────
+   LA TABLA, CON SUS FILTROS
+   ────────────────────────────────────────────────────────── */
+function prepararFiltros() {
+  const sel = $('fSector');
+  sel.innerHTML = '<option value="">Todos los sectores</option>' +
+    SECTORES.map(s => `<option value="${s.id}">${esc(s.nombre)}</option>`).join('');
+  ['fSector', 'fParroquia', 'fComuna', 'fEstado'].forEach(id =>
+    $(id).addEventListener('change', pintarTabla));
+  let t;
+  $('fBusca').addEventListener('input', () => { clearTimeout(t); t = setTimeout(pintarTabla, 250); });
+  $('btnLimpiar').addEventListener('click', () => {
+    ['fSector', 'fParroquia', 'fComuna', 'fEstado'].forEach(id => { $(id).value = ''; });
+    $('fBusca').value = '';
+    pintarTabla();
+  });
+  document.querySelectorAll('th[data-orden]').forEach(th => {
+    th.addEventListener('click', () => {
+      const c = th.dataset.orden;
+      orden = { campo: c, asc: orden.campo === c ? !orden.asc : true };
+      pintarTabla();
+    });
+  });
+  $('btnExcel').addEventListener('click', bajarExcel);
+  $('btnPdf').addEventListener('click', bajarPdf);
+}
+
+/* Las listas de parroquia y comuna salen de lo que hay cargado, no de un
+   catálogo: así no se ofrecen opciones que no existen en los datos. */
+function refrescarOpciones() {
+  const rellena = (id, campo) => {
+    const sel = $(id);
+    const antes = sel.value;
+    const vals = [...new Set(filas.map(f => f[campo]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+    sel.innerHTML = `<option value="">Todas</option>` +
+      vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+    if (vals.includes(antes)) sel.value = antes;
+  };
+  rellena('fParroquia', 'parroquia');
+  rellena('fComuna', 'comuna');
+}
+
+function aplicarFiltros() {
+  const s = $('fSector').value, p = $('fParroquia').value, c = $('fComuna').value;
+  const e = $('fEstado').value;
+  const q = $('fBusca').value.trim().toLowerCase();
+  /* filter() siempre devuelve una copia: la lista de origen no se toca ni
+     se reordena por debajo. */
+  return filas.filter(f => {
+    if (s && f.sectorId !== s) return false;
+    if (p && f.parroquia !== p) return false;
+    if (c && f.comuna !== c) return false;
+    if (e === 'completo' && f.afines < META) return false;
+    if (e === 'medias' && !(f.afines > 0 && f.afines < META)) return false;
+    if (e === 'cero' && f.afines !== 0) return false;
+    if (q) {
+      const heno = [f.nombre, f.cedula, f.telefono, f.comunidad, f.centro, f.comuna, f.parroquia]
+        .join(' ').toLowerCase();
+      if (!heno.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function ordenar(lista) {
+  const c = orden.campo, s = orden.asc ? 1 : -1;
+  return lista.slice().sort((a, b) => {
+    const x = a[c], y = b[c];
+    if (typeof x === 'number' && typeof y === 'number') return (x - y) * s;
+    return String(x).localeCompare(String(y), 'es') * s;
+  });
+}
+
+function comoVa(n) {
+  if (n >= META) return '<span class="pill ok">Completo</span>';
+  if (n > 0) return `<span class="pill ojo">Le faltan ${META - n}</span>`;
+  return '<span class="pill mal">Sin nadie</span>';
+}
+
+function pintarTabla() {
+  const lista = ordenar(aplicarFiltros());
+  const r = resumenDe(lista);
+  $('conteo').textContent =
+    `${num(lista.length)} ${lista.length === 1 ? 'jefe' : 'jefes'} · ` +
+    `${num(r.afines)} personas cargadas · ${num(r.completos)} completos`;
+  $('cuerpo').innerHTML = lista.map(f => `<tr>
+    <td>${esc(f.sector)}</td>
+    <td><b>${esc(f.nombre)}</b>${f.centro ? `<br><span style="font-size:11.5px;color:var(--tinta-3)">${esc(f.centro)}</span>` : ''}</td>
+    <td>${esc(f.cedula)}</td>
+    <td>${esc(f.telefono)}</td>
+    <td>${esc(f.parroquia)}</td>
+    <td>${esc(f.comuna)}</td>
+    <td>${esc(f.comunidad)}</td>
+    <td class="der"><b>${num(f.afines)}</b></td>
+    <td>${comoVa(f.afines)}</td>
+  </tr>`).join('') ||
+    '<tr><td colspan="9" style="text-align:center;color:var(--tinta-3);padding:26px">' +
+    'No hay ningún jefe con esos filtros.</td></tr>';
+}
+
+/* ──────────────────────────────────────────────────────────
+   DESCARGAS
+
+   Bajan lo que se está viendo, con los filtros puestos, y lo dicen en la
+   propia hoja: si no, un Excel filtrado se confunde después con el total.
+   ────────────────────────────────────────────────────────── */
+function rotuloFiltros() {
+  const p = [];
+  const t = (id) => { const s = $(id); return s.value ? s.options[s.selectedIndex].text : ''; };
+  if (t('fSector')) p.push('Sector: ' + t('fSector'));
+  if (t('fParroquia')) p.push('Parroquia: ' + t('fParroquia'));
+  if (t('fComuna')) p.push('Comuna: ' + t('fComuna'));
+  if (t('fEstado')) p.push(t('fEstado'));
+  if ($('fBusca').value.trim()) p.push('Buscando: ' + $('fBusca').value.trim());
+  return p.length ? p.join(' · ') : 'Todos los sectores, sin filtros';
+}
+
+const CABECERAS = ['Sector', 'Jefe de patrulla', 'Cedula', 'Telefono', 'Parroquia',
+                   'Comuna', 'Comunidad', 'Centro electoral', 'Cargados', 'Como va'];
+const ANCHOS = [18, 32, 13, 14, 16, 26, 26, 34, 10, 14];
+
+function comoVaTexto(n) {
+  return n >= META ? 'Completo' : n > 0 ? `Le faltan ${META - n}` : 'Sin nadie';
+}
+function aFilas(lista) {
+  return lista.map(f => [f.sector, f.nombre, f.cedula, f.telefono, f.parroquia,
+                         f.comuna, f.comunidad, f.centro, f.afines, comoVaTexto(f.afines)]);
+}
+
+function bajarExcel() {
+  const lista = ordenar(aplicarFiltros());
+  const r = resumenDe(lista);
+  const cuerpo = aFilas(lista);
+  /* Encabezados, filas y anchos tienen que tener la MISMA cantidad de
+     columnas: si no, el Excel sale con los datos corridos y sin avisar. */
+  if (CABECERAS.length !== ANCHOS.length ||
+      cuerpo.some(f => f.length !== CABECERAS.length)) {
+    alert('El Excel no cuadra de columnas. No se descarga para no darte datos corridos.');
+    return;
+  }
+  const hoy = new Date();
+  const aoa = [
+    ['1x10 POR SECTORES - ALCALDIA DE CRISTOBAL ROJAS'],
+    ['Generado el ' + hoy.toLocaleString('es-VE') + ' · ' + rotuloFiltros()],
+    [`${lista.length} jefes · ${r.afines} personas cargadas · ${r.completos} completos`],
+    [],
+    CABECERAS,
+    ...cuerpo
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = ANCHOS.map(w => ({ wch: w }));
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({
+    s: { r: 4, c: 0 }, e: { r: 4 + cuerpo.length, c: CABECERAS.length - 1 } }) };
+  ws['!freeze'] = { xSplit: 0, ySplit: 5 };
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '1x10 por sectores');
+
+  /* Una segunda hoja con el resumen: es lo que se mira primero. */
+  const res = [['Sector', 'Jefes', 'Cargados', 'Promedio por jefe', 'Completos',
+                'Sin completar', 'Avance %']];
+  SECTORES.forEach(s => {
+    const rr = resumenDe(filas.filter(f => f.sectorId === s.id));
+    res.push([s.nombre, rr.jefes, rr.afines, rr.jefes ? +rr.promedio.toFixed(1) : 0,
+              rr.completos, rr.medias + rr.ceros, rr.avance]);
+  });
+  const tot = resumenDe(filas);
+  res.push(['TOTAL', tot.jefes, tot.afines, tot.jefes ? +tot.promedio.toFixed(1) : 0,
+            tot.completos, tot.medias + tot.ceros, tot.avance]);
+  const ws2 = XLSX.utils.aoa_to_sheet(res);
+  ws2['!cols'] = [{wch:24},{wch:9},{wch:11},{wch:19},{wch:12},{wch:15},{wch:11}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
+
+  XLSX.writeFile(wb, `1x10_por_sectores_${hoy.toISOString().slice(0,10)}.xlsx`);
+}
+
+function bajarPdf() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' });
+  const lista = ordenar(aplicarFiltros());
+  const r = resumenDe(lista);
+
+  if (window.dibujarHeaderPDF) {
+    window.dibujarHeaderPDF(doc, {
+      titulo: '1x10 POR SECTORES',
+      subtitulo: rotuloFiltros()
+    });
+  }
+  let y = 42;
+
+  doc.setFontSize(10);
+  doc.setTextColor(60, 60, 60);
+  doc.text(`${lista.length} jefes de patrulla · ${r.afines} personas cargadas · ` +
+           `${r.completos} completos · ${r.avance}% de la meta`, 14, y);
+  y += 6;
+
+  /* Primero el resumen por sector, que es lo que se mira. */
+  doc.autoTable({
+    startY: y,
+    head: [['Sector', 'Jefes', 'Cargados', 'Por jefe', 'Completos', 'Sin completar', 'Avance']],
+    body: SECTORES.map(s => {
+      const rr = resumenDe(filas.filter(f => f.sectorId === s.id));
+      return [s.nombre, rr.jefes, rr.afines, rr.jefes ? rr.promedio.toFixed(1) : '-',
+              rr.completos, rr.medias + rr.ceros, rr.avance + '%'];
+    }),
+    styles: { fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: [10, 35, 81], textColor: 255, fontStyle: 'bold' },
+    /* Carta horizontal deja unos 251 mm utiles: 52+22+26+24+26+32+22 = 204. */
+    columnStyles: {
+      0: { cellWidth: 52 }, 1: { cellWidth: 22, halign: 'right' },
+      2: { cellWidth: 26, halign: 'right' }, 3: { cellWidth: 24, halign: 'right' },
+      4: { cellWidth: 26, halign: 'right' }, 5: { cellWidth: 32, halign: 'right' },
+      6: { cellWidth: 22, halign: 'right' }
+    },
+    margin: { left: 14, right: 14 }
+  });
+
+  doc.addPage();
+  if (window.dibujarHeaderPDF) {
+    window.dibujarHeaderPDF(doc, { titulo: '1x10 POR SECTORES', subtitulo: 'Detalle, jefe por jefe' });
+  }
+  doc.autoTable({
+    startY: 42,
+    head: [['Sector', 'Jefe de patrulla', 'Cedula', 'Telefono', 'Parroquia', 'Comuna',
+            'Comunidad', 'Carg.', 'Como va']],
+    body: aFilas(lista).map(f => [f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[8], f[9]]),
+    styles: { fontSize: 7.5, cellPadding: 1.5, overflow: 'linebreak' },
+    headStyles: { fillColor: [10, 35, 81], textColor: 255, fontStyle: 'bold' },
+    /* 26+46+21+23+26+38+38+13+20 = 251 mm exactos. Si se toca una, hay que
+       volver a sumar: autoTable no avisa, recorta o desborda. */
+    columnStyles: {
+      0: { cellWidth: 26 }, 1: { cellWidth: 46 }, 2: { cellWidth: 21 },
+      3: { cellWidth: 23 }, 4: { cellWidth: 26 }, 5: { cellWidth: 38 },
+      6: { cellWidth: 38 }, 7: { cellWidth: 13, halign: 'right' }, 8: { cellWidth: 20 }
+    },
+    margin: { left: 14, right: 14 },
+    didDrawPage: () => { if (window.dibujarFooterPDF) window.dibujarFooterPDF(doc); }
+  });
+
+  doc.save(`1x10_por_sectores_${new Date().toISOString().slice(0,10)}.pdf`);
+}
+</script>
+</body>
+</html>
