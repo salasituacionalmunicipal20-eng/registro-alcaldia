@@ -18,6 +18,7 @@
         .wrap { max-width: 1240px; margin: 0 auto; padding: 18px; }
         .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
         .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        .card.share { border-top: 5px solid #0a6cb0; }
         label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
         input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
         .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 8px 0; color: #fff; }
@@ -75,6 +76,23 @@
         <div id="acceso-restringido" class="estado-box error hidden"><h2 style="color:#b91c1c;">Acceso restringido</h2><p>Solo para administradores.</p></div>
 
         <div id="contenido" class="hidden">
+            <div class="card share">
+                <h2>📣 Compartir el formulario</h2>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
+                    <img id="qr" width="150" height="150" style="border:1px solid #e2e8f0;border-radius:8px;" alt="QR" />
+                    <div style="flex:1;min-width:240px;">
+                        <p style="color:#475569;font-size:14px;margin-bottom:8px;">Comparte este enlace o el QR para que la gente se registre en Atención Social:</p>
+                        <div style="font-size:22px;font-weight:800;color:#0a6cb0;margin-bottom:10px;" id="shortTxt">—</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button id="btnCopiar" class="btn-exp" style="background:#0a2351;">📋 Copiar enlace</button>
+                            <a id="btnWa" class="btn-exp" style="background:#16a34a;text-decoration:none;display:inline-block;" target="_blank" rel="noopener">💬 WhatsApp</a>
+                            <a id="btnQrDl" class="btn-exp" style="background:#0a6cb0;text-decoration:none;display:inline-block;" download="qr-atencion-social.png">⬇️ Descargar QR</a>
+                        </div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Enlace completo: <span id="fullTxt"></span></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
                 <div class="stats-row">
@@ -163,6 +181,22 @@
         const hoyISO = () => fechaDia(Date.now());
 
         let REGS = [], pagina = 1; const TAM = 30;
+
+        // ---- Compartir ----
+        const URL_FORM = 'https://salasituacional.alcaldiadecharallave.com/atencion-social.html';
+        // TinyURL con alias propio, no da.gd: da.gd le muestra a cada visitante nuevo
+        // de un enlace recién creado una pantalla de advertencia sobre phishing antes
+        // de redirigir, y eso espanta a quien lo recibe por un canal oficial.
+        const URL_CORTO = 'https://tinyurl.com/atencionsocialcr';
+        $('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(URL_CORTO)}`;
+        $('shortTxt').textContent = URL_CORTO.replace('https://', '');
+        $('fullTxt').textContent = URL_FORM;
+        $('btnWa').href = `https://wa.me/?text=${encodeURIComponent('🤝 ATENCIÓN SOCIAL — Regístrate aquí (Alcaldía de Cristóbal Rojas): ' + URL_CORTO)}`;
+        $('btnQrDl').href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&download=1&data=${encodeURIComponent(URL_CORTO)}`;
+        $('btnCopiar').addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(URL_CORTO); $('btnCopiar').textContent = '✓ Copiado'; setTimeout(() => $('btnCopiar').textContent = '📋 Copiar enlace', 1800); }
+            catch (e) { prompt('Copia el enlace:', URL_CORTO); }
+        });
 
         $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch (e) {} location.href = 'index.html'; });
 

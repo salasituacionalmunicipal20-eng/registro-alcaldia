@@ -2,16 +2,14 @@
   "rules": {
     "habitantes": {
       ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists()",
-      ".indexOn": ["cedula"],
       "$habitanteId": {
         ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || (auth != null && root.child('operadores').child(auth.uid).exists() && newData.exists())"
       }
     },
     "atencion_social": {
-      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists()",
-      ".indexOn": ["cedula"],
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
       "$id": {
-        ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || (auth != null && root.child('operadores').child(auth.uid).exists() && newData.exists())",
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
         ".validate": "newData.hasChildren(['nombre','apellido','cedula']) && newData.child('nombre').isString() && newData.child('nombre').val().length <= 150 && newData.child('apellido').isString() && newData.child('apellido').val().length <= 150 && newData.child('cedula').isString() && newData.child('cedula').val().length <= 15"
       }
     },
