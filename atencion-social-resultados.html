@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atención Social — Resultados</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #0a2351; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-nav:hover { background: rgba(255,255,255,0.25); }
+        .wrap { max-width: 1240px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 8px 0; color: #fff; }
+        .filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; align-items: end; }
+        .filtros .full { grid-column: 1 / -1; }
+        .stats-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .stat { display: inline-block; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; }
+        .stat .num { font-size: 22px; font-weight: 800; color: #0a2351; }
+        .stat-btn { cursor: pointer; transition: background .15s, border-color .15s; }
+        .stat-btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+        .stat-btn.activo { background: #eef2ff; border-color: #6366f1; box-shadow: 0 0 0 2px #c7d2fe inset; }
+        .live { font-size: 12px; font-weight: 700; color: #16a34a; }
+        .live .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
+        tbody tr:hover { background: #f8fafc; }
+        .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .pill { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+        .p-si { background: #fef3c7; color: #92400e; }
+        .p-no { background: #f1f5f9; color: #475569; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #0a2351; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #fff; border-radius: 12px; max-width: 620px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+        .modal h3 { color: #0a2351; font-size: 18px; margin-bottom: 12px; }
+        .modal h4 { color: #0a6cb0; font-size: 13px; text-transform: uppercase; letter-spacing: .3px; margin: 16px 0 6px; }
+        .fila { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid #eef2f7; font-size: 14px; }
+        .fila .k { font-weight: 700; color: #475569; min-width: 180px; }
+        .fila .val { color: #0f172a; white-space: pre-wrap; }
+        .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; }
+    </style>
+    <script src="autofresh.js"></script>
+</head>
+<body>
+    <div class="topbar">
+        <h1>🤝 Atención Social — Resultados</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="atencion-social.html">+ Registrar</a>
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden"><h2 style="color:#b91c1c;">Acceso restringido</h2><p>Solo para administradores.</p></div>
+
+        <div id="contenido" class="hidden">
+            <div class="card">
+                <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
+                <div class="stats-row">
+                    <div class="stat"><span class="num" id="stTotal">—</span> <span style="color:#64748b;font-size:12px;">registros</span></div>
+                    <div class="stat stat-btn" id="tileHoy" title="Ver solo los de hoy"><span class="num" id="stHoy" style="color:#0a6cb0;">—</span> <span style="color:#64748b;font-size:12px;">📅 hoy</span></div>
+                    <div class="stat stat-btn" id="tileResp" title="Ver solo con responsabilidad política"><span class="num" id="stResp" style="color:#92400e;">—</span> <span style="color:#64748b;font-size:12px;">🏛️ con responsabilidad</span></div>
+                    <div class="stat"><span class="num" id="stComunidades" style="color:#7c3aed;">—</span> <span style="color:#64748b;font-size:12px;">📍 comunidades</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Personas registradas</h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
+                </div>
+                <div class="filtros">
+                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, teléfono, responsabilidad, comunidad…" autocomplete="off" /></div>
+                    <div><label>Desde</label><input id="fDesde" type="date" /></div>
+                    <div><label>Hasta</label><input id="fHasta" type="date" /></div>
+                    <div><label>Parroquia (responsabilidad)</label><select id="fParroquia"><option value="">Todas</option></select></div>
+                    <div><label>Responsabilidad política</label><select id="fResp"><option value="">Todos</option><option value="si">Sí tiene</option><option value="no">No tiene</option></select></div>
+                    <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
+                </div>
+                <p id="filtroInfo" style="font-size:12.5px;color:#64748b;margin:10px 0;"></p>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Fecha</th><th>Nombre y apellido</th><th>Cédula</th><th>Teléfono</th>
+                                <th>Edad</th><th>Responsabilidad política</th><th>Registrado por</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+        const NODO = 'atencion_social';
+
+        function calcularEdad(fechaNacStr) {
+            if (!fechaNacStr || !/^\d{4}-\d{2}-\d{2}$/.test(fechaNacStr)) return null;
+            const p = fechaNacStr.split('-');
+            const anio = parseInt(p[0], 10), mes = parseInt(p[1], 10) - 1, dia = parseInt(p[2], 10);
+            const hoy = new Date();
+            let edad = hoy.getFullYear() - anio;
+            const cumpleEsteAnio = (hoy.getMonth() > mes) || (hoy.getMonth() === mes && hoy.getDate() >= dia);
+            if (!cumpleEsteAnio) edad--;
+            return (edad >= 0 && edad <= 120) ? edad : null;
+        }
+        const comunidadDe = (r) => [r.responsabilidad_comunidad, r.responsabilidad_comuna, r.responsabilidad_parroquia]
+            .filter(Boolean).filter(x => x !== 'OTRO').join(' · ') || (r.responsabilidad_otro_lugar || '');
+        const respTexto = (r) => r.tiene_responsabilidad_politica
+            ? [r.responsabilidad_cual, comunidadDe(r)].filter(Boolean).join(' — ')
+            : 'No tiene';
+        const fechaDia = (ts) => { if (!ts) return ''; const d = new Date(ts), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+        const fechaLarga = (ts) => ts ? new Date(ts).toLocaleString('es-VE', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        const hoyISO = () => fechaDia(Date.now());
+
+        let REGS = [], pagina = 1; const TAM = 30;
+
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch (e) {} location.href = 'index.html'; });
+
+        /* Patrón de acceso en los tableros: solo administradores. */
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuper;
+            if (!esSuper) {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    permitido = snap.exists() && snap.val().rol === 'admin';
+                } catch (e) { permitido = false; }
+            }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            onValue(ref(database, NODO), (snap) => {
+                const val = snap.val() || {};
+                REGS = Object.entries(val).map(([id, m]) => ({ id, ...m }))
+                    .sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
+                poblarFiltros(); render();
+            }, () => { REGS = []; render(); });
+        });
+
+        const FILTROS = ['fBuscar', 'fDesde', 'fHasta', 'fParroquia', 'fResp'];
+        FILTROS.forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
+        $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => $(id).value = ''); pagina = 1; render(); });
+        $('tileHoy').addEventListener('click', () => { const h = hoyISO(); const act = $('fDesde').value === h && $('fHasta').value === h; $('fDesde').value = act ? '' : h; $('fHasta').value = act ? '' : h; pagina = 1; render(); });
+        $('tileResp').addEventListener('click', () => { $('fResp').value = $('fResp').value === 'si' ? '' : 'si'; pagina = 1; render(); });
+
+        function poblarFiltros() {
+            const el = $('fParroquia'), prev = el.value;
+            const arr = [...new Set(REGS.map(r => r.responsabilidad_parroquia).filter(Boolean))].sort();
+            el.innerHTML = '<option value="">Todas</option>' + arr.map(x => `<option>${esc(x)}</option>`).join('');
+            if (prev) el.value = prev;
+        }
+
+        function filtrados() {
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const desde = $('fDesde').value, hasta = $('fHasta').value;
+            const par = $('fParroquia').value, resp = $('fResp').value;
+            return REGS.filter(r => {
+                const dia = fechaDia(r.fecha_registro);
+                if (desde && dia < desde) return false;
+                if (hasta && dia > hasta) return false;
+                if (par && r.responsabilidad_parroquia !== par) return false;
+                if (resp === 'si' && !r.tiene_responsabilidad_politica) return false;
+                if (resp === 'no' && r.tiene_responsabilidad_politica) return false;
+                if (q) {
+                    const txt = [r.nombre, r.apellido, r.cedula, r.telefono, r.responsabilidad_cual,
+                                 comunidadDe(r), r.registrado_por_nombre].filter(Boolean).join(' ').toLowerCase();
+                    if (!txt.includes(q)) return false;
+                }
+                return true;
+            });
+        }
+
+        function render() {
+            const h = hoyISO();
+            $('stTotal').textContent = REGS.length;
+            $('stHoy').textContent = REGS.filter(r => fechaDia(r.fecha_registro) === h).length;
+            $('stResp').textContent = REGS.filter(r => r.tiene_responsabilidad_politica).length;
+            $('stComunidades').textContent = new Set(REGS.map(r => r.responsabilidad_comunidad).filter(Boolean)).size;
+            $('tileHoy').classList.toggle('activo', $('fDesde').value === h && $('fHasta').value === h);
+            $('tileResp').classList.toggle('activo', $('fResp').value === 'si');
+
+            const lista = filtrados();
+            $('filtroInfo').textContent = (lista.length === REGS.length)
+                ? `Mostrando los ${REGS.length} registro(s).`
+                : `Mostrando ${lista.length} de ${REGS.length} registro(s) con los filtros aplicados.`;
+
+            const tot = Math.max(1, Math.ceil(lista.length / TAM));
+            if (pagina > tot) pagina = tot;
+            const pag = lista.slice((pagina - 1) * TAM, pagina * TAM);
+            const tb = $('tbody');
+
+            if (!pag.length) {
+                tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:34px;color:#94a3b8;">Sin registros con estos filtros.</td></tr>';
+            } else {
+                tb.innerHTML = pag.map(r => {
+                    const edad = calcularEdad(r.fecha_nacimiento);
+                    return `<tr>
+                        <td>${esc(fechaDia(r.fecha_registro))}</td>
+                        <td><b>${esc(r.nombre)} ${esc(r.apellido)}</b></td>
+                        <td>${esc((r.nacionalidad || 'V') + '-' + (r.cedula || ''))}</td>
+                        <td>${esc(r.telefono || '—')}</td>
+                        <td>${edad == null ? '—' : edad}</td>
+                        <td><span class="pill ${r.tiene_responsabilidad_politica ? 'p-si' : 'p-no'}">${r.tiene_responsabilidad_politica ? 'Sí' : 'No'}</span>
+                            ${r.tiene_responsabilidad_politica ? `<br /><span style="font-size:12px;color:#64748b;">${esc(respTexto(r))}</span>` : ''}</td>
+                        <td style="font-size:12.5px;color:#64748b;">${esc(r.registrado_por_nombre || '—')}</td>
+                        <td style="white-space:nowrap;">
+                            <button class="btn-ver" data-id="${esc(r.id)}">Ver</button>
+                            <button class="btn-del" data-del="${esc(r.id)}">🗑️</button>
+                        </td>
+                    </tr>`;
+                }).join('');
+                tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+                tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.del)));
+            }
+
+            const pg = $('paginacion');
+            pg.innerHTML = tot <= 1 ? '' :
+                `<button ${pagina === 1 ? 'disabled' : ''} id="pgPrev">‹ Anterior</button>
+                 <span style="font-size:13px;color:#475569;">Página ${pagina} de ${tot}</span>
+                 <button ${pagina === tot ? 'disabled' : ''} id="pgNext">Siguiente ›</button>`;
+            if ($('pgPrev')) $('pgPrev').addEventListener('click', () => { pagina--; render(); });
+            if ($('pgNext')) $('pgNext').addEventListener('click', () => { pagina++; render(); });
+        }
+
+        async function borrar(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            if (!confirm(`¿Borrar el registro de "${r.nombre} ${r.apellido}"?`)) return;
+            try { await remove(ref(database, NODO + '/' + id)); }
+            catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
+        }
+
+        function verDetalle(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const edad = calcularEdad(r.fecha_nacimiento);
+            const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc((val == null || val === '') ? '—' : val)}</span></div>`;
+            $('modal').innerHTML = `
+                <h3>${esc(r.nombre)} ${esc(r.apellido)}</h3>
+                <div><span class="pill ${r.tiene_responsabilidad_politica ? 'p-si' : 'p-no'}">${r.tiene_responsabilidad_politica ? '🏛️ Con responsabilidad política' : 'Sin responsabilidad política'}</span></div>
+                <h4>Datos de la persona</h4>
+                ${fila('Cédula', (r.nacionalidad || 'V') + '-' + (r.cedula || ''))}
+                ${fila('Teléfono', r.telefono)}
+                ${fila('Fecha de nacimiento', r.fecha_nacimiento)}
+                ${fila('Edad', edad == null ? null : edad + ' años')}
+                ${r.tiene_responsabilidad_politica ? `
+                <h4>Responsabilidad política</h4>
+                ${fila('Cuál', r.responsabilidad_cual)}
+                ${fila('Parroquia', r.responsabilidad_parroquia)}
+                ${fila('Comuna', r.responsabilidad_comuna)}
+                ${fila('Comunidad', r.responsabilidad_comunidad)}
+                ${r.responsabilidad_otro_lugar ? fila('Otro lugar', r.responsabilidad_otro_lugar) : ''}` : ''}
+                <h4>Registro</h4>
+                ${fila('Fecha y hora', fechaLarga(r.fecha_registro))}
+                ${fila('Registrado por', r.registrado_por_nombre)}
+                <button class="cerrar" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+        }
+        $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        // ---------------------------------------------------------------- EXCEL
+        $('btnExcel').addEventListener('click', () => {
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay registros que exportar con los filtros actuales.'); return; }
+            const ahora = new Date();
+            const NAVY = '0A2351', GRIS = '64748B', ZEBRA = 'F1F5F9', TEXTO = '0F172A';
+            const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
+
+            const hdr = ['Fecha', 'Nombre', 'Apellido', 'Cédula', 'Nacionalidad', 'Teléfono', 'Fecha de nacimiento',
+                'Edad', '¿Responsabilidad política?', 'Cuál', 'Parroquia', 'Comuna', 'Comunidad', 'Otro lugar', 'Registrado por'];
+            const filas = lista.map(r => [
+                fechaDia(r.fecha_registro), r.nombre || '', r.apellido || '', r.cedula || '', r.nacionalidad || 'V',
+                r.telefono || '', r.fecha_nacimiento || '', calcularEdad(r.fecha_nacimiento) ?? '',
+                r.tiene_responsabilidad_politica ? 'Sí' : 'No', r.responsabilidad_cual || '',
+                r.responsabilidad_parroquia || '', r.responsabilidad_comuna || '', r.responsabilidad_comunidad || '',
+                r.responsabilidad_otro_lugar || '', r.registrado_por_nombre || ''
+            ]);
+
+            const titulo = 'ATENCIÓN SOCIAL';
+            const data = [
+                [titulo].concat(Array(hdr.length - 1).fill('')),
+                [`Generado ${ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' })} · ${filas.length} registro(s)`].concat(Array(hdr.length - 1).fill('')),
+                hdr, ...filas
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const setS = (rr, c, s) => { const a = XLSX.utils.encode_cell({ r: rr, c }); if (!ws[a]) ws[a] = { t: 's', v: '' }; ws[a].s = s; };
+            for (let c = 0; c < hdr.length; c++) {
+                setS(0, c, { font: { bold: true, sz: 15, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center' } });
+                setS(1, c, { font: { italic: true, sz: 10, color: { rgb: GRIS } }, alignment: { horizontal: 'center' } });
+                setS(2, c, { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', wrapText: true }, border: borde });
+            }
+            for (let rr = 3; rr < data.length; rr++) for (let c = 0; c < hdr.length; c++) {
+                setS(rr, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...((rr % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}) });
+            }
+            ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr.length - 1 } }];
+            ws['!cols'] = [12, 18, 18, 13, 12, 16, 15, 8, 16, 26, 18, 22, 22, 20, 22].map(w => ({ wch: w }));
+            ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: hdr.length - 1 } }) };
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Atención Social');
+            guardarXlsx(wb, `atencion_social_${ahora.toISOString().slice(0, 10)}.xlsx`);
+        });
+
+        // ------------------------------------------------------------------ PDF
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s); try { t = t.normalize('NFC'); } catch (e) {}
+            let out = '';
+            for (const ch of t) {
+                const c = ch.codePointAt(0);
+                if (c === 0x201C || c === 0x201D || c === 0x2033) out += '"';
+                else if (c === 0x2018 || c === 0x2019 || c === 0x2032) out += "'";
+                else if (c === 0x2013 || c === 0x2014) out += '-';
+                else if (c === 0x2026) out += '...';
+                else if (c === 0x00A0) out += ' ';
+                else if (c < 32 || c === 127) out += ' ';
+                else if (c <= 255) out += ch;
+                else out += '';
+            }
+            return out.replace(/ {2,}/g, ' ').trim();
+        }
+
+        $('btnPdf').addEventListener('click', () => {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return; }
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay registros que exportar con los filtros actuales.'); return; }
+
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' });
+            const drawHF = () => {
+                dibujarHeaderPDF(doc, { titulo: 'Atencion Social', subtitulo: _safePdf(lista.length + ' registro(s)') });
+                dibujarFooterPDF(doc);
+            };
+            drawHF();
+
+            const cuerpo = lista.map(r => [
+                _safePdf(fechaDia(r.fecha_registro)), _safePdf(r.nombre), _safePdf(r.apellido),
+                _safePdf((r.nacionalidad || 'V') + '-' + (r.cedula || '')), _safePdf(r.telefono || '-'),
+                calcularEdad(r.fecha_nacimiento) == null ? '-' : String(calcularEdad(r.fecha_nacimiento)),
+                _safePdf(r.tiene_responsabilidad_politica ? 'Si' : 'No'),
+                _safePdf(r.responsabilidad_cual || '-'), _safePdf(comunidadDe(r) || '-'),
+                _safePdf(r.registrado_por_nombre || '-')
+            ]);
+
+            // Carta horizontal deja ~251mm utiles: 20+30+30+18+24+12+14+35+38+30 = 251.
+            jsPDF.API.autoTable.call(doc, {
+                startY: 42, margin: { top: 42, bottom: 16, left: 14, right: 14 },
+                head: [['Fecha', 'Nombre', 'Apellido', 'Cédula', 'Teléfono', 'Edad', '¿Resp.?', 'Cuál', 'Comunidad', 'Registrado por']],
+                body: cuerpo, theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.5, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
+                headStyles: { fillColor: [10, 35, 81], textColor: 255, fontStyle: 'bold' },
+                columnStyles: {
+                    0: { cellWidth: 20 }, 1: { cellWidth: 30 }, 2: { cellWidth: 30 }, 3: { cellWidth: 18 },
+                    4: { cellWidth: 24 }, 5: { cellWidth: 12, halign: 'right' }, 6: { cellWidth: 14 },
+                    7: { cellWidth: 35 }, 8: { cellWidth: 38 }, 9: { cellWidth: 30 }
+                },
+                didDrawPage: drawHF
+            });
+            doc.save('atencion_social_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        });
+
+        // Los escritores de SheetJS / xlsx-js-style NO saben congelar paneles: solo emiten
+        // <sheetView workbookViewId>, nunca <pane>. Aquí se abre el zip generado, se le inyecta
+        // el <pane> a cada hoja y se vuelve a cerrar. Si algo falla, cae al guardado normal.
+        function guardarXlsx(wb, nombre) {
+            try {
+                const filaHdr = (wb.SheetNames || []).map(function (n) {
+                    const ws = (wb.Sheets || {})[n] || {};
+                    const rf = ws['!autofilter'] && ws['!autofilter'].ref;
+                    const m = rf && /^[A-Za-z]+(\d+)/.exec(String(rf));
+                    return m ? Number(m[1]) : 0;
+                });
+                if (!filaHdr.some(Boolean)) throw new Error('ninguna hoja tiene filtro de referencia');
+                const cfb = XLSX.CFB.read(new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })), { type: 'array' });
+                let n = 0;
+                (cfb.FullPaths || []).forEach(function (ruta, i) {
+                    const mh = /\/xl\/worksheets\/sheet(\d+)\.xml$/.exec(ruta);
+                    if (!mh) return;
+                    const y = filaHdr[Number(mh[1]) - 1];
+                    const ent = cfb.FileIndex[i];
+                    if (!y || !ent || !ent.content) return;
+                    const celda = 'A' + (y + 1);
+                    const pane = '<pane ySplit="' + y + '" topLeftCell="' + celda + '" activePane="bottomLeft" state="frozen"/>'
+                        + '<selection pane="bottomLeft" activeCell="' + celda + '" sqref="' + celda + '"/>';
+                    let xml = new TextDecoder('utf-8').decode(new Uint8Array(ent.content));
+                    const antes = xml;
+                    xml = xml.replace(/(<sheetView[^>]*?)\/>/, '$1>' + pane + '</sheetView>');
+                    if (xml === antes) return;
+                    const b = new TextEncoder().encode(xml);
+                    ent.content = b; ent.size = b.length; n++;
+                });
+                if (!n) throw new Error('no se pudo inyectar el congelado');
+                const blob = new Blob([XLSX.CFB.write(cfb, { type: 'array', fileType: 'zip' })],
+                    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = nombre;
+                document.body.appendChild(a); a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+            } catch (e) {
+                XLSX.writeFile(wb, nombre);
+            }
+        }
+    </script>
+</body>
+</html>
