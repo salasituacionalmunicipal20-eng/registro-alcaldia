@@ -629,6 +629,10 @@
       }
     },
 
+    "pc_config": {
+      ".read": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
+      ".write": "auth != null && root.child('pc_operadores').child(auth.uid).exists()"
+    },
     "pc_operadores": {
       ".read": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
       "$uid": {
