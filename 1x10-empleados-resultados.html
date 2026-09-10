@@ -2141,13 +2141,18 @@
 
             // Anchos de columna: suman 192. Ninguno baja de lo que necesita su
             // propio titulo, o el encabezado se parte en dos lineas.
-            const col = { num: 9, ced: 28, nom: 70, tel: 28, nac: 40, gen: 17 };
+            // Firma y Huella se agregan para que la Ficha quede igual que el
+            // resto de los PDF del 1x10: espacio para firmar junto a cada
+            // persona. Nombre, Nacimiento y Genero se acortan para abrirles sitio.
+            const col = { num: 8, ced: 22, nom: 63, tel: 23, nac: 24, gen: 8, firma: 27, huella: 17 };
             const xNum = margenX;
             const xCed = xNum + col.num;
             const xNom = xCed + col.ced;
             const xTel = xNom + col.nom;
             const xNac = xTel + col.tel;
             const xGen = xNac + col.nac;
+            const xFirma = xGen + col.gen;
+            const xHuella = xFirma + col.firma;
             const filaH = 8;
             const AFINES_POR_PAGINA = 18;
 
@@ -2190,6 +2195,7 @@
                 lineas.push(['Comunidad', j.comunidad_nombre || '-', null, null]);
                 lineas.push(['Centro electoral', j.centro_electoral || '-', 'Mesas', j.mesas || '-']);
                 lineas.push(['Registrado', fmtFechaCorta(j.fecha_registro) || '-', null, null]);
+                lineas.push(['Firma', '_______________________________', null, null]);
 
                 const altoCaja = 7 + lineas.length * 5.4;
                 doc.setFillColor(241, 245, 252);
@@ -2253,8 +2259,10 @@
                 doc.text(_safePdf('CEDULA'), xCed + 2, y + 4.8);
                 doc.text(_safePdf('NOMBRE Y APELLIDO'), xNom + 2, y + 4.8);
                 doc.text(_safePdf('TELEFONO'), xTel + 2, y + 4.8);
-                doc.text(_safePdf('NACIMIENTO (EDAD)'), xNac + 2, y + 4.8);
+                doc.text(_safePdf('NACIMIENTO'), xNac + 2, y + 4.8);
                 doc.text(_safePdf('GEN'), xGen + col.gen / 2, y + 4.8, { align: 'center' });
+                doc.text(_safePdf('FIRMA'), xFirma + col.firma / 2, y + 4.8, { align: 'center' });
+                doc.text(_safePdf('HUELLA'), xHuella + col.huella / 2, y + 4.8, { align: 'center' });
                 return y + 7;
             }
 
@@ -2266,7 +2274,7 @@
                 doc.setDrawColor(226, 232, 240);
                 doc.setLineWidth(0.2);
                 doc.line(margenX, y + filaH, margenX + anchoUtil, y + filaH);
-                [xCed, xNom, xTel, xNac, xGen].forEach(x => doc.line(x, y, x, y + filaH));
+                [xCed, xNom, xTel, xNac, xGen, xFirma, xHuella].forEach(x => doc.line(x, y, x, y + filaH));
                 doc.line(margenX, y, margenX, y + filaH);
                 doc.line(margenX + anchoUtil, y, margenX + anchoUtil, y + filaH);
 
@@ -2274,6 +2282,14 @@
                 doc.setFont('helvetica', 'bold');
                 doc.setFontSize(8.5);
                 doc.text(String(numero), xNum + col.num / 2, y + 5.4, { align: 'center' });
+
+                // Linea para firmar y para la huella: se ve aunque el renglon este
+                // en blanco ("por registrar") o nadie haya firmado todavia.
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.2);
+                doc.line(xFirma + 2, y + filaH - 2, xFirma + col.firma - 2, y + filaH - 2);
+                doc.line(xHuella + 2, y + filaH - 2, xHuella + col.huella - 2, y + filaH - 2);
+                doc.setDrawColor(226, 232, 240);
 
                 if (!a) {
                     // Renglon en blanco: el jefe todavia no lo registro. Se deja
