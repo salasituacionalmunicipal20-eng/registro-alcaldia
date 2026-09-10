@@ -1543,6 +1543,9 @@
                     doc.setTextColor(60, 60, 60);
                     doc.text(_safePdf(`C.I. ${ced}   *   Tel: ${tel}`), margenX + anchoUtil, y + 4, { align: 'right' });
                     y += 6;
+                    doc.setFontSize(8);
+                    doc.setTextColor(140, 140, 140);
+                    doc.text(_safePdf('Firma: ______________________'), margenX + anchoUtil, y + 3.5, { align: 'right' });
                     doc.setTextColor(100, 100, 100);
                     doc.text(_safePdf(`Comunidad: ${comunidad}`), margenX, y + 3.5);
                     doc.text(_safePdf(`Afines: ${afines.length}`), margenX + anchoUtil, y + 3.5, { align: 'right' });
@@ -1558,13 +1561,20 @@
                         doc.setFontSize(8);
                         doc.setTextColor(80, 80, 80);
                         doc.setFont('helvetica', 'bold');
-                        // Layout: #(4) | Cedula(14) | Nombre(44) | Tel(col fija a la derecha)
-                        const xTel = margenX + anchoUtil - 36; // 36mm para telefono
+                        // Layout: #(10) | Cedula(24) | Nombre | Telefono(24) | Firma(26) | Huella(16)
+                        // Firma y Huella se agregan para que TODO lo que el 1x10 imprime
+                        // quede igual: espacio para firmar al lado de cada persona, como
+                        // ya lo tienen la Ficha y la Hoja de Asistencia.
+                        const xTel = margenX + anchoUtil - 66; // 66mm reservados para Telefono+Firma+Huella
+                        const xFirmaAf = xTel + 24;
+                        const xHuellaAf = xFirmaAf + 26;
                         const anchoNombre = xTel - (margenX + 44) - 2;
                         doc.text('#', margenX + 4, y + 3);
                         doc.text('Cedula', margenX + 14, y + 3);
                         doc.text('Nombre completo', margenX + 44, y + 3);
                         doc.text('Telefono', xTel, y + 3);
+                        doc.text('Firma', xFirmaAf, y + 3);
+                        doc.text('Huella', xHuellaAf, y + 3);
                         y += 4;
                         doc.setFont('helvetica', 'normal');
                         doc.setTextColor(30, 41, 59);
@@ -1578,7 +1588,13 @@
                             const nomLineas = doc.splitTextToSize(_safePdf(nomA), anchoNombre);
                             doc.text(nomLineas, margenX + 44, y + 3);
                             doc.text(_safePdf(telA), xTel, y + 3);
-                            y += Math.max(4, nomLineas.length * 4);
+                            const altoFila = Math.max(4, nomLineas.length * 4);
+                            // Linea para firmar y para la huella: se ve aunque nadie firme aun.
+                            doc.setDrawColor(200, 200, 200);
+                            doc.setLineWidth(0.2);
+                            doc.line(xFirmaAf, y + altoFila - 1, xFirmaAf + 24, y + altoFila - 1);
+                            doc.line(xHuellaAf, y + altoFila - 1, xHuellaAf + 14, y + altoFila - 1);
+                            y += altoFila;
                         });
                     }
                     y += 3;
