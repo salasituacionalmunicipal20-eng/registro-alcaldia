@@ -647,8 +647,92 @@
       ".read": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
       ".indexOn": ["fecha_registro"],
       "$id": {
-        ".write": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
-        ".validate": "newData.hasChildren(['propietario', 'ubicacion']) && newData.child('propietario').hasChildren(['nombres_apellidos'])"
+        ".write": "(!data.exists() && newData.exists() && root.child('pc_config').child('formulario_abierto').val() === true) || (auth != null && root.child('pc_operadores').child(auth.uid).exists())",
+        ".validate": "(data.exists() || $id.matches(/^-[A-Za-z0-9_-]{19}$/)) && newData.hasChildren(['propietario','ubicacion','fecha_registro']) && ((auth != null && root.child('pc_operadores').child(auth.uid).exists()) || (newData.child('origen').val() === 'publico' && !newData.hasChild('registrado_por') && !newData.hasChild('editado_por') && !newData.hasChild('fecha_edicion') && !newData.hasChild('codigo')))",
+
+        "origen":                   { ".validate": "newData.isString() && newData.val().matches(/^(publico|interno)$/)" },
+        "codigo":                   { ".validate": "newData.isString() && newData.val().matches(/^PCCR-RS-[0-9]{4}-[0-9]{2}$/)" },
+        "fecha_registro":           { ".validate": "newData.isNumber() && newData.val() > 1700000000000 && newData.val() <= now + 60000" },
+        "fecha_edicion":            { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+        "fecha_informe":            { ".validate": "newData.isString() && newData.val().matches(/^(19|20)[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/)" },
+        "inspeccion_realizada_por": { ".validate": "newData.isString() && newData.val().length <= 150" },
+        "informe_transcrito_por":   { ".validate": "newData.isString() && newData.val().length <= 150" },
+        "diagnostico":              { ".validate": "newData.isString() && newData.val().length <= 3000" },
+
+        "reportado_por": {
+          "nombre":   { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "telefono": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "$otro":    { ".validate": false }
+        },
+        "registrado_por": {
+          "uid":    { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "nombre": { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "email":  { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "$otro":  { ".validate": false }
+        },
+        "editado_por": {
+          "uid":    { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "nombre": { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "email":  { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "$otro":  { ".validate": false }
+        },
+
+        "ubicacion": {
+          ".validate": "newData.hasChildren()",
+          "parroquia":         { ".validate": "newData.isString() && newData.val().length <= 80" },
+          "sector":            { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "comunidad":         { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "calle":             { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "cuadrante_paz":     { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "telf_cuadrante":    { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "sala_autogobierno": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "direccion_exacta":  { ".validate": "newData.isString() && newData.val().length <= 300" },
+          "$otro":             { ".validate": false }
+        },
+
+        "propietario": {
+          ".validate": "newData.hasChildren(['nombres_apellidos'])",
+          "cedula":            { ".validate": "newData.isString() && newData.val().matches(/^([VEve]?-?[0-9]{4,10})?$/)" },
+          "nombres_apellidos": { ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 150" },
+          "edad":              { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120" },
+          "telf":              { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "ocupacion":         { ".validate": "newData.isString() && newData.val().length <= 100" },
+          "tenencia_vivienda": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "$otro":             { ".validate": false }
+        },
+
+        "grupo_familiar": {
+          "adultos":        { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 200" },
+          "ninos":          { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 200" },
+          "lactantes":      { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 200" },
+          "adolescentes":   { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 200" },
+          "tercera_edad":   { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 200" },
+          "discapacitados": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 200" },
+          "$otro":          { ".validate": false }
+        },
+
+        "tipo_estructura":       { "$i": { ".validate": "$i.matches(/^([0-9]|1[0-9])$/) && newData.isString() && newData.val().length <= 60" } },
+        "evaluacion_danos":      { "$i": { ".validate": "$i.matches(/^([0-9]|1[0-9])$/) && newData.isString() && newData.val().length <= 60" } },
+        "ubicacion_danos":       { "$i": { ".validate": "$i.matches(/^([0-9]|1[0-9])$/) && newData.isString() && newData.val().length <= 60" } },
+        "losa_techo":            { "$i": { ".validate": "$i.matches(/^([0-9]|1[0-9])$/) && newData.isString() && newData.val().length <= 60" } },
+        "losa_piso":             { "$i": { ".validate": "$i.matches(/^([0-9]|1[0-9])$/) && newData.isString() && newData.val().length <= 60" } },
+        "sistema_estructural":   { "$i": { ".validate": "$i.matches(/^([0-9]|1[0-9])$/) && newData.isString() && newData.val().length <= 60" } },
+        "distribucion_vivienda": { "$i": { ".validate": "$i.matches(/^([0-9]|1[0-9])$/) && newData.isString() && newData.val().length <= 60" } },
+
+        "nucleo_familiar": {
+          "$i": {
+            ".validate": "$i.matches(/^([0-9]|[12][0-9])$/)",
+            "parentesco":      { ".validate": "newData.isString() && newData.val().length <= 60" },
+            "nombre_apellido": { ".validate": "newData.isString() && newData.val().length <= 150" },
+            "edad":            { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120" },
+            "sexo":            { ".validate": "newData.isString() && newData.val().matches(/^[MF]?$/)" },
+            "cedula":          { ".validate": "newData.isString() && newData.val().length <= 15" },
+            "nombre_plantel":  { ".validate": "newData.isString() && newData.val().length <= 150" },
+            "$otro":           { ".validate": false }
+          }
+        },
+
+        "$otro": { ".validate": false }
       }
     },
     "pc_bitacora": {
