@@ -89,6 +89,25 @@
             </div>
 
             <div class="card">
+                <h2>📋 Tipo de atención</h2>
+                <div class="sub">¿Qué tipo de atención recibiste? *</div>
+                <div class="ops" id="grpTipoAtencion">
+                    <label class="op"><input type="radio" name="tipoAtencion" value="Alimentación" /> Alimentación</label>
+                    <label class="op"><input type="radio" name="tipoAtencion" value="Salud / Medicinas" /> Salud / Medicinas</label>
+                    <label class="op"><input type="radio" name="tipoAtencion" value="Vivienda" /> Vivienda</label>
+                    <label class="op"><input type="radio" name="tipoAtencion" value="Ayuda económica" /> Ayuda económica</label>
+                    <label class="op"><input type="radio" name="tipoAtencion" value="Empleo" /> Empleo</label>
+                    <label class="op"><input type="radio" name="tipoAtencion" value="Documentación / Trámites" /> Documentación / Trámites</label>
+                    <label class="op"><input type="radio" name="tipoAtencion" value="Educación" /> Educación</label>
+                    <label class="op"><input type="radio" name="tipoAtencion" value="Otro" /> Otro</label>
+                </div>
+                <div id="campoTipoOtro" class="hidden">
+                    <label>¿Cuál? *</label>
+                    <input id="f_tipo_otro" placeholder="Escribe el tipo de atención" autocomplete="off" />
+                </div>
+            </div>
+
+            <div class="card">
                 <h2>🏛️ Responsabilidad política</h2>
                 <div class="sub">¿Tienes alguna responsabilidad política (jefe de calle, CBBI, UBCH, comuna, etc.)?</div>
                 <div class="ops" id="grpTieneResp">
@@ -207,6 +226,13 @@
         }
         $('f_cedula').addEventListener('blur', alConsultarCedula);
 
+        /* ---- Tipo de atención: "Otro" abre el campo para escribirlo ---- */
+        $('grpTipoAtencion').addEventListener('change', () => {
+            const otro = document.querySelector('input[name="tipoAtencion"]:checked')?.value === 'Otro';
+            $('campoTipoOtro').classList.toggle('hidden', !otro);
+            if (!otro) $('f_tipo_otro').value = '';
+        });
+
         /* ---- ¿Tiene responsabilidad política? Sí muestra los sub-campos, No los oculta y los limpia ---- */
         $('grpTieneResp').addEventListener('change', () => {
             const si = document.querySelector('input[name="tieneResp"]:checked')?.value === 'si';
@@ -257,6 +283,15 @@
             if (!apellido) { err('Escribe el apellido.', 'f_apellido'); return; }
             if (!cedula || cedula.length < 4) { err('Escribe una cédula válida.', 'f_cedula'); return; }
 
+            const tipoElegido = document.querySelector('input[name="tipoAtencion"]:checked');
+            if (!tipoElegido) { err('Indica qué tipo de atención recibiste.'); return; }
+            let tipoAtencion = tipoElegido.value;
+            if (tipoAtencion === 'Otro') {
+                const otro = v('f_tipo_otro');
+                if (!otro) { err('Escribe cuál fue el tipo de atención.', 'f_tipo_otro'); return; }
+                tipoAtencion = otro;
+            }
+
             const tieneResp = document.querySelector('input[name="tieneResp"]:checked');
             if (!tieneResp) { err('Indica si tienes o no responsabilidad política.'); return; }
             const si = tieneResp.value === 'si';
@@ -274,6 +309,7 @@
             const payload = {
                 nombre, apellido, cedula, nacionalidad: nac,
                 telefono: v('f_telefono'), fecha_nacimiento: v('f_fecha_nac'),
+                tipo_atencion: tipoAtencion,
                 tiene_responsabilidad_politica: si,
                 responsabilidad_cual: si ? responsabilidad.cual : null,
                 responsabilidad_parroquia: si ? responsabilidad.parroquia : null,

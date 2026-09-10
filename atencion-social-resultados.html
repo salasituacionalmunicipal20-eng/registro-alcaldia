@@ -110,9 +110,10 @@
                     <button id="btnPdf" class="btn-exp" style="background:#0a2351;">📄 Descargar PDF</button>
                 </div>
                 <div class="filtros">
-                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, teléfono, responsabilidad, comunidad…" autocomplete="off" /></div>
+                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, teléfono, tipo de atención, responsabilidad, comunidad…" autocomplete="off" /></div>
                     <div><label>Desde</label><input id="fDesde" type="date" /></div>
                     <div><label>Hasta</label><input id="fHasta" type="date" /></div>
+                    <div><label>Tipo de atención</label><select id="fTipo"><option value="">Todos</option></select></div>
                     <div><label>Parroquia (responsabilidad)</label><select id="fParroquia"><option value="">Todas</option></select></div>
                     <div><label>Responsabilidad política</label><select id="fResp"><option value="">Todos</option><option value="si">Sí tiene</option><option value="no">No tiene</option></select></div>
                     <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
@@ -123,7 +124,7 @@
                         <thead>
                             <tr>
                                 <th>Fecha</th><th>Nombre y apellido</th><th>Cédula</th><th>Teléfono</th>
-                                <th>Edad</th><th>Responsabilidad política</th><th>Registrado por</th><th></th>
+                                <th>Edad</th><th>Tipo de atención</th><th>Responsabilidad política</th><th></th>
                             </tr>
                         </thead>
                         <tbody id="tbody"></tbody>
@@ -222,7 +223,7 @@
             }, () => { REGS = []; render(); });
         });
 
-        const FILTROS = ['fBuscar', 'fDesde', 'fHasta', 'fParroquia', 'fResp'];
+        const FILTROS = ['fBuscar', 'fDesde', 'fHasta', 'fTipo', 'fParroquia', 'fResp'];
         FILTROS.forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
         $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => $(id).value = ''); pagina = 1; render(); });
         $('tileHoy').addEventListener('click', () => { const h = hoyISO(); const act = $('fDesde').value === h && $('fHasta').value === h; $('fDesde').value = act ? '' : h; $('fHasta').value = act ? '' : h; pagina = 1; render(); });
@@ -233,21 +234,27 @@
             const arr = [...new Set(REGS.map(r => r.responsabilidad_parroquia).filter(Boolean))].sort();
             el.innerHTML = '<option value="">Todas</option>' + arr.map(x => `<option>${esc(x)}</option>`).join('');
             if (prev) el.value = prev;
+
+            const elT = $('fTipo'), prevT = elT.value;
+            const arrT = [...new Set(REGS.map(r => r.tipo_atencion).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+            elT.innerHTML = '<option value="">Todos</option>' + arrT.map(x => `<option>${esc(x)}</option>`).join('');
+            if (prevT) elT.value = prevT;
         }
 
         function filtrados() {
             const q = ($('fBuscar').value || '').trim().toLowerCase();
             const desde = $('fDesde').value, hasta = $('fHasta').value;
-            const par = $('fParroquia').value, resp = $('fResp').value;
+            const par = $('fParroquia').value, resp = $('fResp').value, tipo = $('fTipo').value;
             return REGS.filter(r => {
                 const dia = fechaDia(r.fecha_registro);
                 if (desde && dia < desde) return false;
                 if (hasta && dia > hasta) return false;
                 if (par && r.responsabilidad_parroquia !== par) return false;
+                if (tipo && r.tipo_atencion !== tipo) return false;
                 if (resp === 'si' && !r.tiene_responsabilidad_politica) return false;
                 if (resp === 'no' && r.tiene_responsabilidad_politica) return false;
                 if (q) {
-                    const txt = [r.nombre, r.apellido, r.cedula, r.telefono, r.responsabilidad_cual,
+                    const txt = [r.nombre, r.apellido, r.cedula, r.telefono, r.tipo_atencion, r.responsabilidad_cual,
                                  comunidadDe(r), r.registrado_por_nombre].filter(Boolean).join(' ').toLowerCase();
                     if (!txt.includes(q)) return false;
                 }
@@ -285,9 +292,9 @@
                         <td>${esc((r.nacionalidad || 'V') + '-' + (r.cedula || ''))}</td>
                         <td>${esc(r.telefono || '—')}</td>
                         <td>${edad == null ? '—' : edad}</td>
+                        <td>${esc(r.tipo_atencion || '—')}</td>
                         <td><span class="pill ${r.tiene_responsabilidad_politica ? 'p-si' : 'p-no'}">${r.tiene_responsabilidad_politica ? 'Sí' : 'No'}</span>
                             ${r.tiene_responsabilidad_politica ? `<br /><span style="font-size:12px;color:#64748b;">${esc(respTexto(r))}</span>` : ''}</td>
-                        <td style="font-size:12.5px;color:#64748b;">${esc(r.registrado_por_nombre || '—')}</td>
                         <td style="white-space:nowrap;">
                             <button class="btn-ver" data-id="${esc(r.id)}">Ver</button>
                             <button class="btn-del" data-del="${esc(r.id)}">🗑️</button>
@@ -326,6 +333,8 @@
                 ${fila('Teléfono', r.telefono)}
                 ${fila('Fecha de nacimiento', r.fecha_nacimiento)}
                 ${fila('Edad', edad == null ? null : edad + ' años')}
+                <h4>Tipo de atención</h4>
+                ${fila('Tipo', r.tipo_atencion)}
                 ${r.tiene_responsabilidad_politica ? `
                 <h4>Responsabilidad política</h4>
                 ${fila('Cuál', r.responsabilidad_cual)}
@@ -351,10 +360,10 @@
             const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
 
             const hdr = ['Fecha', 'Nombre', 'Apellido', 'Cédula', 'Nacionalidad', 'Teléfono', 'Fecha de nacimiento',
-                'Edad', '¿Responsabilidad política?', 'Cuál', 'Parroquia', 'Comuna', 'Comunidad', 'Otro lugar', 'Registrado por'];
+                'Edad', 'Tipo de atención', '¿Responsabilidad política?', 'Cuál', 'Parroquia', 'Comuna', 'Comunidad', 'Otro lugar', 'Registrado por'];
             const filas = lista.map(r => [
                 fechaDia(r.fecha_registro), r.nombre || '', r.apellido || '', r.cedula || '', r.nacionalidad || 'V',
-                r.telefono || '', r.fecha_nacimiento || '', calcularEdad(r.fecha_nacimiento) ?? '',
+                r.telefono || '', r.fecha_nacimiento || '', calcularEdad(r.fecha_nacimiento) ?? '', r.tipo_atencion || '',
                 r.tiene_responsabilidad_politica ? 'Sí' : 'No', r.responsabilidad_cual || '',
                 r.responsabilidad_parroquia || '', r.responsabilidad_comuna || '', r.responsabilidad_comunidad || '',
                 r.responsabilidad_otro_lugar || '', r.registrado_por_nombre || ''
@@ -377,7 +386,7 @@
                 setS(rr, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...((rr % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}) });
             }
             ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr.length - 1 } }];
-            ws['!cols'] = [12, 18, 18, 13, 12, 16, 15, 8, 16, 26, 18, 22, 22, 20, 22].map(w => ({ wch: w }));
+            ws['!cols'] = [12, 18, 18, 13, 12, 16, 15, 8, 20, 16, 26, 18, 22, 22, 20, 22].map(w => ({ wch: w }));
             ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: hdr.length - 1 } }) };
 
             const wb = XLSX.utils.book_new();
@@ -422,22 +431,24 @@
                 _safePdf(fechaDia(r.fecha_registro)), _safePdf(r.nombre), _safePdf(r.apellido),
                 _safePdf((r.nacionalidad || 'V') + '-' + (r.cedula || '')), _safePdf(r.telefono || '-'),
                 calcularEdad(r.fecha_nacimiento) == null ? '-' : String(calcularEdad(r.fecha_nacimiento)),
+                _safePdf(r.tipo_atencion || '-'),
                 _safePdf(r.tiene_responsabilidad_politica ? 'Si' : 'No'),
-                _safePdf(r.responsabilidad_cual || '-'), _safePdf(comunidadDe(r) || '-'),
-                _safePdf(r.registrado_por_nombre || '-')
+                _safePdf(r.responsabilidad_cual || '-'), _safePdf(comunidadDe(r) || '-')
             ]);
 
-            // Carta horizontal deja ~251mm utiles: 20+30+30+18+24+12+14+35+38+30 = 251.
+            // Carta horizontal deja ~251mm utiles: 20+28+28+18+22+11+26+13+35+38 = 239 (queda margen).
+            // Se quita "Registrado por" -ahora siempre dice "Formulario publico", ya no aporta nada-
+            // y en su lugar entra "Tipo de atencion".
             jsPDF.API.autoTable.call(doc, {
                 startY: 42, margin: { top: 42, bottom: 16, left: 14, right: 14 },
-                head: [['Fecha', 'Nombre', 'Apellido', 'Cédula', 'Teléfono', 'Edad', '¿Resp.?', 'Cuál', 'Comunidad', 'Registrado por']],
+                head: [['Fecha', 'Nombre', 'Apellido', 'Cédula', 'Teléfono', 'Edad', 'Tipo de atención', '¿Resp.?', 'Cuál', 'Comunidad']],
                 body: cuerpo, theme: 'grid',
                 styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.5, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
                 headStyles: { fillColor: [10, 35, 81], textColor: 255, fontStyle: 'bold' },
                 columnStyles: {
-                    0: { cellWidth: 20 }, 1: { cellWidth: 30 }, 2: { cellWidth: 30 }, 3: { cellWidth: 18 },
-                    4: { cellWidth: 24 }, 5: { cellWidth: 12, halign: 'right' }, 6: { cellWidth: 14 },
-                    7: { cellWidth: 35 }, 8: { cellWidth: 38 }, 9: { cellWidth: 30 }
+                    0: { cellWidth: 20 }, 1: { cellWidth: 28 }, 2: { cellWidth: 28 }, 3: { cellWidth: 18 },
+                    4: { cellWidth: 22 }, 5: { cellWidth: 11, halign: 'right' }, 6: { cellWidth: 26 },
+                    7: { cellWidth: 13 }, 8: { cellWidth: 35 }, 9: { cellWidth: 38 }
                 },
                 didDrawPage: drawHF
             });
