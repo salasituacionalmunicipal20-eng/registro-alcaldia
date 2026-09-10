@@ -627,6 +627,32 @@
           "$other":          { ".validate": false }
         }
       }
+    },
+
+    "pc_operadores": {
+      ".read": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
+      "$uid": {
+        ".write": "auth != null && root.child('pc_operadores').child(auth.uid).child('rol').val() === 'admin_plus'",
+        "cambio_obligatorio": {
+          ".write": "auth != null && ($uid === auth.uid || root.child('pc_operadores').child(auth.uid).child('rol').val() === 'admin_plus')",
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+    "pc_informes": {
+      ".read": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
+      ".indexOn": ["fecha_registro"],
+      "$id": {
+        ".write": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
+        ".validate": "newData.hasChildren(['propietario', 'ubicacion']) && newData.child('propietario').hasChildren(['nombres_apellidos'])"
+      }
+    },
+    "pc_bitacora": {
+      ".read": "auth != null && root.child('pc_operadores').child(auth.uid).child('rol').val() === 'admin_plus'",
+      ".indexOn": ["fecha"],
+      "$id": {
+        ".write": "auth != null && root.child('pc_operadores').child(auth.uid).exists() && !data.exists()"
+      }
     }
   }
 }
