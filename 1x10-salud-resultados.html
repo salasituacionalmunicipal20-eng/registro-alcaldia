@@ -1091,7 +1091,7 @@
                         <td>${escapeHtml(fmtFechaCorta(j.fecha_registro))}</td>
                         <td>
                             <button class="btn-fila ver" data-action="ver" data-ced="${escapeHtml(j.cedula || '')}">Ver Afines</button>
-                            <button class="btn-fila" data-action="ficha" data-ced="${escapeHtml(j.cedula || '')}" style="background:#0f766e;color:#fff;">Ficha</button>
+                            <button class="btn-fila" data-action="ficha" data-ced="${escapeHtml(j.cedula || '')}" style="background:#0f766e;color:#fff;">🖨️ Imprimir</button>
                             <button class="btn-fila del" data-action="del" data-ced="${escapeHtml(j.cedula || '')}">Eliminar</button>
                         </td>
                     </tr>
@@ -2106,7 +2106,7 @@
         }
 
         // ── LA FICHA: una hoja por jefe ───────────────────────────
-        function generarPdfFichas(lista, nombreArchivo) {
+        function generarPdfFichas(lista, nombreArchivo, modo) {
             if (!window.jspdf || !window.jspdf.jsPDF) {
                 alert('La librería de PDF no cargó. Revisa tu conexión a internet y recarga la página.');
                 return;
@@ -2350,14 +2350,19 @@
                 doc.setTextColor(150, 150, 150);
                 doc.text(_safePdf('Pagina ' + i + ' de ' + total), pageW / 2, pageH - 6, { align: 'center' });
             }
-            doc.save(nombreArchivo);
+            if (modo === 'imprimir') {
+                doc.autoPrint();
+                window.open(doc.output('bloburl'), '_blank');
+            } else {
+                doc.save(nombreArchivo);
+            }
         }
 
         function fichaDeUnJefe(cedula) {
             const j = getJefesArray().find(x => String(x.cedula) === String(cedula));
             if (!j) { alert('No se encontró ese jefe 1x10.'); return; }
             const slug = String(j.cedula || 'jefe').replace(/[^0-9A-Za-z]/g, '');
-            generarPdfFichas([j], ARCHIVO_1x10 + '_ficha_' + slug + '.pdf');
+            generarPdfFichas([j], ARCHIVO_1x10 + '_ficha_' + slug + '.pdf', 'imprimir');
         }
 
         function fichasDeTodos() {
