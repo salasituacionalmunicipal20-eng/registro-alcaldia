@@ -177,6 +177,9 @@
         const respTexto = (r) => r.tiene_responsabilidad_politica
             ? [r.responsabilidad_cual, comunidadDe(r)].filter(Boolean).join(' — ')
             : 'No tiene';
+        // "Salud" trae un detalle aparte (con medicamento o solo consulta).
+        // Se junta en un solo texto para no abrir otra columna en la tabla y el PDF.
+        const tipoConDetalle = (r) => [r.tipo_atencion, r.salud_detalle].filter(Boolean).join(' — ');
         const fechaDia = (ts) => { if (!ts) return ''; const d = new Date(ts), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
         const fechaLarga = (ts) => ts ? new Date(ts).toLocaleString('es-VE', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
         const hoyISO = () => fechaDia(Date.now());
@@ -254,7 +257,7 @@
                 if (resp === 'si' && !r.tiene_responsabilidad_politica) return false;
                 if (resp === 'no' && r.tiene_responsabilidad_politica) return false;
                 if (q) {
-                    const txt = [r.nombre, r.apellido, r.cedula, r.telefono, r.tipo_atencion, r.responsabilidad_cual,
+                    const txt = [r.nombre, r.apellido, r.cedula, r.telefono, r.tipo_atencion, r.salud_detalle, r.responsabilidad_cual,
                                  comunidadDe(r), r.registrado_por_nombre].filter(Boolean).join(' ').toLowerCase();
                     if (!txt.includes(q)) return false;
                 }
@@ -292,7 +295,7 @@
                         <td>${esc((r.nacionalidad || 'V') + '-' + (r.cedula || ''))}</td>
                         <td>${esc(r.telefono || '—')}</td>
                         <td>${edad == null ? '—' : edad}</td>
-                        <td>${esc(r.tipo_atencion || '—')}</td>
+                        <td>${esc(tipoConDetalle(r) || '—')}</td>
                         <td><span class="pill ${r.tiene_responsabilidad_politica ? 'p-si' : 'p-no'}">${r.tiene_responsabilidad_politica ? 'Sí' : 'No'}</span>
                             ${r.tiene_responsabilidad_politica ? `<br /><span style="font-size:12px;color:#64748b;">${esc(respTexto(r))}</span>` : ''}</td>
                         <td style="white-space:nowrap;">
@@ -335,6 +338,7 @@
                 ${fila('Edad', edad == null ? null : edad + ' años')}
                 <h4>Tipo de atención</h4>
                 ${fila('Tipo', r.tipo_atencion)}
+                ${r.salud_detalle ? fila('Detalle', r.salud_detalle) : ''}
                 ${r.tiene_responsabilidad_politica ? `
                 <h4>Responsabilidad política</h4>
                 ${fila('Cuál', r.responsabilidad_cual)}
@@ -360,10 +364,10 @@
             const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
 
             const hdr = ['Fecha', 'Nombre', 'Apellido', 'Cédula', 'Nacionalidad', 'Teléfono', 'Fecha de nacimiento',
-                'Edad', 'Tipo de atención', '¿Responsabilidad política?', 'Cuál', 'Parroquia', 'Comuna', 'Comunidad', 'Otro lugar', 'Registrado por'];
+                'Edad', 'Tipo de atención', 'Detalle de salud', '¿Responsabilidad política?', 'Cuál', 'Parroquia', 'Comuna', 'Comunidad', 'Otro lugar', 'Registrado por'];
             const filas = lista.map(r => [
                 fechaDia(r.fecha_registro), r.nombre || '', r.apellido || '', r.cedula || '', r.nacionalidad || 'V',
-                r.telefono || '', r.fecha_nacimiento || '', calcularEdad(r.fecha_nacimiento) ?? '', r.tipo_atencion || '',
+                r.telefono || '', r.fecha_nacimiento || '', calcularEdad(r.fecha_nacimiento) ?? '', r.tipo_atencion || '', r.salud_detalle || '',
                 r.tiene_responsabilidad_politica ? 'Sí' : 'No', r.responsabilidad_cual || '',
                 r.responsabilidad_parroquia || '', r.responsabilidad_comuna || '', r.responsabilidad_comunidad || '',
                 r.responsabilidad_otro_lugar || '', r.registrado_por_nombre || ''
@@ -386,7 +390,7 @@
                 setS(rr, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...((rr % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}) });
             }
             ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr.length - 1 } }];
-            ws['!cols'] = [12, 18, 18, 13, 12, 16, 15, 8, 20, 16, 26, 18, 22, 22, 20, 22].map(w => ({ wch: w }));
+            ws['!cols'] = [12, 18, 18, 13, 12, 16, 15, 8, 20, 22, 16, 26, 18, 22, 22, 20, 22].map(w => ({ wch: w }));
             ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: hdr.length - 1 } }) };
 
             const wb = XLSX.utils.book_new();
@@ -431,7 +435,7 @@
                 _safePdf(fechaDia(r.fecha_registro)), _safePdf(r.nombre), _safePdf(r.apellido),
                 _safePdf((r.nacionalidad || 'V') + '-' + (r.cedula || '')), _safePdf(r.telefono || '-'),
                 calcularEdad(r.fecha_nacimiento) == null ? '-' : String(calcularEdad(r.fecha_nacimiento)),
-                _safePdf(r.tipo_atencion || '-'),
+                _safePdf(tipoConDetalle(r) || '-'),
                 _safePdf(r.tiene_responsabilidad_politica ? 'Si' : 'No'),
                 _safePdf(r.responsabilidad_cual || '-'), _safePdf(comunidadDe(r) || '-')
             ]);
