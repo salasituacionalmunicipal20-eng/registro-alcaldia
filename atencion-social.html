@@ -86,6 +86,21 @@
                 <label>🎂 Fecha de nacimiento</label>
                 <input id="f_fecha_nac" type="date" />
                 <div class="edad-linea" id="edadTxt"></div>
+
+                <label>📍 Parroquia</label>
+                <select id="f_parroquia"><option value="">Selecciona la parroquia</option></select>
+                <div id="campoComuna" class="hidden">
+                    <label>📍 Comuna</label>
+                    <select id="f_comuna"><option value="">Selecciona la comuna</option></select>
+                </div>
+                <div id="campoComunidad" class="hidden">
+                    <label>📍 Comunidad</label>
+                    <select id="f_comunidad"><option value="">Selecciona la comunidad</option></select>
+                </div>
+                <div id="campoOtro" class="hidden">
+                    <label>📍 Escribe la comuna y comunidad <span class="hint">(no aparece en la lista)</span></label>
+                    <input id="f_otro_lugar" placeholder="Comuna / comunidad" autocomplete="off" />
+                </div>
             </div>
 
             <div class="card">
@@ -266,7 +281,30 @@
         const comunidadesDe = (par, com) => Object.values(T()).filter(c => c.activo && c.parroquia === par && c.circuito_comunal === com).map(c => c.nombre).sort((a, b) => a.localeCompare(b, 'es'));
         const opts = (sel, arr, ph) => { sel.innerHTML = `<option value="">${ph}</option>` + arr.map(x => `<option>${esc(x)}</option>`).join('') + '<option value="OTRO">OTRO / No aparece</option>'; };
 
-        window.addEventListener('DOMContentLoaded', () => { opts($('f_resp_parroquia'), parroquias(), 'Selecciona la parroquia'); });
+        window.addEventListener('DOMContentLoaded', () => {
+            opts($('f_parroquia'), parroquias(), 'Selecciona la parroquia');
+            opts($('f_resp_parroquia'), parroquias(), 'Selecciona la parroquia');
+        });
+
+        /* ---- Cascada territorial de la PERSONA (se le pregunta a todos,
+               tenga o no responsabilidad política) ---- */
+        $('f_parroquia').addEventListener('change', () => {
+            const par = v('f_parroquia');
+            $('campoComuna').classList.toggle('hidden', !par);
+            $('campoComunidad').classList.add('hidden');
+            $('campoOtro').classList.toggle('hidden', par !== 'OTRO');
+            if (par && par !== 'OTRO') opts($('f_comuna'), comunasDe(par), 'Selecciona la comuna');
+        });
+        $('f_comuna').addEventListener('change', () => {
+            const par = v('f_parroquia'), com = v('f_comuna');
+            const otro = (com === 'OTRO');
+            $('campoOtro').classList.toggle('hidden', !otro);
+            $('campoComunidad').classList.toggle('hidden', !com || otro);
+            if (com && !otro) opts($('f_comunidad'), comunidadesDe(par, com), 'Selecciona la comunidad');
+        });
+        $('f_comunidad').addEventListener('change', () => {
+            $('campoOtro').classList.toggle('hidden', v('f_comunidad') !== 'OTRO');
+        });
 
         $('f_resp_parroquia').addEventListener('change', () => {
             const par = v('f_resp_parroquia');
@@ -327,6 +365,11 @@
             const payload = {
                 nombre, apellido, cedula, nacionalidad: nac,
                 telefono: v('f_telefono'), fecha_nacimiento: v('f_fecha_nac'),
+                /* Dónde vive la persona. Se le pregunta a todo el mundo, no
+                   solo a quien tiene responsabilidad política: es lo que
+                   permite cruzar la atención social con el territorio. */
+                parroquia: v('f_parroquia'), comuna: v('f_comuna'),
+                comunidad: v('f_comunidad'), otro_lugar: v('f_otro_lugar'),
                 tipo_atencion: tipoAtencion,
                 salud_detalle: saludDetalle,
                 tiene_responsabilidad_politica: si,

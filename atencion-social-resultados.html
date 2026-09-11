@@ -174,6 +174,12 @@
         }
         const comunidadDe = (r) => [r.responsabilidad_comunidad, r.responsabilidad_comuna, r.responsabilidad_parroquia]
             .filter(Boolean).filter(x => x !== 'OTRO').join(' · ') || (r.responsabilidad_otro_lugar || '');
+        /* Dónde vive la persona. Es distinto de comunidadDe(): aquella es la
+           comunidad donde ejerce su responsabilidad política, y solo la tienen
+           algunos. Esta se le pregunta a todo el mundo. Los registros viejos
+           no la traen, por eso en los filtros se cae a la otra como respaldo. */
+        const ubicacionDe = (r) => [r.comunidad, r.comuna, r.parroquia]
+            .filter(Boolean).filter(x => x !== 'OTRO').join(' · ') || (r.otro_lugar || '');
         const respTexto = (r) => r.tiene_responsabilidad_politica
             ? [r.responsabilidad_cual, comunidadDe(r)].filter(Boolean).join(' — ')
             : 'No tiene';
@@ -234,7 +240,7 @@
 
         function poblarFiltros() {
             const el = $('fParroquia'), prev = el.value;
-            const arr = [...new Set(REGS.map(r => r.responsabilidad_parroquia).filter(Boolean))].sort();
+            const arr = [...new Set(REGS.map(r => r.parroquia || r.responsabilidad_parroquia).filter(Boolean))].sort();
             el.innerHTML = '<option value="">Todas</option>' + arr.map(x => `<option>${esc(x)}</option>`).join('');
             if (prev) el.value = prev;
 
@@ -252,13 +258,13 @@
                 const dia = fechaDia(r.fecha_registro);
                 if (desde && dia < desde) return false;
                 if (hasta && dia > hasta) return false;
-                if (par && r.responsabilidad_parroquia !== par) return false;
+                if (par && (r.parroquia || r.responsabilidad_parroquia) !== par) return false;
                 if (tipo && r.tipo_atencion !== tipo) return false;
                 if (resp === 'si' && !r.tiene_responsabilidad_politica) return false;
                 if (resp === 'no' && r.tiene_responsabilidad_politica) return false;
                 if (q) {
                     const txt = [r.nombre, r.apellido, r.cedula, r.telefono, r.tipo_atencion, r.salud_detalle, r.responsabilidad_cual,
-                                 comunidadDe(r), r.registrado_por_nombre].filter(Boolean).join(' ').toLowerCase();
+                                 ubicacionDe(r), comunidadDe(r), r.registrado_por_nombre].filter(Boolean).join(' ').toLowerCase();
                     if (!txt.includes(q)) return false;
                 }
                 return true;
@@ -270,7 +276,7 @@
             $('stTotal').textContent = REGS.length;
             $('stHoy').textContent = REGS.filter(r => fechaDia(r.fecha_registro) === h).length;
             $('stResp').textContent = REGS.filter(r => r.tiene_responsabilidad_politica).length;
-            $('stComunidades').textContent = new Set(REGS.map(r => r.responsabilidad_comunidad).filter(Boolean)).size;
+            $('stComunidades').textContent = new Set(REGS.map(r => r.comunidad || r.responsabilidad_comunidad).filter(Boolean)).size;
             $('tileHoy').classList.toggle('activo', $('fDesde').value === h && $('fHasta').value === h);
             $('tileResp').classList.toggle('activo', $('fResp').value === 'si');
 
@@ -336,6 +342,11 @@
                 ${fila('Teléfono', r.telefono)}
                 ${fila('Fecha de nacimiento', r.fecha_nacimiento)}
                 ${fila('Edad', edad == null ? null : edad + ' años')}
+                <h4>Dónde vive</h4>
+                ${fila('Parroquia', r.parroquia)}
+                ${fila('Comuna', r.comuna)}
+                ${fila('Comunidad', r.comunidad)}
+                ${r.otro_lugar ? fila('Otro lugar', r.otro_lugar) : ''}
                 <h4>Tipo de atención</h4>
                 ${fila('Tipo', r.tipo_atencion)}
                 ${r.salud_detalle ? fila('Detalle', r.salud_detalle) : ''}
@@ -363,11 +374,19 @@
             const NAVY = '0A2351', GRIS = '64748B', ZEBRA = 'F1F5F9', TEXTO = '0F172A';
             const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
 
+            /* OJO: encabezados, filas y anchos tienen que tener SIEMPRE la
+               misma cantidad de elementos (21). Si no cuadran, el Excel sale
+               con los datos bajo la columna equivocada y sin ningún error. */
             const hdr = ['Fecha', 'Nombre', 'Apellido', 'Cédula', 'Nacionalidad', 'Teléfono', 'Fecha de nacimiento',
-                'Edad', 'Tipo de atención', 'Detalle de salud', '¿Responsabilidad política?', 'Cuál', 'Parroquia', 'Comuna', 'Comunidad', 'Otro lugar', 'Registrado por'];
+                'Edad',
+                'Parroquia', 'Comuna', 'Comunidad', 'Otro lugar',
+                'Tipo de atención', 'Detalle de salud', '¿Responsabilidad política?', 'Cuál',
+                'Parroquia (resp.)', 'Comuna (resp.)', 'Comunidad (resp.)', 'Otro lugar (resp.)', 'Registrado por'];
             const filas = lista.map(r => [
                 fechaDia(r.fecha_registro), r.nombre || '', r.apellido || '', r.cedula || '', r.nacionalidad || 'V',
-                r.telefono || '', r.fecha_nacimiento || '', calcularEdad(r.fecha_nacimiento) ?? '', r.tipo_atencion || '', r.salud_detalle || '',
+                r.telefono || '', r.fecha_nacimiento || '', calcularEdad(r.fecha_nacimiento) ?? '',
+                r.parroquia || '', r.comuna || '', r.comunidad || '', r.otro_lugar || '',
+                r.tipo_atencion || '', r.salud_detalle || '',
                 r.tiene_responsabilidad_politica ? 'Sí' : 'No', r.responsabilidad_cual || '',
                 r.responsabilidad_parroquia || '', r.responsabilidad_comuna || '', r.responsabilidad_comunidad || '',
                 r.responsabilidad_otro_lugar || '', r.registrado_por_nombre || ''
@@ -390,7 +409,7 @@
                 setS(rr, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...((rr % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}) });
             }
             ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr.length - 1 } }];
-            ws['!cols'] = [12, 18, 18, 13, 12, 16, 15, 8, 20, 22, 16, 26, 18, 22, 22, 20, 22].map(w => ({ wch: w }));
+            ws['!cols'] = [12, 18, 18, 13, 12, 16, 15, 8, 16, 20, 22, 20, 20, 22, 16, 26, 18, 22, 22, 20, 22].map(w => ({ wch: w }));
             ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: hdr.length - 1 } }) };
 
             const wb = XLSX.utils.book_new();
@@ -437,7 +456,11 @@
                 calcularEdad(r.fecha_nacimiento) == null ? '-' : String(calcularEdad(r.fecha_nacimiento)),
                 _safePdf(tipoConDetalle(r) || '-'),
                 _safePdf(r.tiene_responsabilidad_politica ? 'Si' : 'No'),
-                _safePdf(r.responsabilidad_cual || '-'), _safePdf(comunidadDe(r) || '-')
+                /* Se muestra dónde VIVE la persona, que ahora se le pregunta a
+                   todos. Los registros viejos no la traen: para esos se cae a
+                   la comunidad de su responsabilidad política, que es lo único
+                   que se les preguntó en su momento. */
+                _safePdf(r.responsabilidad_cual || '-'), _safePdf(ubicacionDe(r) || comunidadDe(r) || '-')
             ]);
 
             // Carta horizontal deja ~251mm utiles: 20+28+28+18+22+11+26+13+35+38 = 239 (queda margen).
