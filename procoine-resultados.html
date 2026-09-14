@@ -177,13 +177,17 @@
         const soloFechaISO = (ms) => { const d = new Date(ms), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
         const hoyISO = () => soloFechaISO(Date.now());
 
+        // Hasta 3 instituciones donde requiere el cupo: se guardan en 3 campos sueltos,
+        // pero se muestran y se filtran como una sola lista.
+        const institucionesCupoDe = (r) => [r.est_institucion_requiere, r.est_institucion_requiere_2, r.est_institucion_requiere_3]
+            .filter(Boolean);
+
         const CAMPOS_PDF = [
             ['rep_nombre', 'Nombre y apellido del representante'], ['rep_cedula', 'Cédula del representante'],
             ['rep_direccion', 'Dirección'], ['rep_telefono', 'Teléfono del representante'],
             ['est_nombre', 'Nombre y apellido del estudiante'], ['est_grado', 'Grado que cursa'],
             ['est_cedula', 'Cédula del estudiante'], ['est_edad', 'Edad'], ['est_fecha_nac', 'Fecha de nacimiento'],
             ['est_institucion_estudia', 'Institución donde estudia'],
-            ['est_institucion_requiere', 'Institución donde requiere el cupo'],
             ['est_extranjero', '¿Es extranjero?'], ['est_telefono', 'Teléfono del estudiante']
         ];
 
@@ -237,7 +241,7 @@
                 if (prev) el.value = prev;
             };
             setSel('fGrado', [...new Set(REGS.map(r => r.est_grado).filter(Boolean))].sort());
-            setSel('fInstitucion', [...new Set(REGS.map(r => r.est_institucion_requiere).filter(Boolean))].sort());
+            setSel('fInstitucion', [...new Set(REGS.flatMap(institucionesCupoDe))].sort());
         }
 
         function filtrados() {
@@ -250,14 +254,14 @@
                 if (desde && f < desde) return false;
                 if (hasta && f > hasta) return false;
                 if (grado && r.est_grado !== grado) return false;
-                if (inst && r.est_institucion_requiere !== inst) return false;
+                if (inst && !institucionesCupoDe(r).includes(inst)) return false;
                 if (ext && (r.est_extranjero || 'No') !== ext) return false;
                 if (ate === 'ok' && !r.atendido) return false;
                 if (ate === 'pend' && r.atendido) return false;
                 if (q) {
                     const txt = [r.rep_nombre, r.rep_cedula, r.rep_direccion, r.rep_telefono,
                                  r.est_nombre, r.est_grado, r.est_cedula, r.est_institucion_estudia,
-                                 r.est_institucion_requiere, r.est_telefono]
+                                 ...institucionesCupoDe(r), r.est_telefono]
                         .filter(Boolean).join(' ').toLowerCase();
                     if (!txt.includes(q)) return false;
                 }
@@ -271,7 +275,7 @@
             $('stHoy').textContent = REGS.filter(r => r.fecha_registro && soloFechaISO(r.fecha_registro) === h).length;
             $('stExtranjero').textContent = REGS.filter(r => r.est_extranjero === 'Sí').length;
             $('stPend').textContent = REGS.filter(r => !r.atendido).length;
-            $('stInstituciones').textContent = new Set(REGS.map(r => r.est_institucion_requiere).filter(Boolean)).size;
+            $('stInstituciones').textContent = new Set(REGS.flatMap(institucionesCupoDe)).size;
             $('tileHoy').classList.toggle('activo', $('fDesde').value === h && $('fHasta').value === h);
             $('tileExtranjero').classList.toggle('activo', $('fExtranjero').value === 'Sí');
             $('tilePend').classList.toggle('activo', $('fAtendido').value === 'pend');
@@ -293,7 +297,7 @@
                         <td><b>${esc(fechaTxt(r))}</b></td>
                         <td>${esc(r.est_nombre || '—')}<br /><span style="color:#64748b;font-size:12px;">${esc(r.est_grado || '')}</span></td>
                         <td>${esc(r.rep_nombre || '—')}<br /><span style="color:#64748b;font-size:12px;">${[r.rep_cedula, r.rep_telefono].filter(Boolean).map(x => esc(x)).join(' · ')}</span></td>
-                        <td style="font-size:12.5px;">${esc(r.est_institucion_requiere || '—')}</td>
+                        <td style="font-size:12.5px;">${institucionesCupoDe(r).map(x => esc(x)).join('<br />') || '—'}</td>
                         <td>${r.est_extranjero === 'Sí' ? '<span class="pill p-extranjero">🌎 Sí</span>' : 'No'}</td>
                         <td><span class="pill ${r.atendido ? 'p-ok' : 'p-pend'}">${r.atendido ? '✓ Atendido' : 'Pendiente'}</span></td>
                         <td style="white-space:nowrap;">
@@ -344,7 +348,7 @@
                 ${fila('Nombre y apellido', r.est_nombre)}${fila('Grado que cursa', r.est_grado)}${fila('Cédula', r.est_cedula)}
                 ${fila('Edad', r.est_edad)}${fila('Fecha de nacimiento', r.est_fecha_nac)}
                 ${fila('Institución donde estudia', r.est_institucion_estudia)}
-                ${fila('Institución donde requiere el cupo', r.est_institucion_requiere)}
+                ${fila('Institución(es) donde requiere el cupo', institucionesCupoDe(r).join(' · '))}
                 ${fila('¿Es extranjero?', r.est_extranjero)}${fila('Teléfono', r.est_telefono)}
                 <button class="btn-pdf-modal" id="btnPdfModal">📄 Descargar el formulario completo en PDF</button>
                 <button class="cerrar" id="cerrarModal">Cerrar</button>`;
@@ -364,12 +368,12 @@
 
             const hdr = ['Fecha de registro', 'Estado', 'Representante', 'Cédula representante', 'Dirección', 'Teléfono representante',
                 'Estudiante', 'Grado', 'Cédula estudiante', 'Edad', 'Fecha de nacimiento', 'Institución donde estudia',
-                'Institución donde requiere el cupo', 'Extranjero', 'Teléfono estudiante'];
+                'Institución(es) donde requiere el cupo', 'Extranjero', 'Teléfono estudiante'];
             const filas = lista.map(r => [
                 fechaTxt(r), r.atendido ? 'Atendido' : 'Pendiente',
                 r.rep_nombre || '', r.rep_cedula || '', r.rep_direccion || '', r.rep_telefono || '',
                 r.est_nombre || '', r.est_grado || '', r.est_cedula || '', r.est_edad != null ? r.est_edad : '',
-                r.est_fecha_nac || '', r.est_institucion_estudia || '', r.est_institucion_requiere || '',
+                r.est_fecha_nac || '', r.est_institucion_estudia || '', institucionesCupoDe(r).join(' / '),
                 r.est_extranjero || 'No', r.est_telefono || ''
             ]);
 
@@ -441,7 +445,7 @@
             const body = lista.map(r => [
                 _safePdf(fechaTxt(r)), _safePdf(r.est_nombre || '-'), _safePdf(r.est_grado || '-'),
                 _safePdf(r.rep_nombre || '-'), _safePdf(r.rep_cedula || '-'), _safePdf(r.rep_telefono || '-'),
-                _safePdf(r.est_institucion_requiere || '-'), _safePdf(r.est_extranjero || 'No'),
+                _safePdf(institucionesCupoDe(r).join(' / ') || '-'), _safePdf(r.est_extranjero || 'No'),
                 _safePdf(r.atendido ? 'Atendido' : 'Pendiente')
             ]);
 
@@ -464,6 +468,9 @@
             const cuerpo = CAMPOS_PDF
                 .filter(c => !(c[0] === 'est_edad' && r.est_edad == null) && !(c[0] === 'est_fecha_nac' && !r.est_fecha_nac))
                 .map(c => [_safePdf(c[1]), _safePdf(r[c[0]] != null && r[c[0]] !== '' ? r[c[0]] : '-')]);
+            const idxInst = cuerpo.findIndex(f => f[0] === _safePdf('Institución donde estudia'));
+            cuerpo.splice(idxInst + 1, 0,
+                [_safePdf('Institución(es) donde requiere el cupo'), _safePdf(institucionesCupoDe(r).join(' / ') || '-')]);
 
             window.jspdf.jsPDF.API.autoTable.call(doc, {
                 startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 },

@@ -21,6 +21,7 @@
         input:focus, textarea:focus, select:focus { border-color: #db2777; background: #fff; }
         .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         @media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+        .cupo-input + .cupo-input { margin-top: 8px; }
         .ops { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
         .op { display: flex; align-items: center; gap: 10px; padding: 12px 13px; border: 1.5px solid #cbd5e1; border-radius: 9px; background: #f8fafc; cursor: pointer; font-size: 14.5px; font-weight: 600; color: #334155; }
         .op input { width: 19px; height: 19px; flex: none; accent-color: #db2777; padding: 0; }
@@ -80,8 +81,11 @@
                 <input id="e_fecha_nac" type="date" />
                 <label>📌 Institución donde estudia</label>
                 <input id="e_inst_estudia" placeholder="Nombre del plantel actual" autocomplete="off" />
-                <label>📌 Institución donde requiere el cupo</label>
-                <input id="e_inst_requiere" placeholder="Nombre del plantel donde necesita el cupo" autocomplete="off" />
+                <label>📌 Institución donde requiere el cupo <span style="font-weight:400;color:#94a3b8;">(hasta 3 opciones)</span></label>
+                <div id="cupoLista">
+                    <input class="cupo-input" placeholder="Opción 1: nombre del plantel donde necesita el cupo" autocomplete="off" />
+                </div>
+                <button type="button" id="btnAgregarCupo" style="width:100%;background:#fdf2f8;color:#9d174d;border:1.5px dashed #fbcfe8;border-radius:9px;padding:10px;font-size:13.5px;font-weight:700;cursor:pointer;margin-top:8px;">+ Agregar otra opción</button>
                 <label>📌 Teléfono</label>
                 <input id="e_telefono" placeholder="0414-0000000" autocomplete="off" inputmode="tel" />
 
@@ -141,6 +145,22 @@
         $('grpExtranjero').addEventListener('change', pintarExtranjero);
         pintarExtranjero();
 
+        // ---- Institución donde requiere el cupo: hasta 3 opciones, se van agregando ----
+        const MAX_CUPOS = 3;
+        $('btnAgregarCupo').addEventListener('click', () => {
+            const actuales = $('cupoLista').querySelectorAll('.cupo-input').length;
+            if (actuales >= MAX_CUPOS) return;
+            const nuevo = document.createElement('input');
+            nuevo.className = 'cupo-input';
+            nuevo.autocomplete = 'off';
+            nuevo.placeholder = 'Opción ' + (actuales + 1) + ': nombre del plantel donde necesita el cupo';
+            $('cupoLista').appendChild(nuevo);
+            nuevo.focus();
+            if (actuales + 1 >= MAX_CUPOS) $('btnAgregarCupo').style.display = 'none';
+        });
+        const institucionesCupo = () => [...$('cupoLista').querySelectorAll('.cupo-input')]
+            .map(i => i.value.trim()).filter(Boolean).slice(0, MAX_CUPOS);
+
         const marcado = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
 
         $('btnEnviar').addEventListener('click', async () => {
@@ -155,11 +175,15 @@
             if (!eNombre) { err('Escribe el nombre del estudiante.', 'e_nombre'); return; }
             if (!eGrado) { err('Escribe el grado que cursa el estudiante.', 'e_grado'); return; }
 
+            const cupos = institucionesCupo();
             const payload = {
                 rep_nombre: rNombre, rep_cedula: rCedula, rep_direccion: v('r_direccion'), rep_telefono: rTelefono,
                 est_nombre: eNombre, est_grado: eGrado, est_cedula: v('e_cedula'),
                 est_fecha_nac: v('e_fecha_nac'),
-                est_institucion_estudia: v('e_inst_estudia'), est_institucion_requiere: v('e_inst_requiere'),
+                est_institucion_estudia: v('e_inst_estudia'),
+                est_institucion_requiere: cupos[0] || '',
+                est_institucion_requiere_2: cupos[1] || '',
+                est_institucion_requiere_3: cupos[2] || '',
                 est_extranjero: marcado('extranjero') || 'No', est_telefono: v('e_telefono'),
                 atendido: false,
                 fecha_registro: Date.now(), registrado_por: 'Formulario público'
