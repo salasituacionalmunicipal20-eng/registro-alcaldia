@@ -188,6 +188,15 @@
         const institucionesCupoDe = (r) => [r.est_institucion_requiere, r.est_institucion_requiere_2, r.est_institucion_requiere_3]
             .filter(Boolean);
 
+        // Misma llave anti-duplicados que usa el formulario público (procoine.html):
+        // se usa aquí solo para liberarla cuando el admin borra un registro.
+        const normalizarTexto = (s) => (s || '')
+            .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+            .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        const claveDedupDe = (r) => r.est_cedula
+            ? { nodo: 'procoine_cedulas', clave: r.est_cedula }
+            : { nodo: 'procoine_sin_cedula', clave: (r.rep_cedula || '') + '_' + normalizarTexto(r.est_nombre) };
+
         const CAMPOS_PDF = [
             ['rep_nombre', 'Nombre y apellido del representante'], ['rep_cedula', 'Cédula del representante'],
             ['rep_direccion', 'Dirección'], ['rep_telefono', 'Teléfono del representante'],
@@ -348,8 +357,13 @@
         async function borrar(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
             if (!confirm(`¿Borrar la inscripción de "${r.est_nombre || ''}"?`)) return;
-            try { await remove(ref(database, NODO + '/' + id)); }
-            catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
+            try {
+                await remove(ref(database, NODO + '/' + id));
+                // Se libera la cédula (o el nombre, si no tenía cédula) para que esa persona
+                // pueda volver a inscribirse si hacía falta.
+                const { nodo, clave } = claveDedupDe(r);
+                await remove(ref(database, nodo + '/' + clave)).catch(() => {});
+            } catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
         }
 
         function verDetalle(id) {

@@ -127,6 +127,20 @@
         "$other":                   { ".validate": false }
       }
     },
+    "procoine_cedulas": {
+      "$cedula": {
+        ".read": true,
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "newData.isNumber()"
+      }
+    },
+    "procoine_sin_cedula": {
+      "$clave": {
+        ".read": true,
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "newData.isNumber()"
+      }
+    },
     "refugiados_cedulas": {
       "$cedula": {
         ".read": true,

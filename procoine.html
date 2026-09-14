@@ -119,7 +119,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
@@ -163,6 +163,17 @@
 
         const marcado = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
 
+        // ---- Para no inscribir a la misma persona dos veces ----
+        // Si el estudiante tiene cédula, esa es la llave. Si no la tiene (muchos niños no
+        // tienen cédula todavía), se usa la cédula del representante + el nombre del
+        // estudiante, normalizado (sin acentos, minúsculas, solo letras/números).
+        const normalizarTexto = (s) => (s || '')
+            .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+            .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        const claveDedup = (rCedula, eCedula, eNombre) => eCedula
+            ? { nodo: 'procoine_cedulas', clave: eCedula }
+            : { nodo: 'procoine_sin_cedula', clave: rCedula + '_' + normalizarTexto(eNombre) };
+
         $('btnEnviar').addEventListener('click', async () => {
             const m = $('msg');
             const err = (t, foco) => { m.textContent = t; m.className = 'msg err'; if (foco) $(foco).focus(); };
@@ -191,15 +202,42 @@
             const edadNum = Number(v('e_edad'));
             if (v('e_edad') && Number.isFinite(edadNum) && edadNum >= 0 && edadNum <= 30) payload.est_edad = edadNum;
 
-            $('btnEnviar').disabled = true; $('btnEnviar').textContent = 'Enviando…';
+            const { nodo, clave } = claveDedup(rCedula, v('e_cedula'), eNombre);
+
+            $('btnEnviar').disabled = true; $('btnEnviar').textContent = 'Verificando…';
             try {
+                // Aviso rápido antes de intentar guardar (no es la protección real, solo evita
+                // el viaje de más si ya se sabe que existe).
+                const yaExiste = await get(ref(database, nodo + '/' + clave));
+                if (yaExiste.exists()) {
+                    err(v('e_cedula')
+                        ? 'Este estudiante (cédula ' + v('e_cedula') + ') ya está inscrito en PROCOINE. Si crees que es un error, contacta a la Sala Situacional.'
+                        : 'Ya existe una inscripción con este mismo nombre de estudiante y representante. Si crees que es un error, contacta a la Sala Situacional.');
+                    $('btnEnviar').disabled = false; $('btnEnviar').textContent = 'Enviar inscripción';
+                    return;
+                }
+            } catch (e) { /* si falla la verificación, se sigue: la reclamación de abajo protege igual */ }
+
+            $('btnEnviar').textContent = 'Enviando…';
+            try {
+                // Se reclama la llave ANTES de guardar el registro: la regla de Firebase
+                // solo deja escribirla una vez, así que dos envíos al mismo tiempo (o un
+                // reintento) no pueden colarse los dos -esa es la protección de verdad,
+                // no el chequeo de arriba, que solo evita el viaje si ya se sabía-.
+                await set(ref(database, nodo + '/' + clave), Date.now());
                 const nuevo = push(ref(database, 'procoine'));
                 await set(nuevo, payload);
                 $('formWrap').style.display = 'none';
                 $('okScreen').style.display = 'block';
                 window.scrollTo(0, 0);
             } catch (e) {
-                err('No se pudo enviar (' + (e.message || e.code || 'error') + '). Revisa tu conexión e intenta de nuevo.');
+                if ((e.code || '') === 'PERMISSION_DENIED') {
+                    err(v('e_cedula')
+                        ? 'Este estudiante ya está inscrito en PROCOINE.'
+                        : 'Ya existe una inscripción con este mismo nombre de estudiante y representante.');
+                } else {
+                    err('No se pudo enviar (' + (e.message || e.code || 'error') + '). Revisa tu conexión e intenta de nuevo.');
+                }
                 $('btnEnviar').disabled = false; $('btnEnviar').textContent = 'Enviar inscripción';
             }
         });
