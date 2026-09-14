@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PROCOINE — Resultados</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #0a2351; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-nav { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .btn-nav:hover { background: rgba(255,255,255,0.25); }
+        .wrap { max-width: 1240px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card.share { border-top: 5px solid #db2777; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; }
+        .btn-exp { border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 8px 0; color: #fff; }
+        .filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; align-items: end; }
+        .filtros .full { grid-column: 1 / -1; }
+        .stats-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+        .stat { display: inline-block; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; }
+        .stat .num { font-size: 22px; font-weight: 800; color: #0a2351; }
+        .stat-btn { cursor: pointer; transition: background .15s, border-color .15s; }
+        .stat-btn:hover { background: #fdf2f8; border-color: #fbcfe8; }
+        .stat-btn.activo { background: #fdf2f8; border-color: #db2777; box-shadow: 0 0 0 2px #fbcfe8 inset; }
+        .live { font-size: 12px; font-weight: 700; color: #16a34a; }
+        .live .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
+        tbody tr:hover { background: #f8fafc; }
+        .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .btn-pdf1 { background: #fdf2f8; color: #9d174d; border: 1px solid #fbcfe8; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .btn-ok { background: #dcfce7; color: #166534; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .btn-del { background: #fee2e2; color: #b91c1c; border: none; border-radius: 6px; padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: 4px; }
+        .pill { display: inline-block; border-radius: 999px; padding: 2px 9px; font-size: 11.5px; font-weight: 800; white-space: nowrap; }
+        .p-ok { background: #dcfce7; color: #166534; }
+        .p-pend { background: #f1f5f9; color: #475569; }
+        .p-extranjero { background: #fef3c7; color: #92400e; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #0a2351; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #fff; border-radius: 12px; max-width: 700px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+        .modal h3 { color: #0a2351; font-size: 18px; margin-bottom: 12px; }
+        .modal h4 { color: #db2777; font-size: 13px; text-transform: uppercase; letter-spacing: .3px; margin: 16px 0 6px; }
+        .fila { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid #eef2f7; font-size: 14px; }
+        .fila .k { font-weight: 700; color: #475569; min-width: 200px; }
+        .fila .val { color: #0f172a; white-space: pre-wrap; }
+        .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; }
+        .btn-pdf-modal { background: #db2777; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px; width: 100%; }
+    </style>
+    <script src="autofresh.js"></script>
+</head>
+<body>
+    <div class="topbar">
+        <h1>📌 PROCOINE — Resultados</h1>
+        <div class="acciones">
+            <a class="btn-nav" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden"><h2 style="color:#b91c1c;">Acceso restringido</h2><p>Solo para administradores.</p></div>
+
+        <div id="contenido" class="hidden">
+            <div class="card share">
+                <h2>📣 Compartir el formulario</h2>
+                <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;">
+                    <img id="qr" width="150" height="150" style="border:1px solid #e2e8f0;border-radius:8px;" alt="QR" />
+                    <div style="flex:1;min-width:240px;">
+                        <p style="color:#475569;font-size:14px;margin-bottom:8px;">Comparte este enlace o el QR para que representantes inscriban a sus estudiantes en PROCOINE:</p>
+                        <div style="font-size:22px;font-weight:800;color:#db2777;margin-bottom:10px;" id="shortTxt">—</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button id="btnCopiar" class="btn-exp" style="background:#0a2351;">📋 Copiar enlace</button>
+                            <a id="btnWa" class="btn-exp" style="background:#16a34a;text-decoration:none;display:inline-block;" target="_blank" rel="noopener">💬 WhatsApp</a>
+                            <a id="btnQrDl" class="btn-exp" style="background:#db2777;text-decoration:none;display:inline-block;" download="qr-procoine.png">⬇️ Descargar QR</a>
+                        </div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:8px;">Enlace completo: <span id="fullTxt"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Resumen <span class="live" style="margin-left:10px;"><span class="dot"></span> en vivo</span></h2>
+                <div class="stats-row">
+                    <div class="stat"><span class="num" id="stTotal">—</span> <span style="color:#64748b;font-size:12px;">inscripciones</span></div>
+                    <div class="stat stat-btn" id="tileHoy" title="Ver solo las de hoy"><span class="num" id="stHoy" style="color:#0a6cb0;">—</span> <span style="color:#64748b;font-size:12px;">📅 hoy</span></div>
+                    <div class="stat stat-btn" id="tileExtranjero" title="Ver solo extranjeros"><span class="num" id="stExtranjero" style="color:#b45309;">—</span> <span style="color:#64748b;font-size:12px;">🌎 extranjeros</span></div>
+                    <div class="stat stat-btn" id="tilePend" title="Ver solo las pendientes"><span class="num" id="stPend" style="color:#b45309;">—</span> <span style="color:#64748b;font-size:12px;">⏳ pendientes</span></div>
+                    <div class="stat"><span class="num" id="stInstituciones" style="color:#7c3aed;">—</span> <span style="color:#64748b;font-size:12px;">🏫 instituciones donde piden cupo</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Inscripciones recibidas</h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
+                    <button id="btnResumenPdf" class="btn-exp" style="background:#0a2351;">🖨️ Imprimir resumen (PDF)</button>
+                    <button id="btnTodosPdf" class="btn-exp" style="background:#db2777;">📄 Formulario completo de cada uno (PDF)</button>
+                </div>
+                <div class="filtros">
+                    <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Estudiante, representante, cédula, institución…" autocomplete="off" /></div>
+                    <div><label>Desde</label><input id="fDesde" type="date" /></div>
+                    <div><label>Hasta</label><input id="fHasta" type="date" /></div>
+                    <div><label>Grado</label><select id="fGrado"><option value="">Todos</option></select></div>
+                    <div><label>Institución donde requiere el cupo</label><select id="fInstitucion"><option value="">Todas</option></select></div>
+                    <div><label>Extranjero</label><select id="fExtranjero"><option value="">Todos</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
+                    <div><label>Estado</label><select id="fAtendido"><option value="">Todos</option><option value="pend">Pendientes</option><option value="ok">Atendidos</option></select></div>
+                    <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
+                </div>
+                <p id="filtroInfo" style="font-size:12.5px;color:#64748b;margin:10px 0;"></p>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Registro</th><th>Estudiante</th><th>Representante</th>
+                                <th>Institución (cupo)</th><th>Extranjero</th><th>Estado</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, get, child, remove, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+        const NODO = 'procoine';
+        const URL_FORM = 'https://salasituacional.alcaldiadecharallave.com/procoine.html';
+        // TinyURL con alias propio, no da.gd: da.gd le muestra a cada visitante nuevo de un
+        // enlace recien creado una pantalla de advertencia sobre phishing antes de redirigir.
+        const URL_CORTO = 'https://tinyurl.com/procoinecharallave';
+
+        const fechaDe = (r) => r.fecha_registro ? new Date(r.fecha_registro) : null;
+        const fechaTxt = (r) => { const d = fechaDe(r); return d ? d.toLocaleString('es-VE', { dateStyle: 'medium', timeStyle: 'short' }) : '—'; };
+        const soloFechaISO = (ms) => { const d = new Date(ms), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+        const hoyISO = () => soloFechaISO(Date.now());
+
+        const CAMPOS_PDF = [
+            ['rep_nombre', 'Nombre y apellido del representante'], ['rep_cedula', 'Cédula del representante'],
+            ['rep_direccion', 'Dirección'], ['rep_telefono', 'Teléfono del representante'],
+            ['est_nombre', 'Nombre y apellido del estudiante'], ['est_grado', 'Grado que cursa'],
+            ['est_cedula', 'Cédula del estudiante'], ['est_edad', 'Edad'], ['est_fecha_nac', 'Fecha de nacimiento'],
+            ['est_institucion_estudia', 'Institución donde estudia'],
+            ['est_institucion_requiere', 'Institución donde requiere el cupo'],
+            ['est_extranjero', '¿Es extranjero?'], ['est_telefono', 'Teléfono del estudiante']
+        ];
+
+        let REGS = [], pagina = 1; const TAM = 30;
+
+        // ---- Compartir ----
+        $('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(URL_CORTO)}`;
+        $('shortTxt').textContent = URL_CORTO.replace('https://', '');
+        $('fullTxt').textContent = URL_FORM;
+        $('btnWa').href = `https://wa.me/?text=${encodeURIComponent('📌 INSCRIPCIÓN EN PROCOINE — Inscribe a tu representado (Sala Situacional, Cristóbal Rojas): ' + URL_CORTO)}`;
+        $('btnQrDl').href = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&download=1&data=${encodeURIComponent(URL_CORTO)}`;
+        $('btnCopiar').addEventListener('click', async () => {
+            try { await navigator.clipboard.writeText(URL_CORTO); $('btnCopiar').textContent = '✓ Copiado'; setTimeout(() => $('btnCopiar').textContent = '📋 Copiar enlace', 1800); }
+            catch (e) { prompt('Copia el enlace:', URL_CORTO); }
+        });
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch (e) {} location.href = 'index.html'; });
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let permitido = esSuper;
+            if (!esSuper) {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    permitido = snap.exists() && snap.val().rol === 'admin';
+                } catch (e) { permitido = false; }
+            }
+            $('loader').classList.add('hidden');
+            if (!permitido) { $('acceso-restringido').classList.remove('hidden'); return; }
+            $('contenido').classList.remove('hidden');
+            onValue(ref(database, NODO), (snap) => {
+                const val = snap.val() || {};
+                REGS = Object.entries(val).map(([id, m]) => ({ id, ...m }))
+                    .sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
+                poblarFiltros(); render();
+            }, () => { REGS = []; render(); });
+        });
+
+        // ---- Filtros ----
+        const FILTROS = ['fBuscar', 'fDesde', 'fHasta', 'fGrado', 'fInstitucion', 'fExtranjero', 'fAtendido'];
+        FILTROS.forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
+        $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => $(id).value = ''); pagina = 1; render(); });
+        $('tileHoy').addEventListener('click', () => { const h = hoyISO(); const act = $('fDesde').value === h && $('fHasta').value === h; $('fDesde').value = act ? '' : h; $('fHasta').value = act ? '' : h; pagina = 1; render(); });
+        $('tileExtranjero').addEventListener('click', () => { $('fExtranjero').value = $('fExtranjero').value === 'Sí' ? '' : 'Sí'; pagina = 1; render(); });
+        $('tilePend').addEventListener('click', () => { $('fAtendido').value = $('fAtendido').value === 'pend' ? '' : 'pend'; pagina = 1; render(); });
+
+        function poblarFiltros() {
+            const setSel = (id, arr) => {
+                const el = $(id), prev = el.value, ph = el.querySelector('option').textContent;
+                el.innerHTML = `<option value="">${ph}</option>` + arr.map(x => `<option>${esc(x)}</option>`).join('');
+                if (prev) el.value = prev;
+            };
+            setSel('fGrado', [...new Set(REGS.map(r => r.est_grado).filter(Boolean))].sort());
+            setSel('fInstitucion', [...new Set(REGS.map(r => r.est_institucion_requiere).filter(Boolean))].sort());
+        }
+
+        function filtrados() {
+            const q = ($('fBuscar').value || '').trim().toLowerCase();
+            const desde = $('fDesde').value, hasta = $('fHasta').value;
+            const grado = $('fGrado').value, inst = $('fInstitucion').value;
+            const ext = $('fExtranjero').value, ate = $('fAtendido').value;
+            return REGS.filter(r => {
+                const f = r.fecha_registro ? soloFechaISO(r.fecha_registro) : '';
+                if (desde && f < desde) return false;
+                if (hasta && f > hasta) return false;
+                if (grado && r.est_grado !== grado) return false;
+                if (inst && r.est_institucion_requiere !== inst) return false;
+                if (ext && (r.est_extranjero || 'No') !== ext) return false;
+                if (ate === 'ok' && !r.atendido) return false;
+                if (ate === 'pend' && r.atendido) return false;
+                if (q) {
+                    const txt = [r.rep_nombre, r.rep_cedula, r.rep_direccion, r.rep_telefono,
+                                 r.est_nombre, r.est_grado, r.est_cedula, r.est_institucion_estudia,
+                                 r.est_institucion_requiere, r.est_telefono]
+                        .filter(Boolean).join(' ').toLowerCase();
+                    if (!txt.includes(q)) return false;
+                }
+                return true;
+            });
+        }
+
+        function render() {
+            const h = hoyISO();
+            $('stTotal').textContent = REGS.length;
+            $('stHoy').textContent = REGS.filter(r => r.fecha_registro && soloFechaISO(r.fecha_registro) === h).length;
+            $('stExtranjero').textContent = REGS.filter(r => r.est_extranjero === 'Sí').length;
+            $('stPend').textContent = REGS.filter(r => !r.atendido).length;
+            $('stInstituciones').textContent = new Set(REGS.map(r => r.est_institucion_requiere).filter(Boolean)).size;
+            $('tileHoy').classList.toggle('activo', $('fDesde').value === h && $('fHasta').value === h);
+            $('tileExtranjero').classList.toggle('activo', $('fExtranjero').value === 'Sí');
+            $('tilePend').classList.toggle('activo', $('fAtendido').value === 'pend');
+
+            const lista = filtrados();
+            $('filtroInfo').textContent = (lista.length === REGS.length)
+                ? `Mostrando las ${REGS.length} inscripción(es).`
+                : `Mostrando ${lista.length} de ${REGS.length} inscripción(es) con los filtros aplicados.`;
+
+            const tot = Math.max(1, Math.ceil(lista.length / TAM));
+            if (pagina > tot) pagina = tot;
+            const pag = lista.slice((pagina - 1) * TAM, pagina * TAM);
+            const tb = $('tbody');
+
+            if (!pag.length) {
+                tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:34px;color:#94a3b8;">Sin inscripciones con estos filtros.</td></tr>';
+            } else {
+                tb.innerHTML = pag.map(r => `<tr>
+                        <td><b>${esc(fechaTxt(r))}</b></td>
+                        <td>${esc(r.est_nombre || '—')}<br /><span style="color:#64748b;font-size:12px;">${esc(r.est_grado || '')}</span></td>
+                        <td>${esc(r.rep_nombre || '—')}<br /><span style="color:#64748b;font-size:12px;">${[r.rep_cedula, r.rep_telefono].filter(Boolean).map(x => esc(x)).join(' · ')}</span></td>
+                        <td style="font-size:12.5px;">${esc(r.est_institucion_requiere || '—')}</td>
+                        <td>${r.est_extranjero === 'Sí' ? '<span class="pill p-extranjero">🌎 Sí</span>' : 'No'}</td>
+                        <td><span class="pill ${r.atendido ? 'p-ok' : 'p-pend'}">${r.atendido ? '✓ Atendido' : 'Pendiente'}</span></td>
+                        <td style="white-space:nowrap;">
+                            <button class="btn-ver" data-id="${esc(r.id)}">Ver</button>
+                            <button class="btn-pdf1" data-pdf="${esc(r.id)}" title="PDF completo de esta inscripción">📄 PDF</button>
+                            <button class="btn-ok" data-ok="${esc(r.id)}" title="${r.atendido ? 'Marcar como pendiente' : 'Marcar como atendido'}">${r.atendido ? '↺' : '✓'}</button>
+                            <button class="btn-del" data-del="${esc(r.id)}">🗑️</button>
+                        </td>
+                    </tr>`).join('');
+                tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
+                tb.querySelectorAll('button.btn-pdf1').forEach(b => b.addEventListener('click', () => pdfIndividual(b.dataset.pdf)));
+                tb.querySelectorAll('button.btn-ok').forEach(b => b.addEventListener('click', () => alternarAtendido(b.dataset.ok)));
+                tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.del)));
+            }
+
+            const pg = $('paginacion');
+            pg.innerHTML = tot <= 1 ? '' :
+                `<button ${pagina === 1 ? 'disabled' : ''} id="pgPrev">‹ Anterior</button>
+                 <span style="font-size:13px;color:#475569;">Página ${pagina} de ${tot}</span>
+                 <button ${pagina === tot ? 'disabled' : ''} id="pgNext">Siguiente ›</button>`;
+            if ($('pgPrev')) $('pgPrev').addEventListener('click', () => { pagina--; render(); });
+            if ($('pgNext')) $('pgNext').addEventListener('click', () => { pagina++; render(); });
+        }
+
+        async function alternarAtendido(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            try { await update(ref(database, NODO + '/' + id), { atendido: !r.atendido, atendido_en: Date.now() }); }
+            catch (e) { alert('No se pudo actualizar: ' + (e.message || e.code)); }
+        }
+
+        async function borrar(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            if (!confirm(`¿Borrar la inscripción de "${r.est_nombre || ''}"?`)) return;
+            try { await remove(ref(database, NODO + '/' + id)); }
+            catch (e) { alert('No se pudo borrar: ' + (e.message || e.code)); }
+        }
+
+        function verDetalle(id) {
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const fila = (k, val) => `<div class="fila"><span class="k">${esc(k)}</span><span class="val">${esc((val == null || val === '') ? '—' : val)}</span></div>`;
+            $('modal').innerHTML = `
+                <h3>Inscripción del ${esc(fechaTxt(r))}</h3>
+                <div><span class="pill ${r.atendido ? 'p-ok' : 'p-pend'}">${r.atendido ? '✓ Atendido' : 'Pendiente'}</span>
+                     ${r.est_extranjero === 'Sí' ? '<span class="pill p-extranjero">🌎 Extranjero</span>' : ''}</div>
+                <h4>Representante</h4>
+                ${fila('Nombre y apellido', r.rep_nombre)}${fila('Cédula', r.rep_cedula)}${fila('Dirección', r.rep_direccion)}${fila('Teléfono', r.rep_telefono)}
+                <h4>Estudiante</h4>
+                ${fila('Nombre y apellido', r.est_nombre)}${fila('Grado que cursa', r.est_grado)}${fila('Cédula', r.est_cedula)}
+                ${fila('Edad', r.est_edad)}${fila('Fecha de nacimiento', r.est_fecha_nac)}
+                ${fila('Institución donde estudia', r.est_institucion_estudia)}
+                ${fila('Institución donde requiere el cupo', r.est_institucion_requiere)}
+                ${fila('¿Es extranjero?', r.est_extranjero)}${fila('Teléfono', r.est_telefono)}
+                <button class="btn-pdf-modal" id="btnPdfModal">📄 Descargar el formulario completo en PDF</button>
+                <button class="cerrar" id="cerrarModal">Cerrar</button>`;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+            $('btnPdfModal').addEventListener('click', () => pdfIndividual(id));
+        }
+        $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
+
+        // ---------------------------------------------------------------- EXCEL
+        $('btnExcel').addEventListener('click', () => {
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay inscripciones que exportar con los filtros actuales.'); return; }
+            const ahora = new Date();
+            const NAVY = '0A2351', GRIS = '64748B', ZEBRA = 'F1F5F9', TEXTO = '0F172A';
+            const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
+
+            const hdr = ['Fecha de registro', 'Estado', 'Representante', 'Cédula representante', 'Dirección', 'Teléfono representante',
+                'Estudiante', 'Grado', 'Cédula estudiante', 'Edad', 'Fecha de nacimiento', 'Institución donde estudia',
+                'Institución donde requiere el cupo', 'Extranjero', 'Teléfono estudiante'];
+            const filas = lista.map(r => [
+                fechaTxt(r), r.atendido ? 'Atendido' : 'Pendiente',
+                r.rep_nombre || '', r.rep_cedula || '', r.rep_direccion || '', r.rep_telefono || '',
+                r.est_nombre || '', r.est_grado || '', r.est_cedula || '', r.est_edad != null ? r.est_edad : '',
+                r.est_fecha_nac || '', r.est_institucion_estudia || '', r.est_institucion_requiere || '',
+                r.est_extranjero || 'No', r.est_telefono || ''
+            ]);
+
+            const titulo = 'INSCRIPCIÓN EN PROCOINE';
+            const data = [
+                [titulo].concat(Array(hdr.length - 1).fill('')),
+                [`Generado ${ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' })} · ${filas.length} inscripción(es)`].concat(Array(hdr.length - 1).fill('')),
+                hdr, ...filas
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const setS = (rr, c, s) => { const a = XLSX.utils.encode_cell({ r: rr, c }); if (!ws[a]) ws[a] = { t: 's', v: '' }; ws[a].s = s; };
+            for (let c = 0; c < hdr.length; c++) {
+                setS(0, c, { font: { bold: true, sz: 15, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center' } });
+                setS(1, c, { font: { italic: true, sz: 10, color: { rgb: GRIS } }, alignment: { horizontal: 'center' } });
+                setS(2, c, { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', wrapText: true }, border: borde });
+            }
+            for (let rr = 3; rr < data.length; rr++) for (let c = 0; c < hdr.length; c++) {
+                setS(rr, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...((rr % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}) });
+            }
+            ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr.length - 1 } }];
+            ws['!cols'] = [20, 11, 24, 14, 26, 16, 24, 12, 14, 8, 14, 24, 26, 11, 16].map(w => ({ wch: w }));
+            ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: hdr.length - 1 } }) };
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Inscripciones');
+            guardarXlsx(wb, `procoine_${ahora.toISOString().slice(0, 10)}.xlsx`);
+        });
+
+        // ------------------------------------------------------------------ PDF
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s); try { t = t.normalize('NFC'); } catch (e) {}
+            let out = '';
+            for (const ch of t) {
+                const c = ch.codePointAt(0);
+                if (c === 0x201C || c === 0x201D || c === 0x2033) out += '"';
+                else if (c === 0x2018 || c === 0x2019 || c === 0x2032) out += "'";
+                else if (c === 0x2013 || c === 0x2014) out += '-';
+                else if (c === 0x2026) out += '...';
+                else if (c === 0x00A0) out += ' ';
+                else if (c < 32 || c === 127) out += ' ';
+                else if (c <= 255) out += ch;
+                else out += '';
+            }
+            return out.replace(/ {2,}/g, ' ').trim();
+        }
+
+        function _pdfListo() {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('jsPDF no cargó.'); return null; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('autoTable no cargó.'); return null; }
+            return jsPDF;
+        }
+
+        // ---- Resumen: una tabla compacta, una fila por inscripción (para imprimir) ----
+        $('btnResumenPdf').addEventListener('click', () => {
+            const jsPDF = _pdfListo(); if (!jsPDF) return;
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay inscripciones que exportar con los filtros actuales.'); return; }
+
+            const doc = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'landscape' });
+            const drawHF = () => {
+                dibujarHeaderPDF(doc, { titulo: 'Inscripcion en PROCOINE - Resumen', subtitulo: _safePdf(lista.length + ' inscripcion(es)') });
+                dibujarFooterPDF(doc);
+            };
+            drawHF();
+
+            const head = [['Fecha', 'Estudiante', 'Grado', 'Representante', 'Cedula rep.', 'Telefono', 'Institucion (cupo)', 'Extranjero', 'Estado']];
+            const body = lista.map(r => [
+                _safePdf(fechaTxt(r)), _safePdf(r.est_nombre || '-'), _safePdf(r.est_grado || '-'),
+                _safePdf(r.rep_nombre || '-'), _safePdf(r.rep_cedula || '-'), _safePdf(r.rep_telefono || '-'),
+                _safePdf(r.est_institucion_requiere || '-'), _safePdf(r.est_extranjero || 'No'),
+                _safePdf(r.atendido ? 'Atendido' : 'Pendiente')
+            ]);
+
+            jsPDF.API.autoTable.call(doc, {
+                startY: 55, margin: { top: 55, bottom: 16, left: 10, right: 10 },
+                head, body, theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.6, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, overflow: 'linebreak' },
+                headStyles: { fillColor: [219, 39, 119], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+                alternateRowStyles: { fillColor: [253, 242, 248] },
+                didDrawPage: drawHF
+            });
+            doc.save('procoine_resumen_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        });
+
+        // ---- Una inscripción, completa, en su propia página (para una sola persona) ----
+        function _dibujarBloqueIndividual(doc, drawHF, r, i, total) {
+            if (i > 0) doc.addPage();
+            const cab = _safePdf('INSCRIPCION ' + (i + 1) + ' de ' + total + '  -  ' + fechaTxt(r) +
+                '  -  ' + (r.atendido ? 'ATENDIDO' : 'PENDIENTE'));
+            const cuerpo = CAMPOS_PDF
+                .filter(c => !(c[0] === 'est_edad' && r.est_edad == null) && !(c[0] === 'est_fecha_nac' && !r.est_fecha_nac))
+                .map(c => [_safePdf(c[1]), _safePdf(r[c[0]] != null && r[c[0]] !== '' ? r[c[0]] : '-')]);
+
+            window.jspdf.jsPDF.API.autoTable.call(doc, {
+                startY: 55, margin: { top: 55, bottom: 16, left: 14, right: 14 },
+                head: [[{ content: cab, colSpan: 2 }]],
+                body: cuerpo, theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 9.5, cellPadding: 2, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' },
+                headStyles: { fillColor: [219, 39, 119], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 10 },
+                columnStyles: { 0: { cellWidth: 65, fontStyle: 'bold', fillColor: [253, 242, 248] }, 1: { cellWidth: 121 } },
+                didDrawPage: drawHF
+            });
+        }
+
+        function pdfIndividual(id) {
+            const jsPDF = _pdfListo(); if (!jsPDF) return;
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => {
+                dibujarHeaderPDF(doc, { titulo: 'Inscripcion en PROCOINE', subtitulo: _safePdf(r.est_nombre || '') });
+                dibujarFooterPDF(doc);
+            };
+            drawHF();
+            _dibujarBloqueIndividual(doc, drawHF, r, 0, 1);
+            doc.save('procoine_' + (r.est_nombre || 'inscripcion').toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.pdf');
+        }
+
+        // ---- El formulario completo de todos los filtrados, uno por pagina ----
+        $('btnTodosPdf').addEventListener('click', () => {
+            const jsPDF = _pdfListo(); if (!jsPDF) return;
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay inscripciones que exportar con los filtros actuales.'); return; }
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => {
+                dibujarHeaderPDF(doc, { titulo: 'Inscripcion en PROCOINE', subtitulo: _safePdf(lista.length + ' inscripcion(es), formulario completo') });
+                dibujarFooterPDF(doc);
+            };
+            drawHF();
+            lista.forEach((r, i) => _dibujarBloqueIndividual(doc, drawHF, r, i, lista.length));
+            doc.save('procoine_completo_' + new Date().toISOString().slice(0, 10) + '.pdf');
+        });
+
+        // Los escritores de SheetJS / xlsx-js-style NO saben congelar paneles: solo emiten
+        // <sheetView workbookViewId>, nunca <pane>. Aqui se abre el zip generado, se le inyecta
+        // el <pane> a cada hoja y se vuelve a cerrar. Si algo falla, cae al guardado normal.
+        function guardarXlsx(wb, nombre) {
+            try {
+                const filaHdr = (wb.SheetNames || []).map(function (n) {
+                    const ws = (wb.Sheets || {})[n] || {};
+                    const rf = ws['!autofilter'] && ws['!autofilter'].ref;
+                    const m = rf && /^[A-Za-z]+(\d+)/.exec(String(rf));
+                    return m ? Number(m[1]) : 0;
+                });
+                if (!filaHdr.some(Boolean)) throw new Error('ninguna hoja tiene filtro de referencia');
+                const cfb = XLSX.CFB.read(new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })), { type: 'array' });
+                let n = 0;
+                (cfb.FullPaths || []).forEach(function (ruta, i) {
+                    const mh = /\/xl\/worksheets\/sheet(\d+)\.xml$/.exec(ruta);
+                    if (!mh) return;
+                    const y = filaHdr[Number(mh[1]) - 1];
+                    const ent = cfb.FileIndex[i];
+                    if (!y || !ent || !ent.content) return;
+                    const celda = 'A' + (y + 1);
+                    const pane = '<pane ySplit="' + y + '" topLeftCell="' + celda + '" activePane="bottomLeft" state="frozen"/>'
+                        + '<selection pane="bottomLeft" activeCell="' + celda + '" sqref="' + celda + '"/>';
+                    let xml = new TextDecoder('utf-8').decode(new Uint8Array(ent.content));
+                    const antes = xml;
+                    xml = xml.replace(/(<sheetView[^>]*?)\/>/, '$1>' + pane + '</sheetView>');
+                    if (xml === antes) return;
+                    const b = new TextEncoder().encode(xml);
+                    ent.content = b; ent.size = b.length; n++;
+                });
+                if (!n) throw new Error('no se pudo inyectar el congelado');
+                const blob = new Blob([XLSX.CFB.write(cfb, { type: 'array', fileType: 'zip' })],
+                    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = nombre;
+                document.body.appendChild(a); a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+            } catch (e) {
+                XLSX.writeFile(wb, nombre);
+            }
+        }
+    </script>
+</body>
+</html>

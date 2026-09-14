@@ -100,6 +100,31 @@
         ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'"
       }
     },
+    "procoine": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      "$id": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "newData.hasChildren(['rep_nombre','rep_cedula','est_nombre','est_grado'])",
+        "rep_nombre":               { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "rep_cedula":               { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20" },
+        "rep_direccion":            { ".validate": "newData.isString() && newData.val().length <= 300" },
+        "rep_telefono":             { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "est_nombre":               { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200" },
+        "est_grado":                { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100" },
+        "est_cedula":               { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "est_edad":                 { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30" },
+        "est_fecha_nac":            { ".validate": "newData.isString() && newData.val().length <= 12" },
+        "est_institucion_estudia":  { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "est_institucion_requiere": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "est_extranjero":           { ".validate": "newData.isString() && newData.val().length <= 5" },
+        "est_telefono":             { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "atendido":                 { ".validate": "newData.isBoolean()" },
+        "atendido_en":              { ".validate": "newData.isNumber()" },
+        "fecha_registro":           { ".validate": "newData.isNumber()" },
+        "registrado_por":           { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "$other":                   { ".validate": false }
+      }
+    },
     "refugiados_cedulas": {
       "$cedula": {
         ".read": true,
