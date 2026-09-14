@@ -129,8 +129,14 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Registro</th><th>Estudiante</th><th>Representante</th>
-                                <th>Institución (cupo)</th><th>Extranjero</th><th>Estado</th><th></th>
+                                <th>Registro</th>
+                                <th>Nombre y apellido<br />(representante)</th><th>Cédula<br />(representante)</th>
+                                <th>Dirección</th><th>Teléfono<br />(representante)</th>
+                                <th>Nombre y apellido<br />(estudiante)</th><th>Grado que cursa</th>
+                                <th>Cédula<br />(estudiante)</th><th>Edad</th><th>Fecha de<br />nacimiento</th>
+                                <th>Institución donde<br />estudia</th><th>Institución(es) donde<br />requiere el cupo</th>
+                                <th>Teléfono<br />(estudiante)</th><th>Es extranjero</th>
+                                <th>Estado</th><th></th>
                             </tr>
                         </thead>
                         <tbody id="tbody"></tbody>
@@ -291,13 +297,22 @@
             const tb = $('tbody');
 
             if (!pag.length) {
-                tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:34px;color:#94a3b8;">Sin inscripciones con estos filtros.</td></tr>';
+                tb.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:34px;color:#94a3b8;">Sin inscripciones con estos filtros.</td></tr>';
             } else {
                 tb.innerHTML = pag.map(r => `<tr>
                         <td><b>${esc(fechaTxt(r))}</b></td>
-                        <td>${esc(r.est_nombre || '—')}<br /><span style="color:#64748b;font-size:12px;">${esc(r.est_grado || '')}</span></td>
-                        <td>${esc(r.rep_nombre || '—')}<br /><span style="color:#64748b;font-size:12px;">${[r.rep_cedula, r.rep_telefono].filter(Boolean).map(x => esc(x)).join(' · ')}</span></td>
+                        <td>${esc(r.rep_nombre || '—')}</td>
+                        <td>${esc(r.rep_cedula || '—')}</td>
+                        <td>${esc(r.rep_direccion || '—')}</td>
+                        <td>${esc(r.rep_telefono || '—')}</td>
+                        <td>${esc(r.est_nombre || '—')}</td>
+                        <td>${esc(r.est_grado || '—')}</td>
+                        <td>${esc(r.est_cedula || '—')}</td>
+                        <td>${r.est_edad != null ? esc(r.est_edad) : '—'}</td>
+                        <td>${esc(r.est_fecha_nac || '—')}</td>
+                        <td>${esc(r.est_institucion_estudia || '—')}</td>
                         <td style="font-size:12.5px;">${institucionesCupoDe(r).map(x => esc(x)).join('<br />') || '—'}</td>
+                        <td>${esc(r.est_telefono || '—')}</td>
                         <td>${r.est_extranjero === 'Sí' ? '<span class="pill p-extranjero">🌎 Sí</span>' : 'No'}</td>
                         <td><span class="pill ${r.atendido ? 'p-ok' : 'p-pend'}">${r.atendido ? '✓ Atendido' : 'Pendiente'}</span></td>
                         <td style="white-space:nowrap;">
