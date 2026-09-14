@@ -317,13 +317,15 @@
                         <td><span class="pill ${r.atendido ? 'p-ok' : 'p-pend'}">${r.atendido ? '✓ Atendido' : 'Pendiente'}</span></td>
                         <td style="white-space:nowrap;">
                             <button class="btn-ver" data-id="${esc(r.id)}">Ver</button>
-                            <button class="btn-pdf1" data-pdf="${esc(r.id)}" title="PDF completo de esta inscripción">📄 PDF</button>
+                            <button class="btn-pdf1" data-pdf="${esc(r.id)}" title="Descargar el PDF completo de esta inscripción">📄 PDF</button>
+                            <button class="btn-pdf1" data-imprimir="${esc(r.id)}" title="Imprimir esta inscripción completa">🖨️ Imprimir</button>
                             <button class="btn-ok" data-ok="${esc(r.id)}" title="${r.atendido ? 'Marcar como pendiente' : 'Marcar como atendido'}">${r.atendido ? '↺' : '✓'}</button>
                             <button class="btn-del" data-del="${esc(r.id)}">🗑️</button>
                         </td>
                     </tr>`).join('');
                 tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verDetalle(b.dataset.id)));
-                tb.querySelectorAll('button.btn-pdf1').forEach(b => b.addEventListener('click', () => pdfIndividual(b.dataset.pdf)));
+                tb.querySelectorAll('button[data-pdf]').forEach(b => b.addEventListener('click', () => pdfIndividual(b.dataset.pdf)));
+                tb.querySelectorAll('button[data-imprimir]').forEach(b => b.addEventListener('click', () => imprimirIndividual(b.dataset.imprimir)));
                 tb.querySelectorAll('button.btn-ok').forEach(b => b.addEventListener('click', () => alternarAtendido(b.dataset.ok)));
                 tb.querySelectorAll('button.btn-del').forEach(b => b.addEventListener('click', () => borrar(b.dataset.del)));
             }
@@ -365,10 +367,12 @@
                 ${fila('Institución donde estudia', r.est_institucion_estudia)}
                 ${fila('Institución(es) donde requiere el cupo', institucionesCupoDe(r).join(' · '))}
                 ${fila('¿Es extranjero?', r.est_extranjero)}${fila('Teléfono', r.est_telefono)}
+                <button class="btn-pdf-modal" id="btnImprimirModal" style="background:#0a2351;">🖨️ Imprimir esta inscripción completa</button>
                 <button class="btn-pdf-modal" id="btnPdfModal">📄 Descargar el formulario completo en PDF</button>
                 <button class="cerrar" id="cerrarModal">Cerrar</button>`;
             $('modalBg').classList.add('show');
             $('cerrarModal').addEventListener('click', () => $('modalBg').classList.remove('show'));
+            $('btnImprimirModal').addEventListener('click', () => imprimirIndividual(id));
             $('btnPdfModal').addEventListener('click', () => pdfIndividual(id));
         }
         $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) $('modalBg').classList.remove('show'); });
@@ -509,6 +513,22 @@
             drawHF();
             _dibujarBloqueIndividual(doc, drawHF, r, 0, 1);
             doc.save('procoine_' + (r.est_nombre || 'inscripcion').toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.pdf');
+        }
+
+        // ---- Imprimir una sola inscripción, completa: abre el PDF listo, con el diálogo de imprimir ya abierto ----
+        function imprimirIndividual(id) {
+            const jsPDF = _pdfListo(); if (!jsPDF) return;
+            const r = REGS.find(x => x.id === id); if (!r) return;
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const drawHF = () => {
+                dibujarHeaderPDF(doc, { titulo: 'Inscripcion en PROCOINE', subtitulo: _safePdf(r.est_nombre || '') });
+                dibujarFooterPDF(doc);
+            };
+            drawHF();
+            _dibujarBloqueIndividual(doc, drawHF, r, 0, 1);
+            doc.autoPrint();
+            const ventana = window.open(doc.output('bloburl'), '_blank');
+            if (!ventana) alert('El navegador bloqueó la ventana para imprimir. Permite las ventanas emergentes de este sitio e inténtalo de nuevo.');
         }
 
         // ---- El formulario completo de todos los filtrados, uno por pagina ----
