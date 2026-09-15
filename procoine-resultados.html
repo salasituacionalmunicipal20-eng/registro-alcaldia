@@ -61,9 +61,30 @@
         .fila .k { font-weight: 700; color: #475569; min-width: 200px; }
         .fila .val { color: #0f172a; white-space: pre-wrap; }
         .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; }
+        .clasif-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 16px; }
+        .clasif { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .clasif h3 { font-size: 13px; font-weight: 800; color: #0a2351; text-transform: uppercase; letter-spacing: .3px; padding: 10px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+        .clasif h3 small { font-weight: 600; color: #64748b; text-transform: none; letter-spacing: 0; }
+        .clasif .caja { max-height: 460px; overflow: auto; }
+        .tclasif { font-size: 13px; }
+        .tclasif th { position: sticky; top: 0; z-index: 1; }
+        .tclasif td { padding: 6px 10px; vertical-align: middle; }
+        .tclasif tr.fila-clic { cursor: pointer; }
+        .tclasif tr.fila-clic:hover { background: #fdf2f8; }
+        .tclasif tr.activa { background: #fce7f3; box-shadow: inset 3px 0 0 #db2777; }
+        .tclasif tr.nivel td { background: #eef2ff; font-weight: 800; color: #0a2351; }
+        .tclasif .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .barra { height: 8px; border-radius: 99px; background: #f1f5f9; min-width: 60px; }
+        .barra i { display: block; height: 100%; border-radius: 99px; background: #db2777; }
+        .variantes { font-size: 11.5px; color: #64748b; }
+        .variantes summary { cursor: pointer; color: #9d174d; font-weight: 700; }
+        .nota-clasif { font-size: 12.5px; color: #64748b; margin: 6px 0 12px; }
+        .chips-filtro { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+        .chip-filtro { background: #fce7f3; color: #9d174d; border: 1px solid #fbcfe8; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
         .btn-pdf-modal { background: #db2777; color: #fff; border: none; border-radius: 8px; padding: 11px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px; width: 100%; }
     </style>
     <script src="autofresh.js"></script>
+    <script src="procoine-clasificacion.js"></script>
 </head>
 <body>
     <div class="topbar">
@@ -108,23 +129,50 @@
             </div>
 
             <div class="card">
-                <h2>Inscripciones recibidas</h2>
-                <div>
-                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel</button>
-                    <button id="btnResumenPdf" class="btn-exp" style="background:#0a2351;">🖨️ Imprimir resumen (PDF)</button>
-                    <button id="btnTodosPdf" class="btn-exp" style="background:#db2777;">📄 Formulario completo de cada uno (PDF)</button>
-                </div>
+                <h2>🔎 Filtros</h2>
+                <p class="nota-clasif">Los filtros se aplican a la clasificación, a la lista y a todo lo que imprimas o descargues. También puedes tocar cualquier fila de la clasificación para filtrar por ella.</p>
                 <div class="filtros">
                     <div class="full"><label>Buscar</label><input id="fBuscar" type="search" placeholder="Estudiante, representante, cédula, institución…" autocomplete="off" /></div>
-                    <div><label>Desde</label><input id="fDesde" type="date" /></div>
-                    <div><label>Hasta</label><input id="fHasta" type="date" /></div>
+                    <div><label>Nivel</label><select id="fNivel"><option value="">Todos</option></select></div>
                     <div><label>Grado</label><select id="fGrado"><option value="">Todos</option></select></div>
+                    <div><label>Edad</label><select id="fEdad"><option value="">Todas</option></select></div>
+                    <div><label>Colegio donde estudia</label><select id="fEstudia"><option value="">Todos</option></select></div>
                     <div><label>Institución donde requiere el cupo</label><select id="fInstitucion"><option value="">Todas</option></select></div>
                     <div><label>Extranjero</label><select id="fExtranjero"><option value="">Todos</option><option value="Sí">Sí</option><option value="No">No</option></select></div>
                     <div><label>Estado</label><select id="fAtendido"><option value="">Todos</option><option value="pend">Pendientes</option><option value="ok">Atendidos</option></select></div>
+                    <div><label>Desde</label><input id="fDesde" type="date" /></div>
+                    <div><label>Hasta</label><input id="fHasta" type="date" /></div>
                     <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;">✕ Limpiar filtros</button></div>
                 </div>
-                <p id="filtroInfo" style="font-size:12.5px;color:#64748b;margin:10px 0;"></p>
+                <div class="chips-filtro" id="chipsFiltro"></div>
+                <p id="filtroInfo" style="font-size:12.5px;color:#64748b;margin:10px 0 0;"></p>
+            </div>
+
+            <div class="card" id="cardClasificacion">
+                <h2>📊 Clasificación de las inscripciones</h2>
+                <div>
+                    <button id="btnClasifImprimir" class="btn-exp" style="background:#0a2351;">🖨️ Imprimir clasificación</button>
+                    <button id="btnClasifPdf" class="btn-exp" style="background:#db2777;">📄 Descargar clasificación (PDF)</button>
+                    <label style="display:inline-flex;align-items:center;gap:6px;text-transform:none;font-size:13px;color:#334155;margin-left:4px;letter-spacing:0;">
+                        <input type="checkbox" id="chkListaEnPdf" style="width:auto;" /> Incluir la lista de estudiantes al final
+                    </label>
+                </div>
+                <p class="nota-clasif" id="notaClasif"></p>
+                <div class="clasif-grid">
+                    <section class="clasif"><h3>Por nivel y grado <small id="subGrado"></small></h3><div class="caja" id="tablaGrado"></div></section>
+                    <section class="clasif"><h3>Por edad <small id="subEdad"></small></h3><div class="caja" id="tablaEdad"></div></section>
+                    <section class="clasif"><h3>Por colegio donde estudia <small id="subEstudia"></small></h3><div class="caja" id="tablaEstudia"></div></section>
+                    <section class="clasif"><h3>Por institución donde requiere el cupo <small id="subCupo"></small></h3><div class="caja" id="tablaCupo"></div></section>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Inscripciones recibidas</h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;">📊 Exportar Excel (lista y clasificación)</button>
+                    <button id="btnResumenPdf" class="btn-exp" style="background:#0a2351;">🖨️ Imprimir lista (PDF)</button>
+                    <button id="btnTodosPdf" class="btn-exp" style="background:#db2777;">📄 Formulario completo de cada uno (PDF)</button>
+                </div>
                 <div style="overflow-x:auto;">
                     <table>
                         <thead>
@@ -208,6 +256,32 @@
 
         let REGS = [], pagina = 1; const TAM = 30;
 
+        // ---- Clasificación: grado, edad y planteles agrupados (ver procoine-clasificacion.js) ----
+        const C = window.PROCOINE_CLASIFICACION;
+        let INDICE = null;
+        const claveEdad = (e) => e == null ? 'sin' : String(e);
+        // A cada inscripción se le calcula UNA vez a qué grupo pertenece. El índice de
+        // planteles se arma con TODAS, para que un colegio tenga el mismo grupo filtre como filtre.
+        function preparar() {
+            INDICE = C.indiceDe(REGS);
+            const ahora = Date.now();
+            for (const r of REGS) {
+                const g = C.clasificarGrado(r.est_grado);
+                r._grado = g.clave; r._nivel = g.nivel;
+                r._edad = C.edadDe(r, ahora).edad;
+                r._estudia = INDICE(r.est_institucion_estudia).clave;
+                r._cupos = [...new Set(institucionesCupoDe(r).map(x => INDICE(x).clave))];
+            }
+        }
+        function coincideEdad(r, v) {
+            if (!v) return true;
+            if (v.startsWith('r:')) {
+                const rg = C.RANGOS.find(x => x.clave === v.slice(2));
+                return r._edad != null && !!rg && r._edad >= rg.min && r._edad <= rg.max;
+            }
+            return claveEdad(r._edad) === v.slice(2);
+        }
+
         // ---- Compartir ----
         $('qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(URL_CORTO)}`;
         $('shortTxt').textContent = URL_CORTO.replace('https://', '');
@@ -237,39 +311,56 @@
                 const val = snap.val() || {};
                 REGS = Object.entries(val).map(([id, m]) => ({ id, ...m }))
                     .sort((a, b) => (b.fecha_registro || 0) - (a.fecha_registro || 0));
-                poblarFiltros(); render();
+                preparar(); poblarFiltros(); render();
             }, () => { REGS = []; render(); });
         });
 
         // ---- Filtros ----
-        const FILTROS = ['fBuscar', 'fDesde', 'fHasta', 'fGrado', 'fInstitucion', 'fExtranjero', 'fAtendido'];
+        const FILTROS = ['fBuscar', 'fNivel', 'fGrado', 'fEdad', 'fEstudia', 'fInstitucion', 'fExtranjero', 'fAtendido', 'fDesde', 'fHasta'];
+        // Al cambiar el nivel se rehace la lista de grados (solo los de ese nivel).
+        $('fNivel').addEventListener('input', () => { $('fGrado').value = ''; poblarFiltros(); });
         FILTROS.forEach(id => $(id).addEventListener('input', () => { pagina = 1; render(); }));
-        $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => $(id).value = ''); pagina = 1; render(); });
+        $('btnLimpiar').addEventListener('click', () => { FILTROS.forEach(id => $(id).value = ''); poblarFiltros(); pagina = 1; render(); });
         $('tileHoy').addEventListener('click', () => { const h = hoyISO(); const act = $('fDesde').value === h && $('fHasta').value === h; $('fDesde').value = act ? '' : h; $('fHasta').value = act ? '' : h; pagina = 1; render(); });
         $('tileExtranjero').addEventListener('click', () => { $('fExtranjero').value = $('fExtranjero').value === 'Sí' ? '' : 'Sí'; pagina = 1; render(); });
         $('tilePend').addEventListener('click', () => { $('fAtendido').value = $('fAtendido').value === 'pend' ? '' : 'pend'; pagina = 1; render(); });
 
         function poblarFiltros() {
-            const setSel = (id, arr) => {
+            if (!INDICE) return;
+            const todo = C.clasificar(REGS, Date.now(), INDICE);
+            const setSel = (id, pares) => {
                 const el = $(id), prev = el.value, ph = el.querySelector('option').textContent;
-                el.innerHTML = `<option value="">${ph}</option>` + arr.map(x => `<option>${esc(x)}</option>`).join('');
-                if (prev) el.value = prev;
+                el.innerHTML = `<option value="">${esc(ph)}</option>` + pares.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
+                el.value = pares.some(x => x[0] === prev) ? prev : '';
             };
-            setSel('fGrado', [...new Set(REGS.map(r => r.est_grado).filter(Boolean))].sort());
-            setSel('fInstitucion', [...new Set(REGS.flatMap(institucionesCupoDe))].sort());
+            setSel('fNivel', todo.niveles.map(n => [n.clave, `${n.nombre} (${n.total})`]));
+            const nivel = $('fNivel').value;
+            setSel('fGrado', todo.porGrado.filter(g => !nivel || g.nivel === nivel)
+                .map(g => [g.clave, (nivel ? '' : g.nivelNombre + ' · ') + nombreGradoDe(g) + ` (${g.total})`]));
+            setSel('fEdad', [...C.RANGOS.map(rg => ['r:' + rg.clave, rg.nombre]),
+                ...todo.porEdad.map(e => ['e:' + claveEdad(e.edad), `${e.nombre} (${e.total})`])]);
+            setSel('fEstudia', todo.porEstudia.map(g => [g.clave, `${g.nombre} (${g.total})`]));
+            setSel('fInstitucion', todo.porCupo.map(g => [g.clave, `${g.nombre} (${g.total})`]));
         }
+        const nombreGradoDe = (g) => g.nivel === 'sin_clasificar'
+            ? (g.clave === 'sin_clasificar|vacio' ? 'No indicó el grado' : 'Sin clasificar: "' + g.variantes.map(v => v[0]).join('", "') + '"')
+            : g.nombre;
 
         function filtrados() {
             const q = ($('fBuscar').value || '').trim().toLowerCase();
             const desde = $('fDesde').value, hasta = $('fHasta').value;
-            const grado = $('fGrado').value, inst = $('fInstitucion').value;
+            const nivel = $('fNivel').value, grado = $('fGrado').value, edad = $('fEdad').value;
+            const estudia = $('fEstudia').value, inst = $('fInstitucion').value;
             const ext = $('fExtranjero').value, ate = $('fAtendido').value;
             return REGS.filter(r => {
                 const f = r.fecha_registro ? soloFechaISO(r.fecha_registro) : '';
                 if (desde && f < desde) return false;
                 if (hasta && f > hasta) return false;
-                if (grado && r.est_grado !== grado) return false;
-                if (inst && !institucionesCupoDe(r).includes(inst)) return false;
+                if (nivel && r._nivel !== nivel) return false;
+                if (grado && r._grado !== grado) return false;
+                if (!coincideEdad(r, edad)) return false;
+                if (estudia && r._estudia !== estudia) return false;
+                if (inst && !r._cupos.includes(inst)) return false;
                 if (ext && (r.est_extranjero || 'No') !== ext) return false;
                 if (ate === 'ok' && !r.atendido) return false;
                 if (ate === 'pend' && r.atendido) return false;
@@ -284,13 +375,28 @@
             });
         }
 
+        // Los filtros puestos, en palabras (para los chips y para el encabezado de los PDF).
+        const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        const fechaLarga = (iso) => { const [a, m, d] = iso.split('-').map(Number); return `${d} de ${MESES[m - 1]} de ${a} (${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${a})`; };
+        function filtrosActivos() {
+            const lista = [];
+            const textoSel = (id) => { const el = $(id); return el.value ? el.options[el.selectedIndex].textContent.replace(/\s\(\d+\)$/, '') : ''; };
+            if (($('fBuscar').value || '').trim()) lista.push(['fBuscar', 'Búsqueda: "' + $('fBuscar').value.trim() + '"']);
+            [['fNivel', 'Nivel'], ['fGrado', 'Grado'], ['fEdad', 'Edad'], ['fEstudia', 'Colegio donde estudia'],
+             ['fInstitucion', 'Institución del cupo'], ['fExtranjero', 'Extranjero'], ['fAtendido', 'Estado']]
+                .forEach(([id, k]) => { const t = textoSel(id); if (t) lista.push([id, k + ': ' + t]); });
+            if ($('fDesde').value) lista.push(['fDesde', 'Desde el ' + fechaLarga($('fDesde').value)]);
+            if ($('fHasta').value) lista.push(['fHasta', 'Hasta el ' + fechaLarga($('fHasta').value)]);
+            return lista;
+        }
+
         function render() {
             const h = hoyISO();
             $('stTotal').textContent = REGS.length;
             $('stHoy').textContent = REGS.filter(r => r.fecha_registro && soloFechaISO(r.fecha_registro) === h).length;
             $('stExtranjero').textContent = REGS.filter(r => r.est_extranjero === 'Sí').length;
             $('stPend').textContent = REGS.filter(r => !r.atendido).length;
-            $('stInstituciones').textContent = new Set(REGS.flatMap(institucionesCupoDe)).size;
+            $('stInstituciones').textContent = new Set(REGS.flatMap(r => r._cupos || [])).size;
             $('tileHoy').classList.toggle('activo', $('fDesde').value === h && $('fHasta').value === h);
             $('tileExtranjero').classList.toggle('activo', $('fExtranjero').value === 'Sí');
             $('tilePend').classList.toggle('activo', $('fAtendido').value === 'pend');
@@ -299,6 +405,8 @@
             $('filtroInfo').textContent = (lista.length === REGS.length)
                 ? `Mostrando las ${REGS.length} inscripción(es).`
                 : `Mostrando ${lista.length} de ${REGS.length} inscripción(es) con los filtros aplicados.`;
+            $('chipsFiltro').innerHTML = filtrosActivos().map(([id, t]) => `<button type="button" class="chip-filtro" data-quitar="${id}" title="Quitar este filtro">${esc(t)} ✕</button>`).join('');
+            renderClasificacion(lista);
 
             const tot = Math.max(1, Math.ceil(lista.length / TAM));
             if (pagina > tot) pagina = tot;
@@ -347,6 +455,84 @@
             if ($('pgPrev')) $('pgPrev').addEventListener('click', () => { pagina--; render(); });
             if ($('pgNext')) $('pgNext').addEventListener('click', () => { pagina++; render(); });
         }
+
+        // ---------------------------------------------------------- CLASIFICACIÓN
+        const pctTxt = (n, t) => t ? (Math.round(1000 * n / t) / 10).toString().replace('.', ',') + ' %' : '—';
+        const barraHTML = (n, t) => `<div class="barra"><i style="width:${t ? Math.max(n > 0 ? 2 : 0, 100 * n / t) : 0}%"></i></div>`;
+        const variantesHTML = (g) => g.variantes.length <= 1 ? '' :
+            `<details class="variantes"><summary>${g.variantes.length} formas de escribirlo</summary>${g.variantes.map(([v, n]) => esc(v) + ' (' + n + ')').join(' · ')}</details>`;
+        const activa = (id, valor) => $(id).value === valor ? ' activa' : '';
+
+        function renderClasificacion(lista) {
+            if (!INDICE) return;
+            const c = C.clasificar(lista, Date.now(), INDICE);
+            $('notaClasif').textContent = (lista.length === REGS.length)
+                ? `Clasificación de las ${c.total} inscripciones. Toca una fila para filtrar por ella.`
+                : `Clasificación de las ${c.total} inscripciones que cumplen los filtros (de ${REGS.length}). Toca una fila para filtrar por ella.`;
+
+            let h = '<table class="tclasif"><thead><tr><th>Nivel y grado</th><th class="num">Inscritos</th><th class="num">%</th><th style="width:90px"></th><th class="num">Edades</th></tr></thead><tbody>';
+            for (const n of c.niveles) {
+                h += `<tr class="nivel fila-clic${activa('fNivel', n.clave)}" data-filtro="fNivel" data-valor="${n.clave}">
+                    <td>${esc(n.nombre)}</td><td class="num">${n.total}</td><td class="num">${pctTxt(n.total, c.total)}</td><td>${barraHTML(n.total, c.total)}</td><td></td></tr>`;
+                for (const g of c.porGrado.filter(x => x.nivel === n.clave)) {
+                    if (g.nombre === n.nombre) continue;   // especial / no escolarizado: la fila del nivel ya lo dice
+                    h += `<tr class="fila-clic${activa('fGrado', g.clave)}" data-filtro="fGrado" data-valor="${esc(g.clave)}" data-nivel="${g.nivel}">
+                        <td style="padding-left:22px;">${esc(nombreGradoDe(g))}${g.nivel !== 'sin_clasificar' ? variantesHTML(g) : ''}</td>
+                        <td class="num">${g.total}</td><td class="num">${pctTxt(g.total, c.total)}</td><td>${barraHTML(g.total, c.total)}</td>
+                        <td class="num">${g.conEdad ? `${g.edadMin} a ${g.edadMax} · prom. ${String(g.edadPromedio).replace('.', ',')}` : '—'}</td></tr>`;
+                }
+            }
+            $('tablaGrado').innerHTML = h + '</tbody></table>';
+            $('subGrado').textContent = `${c.niveles.length} nivel(es)`;
+
+            h = '<table class="tclasif"><thead><tr><th>Edad</th><th class="num">Inscritos</th><th class="num">%</th><th style="width:90px"></th></tr></thead><tbody>';
+            for (const rg of c.porRango) {
+                const valor = rg.clave === 'sin' ? 'e:sin' : 'r:' + rg.clave;
+                h += `<tr class="nivel fila-clic${activa('fEdad', valor)}" data-filtro="fEdad" data-valor="${valor}"><td>${esc(rg.nombre)}</td><td class="num">${rg.total}</td><td class="num">${pctTxt(rg.total, c.total)}</td><td>${barraHTML(rg.total, c.total)}</td></tr>`;
+                if (rg.clave === 'sin') continue;
+                const def = C.RANGOS.find(x => x.clave === rg.clave);
+                for (const e of c.porEdad.filter(x => x.edad != null && x.edad >= def.min && x.edad <= def.max)) {
+                    const v = 'e:' + claveEdad(e.edad);
+                    h += `<tr class="fila-clic${activa('fEdad', v)}" data-filtro="fEdad" data-valor="${v}"><td style="padding-left:22px;">${esc(e.nombre)}</td><td class="num">${e.total}</td><td class="num">${pctTxt(e.total, c.total)}</td><td>${barraHTML(e.total, c.total)}</td></tr>`;
+                }
+            }
+            $('tablaEdad').innerHTML = h + '</tbody></table>';
+            $('subEdad').textContent = c.sinEdad ? `${c.sinEdad} sin edad` + (c.edadCalculada ? ` · ${c.edadCalculada} calculada de la fecha de nacimiento` : '') : (c.edadCalculada ? `${c.edadCalculada} calculada de la fecha de nacimiento` : '');
+
+            h = '<table class="tclasif"><thead><tr><th>Colegio donde estudia</th><th class="num">Inscritos</th><th class="num">%</th><th style="width:90px"></th></tr></thead><tbody>';
+            for (const g of c.porEstudia) {
+                h += `<tr class="fila-clic${activa('fEstudia', g.clave)}" data-filtro="fEstudia" data-valor="${esc(g.clave)}"><td>${esc(g.nombre)}${variantesHTML(g)}</td><td class="num">${g.total}</td><td class="num">${pctTxt(g.total, c.total)}</td><td>${barraHTML(g.total, c.total)}</td></tr>`;
+            }
+            $('tablaEstudia').innerHTML = h + '</tbody></table>';
+            $('subEstudia').textContent = `${c.porEstudia.filter(g => g.clave !== 'vacio').length} distintos`;
+
+            const maxCupo = c.porCupo.length ? c.porCupo[0].total : 0;
+            h = '<table class="tclasif"><thead><tr><th>Institución donde requiere el cupo</th><th class="num" title="Cuántos la pidieron en cualquiera de sus 3 opciones">Pedidos</th><th class="num" title="Cuántos la pusieron como primera opción">1ª opción</th><th style="width:90px"></th></tr></thead><tbody>';
+            for (const g of c.porCupo) {
+                h += `<tr class="fila-clic${activa('fInstitucion', g.clave)}" data-filtro="fInstitucion" data-valor="${esc(g.clave)}"><td>${esc(g.nombre)}${variantesHTML(g)}</td><td class="num">${g.total}</td><td class="num">${g.primera}</td><td>${barraHTML(g.total, maxCupo)}</td></tr>`;
+            }
+            $('tablaCupo').innerHTML = h + '</tbody></table>';
+            $('subCupo').textContent = `${c.porCupo.length} distintas · cada estudiante puede pedir hasta 3`;
+        }
+
+        // Tocar una fila de la clasificación filtra por ella (y tocarla otra vez quita el filtro).
+        $('cardClasificacion').addEventListener('click', (ev) => {
+            if (ev.target.closest('details')) return;
+            const tr = ev.target.closest('tr[data-filtro]');
+            if (!tr) return;
+            const id = tr.dataset.filtro, el = $(id);
+            const nuevo = el.value === tr.dataset.valor ? '' : tr.dataset.valor;
+            if (id === 'fNivel') { el.value = nuevo; $('fGrado').value = ''; poblarFiltros(); }
+            else if (id === 'fGrado') { if (nuevo) $('fNivel').value = tr.dataset.nivel; poblarFiltros(); $('fGrado').value = nuevo; }
+            else el.value = nuevo;
+            pagina = 1; render();
+        });
+        $('chipsFiltro').addEventListener('click', (ev) => {
+            const b = ev.target.closest('[data-quitar]'); if (!b) return;
+            $(b.dataset.quitar).value = '';
+            if (b.dataset.quitar === 'fNivel') { $('fGrado').value = ''; poblarFiltros(); }
+            pagina = 1; render();
+        });
 
         async function alternarAtendido(id) {
             const r = REGS.find(x => x.id === id); if (!r) return;
@@ -432,6 +618,59 @@
 
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Inscripciones');
+
+            // Las hojas de la clasificación. OJO trampa 10.1: hdr, filas y anchos con la misma cantidad.
+            const c = C.clasificar(lista, Date.now(), INDICE);
+            const filtrosTxt = filtrosActivos().map(f => f[1]).join(' | ') || 'Sin filtros (todas)';
+            const hoja = (nombre, tituloHoja, hdr2, filas2, anchos) => {
+                if (hdr2.length !== anchos.length || filas2.some(f => f.length !== hdr2.length)) throw new Error('La hoja ' + nombre + ' no cuadra');
+                const data2 = [[tituloHoja].concat(Array(hdr2.length - 1).fill('')),
+                    [`Generado ${ahora.toLocaleString('es-VE', { dateStyle: 'long', timeStyle: 'short' })} · ${lista.length} inscripción(es) · ${filtrosTxt}`].concat(Array(hdr2.length - 1).fill('')),
+                    hdr2, ...filas2];
+                const w = XLSX.utils.aoa_to_sheet(data2);
+                const st = (rr, cc, sty) => { const a = XLSX.utils.encode_cell({ r: rr, c: cc }); if (!w[a]) w[a] = { t: 's', v: '' }; w[a].s = sty; };
+                for (let cc = 0; cc < hdr2.length; cc++) {
+                    st(0, cc, { font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center' } });
+                    st(1, cc, { font: { italic: true, sz: 10, color: { rgb: GRIS } }, alignment: { horizontal: 'center', wrapText: true } });
+                    st(2, cc, { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', wrapText: true }, border: borde });
+                }
+                for (let rr = 3; rr < data2.length; rr++) for (let cc = 0; cc < hdr2.length; cc++) {
+                    const destacada = filas2[rr - 3].destacada;
+                    st(rr, cc, { font: { sz: 10, bold: !!destacada, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde,
+                        ...(destacada ? { fill: { fgColor: { rgb: 'E0E7FF' } } } : (rr % 2 === 0 ? { fill: { fgColor: { rgb: ZEBRA } } } : {})) });
+                }
+                w['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr2.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr2.length - 1 } }];
+                w['!cols'] = anchos.map(x => ({ wch: x }));
+                w['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas2.length, c: hdr2.length - 1 } }) };
+                XLSX.utils.book_append_sheet(wb, w, nombre);
+            };
+            const escritoX = (g) => g.variantes.length > 1 ? g.variantes.map(([v, n]) => `${v} (${n})`).join('; ') : '';
+            const marca = (fila, d) => { fila.destacada = d; return fila; };
+            const pct = (n) => c.total ? Math.round(1000 * n / c.total) / 10 : 0;
+
+            const fG = [];
+            for (const n of c.niveles) {
+                fG.push(marca([n.nombre, 'Total del nivel', n.total, pct(n.total), '', '', '', ''], true));
+                for (const g of c.porGrado.filter(x => x.nivel === n.clave)) {
+                    if (g.nombre === n.nombre) continue;
+                    fG.push(marca([n.nombre, nombreGradoDe(g), g.total, pct(g.total), g.edadMin ?? '', g.edadMax ?? '', g.edadPromedio ?? '', g.nivel === 'sin_clasificar' ? '' : escritoX(g)], false));
+                }
+            }
+            hoja('Por grado', 'PROCOINE — POR NIVEL Y GRADO', ['Nivel', 'Grado', 'Inscritos', '%', 'Edad mínima', 'Edad máxima', 'Edad promedio', 'Escrito como'], fG, [20, 30, 11, 8, 12, 12, 13, 60]);
+
+            const fE = [];
+            for (const rg of c.porRango) {
+                fE.push(marca([rg.nombre, rg.total, pct(rg.total)], true));
+                if (rg.clave === 'sin') continue;
+                const def = C.RANGOS.find(x => x.clave === rg.clave);
+                for (const e of c.porEdad.filter(x => x.edad != null && x.edad >= def.min && x.edad <= def.max)) fE.push(marca(['   ' + e.nombre, e.total, pct(e.total)], false));
+            }
+            hoja('Por edad', 'PROCOINE — POR EDAD', ['Edad', 'Inscritos', '%'], fE, [34, 11, 8]);
+
+            hoja('Por colegio', 'PROCOINE — POR COLEGIO DONDE ESTUDIA', ['Colegio donde estudia', 'Inscritos', '%', 'Escrito como'],
+                c.porEstudia.map(g => [g.nombre, g.total, pct(g.total), escritoX(g)]), [40, 11, 8, 70]);
+            hoja('Por institución del cupo', 'PROCOINE — POR INSTITUCIÓN DONDE REQUIERE EL CUPO', ['Institución donde requiere el cupo', 'Pedidos (cualquier opción)', 'Como 1ª opción', 'Escrito como'],
+                c.porCupo.map(g => [g.nombre, g.total, g.primera, escritoX(g)]), [40, 14, 12, 70]);
             guardarXlsx(wb, `procoine_${ahora.toISOString().slice(0, 10)}.xlsx`);
         });
 
@@ -469,7 +708,8 @@
 
             const doc = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'landscape' });
             const drawHF = () => {
-                dibujarHeaderPDF(doc, { titulo: 'Inscripcion en PROCOINE - Resumen', subtitulo: _safePdf(lista.length + ' inscripcion(es)') });
+                const f = filtrosActivos().map(x => x[1]);
+                dibujarHeaderPDF(doc, { titulo: 'Inscripcion en PROCOINE - Lista', subtitulo: _safePdf(lista.length + ' inscripcion(es)' + (f.length ? ' | ' + f.join(' | ') : '')).slice(0, 150) });
                 dibujarFooterPDF(doc);
             };
             drawHF();
@@ -492,6 +732,101 @@
             });
             doc.save('procoine_resumen_' + new Date().toISOString().slice(0, 10) + '.pdf');
         });
+
+        // ---- La clasificación, con los filtros puestos. imprimir=true abre el diálogo de imprimir ----
+        // Carta vertical: el ancho útil es 186 mm y todas las tablas suman exactamente eso.
+        function pdfClasificacion(imprimir) {
+            const jsPDF = _pdfListo(); if (!jsPDF) return;
+            const lista = filtrados();
+            if (!lista.length) { alert('No hay inscripciones con los filtros actuales.'); return; }
+            const c = C.clasificar(lista, Date.now(), INDICE);
+            const filtros = filtrosActivos().map(f => f[1]);
+            const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+            const subtitulo = lista.length + ' inscripcion(es)' + (filtros.length ? ' que cumplen los filtros' : ', todas');
+            const drawHF = () => {
+                dibujarHeaderPDF(doc, { titulo: 'PROCOINE - Clasificacion de las inscripciones', subtitulo: _safePdf(subtitulo) });
+                dibujarFooterPDF(doc);
+            };
+            drawHF();
+            let y = 55;
+            const parrafo = (texto, tam = 9) => {
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(tam); doc.setTextColor(51, 65, 85);
+                const lineas = doc.splitTextToSize(_safePdf(texto), 186);
+                doc.text(lineas, 14, y); y += lineas.length * (tam * 0.42) + 2.5;
+            };
+            parrafo('Filtros aplicados: ' + (filtros.length ? filtros.join('  |  ') : 'ninguno, son todas las inscripciones') + '.');
+            parrafo(`Edad: ${c.total - c.sinEdad} con edad y ${c.sinEdad} sin edad` + (c.edadCalculada ? ` (${c.edadCalculada} calculada de la fecha de nacimiento)` : '') +
+                '. Grados y planteles escritos de formas distintas se agrupan solo cuando es el mismo nombre; en "Escrito como" se ve lo que se unio.');
+
+            const estilo = {
+                margin: { top: 55, bottom: 16, left: 14, right: 14 }, theme: 'grid',
+                styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.6, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, overflow: 'linebreak', valign: 'middle' },
+                headStyles: { fillColor: [219, 39, 119], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+                didDrawPage: drawHF
+            };
+            const destacar = (d) => {
+                if (d.section === 'body' && d.row.raw && d.row.raw.destacada) { d.cell.styles.fillColor = [238, 242, 255]; d.cell.styles.fontStyle = 'bold'; d.cell.styles.textColor = [10, 35, 81]; }
+            };
+            const tabla = (titulo, head, body, columnStyles) => {
+                if (y > 238) { doc.addPage(); y = 55; }
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(10, 35, 81);
+                doc.text(_safePdf(titulo), 14, y + 2); y += 5;
+                jsPDF.API.autoTable.call(doc, { ...estilo, startY: y, head: [head], body, columnStyles, didParseCell: destacar });
+                y = doc.lastAutoTable.finalY + 9;
+            };
+            const escrito = (g) => g.variantes.length > 1 ? _safePdf(g.variantes.map(([v, n]) => `${v} (${n})`).join('; ')).slice(0, 400) : '';
+            const conMarca = (fila, destacada) => { fila.destacada = destacada; return fila; };
+
+            const filasGrado = [];
+            for (const n of c.niveles) {
+                filasGrado.push(conMarca([_safePdf(n.nombre), n.total, _safePdf(pctTxt(n.total, c.total)), '', ''], true));
+                for (const g of c.porGrado.filter(x => x.nivel === n.clave)) {
+                    if (g.nombre === n.nombre) continue;
+                    filasGrado.push(conMarca(['   ' + _safePdf(nombreGradoDe(g)), g.total, _safePdf(pctTxt(g.total, c.total)),
+                        g.conEdad ? _safePdf(`${g.edadMin} a ${g.edadMax} (prom. ${String(g.edadPromedio).replace('.', ',')})`) : '-',
+                        g.nivel === 'sin_clasificar' ? '' : escrito(g)], false));
+                }
+            }
+            tabla('Por nivel y grado', ['Nivel y grado', 'Inscritos', '%', 'Edades', 'Escrito como'], filasGrado,
+                { 0: { cellWidth: 56 }, 1: { cellWidth: 20, halign: 'right' }, 2: { cellWidth: 18, halign: 'right' }, 3: { cellWidth: 34 }, 4: { cellWidth: 58, fontSize: 7 } });
+
+            const filasEdad = [];
+            for (const rg of c.porRango) {
+                filasEdad.push(conMarca([_safePdf(rg.nombre), rg.total, _safePdf(pctTxt(rg.total, c.total))], true));
+                if (rg.clave === 'sin') continue;
+                const def = C.RANGOS.find(x => x.clave === rg.clave);
+                for (const e of c.porEdad.filter(x => x.edad != null && x.edad >= def.min && x.edad <= def.max)) {
+                    filasEdad.push(conMarca(['   ' + _safePdf(e.nombre), e.total, _safePdf(pctTxt(e.total, c.total))], false));
+                }
+            }
+            tabla('Por edad', ['Edad', 'Inscritos', '%'], filasEdad, { 0: { cellWidth: 106 }, 1: { cellWidth: 40, halign: 'right' }, 2: { cellWidth: 40, halign: 'right' } });
+
+            tabla('Por colegio donde estudia', ['Colegio donde estudia', 'Inscritos', '%', 'Escrito como'],
+                c.porEstudia.map(g => [_safePdf(g.nombre), g.total, _safePdf(pctTxt(g.total, c.total)), escrito(g)]),
+                { 0: { cellWidth: 76 }, 1: { cellWidth: 20, halign: 'right' }, 2: { cellWidth: 18, halign: 'right' }, 3: { cellWidth: 72, fontSize: 7 } });
+
+            tabla('Por institucion donde requiere el cupo', ['Institucion donde requiere el cupo', 'Pedidos', '1a opcion', 'Escrito como'],
+                c.porCupo.map(g => [_safePdf(g.nombre), g.total, g.primera, escrito(g)]),
+                { 0: { cellWidth: 72 }, 1: { cellWidth: 20, halign: 'right' }, 2: { cellWidth: 22, halign: 'right' }, 3: { cellWidth: 72, fontSize: 7 } });
+            parrafo('"Pedidos" cuenta cada institucion que el estudiante puso en cualquiera de sus 3 opciones; "1a opcion", solo la primera.', 8);
+
+            if ($('chkListaEnPdf').checked) {
+                tabla('Estudiantes incluidos', ['Estudiante', 'Grado', 'Edad', 'Colegio donde estudia', 'Institucion(es) del cupo', 'Extranjero'],
+                    lista.map(r => [_safePdf(r.est_nombre || '-'), _safePdf(r.est_grado || '-'), r._edad != null ? r._edad : '-',
+                        _safePdf(r.est_institucion_estudia || '-'), _safePdf(institucionesCupoDe(r).join(' / ') || '-'), _safePdf(r.est_extranjero || 'No')]),
+                    { 0: { cellWidth: 44 }, 1: { cellWidth: 22 }, 2: { cellWidth: 12, halign: 'right' }, 3: { cellWidth: 42 }, 4: { cellWidth: 48 }, 5: { cellWidth: 18 } });
+            }
+
+            if (imprimir) {
+                doc.autoPrint();
+                const ventana = window.open(doc.output('bloburl'), '_blank');
+                if (!ventana) alert('El navegador bloqueó la ventana para imprimir. Permite las ventanas emergentes de este sitio e inténtalo de nuevo.');
+            } else {
+                doc.save('procoine_clasificacion_' + new Date().toISOString().slice(0, 10) + '.pdf');
+            }
+        }
+        $('btnClasifImprimir').addEventListener('click', () => pdfClasificacion(true));
+        $('btnClasifPdf').addEventListener('click', () => pdfClasificacion(false));
 
         // ---- Una inscripción, completa, en su propia página (para una sola persona) ----
         function _dibujarBloqueIndividual(doc, drawHF, r, i, total) {
