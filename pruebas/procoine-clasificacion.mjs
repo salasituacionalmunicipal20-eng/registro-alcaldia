@@ -35,11 +35,18 @@ prueba('"NO ESCOLARIZADO" tiene su propia categoría', grado('NO ESCOLARIZADO') 
 prueba('"ESPECIAL" es educación especial', grado('ESPECIAL') === 'especial');
 
 seccion('Grado: lo que NO se adivina');
-for (const t of ['9no', '5TO', 'TEL', 'ECER AÑO', '1ER ALO'])
+for (const t of ['5TO', 'TEL', 'ECER AÑO'])
     prueba(`"${t}" queda sin clasificar`, C.clasificarGrado(t).nivel === 'sin_clasificar', grado(t));
 prueba('"5 Años" es una edad, no un grado', C.clasificarGrado('5 Años').nivel === 'sin_clasificar');
 prueba('"3ER o 4°G GRADO" trae dos números: sin clasificar', C.clasificarGrado('3ER o 4°G GRADO').nivel === 'sin_clasificar');
-prueba('"7MO GRADO" no existe en primaria: sin clasificar', C.clasificarGrado('7MO GRADO').nivel === 'sin_clasificar');
+prueba('"8VO AÑO" no existe en media: sin clasificar', C.clasificarGrado('8VO AÑO').nivel === 'sin_clasificar');
+
+seccion('Grado: lo que aclaró el usuario (15/09/2026)');
+prueba('"1ER ALO" es 1er año (aclarado)', grado('1ER ALO') === 'media|1', grado('1ER ALO'));
+prueba('"9no" es 9no grado, en media, sin convertirlo a año', grado('9no') === 'media|9g' && C.nombreGrado('media|9g') === '9no grado (sistema anterior)', grado('9no'));
+prueba('"7MO GRADO" y "8vo" son grados del sistema anterior', grado('7MO GRADO') === 'media|7g' && grado('8vo') === 'media|8g');
+prueba('"3ER o 4°G GRADO" sigue sin clasificar hasta que el usuario diga cuál', C.clasificarGrado('3ER o 4°G GRADO').nivel === 'sin_clasificar');
+prueba('el 9no grado va después del 5to año al ordenar', (() => { const c = C.clasificar([{ est_grado: '9no' }, { est_grado: '5TO AÑO' }, { est_grado: '1ER AÑO' }]); return c.porGrado.map(g => g.clave).join() === 'media|1,media|5,media|9g'; })());
 prueba('"6TO AÑO" no existe en media: sin clasificar', C.clasificarGrado('6TO AÑO').nivel === 'sin_clasificar');
 prueba('vacío: "No indicó el grado"', grado('') === 'sin_clasificar|vacio' && C.nombreGrado('sin_clasificar|vacio') === 'No indicó el grado');
 prueba('el nombre bonito de primaria|3 es "3er grado"', C.nombreGrado('primaria|3') === '3er grado');
@@ -77,7 +84,7 @@ const regs = [
     { est_grado: '1ER AÑO', est_edad: 12, est_institucion_estudia: 'UEE CARMEN RUIZ', est_institucion_requiere: 'UEN CREACION CHARALLAVE', est_institucion_requiere_2: 'UENB CREACIÓN CHARALLAVE' },
     { est_grado: '1er año', est_edad: 11, est_institucion_estudia: 'Carmen Ruiz', est_institucion_requiere: 'EBE POLICARPO FARRERA', est_institucion_requiere_2: 'UEN CREACION CHARALLAVE' },
     { est_grado: '3er grado', est_edad: 8, est_institucion_estudia: 'CHILE', est_institucion_requiere: 'POLICARPO FARRERA' },
-    { est_grado: '9no', est_institucion_estudia: '' }
+    { est_grado: 'TEL', est_institucion_estudia: '' }
 ];
 const c = C.clasificar(regs, Date.now());
 const g1 = c.porGrado.find(g => g.clave === 'media|1');

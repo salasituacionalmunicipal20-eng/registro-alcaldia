@@ -43,12 +43,27 @@
     };
     const ORDINAL = { 1: '1er', 2: '2do', 3: '3er', 4: '4to', 5: '5to', 6: '6to' };
 
+    /* Lo que el USUARIO aclaró a mano (15/09/2026). Solo se agrega aquí lo que él
+       confirme: nada se deduce. La llave es el texto ya limpio (mayúsculas, sin acentos). */
+    const ACLARADOS = {
+        '1ER ALO': 'media|1',            /* "1er alo es primer año" */
+        '9NO': 'media|9g'                /* "9no es noveno grado" (sistema anterior; va en media, sin convertirlo a año) */
+    };
+    /* 7mo, 8vo y 9no solo existen como grados (sistema anterior). */
+    const GRADOS_VIEJOS = { '7': '7mo grado', '8': '8vo grado', '9': '9no grado' };
+
     function clasificarGrado(texto) {
         const original = String(texto == null ? '' : texto).trim();
         /* "2D0" y "4T0" traen un cero en vez de la letra O del ordinal. */
         const t = limpio(original).replace(/°|º/g, ' ').replace(/(\d\s?[DT])0\b/g, '$1O');
         const sin = { nivel: 'sin_clasificar', numero: null, original };
         if (!t) return { ...sin, clave: 'sin_clasificar|vacio' };
+        if (ACLARADOS[t]) {
+            const [nv, num] = ACLARADOS[t].split('|');
+            return { nivel: nv, numero: parseInt(num, 10), clave: ACLARADOS[t], original };
+        }
+        const viejo = t.match(/^([789])\s*(MO|VO|NO)?\s*(GRADO)?$/);
+        if (viejo && (viejo[2] || viejo[3])) return { nivel: 'media', numero: Number(viejo[1]), clave: 'media|' + viejo[1] + 'g', original };
         if (/NO ESCOLARIZAD/.test(t)) return { nivel: 'no_escolarizado', numero: null, clave: 'no_escolarizado', original };
         if (/\bESPECIAL\b/.test(t)) return { nivel: 'especial', numero: null, clave: 'especial', original };
 
@@ -80,6 +95,7 @@
         if (!n) return clave;
         if (!n.unidad) return n.nombre;
         if (numero === 'sin_numero') return 'Sin decir el grupo';
+        if (/^[789]g$/.test(numero)) return GRADOS_VIEJOS[numero[0]] + ' (sistema anterior)';
         return `${ORDINAL[numero]} ${n.unidad}`;
     }
 
