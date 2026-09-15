@@ -9,8 +9,9 @@
    - Grado: se reconoce el tipo por la palabra (GRADO → primaria, AÑO →
      media, NIVEL / GRUPO / INICIAL / PREESCOLAR → inicial) y el número por
      el dígito o el ordinal romano. Si no se entiende, o trae dos números
-     ("3ER o 4° GRADO"), o el número no existe en ese nivel, va a
-     "Sin clasificar" con el texto tal cual.
+     ("1ER o 2° GRADO"), o el número no existe en ese nivel, va a
+     "Sin clasificar" con el texto tal cual, salvo lo que el usuario aclaró
+     (ver ACLARADOS).
    - Plantel: se une solo lo que es literalmente el mismo nombre: sin
      mayúsculas, acentos, puntos, el tipo de plantel adelante (UEE, UEN,
      EBN, Liceo…) ni el título (Dr., Profa.), y con abreviaturas
@@ -47,7 +48,14 @@
        confirme: nada se deduce. La llave es el texto ya limpio (mayúsculas, sin acentos). */
     const ACLARADOS = {
         '1ER ALO': 'media|1',            /* "1er alo es primer año" */
-        '9NO': 'media|9g'                /* "9no es noveno grado" (sistema anterior; va en media, sin convertirlo a año) */
+        '9NO': 'media|9g',               /* "9no es noveno grado" (sistema anterior; va en media, sin convertirlo a año) */
+        '5TO': 'media|5',                /* "5TO y 5 Años son quinto año" */
+        '5 ANOS': 'media|5',
+        'ECER ANO': 'media|3',           /* "ECER AÑO es tercer año" */
+        /* "3er es tercer grado, 4°G GRADO es cuarto grado": es UNA sola inscripción que escribió los dos,
+           así que no se escoge uno: va en primaria, en su propia fila "3er o 4to grado". */
+        '3ER O 4 G GRADO': 'primaria|3o4'
+        /* "TEL": el usuario no sabe a qué se refiere; se deja sin clasificar. */
     };
     /* 7mo, 8vo y 9no solo existen como grados (sistema anterior). */
     const GRADOS_VIEJOS = { '7': '7mo grado', '8': '8vo grado', '9': '9no grado' };
@@ -60,7 +68,7 @@
         if (!t) return { ...sin, clave: 'sin_clasificar|vacio' };
         if (ACLARADOS[t]) {
             const [nv, num] = ACLARADOS[t].split('|');
-            return { nivel: nv, numero: parseInt(num, 10), clave: ACLARADOS[t], original };
+            return { nivel: nv, numero: num === '3o4' ? 3.5 : parseInt(num, 10), clave: ACLARADOS[t], original };   /* 3.5: se ordena entre 3er y 4to grado */
         }
         const viejo = t.match(/^([789])\s*(MO|VO|NO)?\s*(GRADO)?$/);
         if (viejo && (viejo[2] || viejo[3])) return { nivel: 'media', numero: Number(viejo[1]), clave: 'media|' + viejo[1] + 'g', original };
@@ -96,6 +104,7 @@
         if (!n.unidad) return n.nombre;
         if (numero === 'sin_numero') return 'Sin decir el grupo';
         if (/^[789]g$/.test(numero)) return GRADOS_VIEJOS[numero[0]] + ' (sistema anterior)';
+        if (numero === '3o4') return '3er o 4to grado (lo escribieron así)';
         return `${ORDINAL[numero]} ${n.unidad}`;
     }
 

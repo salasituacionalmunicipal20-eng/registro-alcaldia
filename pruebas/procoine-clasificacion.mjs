@@ -35,17 +35,22 @@ prueba('"NO ESCOLARIZADO" tiene su propia categoría', grado('NO ESCOLARIZADO') 
 prueba('"ESPECIAL" es educación especial', grado('ESPECIAL') === 'especial');
 
 seccion('Grado: lo que NO se adivina');
-for (const t of ['5TO', 'TEL', 'ECER AÑO'])
+for (const t of ['TEL', 'ESTO', 'ECER'])
     prueba(`"${t}" queda sin clasificar`, C.clasificarGrado(t).nivel === 'sin_clasificar', grado(t));
-prueba('"5 Años" es una edad, no un grado', C.clasificarGrado('5 Años').nivel === 'sin_clasificar');
-prueba('"3ER o 4°G GRADO" trae dos números: sin clasificar', C.clasificarGrado('3ER o 4°G GRADO').nivel === 'sin_clasificar');
+prueba('"4 Años" (una edad, sin aclarar) no es un grado', C.clasificarGrado('4 Años').nivel === 'sin_clasificar');
+prueba('otro texto con dos números ("1ER o 2° GRADO") sigue sin clasificar', C.clasificarGrado('1ER o 2° GRADO').nivel === 'sin_clasificar');
 prueba('"8VO AÑO" no existe en media: sin clasificar', C.clasificarGrado('8VO AÑO').nivel === 'sin_clasificar');
 
 seccion('Grado: lo que aclaró el usuario (15/09/2026)');
 prueba('"1ER ALO" es 1er año (aclarado)', grado('1ER ALO') === 'media|1', grado('1ER ALO'));
 prueba('"9no" es 9no grado, en media, sin convertirlo a año', grado('9no') === 'media|9g' && C.nombreGrado('media|9g') === '9no grado (sistema anterior)', grado('9no'));
 prueba('"7MO GRADO" y "8vo" son grados del sistema anterior', grado('7MO GRADO') === 'media|7g' && grado('8vo') === 'media|8g');
-prueba('"3ER o 4°G GRADO" sigue sin clasificar hasta que el usuario diga cuál', C.clasificarGrado('3ER o 4°G GRADO').nivel === 'sin_clasificar');
+prueba('"5TO" y "5 Años" son 5to año (aclarado)', grado('5TO') === 'media|5' && grado('5 Años') === 'media|5', grado('5TO') + ' ' + grado('5 Años'));
+prueba('"ECER AÑO" es 3er año (aclarado)', grado('ECER AÑO') === 'media|3', grado('ECER AÑO'));
+prueba('"3ER o 4°G GRADO" va en primaria, en su propia fila, sin escoger uno', grado('3ER o 4°G GRADO') === 'primaria|3o4' &&
+    C.nombreGrado('primaria|3o4') === '3er o 4to grado (lo escribieron así)', grado('3ER o 4°G GRADO'));
+prueba('"TEL" se deja sin clasificar (el usuario no sabe qué es)', C.clasificarGrado('TEL').nivel === 'sin_clasificar');
+prueba('la fila "3er o 4to grado" se ordena después del 3er grado y antes del 4to', (() => { const c = C.clasificar([{ est_grado: '4TO GRADO' }, { est_grado: '3ER o 4°G GRADO' }, { est_grado: '3ER o 4°G GRADO' }, { est_grado: '3ER GRADO' }]); return c.porGrado.map(g => g.clave).join() === 'primaria|3,primaria|3o4,primaria|4'; })());
 prueba('el 9no grado va después del 5to año al ordenar', (() => { const c = C.clasificar([{ est_grado: '9no' }, { est_grado: '5TO AÑO' }, { est_grado: '1ER AÑO' }]); return c.porGrado.map(g => g.clave).join() === 'media|1,media|5,media|9g'; })());
 prueba('"6TO AÑO" no existe en media: sin clasificar', C.clasificarGrado('6TO AÑO').nivel === 'sin_clasificar');
 prueba('vacío: "No indicó el grado"', grado('') === 'sin_clasificar|vacio' && C.nombreGrado('sin_clasificar|vacio') === 'No indicó el grado');
