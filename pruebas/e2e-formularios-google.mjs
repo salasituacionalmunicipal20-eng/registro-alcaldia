@@ -31,6 +31,14 @@ async function cuenta(tipo, extra) {
   else await db.ref('operadores/' + u.uid).set({ nombre: 'Prueba ' + tipo, rol: extra.rol, cambio_obligatorio: false, comunas_asignadas: ['TODAS'] });
   return { usuario, pw, uid: u.uid };
 }
+/** Lector que entra con un correo completo (como la cuenta de Google de una sala), sin cambio de clave. */
+async function cuentaConCorreo() {
+  const correo = `${MARCA}-correo@example.com`, pw = clave();
+  const u = await auth.createUser({ email: correo, password: pw });
+  cuentas.push(u.uid);
+  await db.ref('gforms_lectores/' + u.uid).set({ nombre: 'Sala de prueba', formularios: { [FORM]: true }, cambio_obligatorio: false });
+  return { usuario: correo.toUpperCase(), pw, uid: u.uid };
+}
 
 let ok = 0, mal = 0;
 function veredicto(nombre, paso, detalle = '') { paso ? ok++ : mal++; console.log(`  ${paso ? '✓' : '✗'} ${nombre}${!paso && detalle ? ' → ' + detalle : ''}`); }
@@ -134,6 +142,14 @@ try {
   await p.setViewport({ width: 1280, height: 900 }); await esperar(600);
   await p.screenshot({ path: path.join(SAL, 'lector-1280.png'), fullPage: true });
   veredicto('en computadora tampoco se sale nada', (await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0);
+
+  console.log('\nLector que entra con su correo completo (como el de Google)');
+  const conCorreo = await cuentaConCorreo();
+  p = await paginaNueva(375);
+  await entrar(p, conCorreo);
+  veredicto('escribiendo el correo completo (aunque sea en mayúsculas) entra directo a su tablero', p.url().includes('/formularios-google.html'), p.url());
+  await p.waitForFunction(() => document.getElementById('kTotal') && document.getElementById('kTotal').textContent !== '—', { timeout: 30000 }).catch(() => null);
+  veredicto('ve el formulario con sus respuestas', (await p.$eval('#kTotal', e => e.textContent.trim())) === String(total));
 
   console.log('\nAdministrador');
   p = await paginaNueva(1280);

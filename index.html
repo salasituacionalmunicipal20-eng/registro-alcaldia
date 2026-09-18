@@ -208,7 +208,10 @@
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            const emailFalso = username + "@alcaldia.com";
+            // Quien escribe un correo completo (ej. la cuenta de Google de una sala
+            // de autogobierno, lectora de formularios) entra con ese correo; los
+            // demás escriben solo su usuario y se completa con @alcaldia.com.
+            const emailFalso = username.includes("@") ? username.toLowerCase() : username + "@alcaldia.com";
 
             signInWithEmailAndPassword(auth, emailFalso, password)
                 .then((userCredential) => {
