@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Formularios de Google — Sala Situacional</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="formularios-google-logica.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; color: #0f172a; line-height: 1.5; }
+        .topbar { background: #0a2351; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; font-weight: 800; }
+        .topbar .quien { font-size: 12px; color: #b8c6e2; font-weight: 600; }
+        .topbar .acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .btn-nav { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.28); border-radius: 6px; padding: 10px 12px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+        .btn-nav:hover { background: rgba(255,255,255,0.25); }
+        .topbar select { background: #fff; color: #0a2351; border: none; border-radius: 6px; padding: 10px; font-size: 14px; font-weight: 700; max-width: 100%; min-height: 44px; }
+        .wrap { max-width: 1240px; margin: 0 auto; padding: 18px; }
+        .card { background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 800; color: #0a2351; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .3px; }
+        .card h3 { font-size: 13.5px; font-weight: 800; color: #0a2351; margin: 0 0 8px; line-height: 1.35; }
+        .cabecera { border-top: 5px solid #0a6cb0; }
+        .cabecera .titulo { font-size: 20px; font-weight: 800; color: #0a2351; line-height: 1.25; text-wrap: balance; }
+        .cabecera .desc { color: #475569; font-size: 14px; margin-top: 4px; }
+        .estado-con { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-size: 13px; color: #475569; }
+        .live { font-size: 12px; font-weight: 700; color: #16a34a; }
+        .live .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 4px; animation: pulso 2s infinite; }
+        @keyframes pulso { 50% { opacity: .35; } }
+        @media (prefers-reduced-motion: reduce) { .live .dot { animation: none; } }
+        .aviso-viejo { margin-top: 12px; background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+        input, select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; min-height: 44px; }
+        input:focus, select:focus { border-color: #0a6cb0; box-shadow: 0 0 0 3px #bfdbfe; }
+        .btn-exp { border: none; border-radius: 6px; padding: 10px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 0 8px 8px 0; color: #fff; min-height: 44px; }
+        .btn-exp:disabled { opacity: .6; cursor: wait; }
+        .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .kpi { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; }
+        .kpi .num { font-size: 24px; font-weight: 800; color: #0a2351; font-variant-numeric: tabular-nums; line-height: 1.15; }
+        .kpi .etq { font-size: 12px; color: #64748b; font-weight: 600; }
+        .kpi .sub { font-size: 11.5px; color: #94a3b8; margin-top: 2px; }
+        .kpi.btn { cursor: pointer; text-align: left; font: inherit; width: 100%; }
+        .kpi.btn:hover { background: #eef2ff; border-color: #c7d2fe; }
+        .kpi.btn.activa { background: #eef2ff; border-color: #6366f1; box-shadow: 0 0 0 2px #c7d2fe inset; }
+        .kpi.alerta .num { color: #b91c1c; } .kpi.verde .num { color: #15803d; } .kpi.morado .num { color: #7c3aed; } .kpi.azul .num { color: #0a6cb0; }
+        .sub-h { font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .3px; margin: 16px 0 8px; }
+        .preguntas { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+        .pregunta { border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; background: #fff; min-width: 0; }
+        .pregunta .meta { font-size: 12px; color: #64748b; margin-bottom: 10px; }
+        .barra { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; width: 100%; background: none; border: none; text-align: left; padding: 5px 4px; border-radius: 6px; cursor: pointer; font: inherit; color: inherit; min-height: 44px; }
+        .barra:hover { background: #f1f5f9; }
+        .barra.activa { background: #eef2ff; box-shadow: 0 0 0 2px #c7d2fe inset; }
+        .barra .txt { font-size: 13px; overflow-wrap: anywhere; }
+        .barra .cnt { font-size: 13px; font-weight: 800; color: #0a2351; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .barra .pista { grid-column: 1 / -1; height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+        .barra .pista i { display: block; height: 100%; background: #0a6cb0; border-radius: 99px; }
+        .barra.otro .pista i { background: #94a3b8; }
+        .valores { list-style: none; font-size: 13px; }
+        .valores li { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
+        .valores li span:first-child { overflow-wrap: anywhere; }
+        .valores li b { font-variant-numeric: tabular-nums; color: #0a2351; }
+        .numeros { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: #475569; margin-bottom: 8px; }
+        .numeros b { color: #0a2351; }
+        .ver-mas { background: none; border: none; color: #0a6cb0; font-weight: 700; font-size: 13px; cursor: pointer; padding: 10px 0 0; min-height: 44px; }
+        .filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; align-items: end; margin-top: 6px; }
+        .filtros .full { grid-column: 1 / -1; }
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+        .chip { background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 99px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; min-height: 36px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+        th { background: #0a2351; color: #fff; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; min-width: 110px; }
+        th:first-child, td:first-child { min-width: 40px; }
+        tbody tr:hover { background: #f8fafc; }
+        .btn-ver { background: #0a2351; color: #fff; border: none; border-radius: 6px; padding: 10px 12px; font-size: 12px; font-weight: 700; cursor: pointer; min-height: 40px; }
+        .paginacion { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        .paginacion button { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 14px; font-size: 13px; cursor: pointer; font-weight: 600; min-height: 44px; }
+        .paginacion button[disabled] { opacity: .4; cursor: default; }
+        .hidden { display: none !important; }
+        .estado-box { text-align: center; padding: 60px 20px; color: #64748b; }
+        .estado-box.error { color: #b91c1c; }
+        .loader-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; border-top-color: #0a2351; animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+        .modal-bg.show { display: flex; }
+        .modal { background: #fff; border-radius: 12px; max-width: 720px; width: 100%; max-height: 88vh; overflow-y: auto; padding: 22px; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+        .modal h3 { color: #0a2351; font-size: 18px; margin-bottom: 4px; }
+        .modal h4 { color: #0a6cb0; font-size: 13px; text-transform: uppercase; letter-spacing: .3px; margin: 16px 0 6px; }
+        .fila { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid #eef2f7; font-size: 14px; }
+        .fila .k { font-weight: 700; color: #475569; flex: 0 0 42%; overflow-wrap: anywhere; }
+        .fila .val { color: #0f172a; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .cerrar { background: #0a2351; color: #fff; border: none; border-radius: 8px; padding: 12px 16px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; width: 100%; min-height: 44px; }
+        .nota { font-size: 12.5px; color: #64748b; margin-top: 8px; }
+        button:focus-visible, a:focus-visible, select:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+        @media (max-width: 560px) {
+            .wrap { padding: 12px; }
+            .card { padding: 14px; }
+            .topbar { padding: 12px 14px; }
+            .topbar h1 { font-size: 16px; }
+            .preguntas { grid-template-columns: 1fr; }
+            .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .fila { flex-direction: column; gap: 2px; }
+            .fila .k { flex: none; }
+        }
+    </style>
+    <script src="autofresh.js"></script>
+</head>
+<body>
+    <div class="topbar">
+        <div>
+            <h1>📋 Formularios de Google</h1>
+            <div class="quien" id="quien"></div>
+        </div>
+        <div class="acciones">
+            <select id="selForm" class="hidden" aria-label="Elegir formulario"></select>
+            <a class="btn-nav hidden" id="btnPanel" href="admin.html">← Panel Admin</a>
+            <button class="btn-nav" id="btnSalir" type="button">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <div id="loader" class="estado-box"><span class="loader-dot"></span> Verificando acceso…</div>
+        <div id="acceso-restringido" class="estado-box error hidden"><h2 style="color:#b91c1c;">Acceso restringido</h2><p>Tu cuenta no tiene permiso para ver los formularios de Google.</p></div>
+        <div id="sin-formularios" class="estado-box hidden"><h2>Todavía no hay formularios conectados</h2><p>Cuando se conecte un formulario de Google, sus respuestas aparecen aquí.</p></div>
+
+        <div id="contenido" class="hidden">
+            <div class="card cabecera">
+                <div class="titulo" id="fTitulo">—</div>
+                <div class="desc" id="fDesc"></div>
+                <div class="estado-con">
+                    <span class="live"><span class="dot"></span> en vivo</span>
+                    <span id="fUltima"></span>
+                    <span id="fRevisado"></span>
+                </div>
+                <div class="aviso-viejo hidden" id="avisoViejo"></div>
+            </div>
+
+            <div class="card">
+                <h2>Resumen</h2>
+                <div class="kpis">
+                    <div class="kpi"><div class="num" id="kTotal">—</div><div class="etq">respuestas</div></div>
+                    <button type="button" class="kpi btn azul" id="kHoyBtn" title="Ver solo las de hoy"><div class="num" id="kHoy">—</div><div class="etq">📅 hoy</div></button>
+                    <div class="kpi"><div class="num" id="kSemana">—</div><div class="etq">últimos 7 días</div></div>
+                    <div class="kpi"><div class="num" id="kUltima" style="font-size:16px;">—</div><div class="etq">última respuesta</div></div>
+                </div>
+            </div>
+
+            <div class="card hidden" id="cardPerfil">
+                <h2>La comunidad en números</h2>
+                <div class="kpis" id="perfilBase"></div>
+                <div class="sub-h">Edades</div>
+                <div class="kpis" id="perfilEdad"></div>
+                <p class="nota" id="perfilEdadNota"></p>
+                <div class="sub-h">Salud y protección</div>
+                <div class="kpis" id="perfilSalud"></div>
+                <p class="nota">Toca una cifra para ver qué respondió cada quien y cómo se contó. Las respuestas como «no», «ninguna» o «no aplica» no se cuentan.</p>
+                <div class="sub-h">Servicios, voto y gas</div>
+                <div class="kpis" id="perfilOtros"></div>
+            </div>
+
+            <div class="card">
+                <h2>Pregunta por pregunta</h2>
+                <p class="nota" style="margin:-4px 0 12px;">Toca una opción para ver en la tabla de abajo solo a quienes respondieron eso.</p>
+                <div class="preguntas" id="preguntas"></div>
+            </div>
+
+            <div class="card" id="cardTabla">
+                <h2>Todas las respuestas</h2>
+                <div>
+                    <button id="btnExcel" class="btn-exp" style="background:#16a34a;" type="button">📊 Excel completo</button>
+                    <button id="btnPdf" class="btn-exp" style="background:#0a2351;" type="button">📄 PDF resumen y listado</button>
+                    <button id="btnPdfFichas" class="btn-exp" style="background:#0a6cb0;" type="button">🗂️ PDF una ficha por persona</button>
+                </div>
+                <div class="filtros">
+                    <div class="full"><label for="fBuscar">Buscar</label><input id="fBuscar" type="search" placeholder="Nombre, cédula, teléfono, lo que sea…" autocomplete="off" /></div>
+                    <div><label for="fDesde">Desde</label><input id="fDesde" type="date" /></div>
+                    <div><label for="fHasta">Hasta</label><input id="fHasta" type="date" /></div>
+                    <div><button id="btnLimpiar" class="btn-exp" style="background:#64748b;width:100%;margin:0;" type="button">✕ Quitar filtros</button></div>
+                </div>
+                <div class="chips" id="chips"></div>
+                <p id="filtroInfo" style="font-size:12.5px;color:#64748b;margin:10px 0;"></p>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead><tr id="thead"></tr></thead>
+                        <tbody id="tbody"></tbody>
+                    </table>
+                </div>
+                <div class="paginacion" id="paginacion"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-bg" id="modalBg"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, onValue, off, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+            authDomain: "alcaldia-admin.firebaseapp.com",
+            databaseURL: "https://alcaldia-admin-default-rtdb.firebaseio.com",
+            projectId: "alcaldia-admin",
+            storageBucket: "alcaldia-admin.firebasestorage.app",
+            messagingSenderId: "945828226894",
+            appId: "1:945828226894:web:0efeebeb270357e6f5201f",
+            measurementId: "G-P4QSQR0XGE"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+        const L = window.GFormsLogica;
+
+        const $ = (id) => document.getElementById(id);
+        const esc = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString('es-VE'));
+        const RE_CLAVE = /^[a-z0-9-]{3,60}$/;
+
+        let FORMS = [];                 // [{ clave, titulo }]
+        let CLAVE = null, suscrita = null;
+        let DATOS = null, LISTA = [], PREGS = [], PERFIL = null;
+        let filtros = { q: '', desde: '', hasta: '', valores: [] };   // valores: [{ pid, valor }]
+        let pagina = 1; const TAM = 30;
+
+        $('btnSalir').addEventListener('click', async () => { try { await signOut(auth); } catch (e) {} location.href = 'index.html'; });
+
+        // ------------------------------------------------------------ acceso
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { location.href = 'index.html'; return; }
+            const esSuper = user.email === 'carlos.admin@alcaldia.com';
+            let esAdmin = esSuper, lector = null;
+            try {
+                const lec = await get(child(ref(database), `gforms_lectores/${user.uid}`));
+                if (lec.exists()) lector = lec.val();
+            } catch (e) { lector = null; }
+            if (lector && lector.cambio_obligatorio) { location.href = 'password.html'; return; }
+            if (!esSuper && !lector) {
+                try {
+                    const snap = await get(child(ref(database), `operadores/${user.uid}`));
+                    esAdmin = snap.exists() && snap.val().rol === 'admin';
+                } catch (e) { esAdmin = false; }
+            }
+            $('loader').classList.add('hidden');
+            if (!esAdmin && !lector) { $('acceso-restringido').classList.remove('hidden'); return; }
+
+            $('quien').textContent = lector ? (lector.nombre || user.email.replace('@alcaldia.com', '')) + ' · solo lectura'
+                                            : (esSuper ? 'Carlos · administrador' : 'Administrador');
+            if (esAdmin) $('btnPanel').classList.remove('hidden');
+
+            try {
+                FORMS = esAdmin ? await formulariosDeAdmin(user) : await formulariosDeLector(lector);
+            } catch (e) {
+                $('acceso-restringido').classList.remove('hidden');
+                $('acceso-restringido').querySelector('p').textContent = 'No se pudo leer la lista de formularios: ' + (e.message || e.code);
+                return;
+            }
+            if (!FORMS.length) { $('sin-formularios').classList.remove('hidden'); return; }
+            const sel = $('selForm');
+            sel.innerHTML = FORMS.map(f => `<option value="${esc(f.clave)}">${esc(f.titulo)}</option>`).join('');
+            if (FORMS.length > 1) sel.classList.remove('hidden');
+            let elegido = (location.hash.match(/^#f=([a-z0-9-]{3,60})$/) || [])[1];
+            if (!elegido) { try { elegido = localStorage.getItem('gforms_ultimo'); } catch (e) { elegido = null; } }
+            if (!FORMS.some(f => f.clave === elegido)) elegido = FORMS[0].clave;
+            sel.value = elegido;
+            sel.addEventListener('change', () => abrir(sel.value));
+            $('contenido').classList.remove('hidden');
+            abrir(elegido);
+        });
+
+        /** Admin: la lista sale de la base sin bajar las respuestas (lectura superficial). */
+        async function formulariosDeAdmin(user) {
+            const token = await user.getIdToken();
+            const r = await fetch(`${firebaseConfig.databaseURL}/gforms.json?shallow=true&auth=${encodeURIComponent(token)}`);
+            if (!r.ok) throw new Error('la base respondió ' + r.status);
+            const claves = Object.keys((await r.json()) || {}).filter(k => RE_CLAVE.test(k)).sort();
+            return Promise.all(claves.map(async (k) => {
+                const m = await get(ref(database, `gforms/${k}/meta`));
+                return { clave: k, titulo: (m.val() && m.val().titulo) || k };
+            }));
+        }
+        /** Lector: solo los formularios que tiene asignados. */
+        async function formulariosDeLector(lector) {
+            const claves = Object.keys(lector.formularios || {}).filter(k => lector.formularios[k] === true && RE_CLAVE.test(k)).sort();
+            return Promise.all(claves.map(async (k) => {
+                const m = await get(ref(database, `gforms/${k}/meta`));
+                return { clave: k, titulo: (m.val() && m.val().titulo) || k };
+            }));
+        }
+
+        function abrir(clave) {
+            if (suscrita) off(suscrita);
+            CLAVE = clave; filtros = { q: '', desde: '', hasta: '', valores: [] }; pagina = 1;
+            ['fBuscar', 'fDesde', 'fHasta'].forEach(id => $(id).value = '');
+            try { localStorage.setItem('gforms_ultimo', clave); } catch (e) {}
+            history.replaceState(null, '', '#f=' + clave);
+            suscrita = ref(database, 'gforms/' + clave);
+            onValue(suscrita, (snap) => {
+                DATOS = snap.val() || {};
+                PREGS = L.preguntasConRespuesta(DATOS.estructura);
+                LISTA = L.vigentes(DATOS);
+                PERFIL = L.perfilCaracterizacion(PREGS, LISTA, new Date());
+                pintarTodo();
+            }, (err) => {
+                $('fTitulo').textContent = 'No se pudo leer el formulario';
+                $('fDesc').textContent = err && err.message ? err.message : '';
+            });
+        }
+
+        // ------------------------------------------------------------ pintar
+        function pintarTodo() {
+            const m = DATOS.meta || {};
+            $('fTitulo').textContent = m.titulo || CLAVE;
+            $('fDesc').textContent = (m.descripcion || '').trim();
+            $('fUltima').textContent = LISTA.length ? 'Última respuesta: ' + L.fechaHora(LISTA[0].enviada) : 'Todavía no hay respuestas';
+            $('fRevisado').textContent = m.sincronizado_en ? 'Google revisado ' + L.haceCuanto(m.sincronizado_en) : '';
+            const viejo = m.sincronizado_en && Date.now() - m.sincronizado_en > 3 * 3600 * 1000;
+            $('avisoViejo').classList.toggle('hidden', !viejo);
+            if (viejo) $('avisoViejo').textContent = '⚠️ Google no se revisa desde ' + L.fechaHora(m.sincronizado_en) +
+                '. Las respuestas nuevas pueden estar llegando igual, pero conviene revisar la conexión del formulario.';
+
+            const hoy = L.diaLocal(Date.now()), hace7 = Date.now() - 7 * 86400000;
+            $('kTotal').textContent = fmt(LISTA.length);
+            $('kHoy').textContent = fmt(LISTA.filter(r => L.diaLocal(r.enviada) === hoy).length);
+            $('kSemana').textContent = fmt(LISTA.filter(r => r.enviada >= hace7).length);
+            $('kUltima').textContent = LISTA.length ? L.fechaHora(LISTA[0].enviada) : '—';
+            $('kHoyBtn').classList.toggle('activa', filtros.desde === hoy && filtros.hasta === hoy);
+
+            pintarPerfil();
+            pintarPreguntas();
+            pintarTabla();
+        }
+
+        function kpi(num, etq, clase = '', sub = '', accion = '') {
+            const a = accion ? ` data-detalle="${esc(accion)}"` : '';
+            const tag = accion ? 'button type="button"' : 'div';
+            return `<${tag} class="kpi ${accion ? 'btn ' : ''}${clase}"${a}><div class="num">${fmt(num)}</div><div class="etq">${esc(etq)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</${accion ? 'button' : 'div'}>`;
+        }
+
+        function pintarPerfil() {
+            const P = PERFIL;
+            $('cardPerfil').classList.toggle('hidden', !P);
+            if (!P) return;
+            const sexo = (v) => (P.sexo.find(f => L.normalizar(f.valor).startsWith(v)) || {}).cantidad || 0;
+            $('perfilBase').innerHTML = [
+                kpi(P.personas, 'personas registradas'),
+                P.familias != null ? kpi(P.familias, 'familias', 'azul', 'jefes de familia distintos') : '',
+                P.viviendas != null ? kpi(P.viviendas, 'viviendas', 'azul', 'casas, torres o ranchos distintos') : '',
+                kpi(sexo('FEMENIN'), 'mujeres', 'morado'),
+                kpi(sexo('MASCULIN'), 'hombres', 'morado')
+            ].join('');
+            $('perfilEdad').innerHTML = P.edades.grupos.map(g => kpi(g.cantidad, g.nombre)).join('');
+            $('perfilEdadNota').textContent = (P.edades.desdeFecha ? `A ${P.edades.desdeFecha} persona(s) la edad se les calculó con la fecha de nacimiento porque no la escribieron. ` : '') +
+                (P.edades.sinEdad ? `${P.edades.sinEdad} persona(s) sin edad ni fecha de nacimiento válidas.` : '');
+            $('perfilSalud').innerHTML = [
+                kpi(P.discapacidad.cantidad, 'con alguna discapacidad', 'alerta', P.carnetDiscapacidad != null ? `${fmt(P.carnetDiscapacidad)} con carnet de discapacidad` : '', 'discapacidad'),
+                kpi(P.embarazadas.cantidad, 'embarazadas', 'alerta', '', 'embarazadas'),
+                P.lactantes != null ? kpi(P.lactantes, 'lactantes', 'alerta') : '',
+                kpi(P.enfermedad.cantidad, 'con alguna enfermedad', '', '', 'enfermedad'),
+                kpi(P.medicamento.cantidad, 'toman algún medicamento', '', '', 'medicamento')
+            ].join('');
+            const extras = [];
+            if (P.carnetPatria != null) extras.push(kpi(P.carnetPatria, 'con carnet de la patria', 'verde'));
+            if (P.cilindros) extras.push(kpi(P.cilindros.total, 'cilindros de gas', '', `según ${fmt(P.cilindros.respondieron)} respuesta(s)`));
+            (P.gas || []).forEach(f => extras.push(kpi(f.cantidad, 'cilindro ' + f.valor)));
+            (P.voto || []).forEach(f => extras.push(kpi(f.cantidad, 'clasificación ' + f.valor, 'verde')));
+            $('perfilOtros').innerHTML = extras.join('');
+            document.querySelectorAll('#cardPerfil [data-detalle]').forEach(b => b.addEventListener('click', () => detallePerfil(b.dataset.detalle)));
+        }
+
+        const NOMBRES_DET = { discapacidad: 'Discapacidades', embarazadas: 'Embarazadas', enfermedad: 'Enfermedades', medicamento: 'Medicamentos' };
+        function detallePerfil(clave) {
+            const d = PERFIL[clave]; if (!d) return;
+            $('modal').innerHTML = `<h3>${esc(NOMBRES_DET[clave])}: ${fmt(d.cantidad)} persona(s)</h3>
+                <p class="nota" style="margin-bottom:10px;">Pregunta: «${esc(d.pregunta || '')}». Se cuentan quienes escribieron algo distinto de «no», «ninguna», «no aplica» o parecido. Abajo está lo que escribieron, agrupando solo lo que es igual salvo mayúsculas, tildes o espacios.</p>
+                <ul class="valores">${d.detalle.map(x => `<li><span>${esc(x.valor)}</span><b>${fmt(x.cantidad)}</b></li>`).join('') || '<li><span>Nadie</span><b>0</b></li>'}</ul>
+                <button class="cerrar" id="cerrarModal" type="button">Cerrar</button>`;
+            abrirModal();
+        }
+
+        function pintarPreguntas() {
+            const cont = $('preguntas');
+            cont.innerHTML = PREGS.map(p => {
+                const s = L.resumen(p, LISTA);
+                const base = s.respondieron || 1;
+                let cuerpo = '';
+                if (s.deOpciones) {
+                    // Con muchas opciones (ej. los 62 centros de votación) se muestran solo las
+                    // que tienen respuestas, de más a menos. El Excel y el PDF traen todas.
+                    let filas = s.filas, ocultas = 0;
+                    if (filas.length > 12) {
+                        filas = s.filas.filter(f => f.cantidad > 0).sort((a, b) => b.cantidad - a.cantidad);
+                        ocultas = s.filas.length - filas.length;
+                    }
+                    cuerpo = filas.map(f => {
+                        const activa = filtros.valores.some(v => v.pid === p.id && v.valor === f.valor);
+                        const pct = Math.round((f.cantidad / base) * 100);
+                        return `<button type="button" class="barra${f.esOtro ? ' otro' : ''}${activa ? ' activa' : ''}" data-pid="${esc(p.id)}" data-valor="${esc(f.valor)}" aria-pressed="${activa}">
+                            <span class="txt">${esc(f.valor)}</span><span class="cnt">${fmt(f.cantidad)} · ${pct}%</span>
+                            <span class="pista"><i style="width:${Math.min(100, pct)}%"></i></span></button>`;
+                    }).join('');
+                    if (ocultas) cuerpo += `<p class="nota">${fmt(ocultas)} opción(es) todavía sin respuestas no se muestran aquí.</p>`;
+                    if (s.otros.length) cuerpo += `<button type="button" class="ver-mas" data-otros="${esc(p.id)}">Ver lo que escribieron en «Otro» (${s.otros.length})</button>`;
+                } else {
+                    const nums = s.numeros ? `<div class="numeros"><span>mínimo <b>${fmt(s.numeros.min)}</b></span><span>máximo <b>${fmt(s.numeros.max)}</b></span><span>promedio <b>${fmt(s.numeros.promedio)}</b></span></div>` : '';
+                    const top = s.filas.slice(0, 6);
+                    cuerpo = nums + `<ul class="valores">${top.map(f => `<li><span>${esc(f.valor)}</span><b>${fmt(f.cantidad)}</b></li>`).join('')}</ul>` +
+                        (s.filas.length > 6 ? `<button type="button" class="ver-mas" data-todos="${esc(p.id)}">Ver las ${fmt(s.filas.length)} respuestas distintas</button>` : '');
+                    if (!s.filas.length) cuerpo = '<p class="nota">Nadie respondió esta pregunta todavía.</p>';
+                }
+                return `<div class="pregunta"><h3>${esc(p.titulo)}</h3>
+                    <div class="meta">${fmt(s.respondieron)} de ${fmt(s.total)} respondieron${s.distintos != null ? ` · ${fmt(s.distintos)} respuesta(s) distinta(s)` : ''}</div>${cuerpo}</div>`;
+            }).join('') || '<p class="nota">Este formulario todavía no tiene preguntas cargadas.</p>';
+            cont.querySelectorAll('.barra').forEach(b => b.addEventListener('click', () => alternarValor(b.dataset.pid, b.dataset.valor)));
+            cont.querySelectorAll('[data-otros]').forEach(b => b.addEventListener('click', () => verLista(b.dataset.otros, true)));
+            cont.querySelectorAll('[data-todos]').forEach(b => b.addEventListener('click', () => verLista(b.dataset.todos, false)));
+        }
+
+        function verLista(pid, otros) {
+            const p = PREGS.find(x => x.id === pid); if (!p) return;
+            const s = L.resumen(p, LISTA);
+            const filas = otros ? s.otros : s.filas;
+            $('modal').innerHTML = `<h3>${esc(p.titulo)}</h3>
+                <p class="nota" style="margin-bottom:10px;">${otros ? 'Lo que escribieron en «Otro».' : 'Todas las respuestas distintas.'} Solo se agrupa lo que es igual salvo mayúsculas, tildes o espacios.</p>
+                <ul class="valores">${filas.map(f => `<li><span>${esc(f.valor)}</span><b>${fmt(f.cantidad)}</b></li>`).join('')}</ul>
+                <button class="cerrar" id="cerrarModal" type="button">Cerrar</button>`;
+            abrirModal();
+        }
+
+        function alternarValor(pid, valor) {
+            const i = filtros.valores.findIndex(v => v.pid === pid && v.valor === valor);
+            if (i >= 0) filtros.valores.splice(i, 1); else filtros.valores.push({ pid, valor });
+            pagina = 1; pintarPreguntas(); pintarTabla();
+            $('cardTabla').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+        }
+
+        function filtradas() {
+            return LISTA.filter(r => {
+                const dia = L.diaLocal(r.enviada);
+                if (filtros.desde && dia < filtros.desde) return false;
+                if (filtros.hasta && dia > filtros.hasta) return false;
+                for (const f of filtros.valores) {
+                    const p = PREGS.find(x => x.id === f.pid);
+                    if (!p || !L.tieneValor(r, p, f.valor, p.opciones || [])) return false;
+                }
+                return L.coincide(r, PREGS, filtros.q);
+            });
+        }
+
+        const COLS_TABLA = () => PREGS.slice(0, 8);
+        function pintarTabla() {
+            const cols = COLS_TABLA();
+            $('thead').innerHTML = '<th>N°</th><th>Enviada</th>' + cols.map(p => `<th>${esc(p.titulo)}</th>`).join('') + '<th></th>';
+            $('chips').innerHTML = filtros.valores.map((f, i) => {
+                const p = PREGS.find(x => x.id === f.pid);
+                return `<button type="button" class="chip" data-chip="${i}">✕ ${esc((p ? p.titulo : '') + ': ' + f.valor)}</button>`;
+            }).join('');
+            $('chips').querySelectorAll('[data-chip]').forEach(b => b.addEventListener('click', () => {
+                filtros.valores.splice(Number(b.dataset.chip), 1); pagina = 1; pintarPreguntas(); pintarTabla();
+            }));
+            const lista = filtradas();
+            $('filtroInfo').textContent = lista.length === LISTA.length ? `Mostrando las ${fmt(LISTA.length)} respuesta(s).`
+                : `Mostrando ${fmt(lista.length)} de ${fmt(LISTA.length)} respuesta(s) con los filtros aplicados.`;
+            const tot = Math.max(1, Math.ceil(lista.length / TAM));
+            if (pagina > tot) pagina = tot;
+            const pag = lista.slice((pagina - 1) * TAM, pagina * TAM);
+            const tb = $('tbody');
+            if (!pag.length) {
+                tb.innerHTML = `<tr><td colspan="${cols.length + 3}" style="text-align:center;padding:34px;color:#94a3b8;">Sin respuestas con estos filtros.</td></tr>`;
+            } else {
+                tb.innerHTML = pag.map((r, i) => `<tr>
+                    <td>${(pagina - 1) * TAM + i + 1}</td>
+                    <td style="white-space:nowrap;">${esc(L.fechaHora(r.enviada))}</td>
+                    ${cols.map(p => `<td>${esc(L.comoTexto(r.v[p.id], p)) || '<span style="color:#cbd5e1;">—</span>'}</td>`).join('')}
+                    <td><button class="btn-ver" type="button" data-id="${esc(r.id)}">Ver ficha</button></td></tr>`).join('');
+                tb.querySelectorAll('button.btn-ver').forEach(b => b.addEventListener('click', () => verFicha(b.dataset.id)));
+            }
+            const pg = $('paginacion');
+            pg.innerHTML = tot <= 1 ? '' : `<button ${pagina === 1 ? 'disabled' : ''} id="pgPrev" type="button">‹ Anterior</button>
+                <span style="font-size:13px;color:#475569;">Página ${pagina} de ${tot}</span>
+                <button ${pagina === tot ? 'disabled' : ''} id="pgNext" type="button">Siguiente ›</button>`;
+            if ($('pgPrev')) $('pgPrev').addEventListener('click', () => { pagina--; pintarTabla(); });
+            if ($('pgNext')) $('pgNext').addEventListener('click', () => { pagina++; pintarTabla(); });
+        }
+
+        function verFicha(id) {
+            const r = LISTA.find(x => x.id === id); if (!r) return;
+            const est = (DATOS.estructura && DATOS.estructura.preguntas) || {};
+            const orden = (DATOS.estructura && DATOS.estructura.orden) || [];
+            let html = `<h3>Respuesta del ${esc(L.fechaHora(r.enviada))}</h3>${r.correo ? `<p class="nota">Correo: ${esc(r.correo)}</p>` : ''}`;
+            orden.forEach(pid => {
+                const p = est[pid]; if (!p) return;
+                if (p.tipo === 'SECTION_HEADER' || p.tipo === 'PAGE_BREAK') { if (p.titulo) html += `<h4>${esc(p.titulo)}</h4>`; return; }
+                if (p.tipo === 'IMAGE' || p.tipo === 'VIDEO') return;
+                const t = L.comoTexto(r.v[pid], p);
+                html += `<div class="fila"><span class="k">${esc(p.titulo)}</span><span class="val">${t ? esc(t) : '<span style="color:#94a3b8;">—</span>'}</span></div>`;
+            });
+            $('modal').innerHTML = html + '<button class="cerrar" id="cerrarModal" type="button">Cerrar</button>';
+            abrirModal();
+        }
+
+        let focoAntes = null;
+        function abrirModal() {
+            focoAntes = document.activeElement;
+            $('modalBg').classList.add('show');
+            $('cerrarModal').addEventListener('click', cerrarModal);
+            $('cerrarModal').focus();
+        }
+        function cerrarModal() { $('modalBg').classList.remove('show'); if (focoAntes && focoAntes.focus) focoAntes.focus(); }
+        $('modalBg').addEventListener('click', (e) => { if (e.target === $('modalBg')) cerrarModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('modalBg').classList.contains('show')) cerrarModal(); });
+
+        // ----------------------------------------------------------- filtros
+        $('fBuscar').addEventListener('input', () => { filtros.q = $('fBuscar').value.trim(); pagina = 1; pintarTabla(); });
+        $('fDesde').addEventListener('input', () => { filtros.desde = $('fDesde').value; pagina = 1; pintarTabla(); pintarTodoKpi(); });
+        $('fHasta').addEventListener('input', () => { filtros.hasta = $('fHasta').value; pagina = 1; pintarTabla(); pintarTodoKpi(); });
+        $('btnLimpiar').addEventListener('click', () => {
+            filtros = { q: '', desde: '', hasta: '', valores: [] }; ['fBuscar', 'fDesde', 'fHasta'].forEach(id => $(id).value = '');
+            pagina = 1; pintarPreguntas(); pintarTabla(); pintarTodoKpi();
+        });
+        $('kHoyBtn').addEventListener('click', () => {
+            const h = L.diaLocal(Date.now()), act = filtros.desde === h && filtros.hasta === h;
+            filtros.desde = filtros.hasta = act ? '' : h; $('fDesde').value = filtros.desde; $('fHasta').value = filtros.hasta;
+            pagina = 1; pintarTabla(); pintarTodoKpi();
+            if (!act) $('cardTabla').scrollIntoView({ block: 'start' });
+        });
+        function pintarTodoKpi() { const h = L.diaLocal(Date.now()); $('kHoyBtn').classList.toggle('activa', filtros.desde === h && filtros.hasta === h); }
+
+        // -------------------------------------------------------------- Excel
+        $('btnExcel').addEventListener('click', () => {
+            const lista = filtradas();
+            if (!lista.length) { alert('No hay respuestas que exportar con los filtros actuales.'); return; }
+            const titulo = ((DATOS.meta && DATOS.meta.titulo) || CLAVE).toUpperCase();
+            const ahora = new Date();
+            const T = L.tablaExcel(PREGS, lista);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, hoja(titulo, `Generado el ${L.fechaLarga(ahora.getTime())} · ${lista.length} respuesta(s)${lista.length !== LISTA.length ? ' (con filtros)' : ''}`, T.encabezados, T.filas, T.anchos), 'Respuestas');
+            // Resumen: cada opción de cada pregunta de opciones, con cantidad y porcentaje.
+            const filasR = [];
+            PREGS.forEach(p => {
+                const s = L.resumen(p, lista);
+                if (!s.deOpciones) return;
+                s.filas.forEach(f => filasR.push([p.titulo, f.valor, f.cantidad, s.respondieron ? Math.round(f.cantidad / s.respondieron * 1000) / 10 : 0]));
+                s.otros.forEach(f => filasR.push([p.titulo, '   Otro: ' + f.valor, f.cantidad, '']));
+            });
+            if (filasR.length) XLSX.utils.book_append_sheet(wb, hoja(titulo + ' — RESUMEN', `Generado el ${L.fechaLarga(ahora.getTime())}`, ['Pregunta', 'Respuesta', 'Cantidad', '% de quienes respondieron'], filasR, [50, 40, 12, 16]), 'Resumen');
+            guardarXlsx(wb, `formulario_${CLAVE}_${L.diaLocal(ahora.getTime())}.xlsx`);
+        });
+
+        function hoja(titulo, generado, hdr, filas, anchos) {
+            if (hdr.length !== anchos.length || filas.some(f => f.length !== hdr.length)) throw new Error('El Excel se descuadró: encabezados, filas y anchos no coinciden.');
+            const NAVY = '0A2351', GRIS = '64748B', ZEBRA = 'F1F5F9', TEXTO = '0F172A';
+            const thin = { style: 'thin', color: { rgb: 'CBD5E1' } }, borde = { top: thin, bottom: thin, left: thin, right: thin };
+            const data = [[titulo].concat(Array(hdr.length - 1).fill('')), [generado].concat(Array(hdr.length - 1).fill('')), hdr].concat(filas);
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const setS = (rr, c, s) => { const a = XLSX.utils.encode_cell({ r: rr, c }); if (!ws[a]) ws[a] = { t: 's', v: '' }; ws[a].s = s; };
+            for (let c = 0; c < hdr.length; c++) {
+                setS(0, c, { font: { bold: true, sz: 15, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center' } });
+                setS(1, c, { font: { italic: true, sz: 10, color: { rgb: GRIS } }, alignment: { horizontal: 'center' } });
+                setS(2, c, { font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: NAVY } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true }, border: borde });
+            }
+            for (let rr = 3; rr < data.length; rr++) for (let c = 0; c < hdr.length; c++) {
+                setS(rr, c, { font: { sz: 10, color: { rgb: TEXTO } }, alignment: { vertical: 'top', wrapText: true }, border: borde, ...((rr % 2 === 0) ? { fill: { fgColor: { rgb: ZEBRA } } } : {}) });
+            }
+            ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: hdr.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: hdr.length - 1 } }];
+            ws['!cols'] = anchos.map(w => ({ wch: w }));
+            ws['!rows'] = [{ hpt: 26 }, { hpt: 16 }, { hpt: 42 }];
+            ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 2, c: 0 }, e: { r: 2 + filas.length, c: hdr.length - 1 } }) };
+            return ws;
+        }
+
+        // Los escritores de SheetJS / xlsx-js-style NO saben congelar paneles: se abre el
+        // zip generado, se inyecta el <pane> en cada hoja y se vuelve a cerrar.
+        function guardarXlsx(wb, nombre) {
+            try {
+                const filaHdr = (wb.SheetNames || []).map(function (n) {
+                    const ws = (wb.Sheets || {})[n] || {};
+                    const rf = ws['!autofilter'] && ws['!autofilter'].ref;
+                    const m = rf && /^[A-Za-z]+(\d+)/.exec(String(rf));
+                    return m ? Number(m[1]) : 0;
+                });
+                if (!filaHdr.some(Boolean)) throw new Error('ninguna hoja tiene filtro de referencia');
+                const cfb = XLSX.CFB.read(new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' })), { type: 'array' });
+                let n = 0;
+                (cfb.FullPaths || []).forEach(function (ruta, i) {
+                    const mh = /\/xl\/worksheets\/sheet(\d+)\.xml$/.exec(ruta);
+                    if (!mh) return;
+                    const y = filaHdr[Number(mh[1]) - 1];
+                    const ent = cfb.FileIndex[i];
+                    if (!y || !ent || !ent.content) return;
+                    const celda = 'A' + (y + 1);
+                    const pane = '<pane ySplit="' + y + '" topLeftCell="' + celda + '" activePane="bottomLeft" state="frozen"/>'
+                        + '<selection pane="bottomLeft" activeCell="' + celda + '" sqref="' + celda + '"/>';
+                    let xml = new TextDecoder('utf-8').decode(new Uint8Array(ent.content));
+                    const antes = xml;
+                    xml = xml.replace(/(<sheetView[^>]*?)\/>/, '$1>' + pane + '</sheetView>');
+                    if (xml === antes) return;
+                    const b = new TextEncoder().encode(xml);
+                    ent.content = b; ent.size = b.length; n++;
+                });
+                if (!n) throw new Error('no se pudo inyectar el congelado');
+                const blob = new Blob([XLSX.CFB.write(cfb, { type: 'array', fileType: 'zip' })],
+                    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = nombre;
+                document.body.appendChild(a); a.click();
+                setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+            } catch (e) {
+                XLSX.writeFile(wb, nombre);
+            }
+        }
+
+        // ---------------------------------------------------------------- PDF
+        function _safePdf(s) {
+            if (s == null) return '';
+            let t = String(s); try { t = t.normalize('NFC'); } catch (e) {}
+            let out = '';
+            for (const ch of t) {
+                const c = ch.codePointAt(0);
+                if (c === 0x201C || c === 0x201D || c === 0x2033) out += '"';
+                else if (c === 0x2018 || c === 0x2019 || c === 0x2032) out += "'";
+                else if (c === 0x2013 || c === 0x2014) out += '-';
+                else if (c === 0x2026) out += '...';
+                else if (c === 0x00A0) out += ' ';
+                else if (c === 0x00B7) out += '·';
+                else if (c < 32 || c === 127) out += ' ';
+                else if (c <= 255) out += ch;
+            }
+            return out.replace(/ {2,}/g, ' ').trim();
+        }
+
+        function prepararPdf(boton) {
+            if (!window.jspdf || !window.jspdf.jsPDF) { alert('No cargó la herramienta de PDF. Revisa la conexión y recarga la página.'); return null; }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF.API || typeof jsPDF.API.autoTable !== 'function') { alert('No cargó la herramienta de tablas del PDF. Recarga la página.'); return null; }
+            const lista = filtradas();
+            if (!lista.length) { alert('No hay respuestas que exportar con los filtros actuales.'); return null; }
+            return { jsPDF, lista, texto: boton.textContent };
+        }
+
+        const ESTILO = { font: 'helvetica', fontSize: 8, cellPadding: 1.4, textColor: [15, 23, 42], lineColor: [203, 213, 225], lineWidth: 0.2, valign: 'top', overflow: 'linebreak' };
+
+        $('btnPdf').addEventListener('click', async () => {
+            const b = $('btnPdf'); const x = prepararPdf(b); if (!x) return;
+            b.disabled = true; b.textContent = 'Generando…';
+            try {
+                const { jsPDF, lista } = x;
+                const doc = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'landscape' });
+                const titulo = _safePdf((DATOS.meta && DATOS.meta.titulo) || CLAVE);
+                const sub = _safePdf(`${lista.length} respuesta(s)${lista.length !== LISTA.length ? ' con filtros' : ''} · ${L.fechaLarga(Date.now())}`);
+                let y0 = 0;
+                const hf = () => { y0 = dibujarHeaderPDF(doc, { titulo, subtitulo: sub }); dibujarFooterPDF(doc); };
+                hf();
+                let y = y0;
+                const tabla = (cfg) => { jsPDF.API.autoTable.call(doc, Object.assign({ startY: y, margin: { top: y0, bottom: 16, left: 14, right: 14 }, theme: 'grid', styles: ESTILO,
+                    headStyles: { fillColor: [10, 35, 81], textColor: 255, fontStyle: 'bold' }, didDrawPage: hf }, cfg)); y = doc.lastAutoTable.finalY + 6; };
+
+                // 1. La comunidad en números (si el formulario es de caracterización)
+                const P = L.perfilCaracterizacion(PREGS, lista, new Date());
+                if (P) {
+                    const sexo = (v) => (P.sexo.find(f => L.normalizar(f.valor).startsWith(v)) || {}).cantidad || 0;
+                    const filas = [['Personas registradas', P.personas], ['Familias (jefes de familia distintos)', P.familias ?? '-'], ['Viviendas distintas', P.viviendas ?? '-'],
+                        ['Mujeres', sexo('FEMENIN')], ['Hombres', sexo('MASCULIN')]]
+                        .concat(P.edades.grupos.map(g => [g.nombre, g.cantidad]))
+                        .concat([['Con alguna discapacidad', P.discapacidad.cantidad], ['Con carnet de discapacidad', P.carnetDiscapacidad ?? '-'],
+                            ['Embarazadas', P.embarazadas.cantidad], ['Lactantes', P.lactantes ?? '-'], ['Con alguna enfermedad', P.enfermedad.cantidad],
+                            ['Toman algún medicamento', P.medicamento.cantidad], ['Con carnet de la patria', P.carnetPatria ?? '-'],
+                            ['Cilindros de gas (suma)', P.cilindros ? P.cilindros.total : '-']])
+                        .concat((P.voto || []).map(f => ['Clasificación ' + f.valor, f.cantidad]));
+                    tabla({ head: [[{ content: 'LA COMUNIDAD EN NUMEROS', colSpan: 2 }]], body: filas.map(f => [_safePdf(f[0]), String(f[1])]),
+                        columnStyles: { 0: { cellWidth: 90, fontStyle: 'bold', fillColor: [241, 245, 249] }, 1: { cellWidth: 30, halign: 'right' } }, tableWidth: 120 });
+                }
+                // 2. Cada pregunta de opciones: cuántos eligieron cada una
+                PREGS.forEach(p => {
+                    const s = L.resumen(p, lista); if (!s.deOpciones) return;
+                    const body = s.filas.map(f => [_safePdf(f.valor), String(f.cantidad), (s.respondieron ? Math.round(f.cantidad / s.respondieron * 100) : 0) + '%']);
+                    s.otros.forEach(f => body.push([_safePdf('   Otro: ' + f.valor), String(f.cantidad), '']));
+                    tabla({ head: [[{ content: _safePdf(p.titulo + ' (' + s.respondieron + ' de ' + s.total + ' respondieron)'), colSpan: 3 }]], body,
+                        columnStyles: { 0: { cellWidth: 150 }, 1: { cellWidth: 22, halign: 'right' }, 2: { cellWidth: 22, halign: 'right' } }, tableWidth: 194 });
+                });
+                // 3. Listado con las columnas principales (el ancho útil de la hoja es ~251 mm)
+                doc.addPage(); hf(); y = y0;
+                const cols = COLS_TABLA();
+                const anchoLibre = 251 - 8 - 24;
+                const w = Math.floor(anchoLibre / Math.max(1, cols.length));
+                const cs = { 0: { cellWidth: 8 }, 1: { cellWidth: 24 } };
+                cols.forEach((c, i) => { cs[i + 2] = { cellWidth: w }; });
+                tabla({ head: [['N°', 'Enviada'].concat(cols.map(c => _safePdf(c.titulo)))],
+                    body: lista.map((r, i) => [String(i + 1), _safePdf(L.fechaHora(r.enviada))].concat(cols.map(c => _safePdf(L.comoTexto(r.v[c.id], c))))),
+                    columnStyles: cs, styles: Object.assign({}, ESTILO, { fontSize: 7.5 }), headStyles: { fillColor: [10, 35, 81], textColor: 255, fontStyle: 'bold', fontSize: 7 } });
+                if (PREGS.length > cols.length) {
+                    doc.setFontSize(8.5); doc.setTextColor(100, 116, 139);
+                    doc.text(_safePdf(`El listado muestra las primeras ${cols.length} preguntas. Todas las respuestas completas están en el Excel y en el PDF de fichas.`), 14, Math.min(y, 200));
+                }
+                doc.save(`formulario_${CLAVE}_${L.diaLocal(Date.now())}.pdf`);
+            } catch (e) {
+                alert('No se pudo generar el PDF: ' + (e.message || e));
+            } finally { b.disabled = false; b.textContent = x.texto; }
+        });
+
+        $('btnPdfFichas').addEventListener('click', async () => {
+            const b = $('btnPdfFichas'); const x = prepararPdf(b); if (!x) return;
+            b.disabled = true; b.textContent = 'Generando…';
+            try {
+                const { jsPDF, lista } = x;
+                const doc = new jsPDF({ unit: 'mm', format: 'letter' });
+                const titulo = _safePdf((DATOS.meta && DATOS.meta.titulo) || CLAVE);
+                let y0 = 0;
+                const hf = () => { y0 = dibujarHeaderPDF(doc, { titulo, subtitulo: _safePdf(`Fichas completas · ${lista.length} persona(s)`) }); dibujarFooterPDF(doc); };
+                const est = (DATOS.estructura && DATOS.estructura.preguntas) || {};
+                const orden = (DATOS.estructura && DATOS.estructura.orden) || [];
+                lista.forEach((r, i) => {
+                    if (i > 0) doc.addPage();
+                    hf();
+                    const body = [];
+                    orden.forEach(pid => {
+                        const p = est[pid]; if (!p) return;
+                        if (p.tipo === 'SECTION_HEADER' || p.tipo === 'PAGE_BREAK') { if (p.titulo) body.push([{ content: _safePdf(p.titulo), colSpan: 2, styles: { fillColor: [226, 232, 240], fontStyle: 'bold' } }]); return; }
+                        if (p.tipo === 'IMAGE' || p.tipo === 'VIDEO') return;
+                        body.push([_safePdf(p.titulo), _safePdf(L.comoTexto(r.v[pid], p)) || '-']);
+                    });
+                    jsPDF.API.autoTable.call(doc, {
+                        startY: y0, margin: { top: y0, bottom: 16, left: 14, right: 14 }, theme: 'grid', styles: Object.assign({}, ESTILO, { fontSize: 8.5 }),
+                        head: [[{ content: _safePdf(`FICHA ${i + 1} de ${lista.length}  -  enviada el ${L.fechaHora(r.enviada)}`), colSpan: 2 }]],
+                        headStyles: { fillColor: [10, 35, 81], textColor: 255, fontStyle: 'bold' },
+                        body, columnStyles: { 0: { cellWidth: 78, fontStyle: 'bold', fillColor: [241, 245, 249] }, 1: { cellWidth: 108 } }, didDrawPage: hf
+                    });
+                });
+                doc.save(`formulario_${CLAVE}_fichas_${L.diaLocal(Date.now())}.pdf`);
+            } catch (e) {
+                alert('No se pudo generar el PDF: ' + (e.message || e));
+            } finally { b.disabled = false; b.textContent = x.texto; }
+        });
+    </script>
+</body>
+</html>

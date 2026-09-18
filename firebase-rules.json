@@ -14,7 +14,7 @@
       }
     },
     "operadores": {
-      ".read": "auth != null",
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists())",
       "$uid": {
         ".write": "auth.token.email === 'carlos.admin@alcaldia.com'",
         "cambio_obligatorio": {
@@ -29,7 +29,9 @@
     },
     "historial_sesiones": {
       ".read": "auth.token.email === 'carlos.admin@alcaldia.com'",
-      ".write": "auth != null"
+      "$id": {
+        ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists())"
+      }
     },
     "presencia": {
       ".read": "auth.token.email === 'carlos.admin@alcaldia.com'",
@@ -38,7 +40,7 @@
       }
     },
     "config": {
-      ".read": "auth != null",
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists())",
       ".write": "auth.token.email === 'carlos.admin@alcaldia.com'"
     },
     "equipos": {
@@ -190,13 +192,13 @@
       }
     },
     "tickets": {
-      ".read": "auth != null",
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists())",
       "$ticketId": {
-        ".write": "auth != null"
+        ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists())"
       }
     },
     "encuestas_consulta_popular": {
-      ".read": "auth != null",
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists())",
       "$cedula": {
         ".write": "((!data.exists() && newData.exists()) && ($cedula.matches(/^[VEJPG]?[0-9]{4,9}$/) || $cedula.matches(/^anon_[0-9]+_[a-z0-9]+$/))) || auth.token.email === 'carlos.admin@alcaldia.com'",
         "nombres":                { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -238,7 +240,7 @@
       }
     },
     "encuestas_reorganizacion_gobierno": {
-      ".read": "auth != null",
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists())",
       "$cedula": {
         ".write": "((!data.exists() && newData.exists()) && ($cedula.matches(/^[VEJPG]?[0-9]{4,9}$/) || $cedula.matches(/^anon_[0-9]+_[a-z0-9]+$/))) || auth.token.email === 'carlos.admin@alcaldia.com'",
         "nombres":                          { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -259,7 +261,7 @@
       }
     },
     "encuestas_percepcion_gestion": {
-      ".read": "auth != null",
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).exists())",
       "$cedula": {
         ".write": "((!data.exists() && newData.exists()) && ($cedula.matches(/^[VEJPG]?[0-9]{4,9}$/) || $cedula.matches(/^anon_[0-9]+_[a-z0-9]+$/))) || auth.token.email === 'carlos.admin@alcaldia.com'",
         "nombres":                       { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -916,6 +918,25 @@
       ".indexOn": ["fecha"],
       "$id": {
         ".write": "auth != null && root.child('pc_operadores').child(auth.uid).exists() && !data.exists()"
+      }
+    },
+    "gforms": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$form": {
+        ".read": "auth != null && root.child('gforms_lectores').child(auth.uid).child('formularios').child($form).val() === true",
+        ".write": "auth != null && auth.uid === 'U8zy2MPJPvU0cXXvwCRVdyWJBQo2'",
+        ".validate": "$form.matches(/^[a-z0-9-]{3,60}$/)"
+      }
+    },
+    "gforms_lectores": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth.token.email === 'carlos.admin@alcaldia.com'",
+        "cambio_obligatorio": {
+          ".write": "auth.token.email === 'carlos.admin@alcaldia.com' || (auth != null && auth.uid === $uid && newData.val() === false)",
+          ".validate": "newData.isBoolean()"
+        }
       }
     }
   }

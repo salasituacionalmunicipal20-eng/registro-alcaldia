@@ -1,0 +1,18 @@
+{
+  // Intermediario de los formularios de Google → Sala Situacional (Firebase).
+  // Secretos (nunca aquí): CLAVE_FIRMA (la misma de las Propiedades del script
+  // del formulario) y ROBOT_CLAVE (cuenta robot-gforms, solo escribe gforms/).
+  "name": "formularios-google",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-01",
+  "routes": [{ "pattern": "formularios-google.alcaldiadecharallave.com", "custom_domain": true }],
+  "vars": {
+    "FIREBASE_DB": "https://alcaldia-admin-default-rtdb.firebaseio.com",
+    // Clave pública de las páginas de la Sala Situacional (no es un secreto).
+    "FIREBASE_API_KEY": "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
+    "ROBOT_CORREO": "robot-gforms@alcaldia.com",
+    // Formularios conectados: id del formulario de Google → clave en gforms/.
+    "FORMULARIOS": "{\"1ZwYffa5Ql29NuKWGZJ177ArhQXLpbzUHJykrcUnBHok\":\"terraza-hugo-chavez-2026\"}"
+  },
+  "observability": { "enabled": true }
+}

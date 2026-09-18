@@ -48,3 +48,10 @@ serviceAccount*.json
 
 # Metadatos de la herramienta de codigo, no son del proyecto
 .serena/
+
+# Pruebas: capturas, descargas y copias rotas a propósito (se regeneran)
+pruebas/.e2e-gforms/
+pruebas/.mutante-logica.js
+worker-gforms/.mutante.js
+worker-gforms/.mutante.gs
+worker-gforms/.wrangler/

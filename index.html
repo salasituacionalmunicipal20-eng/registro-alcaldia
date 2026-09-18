@@ -162,6 +162,15 @@
                 window.location.href = "admin.html";
             } else {
                 const dbRef = ref(database);
+                // Lectores de formularios de Google: van en su propia lista (no son
+                // operadores, así no pueden leer el censo) y solo ven su tablero.
+                try {
+                    const lector = await get(child(dbRef, `gforms_lectores/${user.uid}`));
+                    if (lector.exists()) {
+                        window.location.href = lector.val().cambio_obligatorio ? "password.html" : "formularios-google.html";
+                        return;
+                    }
+                } catch (e) { /* no es lector: sigue como siempre */ }
                 try {
                     const snapshot = await get(child(dbRef, `operadores/${user.uid}`));
                     if (snapshot.exists()) {
