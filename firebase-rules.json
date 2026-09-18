@@ -782,6 +782,135 @@
         "$otro": { ".validate": false }
       }
     },
+    "pc_novedades": {
+      ".read": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
+      ".indexOn": ["fecha_registro"],
+      "$id": {
+        ".write": "(!data.exists() && newData.exists() && root.child('pc_config').child('formulario_abierto').val() === true) || (auth != null && root.child('pc_operadores').child(auth.uid).exists())",
+        ".validate": "(data.exists() || $id.matches(/^-[A-Za-z0-9_-]{19}$/)) && newData.hasChildren(['fecha','tipo_actividad','resena','reportado_por','fecha_registro']) && ((auth != null && root.child('pc_operadores').child(auth.uid).exists()) || (newData.child('origen').val() === 'publico' && !newData.hasChild('registrado_por') && !newData.hasChild('editado_por') && !newData.hasChild('fecha_edicion')))",
+
+        "origen":         { ".validate": "newData.isString() && newData.val().matches(/^(publico|interno)$/)" },
+        "fecha_registro": { ".validate": "newData.isNumber() && newData.val() > 1700000000000 && newData.val() <= now + 60000" },
+        "fecha_edicion":  { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+        "reportado_por": {
+          "nombre":   { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "telefono": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "$otro":    { ".validate": false }
+        },
+        "registrado_por": {
+          "uid":    { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "nombre": { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "email":  { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "$otro":  { ".validate": false }
+        },
+        "editado_por": {
+          "uid":    { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "nombre": { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "email":  { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "$otro":  { ".validate": false }
+        },
+        "fecha":          { ".validate": "newData.isString() && newData.val().matches(/^(19|20)[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/)" },
+        "hora_inicio":    { ".validate": "newData.isString() && newData.val().matches(/^(([01][0-9]|2[0-3]):[0-5][0-9])?$/)" },
+        "hora_fin":       { ".validate": "newData.isString() && newData.val().matches(/^(([01][0-9]|2[0-3]):[0-5][0-9])?$/)" },
+        "parroquia":      { ".validate": "newData.isString() && newData.val().length <= 80" },
+        "comuna":         { ".validate": "newData.isString() && newData.val().length <= 120" },
+        "cuadrante":      { ".validate": "newData.isString() && newData.val().length <= 120" },
+        "tipo_actividad": { ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 120" },
+        "resena":         { ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 3000" },
+        "paciente": {
+          "nombre":      { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "cedula":      { ".validate": "newData.isString() && newData.val().matches(/^([VEve]?-?[0-9]{4,10})?$/)" },
+          "edad":        { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120" },
+          "idx":         { ".validate": "newData.isString() && newData.val().length <= 300" },
+          "ta":          { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "pulso":       { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "spo2":        { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "temperatura": { ".validate": "newData.isString() && newData.val().length <= 20" },
+          "$otro":       { ".validate": false }
+        },
+        "acompanante": {
+          "nombre":    { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "cedula":    { ".validate": "newData.isString() && newData.val().matches(/^([VEve]?-?[0-9]{4,10})?$/)" },
+          "direccion": { ".validate": "newData.isString() && newData.val().length <= 300" },
+          "telefono":  { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "$otro":     { ".validate": false }
+        },
+        "traslado": {
+          "centro_hospitalario": { ".validate": "newData.isString() && newData.val().length <= 300" },
+          "medico_refiere":      { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "destino":             { ".validate": "newData.isString() && newData.val().length <= 300" },
+          "servicio":            { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "medico_recibe":       { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "$otro":               { ".validate": false }
+        },
+        "conductor":  {
+          "nombre":   { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "cedula":   { ".validate": "newData.isString() && newData.val().matches(/^([VEve]?-?[0-9]{4,10})?$/)" },
+          "telefono": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "$otro":    { ".validate": false }
+        },
+        "paramedico": {
+          "nombre":   { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "cedula":   { ".validate": "newData.isString() && newData.val().matches(/^([VEve]?-?[0-9]{4,10})?$/)" },
+          "telefono": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "$otro":    { ".validate": false }
+        },
+        "unidad":     { ".validate": "newData.isString() && newData.val().length <= 60" },
+        "placa":      { ".validate": "newData.isString() && newData.val().length <= 20" },
+        "nota":       { ".validate": "newData.isString() && newData.val().length <= 2000" },
+        "estatus":    { ".validate": "newData.isString() && newData.val().matches(/^(Finalizado|En curso)$/)" },
+
+        "$otro": { ".validate": false }
+      }
+    },
+
+    "pc_jornadas": {
+      ".read": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
+      ".indexOn": ["fecha_registro"],
+      "$id": {
+        ".write": "(!data.exists() && newData.exists() && root.child('pc_config').child('formulario_abierto').val() === true) || (auth != null && root.child('pc_operadores').child(auth.uid).exists())",
+        ".validate": "(data.exists() || $id.matches(/^-[A-Za-z0-9_-]{19}$/)) && newData.hasChildren(['fecha','lugar','personas','reportado_por','fecha_registro']) && ((auth != null && root.child('pc_operadores').child(auth.uid).exists()) || (newData.child('origen').val() === 'publico' && !newData.hasChild('registrado_por') && !newData.hasChild('editado_por') && !newData.hasChild('fecha_edicion'))) && !newData.child('personas').child('300').exists()",
+
+        "origen":         { ".validate": "newData.isString() && newData.val().matches(/^(publico|interno)$/)" },
+        "fecha_registro": { ".validate": "newData.isNumber() && newData.val() > 1700000000000 && newData.val() <= now + 60000" },
+        "fecha_edicion":  { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+        "reportado_por": {
+          "nombre":   { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "telefono": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "$otro":    { ".validate": false }
+        },
+        "registrado_por": {
+          "uid":    { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "nombre": { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "email":  { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "$otro":  { ".validate": false }
+        },
+        "editado_por": {
+          "uid":    { ".validate": "newData.isString() && newData.val().length <= 128" },
+          "nombre": { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "email":  { ".validate": "newData.isString() && newData.val().length <= 150" },
+          "$otro":  { ".validate": false }
+        },
+        "fecha": { ".validate": "newData.isString() && newData.val().matches(/^(19|20)[0-9]{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/)" },
+        "lugar": { ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 200" },
+        "total": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 300" },
+        "personas": {
+          "$i": {
+            ".validate": "$i.matches(/^([0-9]|[1-9][0-9]|[12][0-9][0-9])$/) && newData.hasChildren(['nombre'])",
+            "nombre":     { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 150" },
+            "edad":       { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120" },
+            "cedula":     { ".validate": "newData.isString() && newData.val().matches(/^([VEve]?-?[0-9]{4,10})?$/)" },
+            "telefono":   { ".validate": "newData.isString() && newData.val().length <= 30" },
+            "ta":         { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "saturacion": { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "comunidad":  { ".validate": "newData.isString() && newData.val().length <= 120" },
+            "$otro":      { ".validate": false }
+          }
+        },
+
+        "$otro": { ".validate": false }
+      }
+    },
     "pc_bitacora": {
       ".read": "auth != null && root.child('pc_operadores').child(auth.uid).child('rol').val() === 'admin_plus'",
       ".indexOn": ["fecha"],
