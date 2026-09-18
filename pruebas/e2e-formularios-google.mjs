@@ -150,6 +150,22 @@ try {
   veredicto('escribiendo el correo completo (aunque sea en mayúsculas) entra directo a su tablero', p.url().includes('/formularios-google.html'), p.url());
   await p.waitForFunction(() => document.getElementById('kTotal') && document.getElementById('kTotal').textContent !== '—', { timeout: 30000 }).catch(() => null);
   veredicto('ve el formulario con sus respuestas', (await p.$eval('#kTotal', e => e.textContent.trim())) === String(total));
+  for (const otra of ['admin.html', 'usuarios.html', 'registro.html']) {
+    await p.goto(BASE + '/' + otra, { waitUntil: 'networkidle2' }); await esperar(4000);
+    veredicto(`si escribe a mano ${otra}, termina otra vez en su tablero`, p.url().includes('/formularios-google.html'), p.url());
+  }
+
+  console.log('\nCuenta que no es operador ni lector (por ejemplo, dada de baja)');
+  const sinNada = { usuario: `${MARCA}-sinrol`, pw: clave() };
+  cuentas.push((await auth.createUser({ email: sinNada.usuario + '@alcaldia.com', password: sinNada.pw })).uid);
+  p = await paginaNueva(1280);
+  await entrar(p, sinNada);
+  await esperar(4000);
+  const url1 = p.url(); await esperar(3000);
+  veredicto('se queda en la entrada (sin ir y venir entre páginas)', url1.endsWith('/index.html') && p.url() === url1, url1 + ' → ' + p.url());
+  veredicto('le dice que no tiene acceso', /no tiene acceso/i.test(await p.$eval('#errorMsg', e => e.textContent + '|' + getComputedStyle(e).display)));
+  await p.goto(BASE + '/formularios-google.html', { waitUntil: 'networkidle2' }); await esperar(3000);
+  veredicto('y le cierra la sesión (una página interna lo devuelve a la entrada)', p.url().endsWith('/index.html'), p.url());
 
   console.log('\nAdministrador');
   p = await paginaNueva(1280);

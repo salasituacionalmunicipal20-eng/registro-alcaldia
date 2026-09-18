@@ -506,8 +506,9 @@
                     document.getElementById('cardActualizadorCNE').classList.remove('hidden');
                     esAdmin = true;
                 } else {
-                    const snapshot = await get(child(ref(database), `operadores/${user.uid}`));
-                    if (!snapshot.exists() || snapshot.val().rol !== "admin") {
+                    // Si la base no deja leer la ficha (no es operador), se trata igual que "no existe".
+                    const snapshot = await get(child(ref(database), `operadores/${user.uid}`)).catch(() => null);
+                    if (!snapshot || !snapshot.exists() || snapshot.val().rol !== "admin") {
                         window.location.href = "index.html";
                         return;
                     }

@@ -139,7 +139,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -186,6 +186,16 @@
                         }
                     }
                 } catch (e) {
+                    // "Sin permiso" = la cuenta no es operador ni lector (o la dieron de
+                    // baja): se cierra la sesión y se avisa. Mandarla a registro.html la
+                    // devolvería aquí sin fin. Cualquier otra falla (red) sigue como antes.
+                    if (/permission/i.test(String((e && (e.code || e.message)) || ''))) {
+                        await signOut(auth).catch(() => {});
+                        const aviso = document.getElementById('errorMsg');
+                        aviso.textContent = "Tu usuario no tiene acceso a la Sala Situacional. Consulta con el administrador.";
+                        aviso.style.display = "block";
+                        return;
+                    }
                     window.location.href = "registro.html";
                 }
             }
