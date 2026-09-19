@@ -913,6 +913,80 @@
         "$otro": { ".validate": false }
       }
     },
+    "pc_visitas": {
+      ".read": "auth != null && root.child('pc_operadores').child(auth.uid).exists()",
+      ".indexOn": [
+        "fecha_registro"
+      ],
+      "$id": {
+        ".write": "(!data.exists() && newData.exists() && root.child('pc_config').child('formulario_abierto').val() === true) || (auth != null && root.child('pc_operadores').child(auth.uid).exists())",
+        ".validate": "(data.exists() || $id.matches(/^-[A-Za-z0-9_-]{19}$/)) && newData.hasChildren(['parroquia','nombre','motivo','fecha_registro']) && ((auth != null && root.child('pc_operadores').child(auth.uid).exists()) || (newData.child('origen').val() === 'publico' && !newData.hasChild('registrado_por') && !newData.hasChild('editado_por') && !newData.hasChild('fecha_edicion')))",
+        "origen": {
+          ".validate": "newData.isString() && newData.val().matches(/^(publico|interno)$/)"
+        },
+        "parroquia": {
+          ".validate": "newData.isString() && newData.val().matches(/^(Charallave|Las Brisas del Tuy)$/)"
+        },
+        "nombre": {
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 150"
+        },
+        "edad": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120"
+        },
+        "cedula": {
+          ".validate": "newData.isString() && newData.val().matches(/^([VEve]?-?[0-9]{4,10})?$/)"
+        },
+        "telefono": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "motivo": {
+          ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 300"
+        },
+        "direccion": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "correo": {
+          ".validate": "newData.isString() && newData.val().length <= 150 && newData.val().matches(/^([^@\\s]+@[^@\\s]+\\.[^@\\s]+)?$/)"
+        },
+        "fecha_registro": {
+          ".validate": "newData.isNumber() && newData.val() > 1700000000000 && newData.val() <= now + 60000"
+        },
+        "fecha_edicion": {
+          ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+        },
+        "registrado_por": {
+          "uid": {
+            ".validate": "newData.isString() && newData.val().length <= 128"
+          },
+          "nombre": {
+            ".validate": "newData.isString() && newData.val().length <= 150"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 150"
+          },
+          "$otro": {
+            ".validate": false
+          }
+        },
+        "editado_por": {
+          "uid": {
+            ".validate": "newData.isString() && newData.val().length <= 128"
+          },
+          "nombre": {
+            ".validate": "newData.isString() && newData.val().length <= 150"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 150"
+          },
+          "$otro": {
+            ".validate": false
+          }
+        },
+        "$otro": {
+          ".validate": false
+        }
+      }
+    },
     "pc_bitacora": {
       ".read": "auth != null && root.child('pc_operadores').child(auth.uid).child('rol').val() === 'admin_plus'",
       ".indexOn": ["fecha"],
