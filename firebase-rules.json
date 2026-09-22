@@ -102,6 +102,40 @@
         ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'"
       }
     },
+    "caminata_nocturna_5k": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      "$cedula": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "newData.hasChildren(['cedula','nombre_apellido','telefono','fecha_nacimiento','edad','sexo','padece_enfermedad','toma_medicamento','direccion_habitacion','municipio','tiene_fotos','fecha_registro']) && $cedula === newData.child('cedula').val() && (newData.child('padece_enfermedad').val() === 'No' || newData.child('enfermedad_detalle').val().length > 0) && (newData.child('toma_medicamento').val() === 'No' || newData.child('medicamento_detalle').val().length > 0)",
+        "cedula":              { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{5,10}$/)" },
+        "nombre_apellido":     { ".validate": "newData.isString() && newData.val().length > 2 && newData.val().length <= 200" },
+        "telefono":            { ".validate": "newData.isString() && newData.val().length > 5 && newData.val().length <= 30" },
+        "fecha_nacimiento":    { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)" },
+        "edad":                { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120" },
+        "sexo":                { ".validate": "newData.isString() && (newData.val() === 'Femenino' || newData.val() === 'Masculino' || newData.val() === 'Otro' || newData.val() === 'Prefiero no indicar')" },
+        "padece_enfermedad":   { ".validate": "newData.val() === 'Sí' || newData.val() === 'No'" },
+        "enfermedad_detalle":  { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "toma_medicamento":    { ".validate": "newData.val() === 'Sí' || newData.val() === 'No'" },
+        "medicamento_detalle": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "direccion_habitacion":{ ".validate": "newData.isString() && newData.val().length > 4 && newData.val().length <= 400" },
+        "municipio":           { ".validate": "newData.isString() && newData.val().length > 1 && newData.val().length <= 120" },
+        "tiene_fotos":         { ".validate": "newData.isBoolean()" },
+        "fecha_registro":      { ".validate": "newData.isNumber()" },
+        "registrado_por":      { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "$other":              { ".validate": false }
+      }
+    },
+    "caminata_nocturna_5k_fotos": {
+      ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+      "$cedula": {
+        ".write": "(!data.exists() && newData.exists()) || auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
+        ".validate": "$cedula.matches(/^[0-9]{5,10}$/) && (newData.child('foto1').isString() || newData.child('foto2').isString() || newData.child('foto3').isString())",
+        "foto1": { ".validate": "newData.isString() && newData.val().length <= 800000" },
+        "foto2": { ".validate": "newData.isString() && newData.val().length <= 800000" },
+        "foto3": { ".validate": "newData.isString() && newData.val().length <= 800000" },
+        "$other": { ".validate": false }
+      }
+    },
     "procoine": {
       ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
       "$id": {

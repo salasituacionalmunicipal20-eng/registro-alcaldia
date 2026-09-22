@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>1ra Caminata Nocturna 5K | Cristóbal Rojas</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7fb; color: #172033; line-height: 1.5; }
+        .top { background: linear-gradient(135deg, #7c2d12, #dc2626 55%, #f59e0b); color: white; padding: 24px 18px; text-align: center; }
+        .top h1 { font-size: 23px; line-height: 1.25; }
+        .top p { margin-top: 7px; font-size: 14px; opacity: .94; }
+        .wrap { max-width: 720px; margin: auto; padding: 16px; }
+        .intro { background: #fff7ed; border: 1px solid #fed7aa; border-left: 5px solid #ea580c; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; font-size: 14px; }
+        .card { background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(15,23,42,.08); padding: 18px; margin-bottom: 14px; }
+        .card h2 { color: #7c2d12; font-size: 15px; text-transform: uppercase; margin-bottom: 5px; }
+        .sub { color: #64748b; font-size: 12.5px; margin-bottom: 12px; }
+        label { display: block; color: #334155; font-size: 13px; font-weight: 750; margin: 13px 0 5px; }
+        input, select, textarea { width: 100%; min-height: 46px; padding: 11px 12px; border: 1px solid #cbd5e1; border-radius: 9px; background: #f8fafc; color: #0f172a; font: inherit; font-size: 16px; }
+        input:focus, select:focus, textarea:focus { outline: 3px solid rgba(220,38,38,.12); border-color: #dc2626; background: white; }
+        input[readonly] { color: #475569; background: #e2e8f0; }
+        textarea { min-height: 88px; resize: vertical; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .hidden { display: none !important; }
+        .ops { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+        .op { display: flex; align-items: center; gap: 9px; min-height: 46px; margin: 0; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 9px; background: #f8fafc; cursor: pointer; font-size: 14px; }
+        .op input { width: 20px; min-height: 20px; height: 20px; padding: 0; accent-color: #dc2626; }
+        .op.sel { border-color: #dc2626; color: #7f1d1d; background: #fef2f2; }
+        .fotos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .fbox { border: 1.5px dashed #f59e0b; border-radius: 10px; background: #fffbeb; padding: 10px; text-align: center; }
+        .fbtn { display: block; margin: 0; padding: 11px 8px; border-radius: 8px; color: white; background: #b91c1c; cursor: pointer; font-size: 13px; }
+        .fbtn input { display: none; }
+        .fbox img { display: none; width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-top: 8px; }
+        .btn { width: 100%; min-height: 52px; border: 0; border-radius: 11px; color: white; background: #b91c1c; font-size: 17px; font-weight: 800; cursor: pointer; margin-top: 14px; }
+        .btn:disabled { opacity: .65; cursor: wait; }
+        .msg { display: none; margin-top: 12px; padding: 12px; border-radius: 9px; font-size: 14px; font-weight: 650; }
+        .msg.err { display: block; color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; }
+        .ok { display: none; text-align: center; background: white; border-radius: 14px; padding: 36px 20px; box-shadow: 0 2px 8px rgba(15,23,42,.08); }
+        .ok .check { font-size: 56px; }
+        .ok h2 { color: #15803d; margin: 8px 0; }
+        .ok p { color: #475569; }
+        .ok button { margin-top: 20px; min-height: 46px; border: 0; border-radius: 9px; padding: 10px 20px; color: white; background: #7c2d12; font-weight: 750; cursor: pointer; }
+        .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 8px 10px 20px; }
+        @media (max-width: 560px) { .row2, .ops, .fotos { grid-template-columns: 1fr; } .top h1 { font-size: 20px; } .wrap { padding: 12px; } .card { padding: 16px; } }
+    </style>
+    <script defer src="municipios-data.js"></script>
+    <script src="autofresh.js"></script>
+</head>
+<body>
+    <header class="top">
+        <h1>🌙 1ra Caminata Nocturna 5K</h1>
+        <p>En conmemoración de la función Santa Rosa de Lima y el Día Mundial del Corazón</p>
+    </header>
+    <main class="wrap">
+        <div id="formWrap">
+            <div class="intro"><b>Formulario de inscripción.</b> Completa tus datos y agrega hasta tres fotografías. Los campos marcados con * son obligatorios.</div>
+
+            <section class="card">
+                <h2>Datos personales</h2>
+                <div class="sub">Al escribir la cédula, el nombre puede completarse automáticamente con la consulta institucional.</div>
+                <label for="cedula">Cédula *</label>
+                <input id="cedula" data-cne data-cne-nombre="#nombre" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="Ejemplo: 12345678" />
+                <label for="nombre">Nombre y apellido *</label>
+                <input id="nombre" autocomplete="name" maxlength="200" placeholder="Nombre completo" />
+                <div class="row2">
+                    <div><label for="telefono">Teléfono *</label><input id="telefono" inputmode="tel" autocomplete="tel" maxlength="30" placeholder="0414-0000000" /></div>
+                    <div><label for="sexo">Sexo *</label><select id="sexo"><option value="">Selecciona</option><option>Femenino</option><option>Masculino</option><option>Otro</option><option>Prefiero no indicar</option></select></div>
+                </div>
+                <div class="row2">
+                    <div><label for="fechaNacimiento">Fecha de nacimiento *</label><input id="fechaNacimiento" type="date" /></div>
+                    <div><label for="edad">Edad</label><input id="edad" readonly placeholder="Se calcula automáticamente" /></div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Información de salud</h2>
+                <label>¿Padece alguna enfermedad? *</label>
+                <div class="ops" id="opsEnfermedad"><label class="op"><input type="radio" name="enfermedad" value="Sí" /> Sí</label><label class="op"><input type="radio" name="enfermedad" value="No" /> No</label></div>
+                <div id="boxEnfermedad" class="hidden"><label for="detalleEnfermedad">Indique cuál *</label><textarea id="detalleEnfermedad" maxlength="500" placeholder="Describe la enfermedad o condición"></textarea></div>
+                <label>¿Toma algún medicamento? *</label>
+                <div class="ops" id="opsMedicamento"><label class="op"><input type="radio" name="medicamento" value="Sí" /> Sí</label><label class="op"><input type="radio" name="medicamento" value="No" /> No</label></div>
+                <div id="boxMedicamento" class="hidden"><label for="detalleMedicamento">Indique cuál *</label><textarea id="detalleMedicamento" maxlength="500" placeholder="Nombre del medicamento y dosis, si la conoce"></textarea></div>
+            </section>
+
+            <section class="card">
+                <h2>Ubicación</h2>
+                <label for="direccion">Dirección de habitación *</label>
+                <textarea id="direccion" maxlength="400" autocomplete="street-address" placeholder="Sector, calle, casa y punto de referencia"></textarea>
+                <label for="municipio">Municipio *</label>
+                <select id="municipio"><option value="">Selecciona el municipio</option></select>
+                <div id="boxOtroMunicipio" class="hidden"><label for="otroMunicipio">Escribe el municipio *</label><input id="otroMunicipio" maxlength="120" placeholder="Nombre del municipio" /></div>
+            </section>
+
+            <section class="card">
+                <h2>Memoria fotográfica</h2>
+                <div class="sub">Puedes agregar hasta tres fotos. Se comprimen automáticamente para facilitar el envío desde el teléfono.</div>
+                <div class="fotos">
+                    <div class="fbox"><label class="fbtn">📷 Agregar foto 1<input type="file" id="foto1" accept="image/*" capture="environment" /></label><img id="prev1" alt="Vista previa de la foto 1" /></div>
+                    <div class="fbox"><label class="fbtn">📷 Agregar foto 2<input type="file" id="foto2" accept="image/*" capture="environment" /></label><img id="prev2" alt="Vista previa de la foto 2" /></div>
+                    <div class="fbox"><label class="fbtn">📷 Agregar foto 3<input type="file" id="foto3" accept="image/*" capture="environment" /></label><img id="prev3" alt="Vista previa de la foto 3" /></div>
+                </div>
+                <button id="enviar" class="btn" type="button">Enviar inscripción</button>
+                <div id="msg" class="msg" role="alert"></div>
+            </section>
+        </div>
+
+        <section id="ok" class="ok">
+            <div class="check">✅</div><h2>¡Inscripción registrada!</h2>
+            <p>Tus datos y fotografías fueron recibidos correctamente.</p>
+            <button id="otra" type="button">Registrar otra persona</button>
+        </section>
+    </main>
+    <footer class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getDatabase, ref, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+        const firebaseConfig = { apiKey:"AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU", authDomain:"alcaldia-admin.firebaseapp.com", databaseURL:"https://alcaldia-admin-default-rtdb.firebaseio.com", projectId:"alcaldia-admin", storageBucket:"alcaldia-admin.firebasestorage.app", messagingSenderId:"945828226894", appId:"1:945828226894:web:0efeebeb270357e6f5201f", measurementId:"G-P4QSQR0XGE" };
+        const database = getDatabase(initializeApp(firebaseConfig));
+        const $ = id => document.getElementById(id);
+        const valor = id => ($(id).value || '').trim();
+        const elegido = nombre => document.querySelector(`input[name="${nombre}"]:checked`)?.value || '';
+        const FOTOS = { foto1:'', foto2:'', foto3:'' };
+
+        function mostrarError(texto, foco) { $('msg').textContent = texto; $('msg').className = 'msg err'; if (foco) $(foco).focus(); }
+        function calcularEdad(fecha) {
+            if (!fecha) return '';
+            const nac = new Date(fecha + 'T12:00:00'), hoy = new Date();
+            if (Number.isNaN(nac.getTime()) || nac > hoy) return '';
+            let edad = hoy.getFullYear() - nac.getFullYear();
+            if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
+            return edad >= 0 && edad <= 120 ? edad : '';
+        }
+        $('fechaNacimiento').max = new Date().toISOString().slice(0,10);
+        $('fechaNacimiento').addEventListener('change', () => { $('edad').value = calcularEdad(valor('fechaNacimiento')); });
+
+        function pintarOpciones(nombre, caja, detalle) {
+            document.querySelectorAll(`input[name="${nombre}"]`).forEach(r => r.addEventListener('change', () => {
+                document.querySelectorAll(`input[name="${nombre}"]`).forEach(x => x.closest('.op').classList.toggle('sel', x.checked));
+                const si = elegido(nombre) === 'Sí'; $(caja).classList.toggle('hidden', !si); if (!si) $(detalle).value = '';
+            }));
+        }
+        pintarOpciones('enfermedad', 'boxEnfermedad', 'detalleEnfermedad');
+        pintarOpciones('medicamento', 'boxMedicamento', 'detalleMedicamento');
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const lista = window.MUNICIPIOS?.Miranda || [];
+            $('municipio').innerHTML = '<option value="">Selecciona el municipio</option>' + lista.map(m => `<option${m === 'Cristóbal Rojas' ? ' selected' : ''}>${m}</option>`).join('') + '<option value="OTRO">Otro municipio</option>';
+        });
+        $('municipio').addEventListener('change', () => $('boxOtroMunicipio').classList.toggle('hidden', valor('municipio') !== 'OTRO'));
+
+        function comprimir(file) {
+            return new Promise((resolve, reject) => {
+                if (!file || !file.type.startsWith('image/')) { reject(new Error('Selecciona un archivo de imagen válido.')); return; }
+                const lector = new FileReader();
+                lector.onerror = () => reject(new Error('No se pudo leer la fotografía.'));
+                lector.onload = e => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error('La fotografía está dañada o no es compatible.'));
+                    img.onload = () => {
+                        const MAX = 1000; let w = img.width, h = img.height;
+                        if (Math.max(w,h) > MAX) { const escala = MAX / Math.max(w,h); w = Math.round(w*escala); h = Math.round(h*escala); }
+                        const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img,0,0,w,h);
+                        const dato = canvas.toDataURL('image/jpeg', .66);
+                        if (dato.length > 800000) reject(new Error('La fotografía sigue siendo demasiado pesada. Intenta con otra.')); else resolve(dato);
+                    };
+                    img.src = e.target.result;
+                };
+                lector.readAsDataURL(file);
+            });
+        }
+        [['foto1','prev1'],['foto2','prev2'],['foto3','prev3']].forEach(([campo,prev]) => $(campo).addEventListener('change', async e => {
+            try { const dato = await comprimir(e.target.files?.[0]); FOTOS[campo] = dato; $(prev).src = dato; $(prev).style.display = 'block'; $('msg').style.display = 'none'; }
+            catch (error) { FOTOS[campo] = ''; $(prev).style.display = 'none'; e.target.value = ''; mostrarError(error.message); }
+        }));
+
+        $('enviar').addEventListener('click', async () => {
+            const cedula = valor('cedula').replace(/\D/g,'');
+            const edad = calcularEdad(valor('fechaNacimiento'));
+            const enfermedad = elegido('enfermedad'), medicamento = elegido('medicamento');
+            const municipio = valor('municipio') === 'OTRO' ? valor('otroMunicipio') : valor('municipio');
+            if (cedula.length < 5 || cedula.length > 10) return mostrarError('Escribe una cédula válida, solo con números.', 'cedula');
+            if (!valor('nombre')) return mostrarError('Escribe el nombre y apellido.', 'nombre');
+            if (!valor('telefono')) return mostrarError('Escribe el teléfono.', 'telefono');
+            if (!valor('fechaNacimiento') || edad === '') return mostrarError('Selecciona una fecha de nacimiento válida.', 'fechaNacimiento');
+            if (!valor('sexo')) return mostrarError('Selecciona el sexo.', 'sexo');
+            if (!enfermedad) return mostrarError('Indica si padece alguna enfermedad.');
+            if (enfermedad === 'Sí' && !valor('detalleEnfermedad')) return mostrarError('Indica cuál enfermedad o condición padece.', 'detalleEnfermedad');
+            if (!medicamento) return mostrarError('Indica si toma algún medicamento.');
+            if (medicamento === 'Sí' && !valor('detalleMedicamento')) return mostrarError('Indica cuál medicamento toma.', 'detalleMedicamento');
+            if (!valor('direccion')) return mostrarError('Escribe la dirección de habitación.', 'direccion');
+            if (!municipio) return mostrarError('Selecciona o escribe el municipio.', valor('municipio') === 'OTRO' ? 'otroMunicipio' : 'municipio');
+
+            const tieneFotos = Object.values(FOTOS).some(Boolean);
+            const registro = { cedula, nombre_apellido:valor('nombre'), telefono:valor('telefono'), fecha_nacimiento:valor('fechaNacimiento'), edad:Number(edad), sexo:valor('sexo'), padece_enfermedad:enfermedad, enfermedad_detalle:enfermedad === 'Sí' ? valor('detalleEnfermedad') : '', toma_medicamento:medicamento, medicamento_detalle:medicamento === 'Sí' ? valor('detalleMedicamento') : '', direccion_habitacion:valor('direccion'), municipio, tiene_fotos:tieneFotos, fecha_registro:Date.now(), registrado_por:'Formulario público' };
+            const cambios = {}; cambios[`caminata_nocturna_5k/${cedula}`] = registro;
+            if (tieneFotos) cambios[`caminata_nocturna_5k_fotos/${cedula}`] = { ...FOTOS };
+            $('enviar').disabled = true; $('enviar').textContent = 'Enviando inscripción…'; $('msg').style.display = 'none';
+            try {
+                await update(ref(database), cambios);
+                $('formWrap').style.display = 'none'; $('ok').style.display = 'block'; window.scrollTo({top:0,behavior:'smooth'});
+            } catch (error) {
+                const duplicada = error?.code === 'PERMISSION_DENIED' || String(error?.message || '').toLowerCase().includes('permission');
+                mostrarError(duplicada ? 'Esta cédula ya tiene una inscripción registrada. Si necesitas corregirla, comunícate con la organización.' : 'No se pudo completar el envío. Revisa tu conexión e intenta nuevamente; no se guardó una inscripción parcial.');
+                $('enviar').disabled = false; $('enviar').textContent = 'Enviar inscripción';
+            }
+        });
+        $('otra').addEventListener('click', () => location.reload());
+    </script>
+    <script src="cne-dateas.js"></script>
+</body>
+</html>

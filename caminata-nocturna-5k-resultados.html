@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resultados Caminata Nocturna 5K</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="autofresh.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:#f1f5f9; color:#172033; }
+        .hidden { display:none !important; }
+        header { background:linear-gradient(135deg,#7c2d12,#dc2626 55%,#f59e0b); color:#fff; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+        header h1 { font-size:21px; } header p { font-size:12px; opacity:.9; margin-top:3px; }
+        .header-actions { display:flex; gap:8px; flex-wrap:wrap; }
+        button, .linkbtn { border:0; border-radius:8px; padding:10px 13px; font:inherit; font-size:13px; font-weight:750; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:5px; }
+        .btn-light { background:#fff; color:#7c2d12; } .btn-dark { background:#7c2d12; color:#fff; } .btn-red { background:#b91c1c; color:#fff; } .btn-blue { background:#075985; color:#fff; } .btn-green { background:#15803d; color:#fff; }
+        main { max-width:1500px; margin:auto; padding:18px; }
+        .estado { background:#fff; border-radius:10px; padding:30px; text-align:center; color:#64748b; box-shadow:0 1px 4px #00000012; }
+        .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:14px; }
+        .kpi { background:#fff; border-radius:11px; padding:15px; box-shadow:0 1px 4px #00000012; border-top:4px solid #dc2626; }
+        .kpi span { display:block; color:#64748b; font-size:12px; font-weight:700; } .kpi strong { display:block; font-size:27px; margin-top:3px; color:#7c2d12; }
+        .panel { background:#fff; border-radius:12px; box-shadow:0 1px 5px #00000014; padding:15px; margin-bottom:14px; }
+        .panel h2 { font-size:15px; color:#7c2d12; margin-bottom:11px; }
+        .compartir { display:grid; grid-template-columns:120px 1fr; gap:16px; align-items:center; }
+        .compartir img { width:120px; height:120px; border:1px solid #e2e8f0; border-radius:9px; }
+        .enlace { padding:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; color:#075985; font-weight:750; overflow-wrap:anywhere; margin:7px 0; }
+        .filtros { display:grid; grid-template-columns:2fr repeat(4,1fr); gap:10px; }
+        input, select { width:100%; min-height:42px; border:1px solid #cbd5e1; border-radius:8px; padding:8px 10px; font:inherit; font-size:14px; background:#f8fafc; }
+        .acciones { display:flex; gap:8px; flex-wrap:wrap; margin-top:11px; align-items:center; }
+        .en-vivo { margin-left:auto; color:#15803d; font-size:12px; font-weight:800; } .en-vivo::before { content:""; display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e; margin-right:5px; }
+        .table-wrap { overflow:auto; border:1px solid #e2e8f0; border-radius:9px; }
+        table { width:100%; border-collapse:collapse; min-width:1250px; font-size:12.5px; }
+        th { position:sticky; top:0; background:#7c2d12; color:#fff; padding:10px 8px; text-align:left; white-space:nowrap; }
+        td { padding:9px 8px; border-bottom:1px solid #e2e8f0; vertical-align:top; } tr:hover td { background:#fff7ed; }
+        .si { color:#b91c1c; font-weight:800; } .foto { color:#15803d; font-weight:800; }
+        .vacio { padding:35px; text-align:center; color:#64748b; }
+        .pag { display:flex; justify-content:center; align-items:center; gap:8px; margin-top:12px; font-size:13px; }
+        .modal { position:fixed; inset:0; z-index:50; background:#0f172acc; display:flex; align-items:center; justify-content:center; padding:14px; }
+        .modal-card { width:min(900px,100%); max-height:92vh; overflow:auto; background:#fff; border-radius:14px; box-shadow:0 20px 50px #0005; }
+        .modal-head { position:sticky; top:0; z-index:2; background:#7c2d12; color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
+        .modal-head button { padding:5px 10px; background:#fff; color:#7c2d12; font-size:18px; }
+        .modal-body { padding:18px; }
+        .detalle { display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; }
+        .dato { border-bottom:1px solid #e2e8f0; padding:6px 0 9px; } .dato b { display:block; color:#64748b; font-size:11px; text-transform:uppercase; margin-bottom:3px; } .dato.completo { grid-column:1/-1; }
+        .galeria { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:15px; }
+        .galeria a { display:block; } .galeria img { width:100%; height:190px; object-fit:cover; border-radius:9px; border:1px solid #cbd5e1; }
+        .modal-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+        @media(max-width:950px){ .kpis{grid-template-columns:repeat(2,1fr)} .filtros{grid-template-columns:1fr 1fr} }
+        @media(max-width:560px){ header,main{padding:12px}.kpis,.filtros,.detalle,.galeria,.compartir{grid-template-columns:1fr}.compartir img{margin:auto}.kpi:last-child{grid-column:1/-1}.en-vivo{width:100%;margin:3px 0}.galeria img{height:auto}.header-actions{width:100%}.header-actions>*{flex:1}.modal-body{padding:14px} }
+    </style>
+</head>
+<body>
+    <header>
+        <div><h1>🌙 Caminata Nocturna 5K</h1><p>Inscripciones · Santa Rosa de Lima · Día Mundial del Corazón</p></div>
+        <div class="header-actions"><a class="linkbtn btn-light" href="admin.html">← Panel principal</a><button id="cerrarSesion" class="btn-light">Cerrar sesión</button></div>
+    </header>
+    <main>
+        <div id="cargando" class="estado">Verificando acceso y cargando inscripciones…</div>
+        <div id="restringido" class="estado hidden"><b>Acceso restringido.</b><br />Este panel está disponible únicamente para administradores.</div>
+        <div id="contenido" class="hidden">
+            <section class="kpis">
+                <div class="kpi"><span>Inscripciones</span><strong id="kTotal">0</strong></div>
+                <div class="kpi"><span>Registradas hoy</span><strong id="kHoy">0</strong></div>
+                <div class="kpi"><span>Con fotografías</span><strong id="kFotos">0</strong></div>
+                <div class="kpi"><span>Con enfermedad</span><strong id="kEnfermedad">0</strong></div>
+                <div class="kpi"><span>Municipios</span><strong id="kMunicipios">0</strong></div>
+            </section>
+            <section class="panel compartir">
+                <img id="qrFormulario" alt="Código QR del formulario público" />
+                <div><h2>Compartir formulario público</h2><div class="enlace">https://tinyurl.com/caminata5kcharallave</div><div class="acciones"><button id="copiarEnlace" class="btn-blue">Copiar enlace</button><a class="linkbtn btn-green" target="_blank" href="https://wa.me/?text=Inscr%C3%ADbete%20en%20la%201ra%20Caminata%20Nocturna%205K%3A%20https%3A%2F%2Ftinyurl.com%2Fcaminata5kcharallave">Compartir por WhatsApp</a><a class="linkbtn btn-dark" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=600x600&download=1&data=https%3A%2F%2Ftinyurl.com%2Fcaminata5kcharallave">Descargar QR</a></div></div>
+            </section>
+            <section class="panel">
+                <h2>Filtros e informes</h2>
+                <div class="filtros">
+                    <input id="buscar" placeholder="Buscar nombre, cédula, teléfono o dirección" />
+                    <select id="fMunicipio"><option value="">Todos los municipios</option></select>
+                    <select id="fSexo"><option value="">Todos los sexos</option><option>Femenino</option><option>Masculino</option><option>Otro</option><option>Prefiero no indicar</option></select>
+                    <select id="fEnfermedad"><option value="">Enfermedad: todas</option><option>Sí</option><option>No</option></select>
+                    <select id="fFotos"><option value="">Fotos: todas</option><option value="si">Con fotos</option><option value="no">Sin fotos</option></select>
+                </div>
+                <div class="acciones">
+                    <button id="limpiar" class="btn-dark">Limpiar filtros</button>
+                    <button id="excel" class="btn-green">⬇ Descargar Excel</button>
+                    <button id="pdf" class="btn-red">⬇ Descargar PDF</button>
+                    <a id="abrirFormulario" class="linkbtn btn-blue" href="caminata-nocturna-5k.html" target="_blank">Abrir formulario público</a>
+                    <span class="en-vivo">Actualización en tiempo real</span>
+                </div>
+            </section>
+            <section class="panel">
+                <h2 id="tituloTabla">Detalle de inscripciones</h2>
+                <div class="table-wrap"><table><thead><tr><th>#</th><th>Nombre y apellido</th><th>Cédula</th><th>Edad</th><th>Sexo</th><th>Teléfono</th><th>Municipio</th><th>Enfermedad</th><th>Medicamento</th><th>Fotos</th><th>Registrado</th><th>Acción</th></tr></thead><tbody id="tbody"></tbody></table></div>
+                <div id="sinDatos" class="vacio hidden">No hay inscripciones que coincidan con los filtros.</div>
+                <div class="pag"><button id="anterior" class="btn-dark">Anterior</button><span id="paginaInfo"></span><button id="siguiente" class="btn-dark">Siguiente</button></div>
+            </section>
+        </div>
+    </main>
+    <div id="modal" class="modal hidden"><div class="modal-card"><div class="modal-head"><b>Ficha completa de la inscripción</b><button id="cerrarModal" aria-label="Cerrar">×</button></div><div id="modalBody" class="modal-body"></div></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getDatabase, ref, child, get, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
+
+        const firebaseConfig={apiKey:"AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",authDomain:"alcaldia-admin.firebaseapp.com",databaseURL:"https://alcaldia-admin-default-rtdb.firebaseio.com",projectId:"alcaldia-admin",storageBucket:"alcaldia-admin.firebasestorage.app",messagingSenderId:"945828226894",appId:"1:945828226894:web:0efeebeb270357e6f5201f",measurementId:"G-P4QSQR0XGE"};
+        const app=initializeApp(firebaseConfig), auth=getAuth(app), database=getDatabase(app), $=id=>document.getElementById(id);
+        let registros=[], filtrados=[], pagina=1, actual=null; const POR_PAGINA=30;
+        const texto=v=>String(v??'').replace(/[<>]/g,c=>c==='<'?'&lt;':'&gt;');
+        const normalizar=v=>String(v??'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+        const fechaCorta=v=>{ if(!v)return '—'; const d=typeof v==='number'?new Date(v):new Date(v+'T12:00:00'); return Number.isNaN(d.getTime())?'—':d.toLocaleDateString('es-VE'); };
+        const fechaHora=v=>{const d=new Date(Number(v));return Number.isNaN(d.getTime())?'—':d.toLocaleString('es-VE',{dateStyle:'short',timeStyle:'short'});};
+        const fechaLarga=v=>{const d=new Date(Number(v));if(Number.isNaN(d.getTime()))return '—';return d.toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+d.toLocaleDateString('es-VE');};
+        const hoyClave=()=>new Date().toLocaleDateString('en-CA');
+        const fechaClave=v=>{const d=new Date(Number(v));return Number.isNaN(d.getTime())?'':d.toLocaleDateString('en-CA');};
+
+        onAuthStateChanged(auth,async user=>{
+            if(!user){location.href='index.html';return;}
+            const esSuper=user.email==='carlos.admin@alcaldia.com'; let permitido=esSuper;
+            if(!esSuper){try{const snap=await get(child(ref(database),`operadores/${user.uid}`));permitido=snap.exists()&&snap.val().rol==='admin';}catch(e){permitido=false;}}
+            $('cargando').classList.add('hidden');
+            if(!permitido){$('restringido').classList.remove('hidden');return;}
+            $('contenido').classList.remove('hidden');
+            onValue(ref(database,'caminata_nocturna_5k'),snap=>{registros=Object.entries(snap.val()||{}).map(([id,r])=>({id,...r})).sort((a,b)=>(b.fecha_registro||0)-(a.fecha_registro||0)); actualizar();});
+        });
+        $('cerrarSesion').addEventListener('click',()=>signOut(auth).then(()=>location.href='index.html'));
+        $('qrFormulario').src='https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent('https://tinyurl.com/caminata5kcharallave');
+        $('copiarEnlace').addEventListener('click',async()=>{try{await navigator.clipboard.writeText('https://tinyurl.com/caminata5kcharallave');$('copiarEnlace').textContent='Enlace copiado';setTimeout(()=>$('copiarEnlace').textContent='Copiar enlace',1800);}catch(e){prompt('Copia este enlace:','https://tinyurl.com/caminata5kcharallave');}});
+
+        function actualizar(){
+            const q=normalizar($('buscar').value), mun=$('fMunicipio').value, sexo=$('fSexo').value, enf=$('fEnfermedad').value, fotos=$('fFotos').value;
+            filtrados=registros.filter(r=>(!q||normalizar([r.nombre_apellido,r.cedula,r.telefono,r.direccion_habitacion,r.municipio].join(' ')).includes(q))&&(!mun||r.municipio===mun)&&(!sexo||r.sexo===sexo)&&(!enf||r.padece_enfermedad===enf)&&(!fotos||(fotos==='si'?r.tiene_fotos:!r.tiene_fotos)));
+            const municipios=[...new Set(registros.map(r=>r.municipio).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+            const seleccionado=$('fMunicipio').value; $('fMunicipio').innerHTML='<option value="">Todos los municipios</option>'+municipios.map(m=>`<option${m===seleccionado?' selected':''}>${texto(m)}</option>`).join('');
+            $('kTotal').textContent=registros.length; $('kHoy').textContent=registros.filter(r=>fechaClave(r.fecha_registro)===hoyClave()).length; $('kFotos').textContent=registros.filter(r=>r.tiene_fotos).length; $('kEnfermedad').textContent=registros.filter(r=>r.padece_enfermedad==='Sí').length; $('kMunicipios').textContent=municipios.length;
+            const paginas=Math.max(1,Math.ceil(filtrados.length/POR_PAGINA)); if(pagina>paginas)pagina=paginas;
+            const inicio=(pagina-1)*POR_PAGINA, lista=filtrados.slice(inicio,inicio+POR_PAGINA);
+            $('tbody').innerHTML=lista.map((r,i)=>`<tr><td>${inicio+i+1}</td><td><b>${texto(r.nombre_apellido)}</b></td><td>${texto(r.cedula)}</td><td>${texto(r.edad)}</td><td>${texto(r.sexo)}</td><td>${texto(r.telefono)}</td><td>${texto(r.municipio)}</td><td class="${r.padece_enfermedad==='Sí'?'si':''}">${texto(r.padece_enfermedad)}</td><td class="${r.toma_medicamento==='Sí'?'si':''}">${texto(r.toma_medicamento)}</td><td class="${r.tiene_fotos?'foto':''}">${r.tiene_fotos?'Sí':'No'}</td><td>${fechaHora(r.fecha_registro)}</td><td><button class="btn-blue ver" data-id="${texto(r.id)}">Ver ficha</button></td></tr>`).join('');
+            $('sinDatos').classList.toggle('hidden',lista.length>0); $('paginaInfo').textContent=`Página ${pagina} de ${paginas} · ${filtrados.length} resultado(s)`; $('anterior').disabled=pagina===1; $('siguiente').disabled=pagina===paginas; $('tituloTabla').textContent=`Detalle de inscripciones (${filtrados.length})`;
+            document.querySelectorAll('.ver').forEach(b=>b.addEventListener('click',()=>abrirFicha(b.dataset.id)));
+        }
+        ['buscar','fMunicipio','fSexo','fEnfermedad','fFotos'].forEach(id=>$(id).addEventListener(id==='buscar'?'input':'change',()=>{pagina=1;actualizar();}));
+        $('limpiar').addEventListener('click',()=>{['buscar','fMunicipio','fSexo','fEnfermedad','fFotos'].forEach(id=>$(id).value='');pagina=1;actualizar();});
+        $('anterior').addEventListener('click',()=>{if(pagina>1){pagina--;actualizar();}}); $('siguiente').addEventListener('click',()=>{if(pagina*POR_PAGINA<filtrados.length){pagina++;actualizar();}});
+
+        async function fotosDe(id){try{const s=await get(ref(database,`caminata_nocturna_5k_fotos/${id}`));return s.val()||{};}catch(e){return{};}}
+        async function abrirFicha(id){
+            actual=registros.find(r=>r.id===id); if(!actual)return;
+            $('modal').classList.remove('hidden'); $('modalBody').innerHTML='<p>Cargando ficha y fotografías…</p>';
+            const fotos=actual.tiene_fotos?await fotosDe(id):{}; actual={...actual,_fotos:fotos};
+            const campos=[['Nombre y apellido',actual.nombre_apellido],['Cédula',actual.cedula],['Teléfono',actual.telefono],['Fecha de nacimiento',fechaCorta(actual.fecha_nacimiento)],['Edad',actual.edad+' años'],['Sexo',actual.sexo],['Municipio',actual.municipio],['Dirección de habitación',actual.direccion_habitacion,'completo'],['Padece alguna enfermedad',actual.padece_enfermedad],['Enfermedad o condición',actual.enfermedad_detalle||'No aplica'],['Toma algún medicamento',actual.toma_medicamento],['Medicamento',actual.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(actual.fecha_registro),'completo']];
+            const galeria=Object.values(fotos).filter(Boolean).map((src,i)=>`<a href="${src}" download="caminata_${texto(actual.cedula)}_foto_${i+1}.jpg" title="Abrir o descargar foto"><img src="${src}" alt="Foto ${i+1} de ${texto(actual.nombre_apellido)}" /></a>`).join('');
+            $('modalBody').innerHTML=`<div class="detalle">${campos.map(c=>`<div class="dato ${c[2]||''}"><b>${c[0]}</b>${texto(c[1])}</div>`).join('')}</div><h3 style="margin-top:16px;color:#7c2d12">Fotografías (${Object.values(fotos).filter(Boolean).length})</h3>${galeria?`<div class="galeria">${galeria}</div>`:'<p style="color:#64748b;margin-top:8px">Esta inscripción no tiene fotografías.</p>'}<div class="modal-actions"><button id="pdfFicha" class="btn-red">Descargar ficha PDF</button><button id="eliminar" class="btn-dark">Eliminar inscripción</button></div>`;
+            $('pdfFicha').addEventListener('click',()=>generarFichaPDF(actual)); $('eliminar').addEventListener('click',eliminarActual);
+        }
+        function cerrarModal(){$('modal').classList.add('hidden');actual=null;}$('cerrarModal').addEventListener('click',cerrarModal);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))cerrarModal();});
+        async function eliminarActual(){if(!actual||!confirm(`¿Eliminar definitivamente la inscripción de ${actual.nombre_apellido}?`))return;try{await Promise.all([remove(ref(database,`caminata_nocturna_5k/${actual.id}`)),remove(ref(database,`caminata_nocturna_5k_fotos/${actual.id}`))]);cerrarModal();}catch(e){alert('No se pudo eliminar la inscripción: '+(e.message||e.code));}}
+
+        const filaExcel=r=>[r.nombre_apellido,r.cedula,r.telefono,r.fecha_nacimiento,r.edad,r.sexo,r.padece_enfermedad,r.enfermedad_detalle||'',r.toma_medicamento,r.medicamento_detalle||'',r.direccion_habitacion,r.municipio,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro),r.registrado_por||''];
+        $('excel').addEventListener('click',()=>{
+            if(!filtrados.length)return alert('No hay datos para exportar.');
+            const encabezados=['NOMBRE Y APELLIDO','CÉDULA','TELÉFONO','FECHA DE NACIMIENTO','EDAD','SEXO','PADECE ENFERMEDAD','ENFERMEDAD O CONDICIÓN','TOMA MEDICAMENTO','MEDICAMENTO','DIRECCIÓN DE HABITACIÓN','MUNICIPIO','TIENE FOTOS','FECHA DE INSCRIPCIÓN','REGISTRADO POR'];
+            const datos=[['1RA CAMINATA NOCTURNA 5K — INSCRIPCIONES'],[`Generado el ${new Date().toLocaleString('es-VE')} · ${filtrados.length} registro(s)`],encabezados,...filtrados.map(filaExcel)];
+            const ws=XLSX.utils.aoa_to_sheet(datos); ws['!merges']=[XLSX.utils.decode_range('A1:O1'),XLSX.utils.decode_range('A2:O2')]; ws['!cols']=[32,14,17,18,8,18,18,34,18,34,42,23,13,23,20].map(w=>({wch:w})); ws['!autofilter']={ref:`A3:O${datos.length}`};
+            for(let c=0;c<15;c++){const celda=ws[XLSX.utils.encode_cell({r:2,c})];celda.s={font:{bold:true,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'7C2D12'}},alignment:{horizontal:'center',vertical:'center',wrapText:true}};}
+            ws.A1.s={font:{bold:true,size:16,color:{rgb:'7C2D12'}},alignment:{horizontal:'center'}}; ws.A2.s={font:{italic:true,color:{rgb:'64748B'}},alignment:{horizontal:'center'}};
+            const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Inscripciones');guardarXlsx(wb,`caminata_nocturna_5k_${new Date().toISOString().slice(0,10)}.xlsx`);
+        });
+        function guardarXlsx(wb,nombre){
+            try{const cfb=XLSX.CFB.read(new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'})),{type:'array'});const ruta='Root Entry/xl/worksheets/sheet1.xml';const i=cfb.FullPaths.indexOf(ruta);if(i>=0){let xml=new TextDecoder().decode(cfb.FileIndex[i].content);xml=xml.replace('<sheetViews><sheetView workbookViewId="0"/></sheetViews>','<sheetViews><sheetView workbookViewId="0"><pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A4" sqref="A4"/></sheetView></sheetViews>');cfb.FileIndex[i].content=new TextEncoder().encode(xml);}const salida=XLSX.CFB.write(cfb,{type:'array',fileType:'zip'});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([salida],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download=nombre;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}catch(e){XLSX.writeFile(wb,nombre);}}
+
+        function prepararPDF(orientacion='landscape'){const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:orientacion,unit:'mm',format:'letter'});if(!doc.autoTable&&jsPDF.API.autoTable)doc.autoTable=(o)=>jsPDF.API.autoTable.call(doc,o);return doc;}
+        $('pdf').addEventListener('click',()=>{
+            if(!filtrados.length)return alert('No hay datos para exportar.'); const doc=prepararPDF('landscape');
+            dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:`Informe completo · ${filtrados.length} inscripción(es) · ${new Date().toLocaleDateString('es-VE')}`});
+            doc.autoTable({startY:34,head:[['#','Nombre y apellido','Cédula','Edad / Sexo','Teléfono','Municipio','Salud','Dirección','Fotos','Registro']],body:filtrados.map((r,i)=>[i+1,r.nombre_apellido,r.cedula,`${r.edad} / ${r.sexo}`,r.telefono,r.municipio,`Enfermedad: ${r.padece_enfermedad}${r.enfermedad_detalle?' — '+r.enfermedad_detalle:''}\nMedicamento: ${r.toma_medicamento}${r.medicamento_detalle?' — '+r.medicamento_detalle:''}`,r.direccion_habitacion,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro)]),styles:{fontSize:6.8,cellPadding:1.4,overflow:'linebreak',valign:'top'},headStyles:{fillColor:[124,45,18],fontSize:7.2},columnStyles:{0:{cellWidth:8},1:{cellWidth:31},2:{cellWidth:17},3:{cellWidth:22},4:{cellWidth:21},5:{cellWidth:25},6:{cellWidth:42},7:{cellWidth:44},8:{cellWidth:12},9:{cellWidth:25}},margin:{left:9,right:9,top:33,bottom:16},didDrawPage:()=>dibujarFooterPDF(doc)});
+            doc.save(`caminata_nocturna_5k_informe_${new Date().toISOString().slice(0,10)}.pdf`);
+        });
+        function generarFichaPDF(r){
+            const doc=prepararPDF('portrait');dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});
+            const filas=[['Nombre y apellido',r.nombre_apellido],['Cédula',r.cedula],['Teléfono',r.telefono],['Fecha de nacimiento',`${fechaCorta(r.fecha_nacimiento)} (${r.edad} años)`],['Sexo',r.sexo],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(r.fecha_registro)]];
+            doc.autoTable({startY:35,body:filas,theme:'grid',styles:{fontSize:9,cellPadding:2.5,overflow:'linebreak'},columnStyles:{0:{cellWidth:52,fontStyle:'bold',fillColor:[255,247,237]},1:{cellWidth:137}},margin:{left:11,right:11,bottom:16}});
+            let y=doc.lastAutoTable.finalY+7;const fotos=Object.values(r._fotos||{}).filter(Boolean);if(fotos.length){doc.setFontSize(11);doc.setTextColor(124,45,18);doc.text('Memoria fotográfica',11,y);y+=4;fotos.forEach((src,i)=>{if(y+48>260){dibujarFooterPDF(doc);doc.addPage();dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});y=35;}try{doc.addImage(src,'JPEG',11+(i%2)*96,y,90,46);if(i%2===1||i===fotos.length-1)y+=51;}catch(e){}});}dibujarFooterPDF(doc);doc.save(`inscripcion_caminata_${r.cedula}.pdf`);
+        }
+    </script>
+</body>
+</html>
