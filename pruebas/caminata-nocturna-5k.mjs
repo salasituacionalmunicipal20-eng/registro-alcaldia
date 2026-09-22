@@ -40,7 +40,7 @@ for (const id of ['compPaginaFotos', 'compFotoNombre', 'compFotoCedula', 'compFo
     assert.match(formulario, new RegExp(`id=["']${id}["']`), `Falta el elemento de impresión fotográfica ${id}`);
 }
 assert.match(formulario, /Foto personal/, 'La impresión pública debe identificar la foto personal');
-assert.match(formulario, /\.comp-foto-item\s*\{[^}]*width:35mm;\s*height:45mm/, 'La foto impresa debe tener tamaño pequeño tipo cédula');
+assert.match(formulario, /\.comp-foto-item\s*\{[^}]*width:30mm;\s*height:40mm/, 'La foto impresa debe tener tamaño pequeño tipo cédula');
 assert.doesNotMatch(formulario, /page-break-before:always/, 'La foto no debe crear una segunda hoja');
 assert.match(formulario, /object-fit:contain/, 'Las fotos impresas deben conservar su proporción');
 assert.match(formulario, /await prepararFotosImpresion\(FOTOS,[^)]+\);window\.print\(\)/, 'La impresión pública debe esperar que carguen las fotos');
@@ -67,7 +67,7 @@ for (const id of ['unoPaginaFotos', 'unoFotoNombre', 'unoFotoCedula', 'unoFotoGr
     assert.match(resultados, new RegExp(`id=["']${id}["']`), `Falta el elemento fotográfico del panel ${id}`);
 }
 assert.match(resultados, /Foto personal/, 'La impresión 1×1 debe identificar la foto personal');
-assert.match(resultados, /\.imp-foto-item\s*\{[^}]*width:35mm;\s*height:45mm/, 'La foto del panel debe imprimirse pequeña tipo cédula');
+assert.match(resultados, /\.imp-foto-item\s*\{[^}]*width:30mm;\s*height:40mm/, 'La foto del panel debe imprimirse pequeña tipo cédula');
 assert.doesNotMatch(resultados, /page-break-before:always/, 'La foto del panel no debe crear una segunda hoja');
 assert.match(resultados, /object-fit:contain/, 'Las fotos del panel deben conservar su proporción');
 assert.match(resultados, /r\._fotos\|\|await fotosDe\(r\.id\)/, 'La impresión desde una fila debe cargar las fotos guardadas');
@@ -76,7 +76,7 @@ assert.doesNotMatch(resultados, /async function fotosDe\([^)]*\)\{[^}]*catch\s*\
 assert.match(resultados, /\.imp-firma\s*\{[^}]*height:34mm/, 'La impresión 1×1 debe reservar un espacio amplio para firmar');
 assert.match(resultados, /async function generarFichaPDF\(r\)/, 'La ficha PDF debe prepararse de forma controlada');
 assert.match(resultados, /doc\.text\('Firma del participante'/, 'El PDF debe incluir el espacio para la firma del participante');
-assert.match(resultados, /roundedRect\(11,yFirma,35,45/, 'El PDF debe colocar una foto personal pequeña de 35 por 45 mm');
+assert.match(resultados, /roundedRect\(11,yFirma,30,40/, 'El PDF debe colocar una foto personal tipo cédula de 30 por 40 mm');
 assert.doesNotMatch(resultados, /titulo:'Memoria fotográfica - Caminata Nocturna 5K'/, 'El PDF individual no debe crear una segunda hoja fotográfica');
 assert.match(resultados, /doc\.getImageProperties\(src\)/, 'El PDF debe calcular la proporción real de cada fotografía');
 assert.match(resultados, /doc\.addImage\(src,formato/, 'El PDF debe insertar las fotografías cargadas');

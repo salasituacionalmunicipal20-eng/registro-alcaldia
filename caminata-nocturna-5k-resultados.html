@@ -79,7 +79,7 @@
             .imp-dato:nth-child(even) { border-right:0; }
             .imp-dato.completo { grid-column:1/-1; border-right:0; }
             .imp-dato b { display:block; color:#555; font-size:9px; text-transform:uppercase; margin-bottom:5px; }
-            .imp-firmas { display:grid; grid-template-columns:36mm 1fr 1fr; gap:7mm; margin-top:8mm; align-items:end; }
+            .imp-firmas { display:grid; grid-template-columns:31mm 1fr 1fr; gap:7mm; margin-top:8mm; align-items:end; }
             .imp-firmas.sin-foto { grid-template-columns:1fr 1fr; }
             .imp-firma { height:34mm; border:1px solid #888; border-radius:2mm; padding:0 6mm 5mm; display:flex; align-items:flex-end; justify-content:center; text-align:center; font-size:12px; }
             .imp-firma span { width:100%; border-top:1px solid #111; padding-top:5px; }
@@ -90,7 +90,7 @@
             .imp-foto-head h2 { color:#7c2d12; font-size:12px; margin:0; }
             .imp-foto-head p { display:none; }
             .imp-foto-grid { display:block; height:auto; }
-            .imp-foto-item { width:35mm; height:45mm; box-sizing:border-box; border:1px solid #777; border-radius:2mm; padding:1.5mm; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; }
+            .imp-foto-item { width:30mm; height:40mm; box-sizing:border-box; border:1px solid #777; border-radius:2mm; padding:1.5mm; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; }
             .imp-foto-item img { width:100%; height:100%; object-fit:contain; display:block; }
         }
     </style>
@@ -291,10 +291,10 @@
                 const fotos=Object.values(r._fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,1),yFirma=doc.lastAutoTable.finalY+7;
                 doc.setDrawColor(130);doc.setLineWidth(0.25);
                 if(fotos.length){
-                    const src=fotos[0],prop=doc.getImageProperties(src),formato=src.startsWith('data:image/png')?'PNG':'JPEG',escala=Math.min(31/prop.width,35/prop.height),ancho=prop.width*escala,alto=prop.height*escala;
-                    doc.setFillColor(250,250,250);doc.roundedRect(11,yFirma,35,45,2,2,'FD');doc.addImage(src,formato,13+(31-ancho)/2,yFirma+2+(35-alto)/2,ancho,alto,undefined,'FAST');
-                    doc.setFontSize(8);doc.setTextColor(80);doc.text('Foto personal',28.5,yFirma+41.5,{align:'center'});
-                    doc.roundedRect(52,yFirma,71,38,2,2);doc.roundedRect(129,yFirma,71,38,2,2);doc.setDrawColor(40);doc.line(59,yFirma+29,116,yFirma+29);doc.line(136,yFirma+29,193,yFirma+29);doc.setFontSize(8.5);doc.setTextColor(35);doc.text('Firma del participante',87.5,yFirma+34,{align:'center'});doc.text('Recibido por',164.5,yFirma+34,{align:'center'});
+                    const src=fotos[0],prop=doc.getImageProperties(src),formato=src.startsWith('data:image/png')?'PNG':'JPEG',escala=Math.min(26/prop.width,30/prop.height),ancho=prop.width*escala,alto=prop.height*escala;
+                    doc.setFillColor(250,250,250);doc.roundedRect(11,yFirma,30,40,2,2,'FD');doc.addImage(src,formato,13+(26-ancho)/2,yFirma+2+(30-alto)/2,ancho,alto,undefined,'FAST');
+                    doc.setFontSize(8);doc.setTextColor(80);doc.text('Foto personal',26,yFirma+36.5,{align:'center'});
+                    doc.roundedRect(47,yFirma,73.5,38,2,2);doc.roundedRect(126.5,yFirma,73.5,38,2,2);doc.setDrawColor(40);doc.line(54,yFirma+29,113.5,yFirma+29);doc.line(133.5,yFirma+29,193,yFirma+29);doc.setFontSize(8.5);doc.setTextColor(35);doc.text('Firma del participante',83.75,yFirma+34,{align:'center'});doc.text('Recibido por',163.25,yFirma+34,{align:'center'});
                 }else{
                     doc.roundedRect(11,yFirma,91.5,38,2,2);doc.roundedRect(108.5,yFirma,91.5,38,2,2);doc.setDrawColor(40);doc.line(20,yFirma+29,93.5,yFirma+29);doc.line(117.5,yFirma+29,191,yFirma+29);doc.setFontSize(8.5);doc.setTextColor(35);doc.text('Firma del participante',56.75,yFirma+34,{align:'center'});doc.text('Recibido por',154.25,yFirma+34,{align:'center'});
                 }
