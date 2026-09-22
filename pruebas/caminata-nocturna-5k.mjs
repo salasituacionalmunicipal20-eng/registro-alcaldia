@@ -39,12 +39,13 @@ assert.ok(formulario.indexOf('class="comp-superior"') < formulario.indexOf('clas
 for (const id of ['compPaginaFotos', 'compFotoNombre', 'compFotoCedula', 'compFotoGrid']) {
     assert.match(formulario, new RegExp(`id=["']${id}["']`), `Falta el elemento de impresión fotográfica ${id}`);
 }
-assert.match(formulario, /Memoria fotográfica/, 'La impresión pública debe incluir una hoja de memoria fotográfica');
-assert.match(formulario, /\.comp-pagina-fotos\.sin-fotos\s*\{\s*display:none\s*!important/, 'La hoja fotográfica no debe imprimirse vacía');
-assert.match(formulario, /page-break-before:always/, 'Las fotos deben comenzar en una hoja carta separada');
+assert.match(formulario, /Foto personal/, 'La impresión pública debe identificar la foto personal');
+assert.match(formulario, /\.comp-foto-item\s*\{[^}]*width:35mm;\s*height:45mm/, 'La foto impresa debe tener tamaño pequeño tipo cédula');
+assert.doesNotMatch(formulario, /page-break-before:always/, 'La foto no debe crear una segunda hoja');
 assert.match(formulario, /object-fit:contain/, 'Las fotos impresas deben conservar su proporción');
 assert.match(formulario, /await prepararFotosImpresion\(FOTOS,[^)]+\);window\.print\(\)/, 'La impresión pública debe esperar que carguen las fotos');
-assert.match(formulario, /\.firma-caja\s*\{[^}]*height:30mm/, 'La impresión pública debe reservar un espacio amplio para firmar');
+assert.match(formulario, /slice\(0,1\)/, 'La impresión pública debe usar solo la primera foto como foto personal');
+assert.match(formulario, /\.firma-caja\s*\{[^}]*height:34mm/, 'La impresión pública debe reservar un espacio amplio para firmar');
 assert.match(formulario, /<span>Firma del participante<\/span>/, 'La impresión pública debe identificar la firma del participante');
 
 for (const texto of ['Descargar Excel', 'Descargar PDF', 'Fotografías', 'Actualización en tiempo real', 'caminata5kcharallave', 'Distribución en tiempo real por sexo y edad', 'Detalle exacto por edad']) {
@@ -65,17 +66,18 @@ assert.ok(resultados.indexOf('class="imp-superior"') < resultados.indexOf('class
 for (const id of ['unoPaginaFotos', 'unoFotoNombre', 'unoFotoCedula', 'unoFotoGrid']) {
     assert.match(resultados, new RegExp(`id=["']${id}["']`), `Falta el elemento fotográfico del panel ${id}`);
 }
-assert.match(resultados, /Memoria fotográfica/, 'La impresión 1×1 debe incluir una hoja de memoria fotográfica');
-assert.match(resultados, /\.imp-pagina-fotos\.sin-fotos\s*\{\s*display:none\s*!important/, 'El panel no debe imprimir una hoja fotográfica vacía');
-assert.match(resultados, /page-break-before:always/, 'Las fotos del panel deben comenzar en una hoja carta separada');
+assert.match(resultados, /Foto personal/, 'La impresión 1×1 debe identificar la foto personal');
+assert.match(resultados, /\.imp-foto-item\s*\{[^}]*width:35mm;\s*height:45mm/, 'La foto del panel debe imprimirse pequeña tipo cédula');
+assert.doesNotMatch(resultados, /page-break-before:always/, 'La foto del panel no debe crear una segunda hoja');
 assert.match(resultados, /object-fit:contain/, 'Las fotos del panel deben conservar su proporción');
 assert.match(resultados, /r\._fotos\|\|await fotosDe\(r\.id\)/, 'La impresión desde una fila debe cargar las fotos guardadas');
 assert.match(resultados, /await prepararFotosImpresion\(fotos,r\.nombre_apellido,r\.cedula\);window\.print\(\)/, 'El panel debe esperar que carguen las fotos antes de imprimir');
 assert.doesNotMatch(resultados, /async function fotosDe\([^)]*\)\{[^}]*catch\s*\([^)]*\)\s*\{\s*return\s*\{\}/, 'Los errores al cargar fotos no deben ocultarse');
-assert.match(resultados, /\.imp-firma\s*\{[^}]*height:30mm/, 'La impresión 1×1 debe reservar un espacio amplio para firmar');
+assert.match(resultados, /\.imp-firma\s*\{[^}]*height:34mm/, 'La impresión 1×1 debe reservar un espacio amplio para firmar');
 assert.match(resultados, /async function generarFichaPDF\(r\)/, 'La ficha PDF debe prepararse de forma controlada');
 assert.match(resultados, /doc\.text\('Firma del participante'/, 'El PDF debe incluir el espacio para la firma del participante');
-assert.match(resultados, /doc\.addPage\(\);dibujarHeaderPDF\(doc,\{titulo:'Memoria fotográfica - Caminata Nocturna 5K'/, 'Las fotos del PDF deben comenzar en una hoja separada');
+assert.match(resultados, /roundedRect\(11,yFirma,35,45/, 'El PDF debe colocar una foto personal pequeña de 35 por 45 mm');
+assert.doesNotMatch(resultados, /titulo:'Memoria fotográfica - Caminata Nocturna 5K'/, 'El PDF individual no debe crear una segunda hoja fotográfica');
 assert.match(resultados, /doc\.getImageProperties\(src\)/, 'El PDF debe calcular la proporción real de cada fotografía');
 assert.match(resultados, /doc\.addImage\(src,formato/, 'El PDF debe insertar las fotografías cargadas');
 assert.doesNotMatch(resultados, /catch\s*\([^)]*\)\s*\{\s*\}/, 'Los errores al generar fotos o informes no deben ocultarse');

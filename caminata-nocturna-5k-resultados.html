@@ -79,22 +79,19 @@
             .imp-dato:nth-child(even) { border-right:0; }
             .imp-dato.completo { grid-column:1/-1; border-right:0; }
             .imp-dato b { display:block; color:#555; font-size:9px; text-transform:uppercase; margin-bottom:5px; }
-            .imp-firmas { display:grid; grid-template-columns:1fr 1fr; gap:10mm; margin-top:12mm; }
-            .imp-firma { height:30mm; border:1px solid #888; border-radius:2mm; padding:0 8mm 5mm; display:flex; align-items:flex-end; justify-content:center; text-align:center; font-size:12px; }
+            .imp-firmas { display:grid; grid-template-columns:36mm 1fr 1fr; gap:7mm; margin-top:8mm; align-items:end; }
+            .imp-firmas.sin-foto { grid-template-columns:1fr 1fr; }
+            .imp-firma { height:34mm; border:1px solid #888; border-radius:2mm; padding:0 6mm 5mm; display:flex; align-items:flex-end; justify-content:center; text-align:center; font-size:12px; }
             .imp-firma span { width:100%; border-top:1px solid #111; padding-top:5px; }
             .imp-pie { position:fixed; bottom:0; left:0; right:0; text-align:center; font-size:9px; color:#666; }
-            .imp-pagina-fotos { display:block; break-before:page; page-break-before:always; padding-top:1mm; font-family:Arial,sans-serif; }
+            .imp-pagina-fotos { display:block; padding:0; font-family:Arial,sans-serif; }
             .imp-pagina-fotos.sin-fotos { display:none !important; }
-            .imp-foto-head { text-align:center; border-bottom:2px solid #7c2d12; padding-bottom:7px; margin:5mm 0 7mm; }
-            .imp-foto-head h2 { color:#7c2d12; font-size:20px; margin:0 0 3px; }
-            .imp-foto-head p { font-size:11px; margin:0; }
-            .imp-foto-grid { display:grid; gap:5mm; height:190mm; }
-            .imp-foto-item { border:1px solid #aaa; border-radius:2mm; padding:2mm; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; }
+            .imp-foto-head { text-align:center; margin:0 0 2mm; }
+            .imp-foto-head h2 { color:#7c2d12; font-size:12px; margin:0; }
+            .imp-foto-head p { display:none; }
+            .imp-foto-grid { display:block; height:auto; }
+            .imp-foto-item { width:35mm; height:45mm; box-sizing:border-box; border:1px solid #777; border-radius:2mm; padding:1.5mm; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; }
             .imp-foto-item img { width:100%; height:100%; object-fit:contain; display:block; }
-            .imp-foto-grid.cantidad-1 { grid-template-columns:1fr; }
-            .imp-foto-grid.cantidad-2 { grid-template-columns:1fr 1fr; height:185mm; }
-            .imp-foto-grid.cantidad-3 { grid-template-columns:1fr 1fr; grid-template-rows:95mm 82mm; height:auto; }
-            .imp-foto-grid.cantidad-3 .imp-foto-item:first-child { grid-column:1/-1; }
         }
     </style>
 </head>
@@ -165,13 +162,11 @@
             <div class="imp-dato"><b>Toma algún medicamento</b><span id="unoMedicamento"></span></div><div class="imp-dato"><b>Detalle</b><span id="unoMedicamentoDetalle"></span></div>
             <div class="imp-dato"><b>Fotografías adjuntas</b><span id="unoFotos"></span></div><div class="imp-dato"><b>Fecha de inscripción</b><span id="unoRegistro"></span></div>
         </div>
-        <div class="imp-firmas"><div class="imp-firma"><span>Firma del participante</span></div><div class="imp-firma"><span>Recibido por</span></div></div>
-        <div class="imp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
-        <div id="unoPaginaFotos" class="imp-pagina-fotos sin-fotos">
-            <div class="imp-superior"><div class="imp-numero">N.º de inscripción: <span></span></div><div class="imp-logos"><img class="imp-logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="imp-logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>
-            <div class="imp-foto-head"><h2>Memoria fotográfica</h2><p><b id="unoFotoNombre"></b> · Cédula: <span id="unoFotoCedula"></span></p></div>
-            <div id="unoFotoGrid" class="imp-foto-grid"></div>
+        <div class="imp-firmas sin-foto">
+            <div id="unoPaginaFotos" class="imp-pagina-fotos sin-fotos"><div class="imp-foto-head"><h2>Foto personal</h2><p><b id="unoFotoNombre"></b> · Cédula: <span id="unoFotoCedula"></span></p></div><div id="unoFotoGrid" class="imp-foto-grid"></div></div>
+            <div class="imp-firma"><span>Firma del participante</span></div><div class="imp-firma"><span>Recibido por</span></div>
         </div>
+        <div class="imp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
     </section>
 
     <script type="module">
@@ -242,8 +237,8 @@
             $('imprimirFicha').addEventListener('click',()=>imprimirRegistro(actual)); $('pdfFicha').addEventListener('click',()=>generarFichaPDF(actual)); $('eliminar').addEventListener('click',eliminarActual);
         }
         function prepararFotosImpresion(fotos,nombre,cedula){
-            const lista=Object.values(fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,3),pagina=$('unoPaginaFotos'),grid=$('unoFotoGrid');
-            pagina.classList.toggle('sin-fotos',lista.length===0);grid.className=`imp-foto-grid cantidad-${lista.length}`;grid.replaceChildren();
+            const lista=Object.values(fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,1),pagina=$('unoPaginaFotos'),grid=$('unoFotoGrid');
+            pagina.classList.toggle('sin-fotos',lista.length===0);pagina.closest('.imp-firmas').classList.toggle('sin-foto',lista.length===0);grid.className=`imp-foto-grid cantidad-${lista.length}`;grid.replaceChildren();
             $('unoFotoNombre').textContent=nombre||'—';$('unoFotoCedula').textContent=cedula||'—';
             return Promise.all(lista.map((src,i)=>new Promise((resolve,reject)=>{const caja=document.createElement('div'),img=document.createElement('img');caja.className='imp-foto-item';img.alt=`Fotografía ${i+1} de ${nombre||'la inscripción'}`;img.onload=resolve;img.onerror=()=>reject(new Error(`No se pudo preparar la fotografía ${i+1} para imprimir.`));img.src=src;caja.appendChild(img);grid.appendChild(caja);})));
         }
@@ -291,25 +286,19 @@
             try{
                 const doc=prepararPDF('portrait');dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});
                 const filas=[['N.º de inscripción','____________________________'],['Nombre y apellido',r.nombre_apellido],['Cédula',r.cedula],['Teléfono',r.telefono],['Fecha de nacimiento',`${fechaCorta(r.fecha_nacimiento)} (${r.edad} años)`],['Sexo',sexoCanonico(r.sexo)],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(r.fecha_registro)]];
-                doc.autoTable({startY:35,body:filas,theme:'grid',styles:{fontSize:9,cellPadding:2.5,overflow:'linebreak'},columnStyles:{0:{cellWidth:52,fontStyle:'bold',fillColor:[255,247,237]},1:{cellWidth:137}},margin:{left:11,right:11,bottom:16}});
+                doc.autoTable({startY:35,body:filas,theme:'grid',styles:{fontSize:8.5,cellPadding:2,overflow:'linebreak'},columnStyles:{0:{cellWidth:52,fontStyle:'bold',fillColor:[255,247,237]},1:{cellWidth:137}},margin:{left:11,right:11,bottom:16}});
 
-                let yFirma=doc.lastAutoTable.finalY+8;if(yFirma+34>260){dibujarFooterPDF(doc);doc.addPage();dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});yFirma=38;}
-                doc.setDrawColor(130);doc.setLineWidth(0.25);doc.roundedRect(11,yFirma,91.5,30,2,2);doc.roundedRect(108.5,yFirma,91.5,30,2,2);
-                doc.setDrawColor(40);doc.line(20,yFirma+22,93.5,yFirma+22);doc.line(117.5,yFirma+22,191,yFirma+22);
-                doc.setFontSize(9);doc.setTextColor(35);doc.text('Firma del participante',56.75,yFirma+27,{align:'center'});doc.text('Recibido por',154.25,yFirma+27,{align:'center'});
-                dibujarFooterPDF(doc);
-
-                const fotos=Object.values(r._fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,3);
+                const fotos=Object.values(r._fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,1),yFirma=doc.lastAutoTable.finalY+7;
+                doc.setDrawColor(130);doc.setLineWidth(0.25);
                 if(fotos.length){
-                    doc.addPage();dibujarHeaderPDF(doc,{titulo:'Memoria fotográfica - Caminata Nocturna 5K',subtitulo:`${r.nombre_apellido} · C.I. ${r.cedula}`});
-                    const cajas=fotos.length===1?[[11,42,189,204]]:fotos.length===2?[[11,42,92,204],[108,42,92,204]]:[[11,42,189,98],[11,148,92,98],[108,148,92,98]];
-                    fotos.forEach((src,i)=>{
-                        const [x,y,w,h]=cajas[i],prop=doc.getImageProperties(src),escala=Math.min((w-4)/prop.width,(h-4)/prop.height),ancho=prop.width*escala,alto=prop.height*escala,formato=src.startsWith('data:image/png')?'PNG':'JPEG';
-                        doc.setDrawColor(170);doc.setFillColor(250,250,250);doc.roundedRect(x,y,w,h,2,2,'FD');
-                        doc.addImage(src,formato,x+(w-ancho)/2,y+(h-alto)/2,ancho,alto,undefined,'FAST');
-                    });
-                    dibujarFooterPDF(doc);
+                    const src=fotos[0],prop=doc.getImageProperties(src),formato=src.startsWith('data:image/png')?'PNG':'JPEG',escala=Math.min(31/prop.width,35/prop.height),ancho=prop.width*escala,alto=prop.height*escala;
+                    doc.setFillColor(250,250,250);doc.roundedRect(11,yFirma,35,45,2,2,'FD');doc.addImage(src,formato,13+(31-ancho)/2,yFirma+2+(35-alto)/2,ancho,alto,undefined,'FAST');
+                    doc.setFontSize(8);doc.setTextColor(80);doc.text('Foto personal',28.5,yFirma+41.5,{align:'center'});
+                    doc.roundedRect(52,yFirma,71,38,2,2);doc.roundedRect(129,yFirma,71,38,2,2);doc.setDrawColor(40);doc.line(59,yFirma+29,116,yFirma+29);doc.line(136,yFirma+29,193,yFirma+29);doc.setFontSize(8.5);doc.setTextColor(35);doc.text('Firma del participante',87.5,yFirma+34,{align:'center'});doc.text('Recibido por',164.5,yFirma+34,{align:'center'});
+                }else{
+                    doc.roundedRect(11,yFirma,91.5,38,2,2);doc.roundedRect(108.5,yFirma,91.5,38,2,2);doc.setDrawColor(40);doc.line(20,yFirma+29,93.5,yFirma+29);doc.line(117.5,yFirma+29,191,yFirma+29);doc.setFontSize(8.5);doc.setTextColor(35);doc.text('Firma del participante',56.75,yFirma+34,{align:'center'});doc.text('Recibido por',154.25,yFirma+34,{align:'center'});
                 }
+                dibujarFooterPDF(doc);
                 doc.save(`inscripcion_caminata_${r.cedula}.pdf`);
             }catch(e){alert('No se pudo generar el PDF con las fotografías. Intenta nuevamente.\n'+(e.message||e.code||''));}
             finally{if(boton){boton.disabled=false;boton.textContent=textoBoton;}}

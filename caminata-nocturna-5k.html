@@ -72,28 +72,24 @@
             .numero-inscripcion { width:92mm; border:2px solid #111; padding:10px; margin:0; font-size:13pt; font-weight:bold; }
             .numero-inscripcion span { display:inline-block; width:45mm; border-bottom:1.5px solid #111; margin-left:5px; height:7mm; vertical-align:bottom; }
             .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #777; }
-            .comp-dato { padding: 8px 10px; border-right: 1px solid #aaa; border-bottom: 1px solid #aaa; min-height: 17mm; }
+            .comp-dato { padding: 6px 8px; border-right: 1px solid #aaa; border-bottom: 1px solid #aaa; min-height: 14mm; }
             .comp-dato:nth-child(even) { border-right: 0; }
             .comp-dato.ancho { grid-column: 1 / -1; border-right: 0; }
             .comp-dato b { display: block; font-size: 8.5pt; text-transform: uppercase; color: #555; margin-bottom: 4px; }
-            .comp-firma { display:grid; grid-template-columns:1fr 1fr; gap:10mm; margin-top:12mm; text-align:center; }
-            .firma-caja { height:30mm; border:1px solid #888; border-radius:2mm; padding:0 8mm 5mm; display:flex; align-items:flex-end; }
+            .comp-firma { display:grid; grid-template-columns:36mm 1fr 1fr; gap:7mm; margin-top:8mm; align-items:end; text-align:center; }
+            .comp-firma.sin-foto { grid-template-columns:1fr 1fr; }
+            .firma-caja { height:34mm; border:1px solid #888; border-radius:2mm; padding:0 6mm 5mm; display:flex; align-items:flex-end; }
             .firma-caja span { width:100%; border-top:1px solid #111; padding-top:4px; font-size:10pt; }
             .comp-pie { margin-top: 14mm; text-align: center; font-size: 8pt; color: #666; }
-            .comp-pagina-fotos { display:block; break-before:page; page-break-before:always; padding-top:1mm; }
+            .comp-pagina-fotos { display:block; padding:0; }
             .comp-pagina-fotos.sin-fotos { display:none !important; }
-            .comp-foto-head { text-align:center; border-bottom:2px solid #7c2d12; padding-bottom:8px; margin-bottom:7mm; }
-            .comp-foto-head h2 { color:#7c2d12; font-size:17pt; margin:0 0 4px; }
-            .comp-foto-head p { font-size:10pt; margin:0; }
-            .comp-foto-grid { display:grid; grid-template-columns:1fr 1fr; gap:5mm; }
-            .comp-foto-item { display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid #aaa; border-radius:3mm; background:#f8fafc; padding:2mm; }
+            .comp-foto-head { text-align:center; margin:0 0 2mm; }
+            .comp-foto-head h2 { color:#7c2d12; font-size:9pt; margin:0; }
+            .comp-foto-head p { display:none; }
+            .comp-foto-grid { display:block; }
+            .comp-foto-item { width:35mm; height:45mm; box-sizing:border-box; display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid #777; border-radius:2mm; background:#f8fafc; padding:1.5mm; }
             .comp-foto-item img { width:100%; height:100%; object-fit:contain; }
-            .comp-foto-grid.cantidad-1 { grid-template-columns:1fr; }
-            .comp-foto-grid.cantidad-1 .comp-foto-item { height:190mm; }
-            .comp-foto-grid.cantidad-2 .comp-foto-item { height:185mm; }
-            .comp-foto-grid.cantidad-3 .comp-foto-item:first-child { grid-column:1/-1; height:95mm; }
-            .comp-foto-grid.cantidad-3 .comp-foto-item:not(:first-child) { height:82mm; }
-            .comp-foto-pie { margin-top:6mm; text-align:center; font-size:8pt; color:#666; }
+            .comp-foto-pie { display:none; }
         }
     </style>
     <script defer src="municipios-data.js"></script>
@@ -181,14 +177,11 @@
             <div class="comp-dato"><b>Toma algún medicamento</b><span id="impMedicamento"></span></div><div class="comp-dato"><b>Detalle</b><span id="impMedicamentoDetalle"></span></div>
             <div class="comp-dato ancho"><b>Fecha de registro</b><span id="impRegistro"></span></div>
         </div>
-        <div class="comp-firma"><div class="firma-caja"><span>Firma del participante</span></div><div class="firma-caja"><span>Recibido por</span></div></div>
-        <div class="comp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
-        <div id="compPaginaFotos" class="comp-pagina-fotos sin-fotos">
-            <div class="comp-superior"><div class="numero-inscripcion">N.º de inscripción: <span></span></div><div class="comp-logos"><img class="logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>
-            <div class="comp-foto-head"><h2>Memoria fotográfica</h2><p><b id="compFotoNombre"></b> · C.I. <span id="compFotoCedula"></span></p></div>
-            <div id="compFotoGrid" class="comp-foto-grid"></div>
-            <div class="comp-foto-pie">1ra Caminata Nocturna 5K · Alcaldía del Municipio Cristóbal Rojas</div>
+        <div class="comp-firma sin-foto">
+            <div id="compPaginaFotos" class="comp-pagina-fotos sin-fotos"><div class="comp-foto-head"><h2>Foto personal</h2><p><b id="compFotoNombre"></b> · C.I. <span id="compFotoCedula"></span></p></div><div id="compFotoGrid" class="comp-foto-grid"></div></div>
+            <div class="firma-caja"><span>Firma del participante</span></div><div class="firma-caja"><span>Recibido por</span></div>
         </div>
+        <div class="comp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
     </section>
 
     <script type="module">
@@ -292,8 +285,8 @@
             }
         });
         function prepararFotosImpresion(fotos, nombre, cedula) {
-            const lista=Object.values(fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,3),pagina=$('compPaginaFotos'),grid=$('compFotoGrid');
-            pagina.classList.toggle('sin-fotos',lista.length===0);grid.replaceChildren();grid.className=`comp-foto-grid cantidad-${lista.length}`;$('compFotoNombre').textContent=nombre||'';$('compFotoCedula').textContent=cedula||'';
+            const lista=Object.values(fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,1),pagina=$('compPaginaFotos'),grid=$('compFotoGrid');
+            pagina.classList.toggle('sin-fotos',lista.length===0);pagina.closest('.comp-firma').classList.toggle('sin-foto',lista.length===0);grid.replaceChildren();grid.className=`comp-foto-grid cantidad-${lista.length}`;$('compFotoNombre').textContent=nombre||'';$('compFotoCedula').textContent=cedula||'';
             const cargas=lista.map((src,i)=>new Promise((resolve,reject)=>{const caja=document.createElement('div'),img=document.createElement('img'),fallar=()=>reject(new Error(`No se pudo preparar la fotografía ${i+1} para imprimir.`));caja.className='comp-foto-item';img.alt=`Fotografía ${i+1} de ${nombre||'la inscripción'}`;img.onload=resolve;img.onerror=fallar;img.src=src;caja.appendChild(img);grid.appendChild(caja);if(img.complete){if(img.naturalWidth>0)resolve();else fallar();}}));
             return Promise.all(cargas);
         }
