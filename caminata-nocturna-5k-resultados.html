@@ -24,6 +24,13 @@
         .kpi span { display:block; color:#64748b; font-size:12px; font-weight:700; } .kpi strong { display:block; font-size:27px; margin-top:3px; color:#7c2d12; }
         .panel { background:#fff; border-radius:12px; box-shadow:0 1px 5px #00000014; padding:15px; margin-bottom:14px; }
         .panel h2 { font-size:15px; color:#7c2d12; margin-bottom:11px; }
+        .distribucion { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+        .bloque-dist { border:1px solid #e2e8f0; border-radius:10px; padding:13px; }
+        .bloque-dist h3 { color:#7c2d12; font-size:13px; margin-bottom:9px; }
+        .renglon-dist { display:grid; grid-template-columns:100px 1fr 42px; gap:8px; align-items:center; margin:8px 0; font-size:13px; }
+        .barra { height:12px; background:#e2e8f0; border-radius:999px; overflow:hidden; }.barra span{display:block;height:100%;background:linear-gradient(90deg,#dc2626,#f59e0b);border-radius:999px}
+        .renglon-dist strong { text-align:right; color:#7c2d12; }
+        .edades { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }.edad-chip{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:7px 9px;font-size:12px}.edad-chip b{color:#7c2d12;font-size:15px}
         .compartir { display:grid; grid-template-columns:120px 1fr; gap:16px; align-items:center; }
         .compartir img { width:120px; height:120px; border:1px solid #e2e8f0; border-radius:9px; }
         .enlace { padding:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; color:#075985; font-weight:750; overflow-wrap:anywhere; margin:7px 0; }
@@ -49,7 +56,7 @@
         .galeria a { display:block; } .galeria img { width:100%; height:190px; object-fit:cover; border-radius:9px; border:1px solid #cbd5e1; }
         .modal-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
         @media(max-width:950px){ .kpis{grid-template-columns:repeat(2,1fr)} .filtros{grid-template-columns:1fr 1fr} }
-        @media(max-width:560px){ header,main{padding:12px}.kpis,.filtros,.detalle,.galeria,.compartir{grid-template-columns:1fr}.compartir img{margin:auto}.kpi:last-child{grid-column:1/-1}.en-vivo{width:100%;margin:3px 0}.galeria img{height:auto}.header-actions{width:100%}.header-actions>*{flex:1}.modal-body{padding:14px} }
+        @media(max-width:560px){ header,main{padding:12px}.kpis,.filtros,.detalle,.galeria,.compartir,.distribucion{grid-template-columns:1fr}.compartir img{margin:auto}.kpi:last-child{grid-column:1/-1}.en-vivo{width:100%;margin:3px 0}.galeria img{height:auto}.header-actions{width:100%}.header-actions>*{flex:1}.modal-body{padding:14px} }
     </style>
 </head>
 <body>
@@ -64,9 +71,17 @@
             <section class="kpis">
                 <div class="kpi"><span>Inscripciones</span><strong id="kTotal">0</strong></div>
                 <div class="kpi"><span>Registradas hoy</span><strong id="kHoy">0</strong></div>
-                <div class="kpi"><span>Con fotografías</span><strong id="kFotos">0</strong></div>
-                <div class="kpi"><span>Con enfermedad</span><strong id="kEnfermedad">0</strong></div>
-                <div class="kpi"><span>Municipios</span><strong id="kMunicipios">0</strong></div>
+                <div class="kpi"><span>Hombres</span><strong id="kHombres">0</strong></div>
+                <div class="kpi"><span>Mujeres</span><strong id="kMujeres">0</strong></div>
+                <div class="kpi"><span>Edad promedio</span><strong id="kPromedio">—</strong></div>
+            </section>
+            <section class="panel">
+                <h2>Distribución en tiempo real por sexo y edad</h2>
+                <div class="distribucion">
+                    <div class="bloque-dist"><h3>Cantidad por sexo</h3><div id="distSexo"></div></div>
+                    <div class="bloque-dist"><h3>Cantidad por grupos de edad</h3><div id="distGrupos"></div></div>
+                </div>
+                <div class="bloque-dist" style="margin-top:12px"><h3>Detalle exacto por edad</h3><div id="distEdades" class="edades"></div></div>
             </section>
             <section class="panel compartir">
                 <img id="qrFormulario" alt="Código QR del formulario público" />
@@ -77,7 +92,7 @@
                 <div class="filtros">
                     <input id="buscar" placeholder="Buscar nombre, cédula, teléfono o dirección" />
                     <select id="fMunicipio"><option value="">Todos los municipios</option></select>
-                    <select id="fSexo"><option value="">Todos los sexos</option><option>Femenino</option><option>Masculino</option><option>Otro</option><option>Prefiero no indicar</option></select>
+                    <select id="fSexo"><option value="">Todos los sexos</option><option>Hombre</option><option>Mujer</option></select>
                     <select id="fEnfermedad"><option value="">Enfermedad: todas</option><option>Sí</option><option>No</option></select>
                     <select id="fFotos"><option value="">Fotos: todas</option><option value="si">Con fotos</option><option value="no">Sin fotos</option></select>
                 </div>
@@ -115,6 +130,8 @@
         const fechaLarga=v=>{const d=new Date(Number(v));if(Number.isNaN(d.getTime()))return '—';return d.toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+d.toLocaleDateString('es-VE');};
         const hoyClave=()=>new Date().toLocaleDateString('en-CA');
         const fechaClave=v=>{const d=new Date(Number(v));return Number.isNaN(d.getTime())?'':d.toLocaleDateString('en-CA');};
+        const sexoCanonico=v=>({Masculino:'Hombre',Femenino:'Mujer'}[v]||v||'');
+        function filasDistribucion(items,total){return items.map(([nombre,cantidad])=>`<div class="renglon-dist"><span>${texto(nombre)}</span><div class="barra"><span style="width:${total?Math.round(cantidad*100/total):0}%"></span></div><strong>${cantidad}</strong></div>`).join('');}
 
         onAuthStateChanged(auth,async user=>{
             if(!user){location.href='index.html';return;}
@@ -131,13 +148,19 @@
 
         function actualizar(){
             const q=normalizar($('buscar').value), mun=$('fMunicipio').value, sexo=$('fSexo').value, enf=$('fEnfermedad').value, fotos=$('fFotos').value;
-            filtrados=registros.filter(r=>(!q||normalizar([r.nombre_apellido,r.cedula,r.telefono,r.direccion_habitacion,r.municipio].join(' ')).includes(q))&&(!mun||r.municipio===mun)&&(!sexo||r.sexo===sexo)&&(!enf||r.padece_enfermedad===enf)&&(!fotos||(fotos==='si'?r.tiene_fotos:!r.tiene_fotos)));
+            filtrados=registros.filter(r=>(!q||normalizar([r.nombre_apellido,r.cedula,r.telefono,r.direccion_habitacion,r.municipio].join(' ')).includes(q))&&(!mun||r.municipio===mun)&&(!sexo||sexoCanonico(r.sexo)===sexo)&&(!enf||r.padece_enfermedad===enf)&&(!fotos||(fotos==='si'?r.tiene_fotos:!r.tiene_fotos)));
             const municipios=[...new Set(registros.map(r=>r.municipio).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
             const seleccionado=$('fMunicipio').value; $('fMunicipio').innerHTML='<option value="">Todos los municipios</option>'+municipios.map(m=>`<option${m===seleccionado?' selected':''}>${texto(m)}</option>`).join('');
-            $('kTotal').textContent=registros.length; $('kHoy').textContent=registros.filter(r=>fechaClave(r.fecha_registro)===hoyClave()).length; $('kFotos').textContent=registros.filter(r=>r.tiene_fotos).length; $('kEnfermedad').textContent=registros.filter(r=>r.padece_enfermedad==='Sí').length; $('kMunicipios').textContent=municipios.length;
+            const hombres=registros.filter(r=>sexoCanonico(r.sexo)==='Hombre').length,mujeres=registros.filter(r=>sexoCanonico(r.sexo)==='Mujer').length;
+            const edades=registros.map(r=>Number(r.edad)).filter(e=>Number.isFinite(e)&&e>=0&&e<=120);const promedio=edades.length?Math.round(edades.reduce((s,e)=>s+e,0)/edades.length):null;
+            $('kTotal').textContent=registros.length;$('kHoy').textContent=registros.filter(r=>fechaClave(r.fecha_registro)===hoyClave()).length;$('kHombres').textContent=hombres;$('kMujeres').textContent=mujeres;$('kPromedio').textContent=promedio==null?'—':promedio+' años';
+            $('distSexo').innerHTML=filasDistribucion([['Hombres',hombres],['Mujeres',mujeres]],registros.length);
+            const grupos=[['0 a 17 años',edades.filter(e=>e<=17).length],['18 a 29 años',edades.filter(e=>e>=18&&e<=29).length],['30 a 59 años',edades.filter(e=>e>=30&&e<=59).length],['60 años o más',edades.filter(e=>e>=60).length]];
+            $('distGrupos').innerHTML=filasDistribucion(grupos,edades.length);
+            const porEdad=new Map();edades.forEach(e=>porEdad.set(e,(porEdad.get(e)||0)+1));$('distEdades').innerHTML=porEdad.size?[...porEdad.entries()].sort((a,b)=>a[0]-b[0]).map(([edad,cantidad])=>`<div class="edad-chip"><b>${cantidad}</b> persona${cantidad===1?'':'s'} de ${edad} año${edad===1?'':'s'}</div>`).join(''):'<span style="color:#64748b;font-size:13px">Aún no hay edades registradas.</span>';
             const paginas=Math.max(1,Math.ceil(filtrados.length/POR_PAGINA)); if(pagina>paginas)pagina=paginas;
             const inicio=(pagina-1)*POR_PAGINA, lista=filtrados.slice(inicio,inicio+POR_PAGINA);
-            $('tbody').innerHTML=lista.map((r,i)=>`<tr><td>${inicio+i+1}</td><td><b>${texto(r.nombre_apellido)}</b></td><td>${texto(r.cedula)}</td><td>${texto(r.edad)}</td><td>${texto(r.sexo)}</td><td>${texto(r.telefono)}</td><td>${texto(r.municipio)}</td><td class="${r.padece_enfermedad==='Sí'?'si':''}">${texto(r.padece_enfermedad)}</td><td class="${r.toma_medicamento==='Sí'?'si':''}">${texto(r.toma_medicamento)}</td><td class="${r.tiene_fotos?'foto':''}">${r.tiene_fotos?'Sí':'No'}</td><td>${fechaHora(r.fecha_registro)}</td><td><button class="btn-blue ver" data-id="${texto(r.id)}">Ver ficha</button></td></tr>`).join('');
+            $('tbody').innerHTML=lista.map((r,i)=>`<tr><td>${inicio+i+1}</td><td><b>${texto(r.nombre_apellido)}</b></td><td>${texto(r.cedula)}</td><td>${texto(r.edad)}</td><td>${texto(sexoCanonico(r.sexo))}</td><td>${texto(r.telefono)}</td><td>${texto(r.municipio)}</td><td class="${r.padece_enfermedad==='Sí'?'si':''}">${texto(r.padece_enfermedad)}</td><td class="${r.toma_medicamento==='Sí'?'si':''}">${texto(r.toma_medicamento)}</td><td class="${r.tiene_fotos?'foto':''}">${r.tiene_fotos?'Sí':'No'}</td><td>${fechaHora(r.fecha_registro)}</td><td><button class="btn-blue ver" data-id="${texto(r.id)}">Ver ficha</button></td></tr>`).join('');
             $('sinDatos').classList.toggle('hidden',lista.length>0); $('paginaInfo').textContent=`Página ${pagina} de ${paginas} · ${filtrados.length} resultado(s)`; $('anterior').disabled=pagina===1; $('siguiente').disabled=pagina===paginas; $('tituloTabla').textContent=`Detalle de inscripciones (${filtrados.length})`;
             document.querySelectorAll('.ver').forEach(b=>b.addEventListener('click',()=>abrirFicha(b.dataset.id)));
         }
@@ -150,7 +173,7 @@
             actual=registros.find(r=>r.id===id); if(!actual)return;
             $('modal').classList.remove('hidden'); $('modalBody').innerHTML='<p>Cargando ficha y fotografías…</p>';
             const fotos=actual.tiene_fotos?await fotosDe(id):{}; actual={...actual,_fotos:fotos};
-            const campos=[['Nombre y apellido',actual.nombre_apellido],['Cédula',actual.cedula],['Teléfono',actual.telefono],['Fecha de nacimiento',fechaCorta(actual.fecha_nacimiento)],['Edad',actual.edad+' años'],['Sexo',actual.sexo],['Municipio',actual.municipio],['Dirección de habitación',actual.direccion_habitacion,'completo'],['Padece alguna enfermedad',actual.padece_enfermedad],['Enfermedad o condición',actual.enfermedad_detalle||'No aplica'],['Toma algún medicamento',actual.toma_medicamento],['Medicamento',actual.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(actual.fecha_registro),'completo']];
+            const campos=[['Nombre y apellido',actual.nombre_apellido],['Cédula',actual.cedula],['Teléfono',actual.telefono],['Fecha de nacimiento',fechaCorta(actual.fecha_nacimiento)],['Edad',actual.edad+' años'],['Sexo',sexoCanonico(actual.sexo)],['Municipio',actual.municipio],['Dirección de habitación',actual.direccion_habitacion,'completo'],['Padece alguna enfermedad',actual.padece_enfermedad],['Enfermedad o condición',actual.enfermedad_detalle||'No aplica'],['Toma algún medicamento',actual.toma_medicamento],['Medicamento',actual.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(actual.fecha_registro),'completo']];
             const galeria=Object.values(fotos).filter(Boolean).map((src,i)=>`<a href="${src}" download="caminata_${texto(actual.cedula)}_foto_${i+1}.jpg" title="Abrir o descargar foto"><img src="${src}" alt="Foto ${i+1} de ${texto(actual.nombre_apellido)}" /></a>`).join('');
             $('modalBody').innerHTML=`<div class="detalle">${campos.map(c=>`<div class="dato ${c[2]||''}"><b>${c[0]}</b>${texto(c[1])}</div>`).join('')}</div><h3 style="margin-top:16px;color:#7c2d12">Fotografías (${Object.values(fotos).filter(Boolean).length})</h3>${galeria?`<div class="galeria">${galeria}</div>`:'<p style="color:#64748b;margin-top:8px">Esta inscripción no tiene fotografías.</p>'}<div class="modal-actions"><button id="pdfFicha" class="btn-red">Descargar ficha PDF</button><button id="eliminar" class="btn-dark">Eliminar inscripción</button></div>`;
             $('pdfFicha').addEventListener('click',()=>generarFichaPDF(actual)); $('eliminar').addEventListener('click',eliminarActual);
@@ -158,7 +181,7 @@
         function cerrarModal(){$('modal').classList.add('hidden');actual=null;}$('cerrarModal').addEventListener('click',cerrarModal);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))cerrarModal();});
         async function eliminarActual(){if(!actual||!confirm(`¿Eliminar definitivamente la inscripción de ${actual.nombre_apellido}?`))return;try{await Promise.all([remove(ref(database,`caminata_nocturna_5k/${actual.id}`)),remove(ref(database,`caminata_nocturna_5k_fotos/${actual.id}`))]);cerrarModal();}catch(e){alert('No se pudo eliminar la inscripción: '+(e.message||e.code));}}
 
-        const filaExcel=r=>[r.nombre_apellido,r.cedula,r.telefono,r.fecha_nacimiento,r.edad,r.sexo,r.padece_enfermedad,r.enfermedad_detalle||'',r.toma_medicamento,r.medicamento_detalle||'',r.direccion_habitacion,r.municipio,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro),r.registrado_por||''];
+        const filaExcel=r=>[r.nombre_apellido,r.cedula,r.telefono,r.fecha_nacimiento,r.edad,sexoCanonico(r.sexo),r.padece_enfermedad,r.enfermedad_detalle||'',r.toma_medicamento,r.medicamento_detalle||'',r.direccion_habitacion,r.municipio,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro),r.registrado_por||''];
         $('excel').addEventListener('click',()=>{
             if(!filtrados.length)return alert('No hay datos para exportar.');
             const encabezados=['NOMBRE Y APELLIDO','CÉDULA','TELÉFONO','FECHA DE NACIMIENTO','EDAD','SEXO','PADECE ENFERMEDAD','ENFERMEDAD O CONDICIÓN','TOMA MEDICAMENTO','MEDICAMENTO','DIRECCIÓN DE HABITACIÓN','MUNICIPIO','TIENE FOTOS','FECHA DE INSCRIPCIÓN','REGISTRADO POR'];
@@ -175,12 +198,12 @@
         $('pdf').addEventListener('click',()=>{
             if(!filtrados.length)return alert('No hay datos para exportar.'); const doc=prepararPDF('landscape');
             dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:`Informe completo · ${filtrados.length} inscripción(es) · ${new Date().toLocaleDateString('es-VE')}`});
-            doc.autoTable({startY:34,head:[['#','Nombre y apellido','Cédula','Edad / Sexo','Teléfono','Municipio','Salud','Dirección','Fotos','Registro']],body:filtrados.map((r,i)=>[i+1,r.nombre_apellido,r.cedula,`${r.edad} / ${r.sexo}`,r.telefono,r.municipio,`Enfermedad: ${r.padece_enfermedad}${r.enfermedad_detalle?' — '+r.enfermedad_detalle:''}\nMedicamento: ${r.toma_medicamento}${r.medicamento_detalle?' — '+r.medicamento_detalle:''}`,r.direccion_habitacion,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro)]),styles:{fontSize:6.8,cellPadding:1.4,overflow:'linebreak',valign:'top'},headStyles:{fillColor:[124,45,18],fontSize:7.2},columnStyles:{0:{cellWidth:8},1:{cellWidth:31},2:{cellWidth:17},3:{cellWidth:22},4:{cellWidth:21},5:{cellWidth:25},6:{cellWidth:42},7:{cellWidth:44},8:{cellWidth:12},9:{cellWidth:25}},margin:{left:9,right:9,top:33,bottom:16},didDrawPage:()=>dibujarFooterPDF(doc)});
+            doc.autoTable({startY:34,head:[['#','Nombre y apellido','Cédula','Edad / Sexo','Teléfono','Municipio','Salud','Dirección','Fotos','Registro']],body:filtrados.map((r,i)=>[i+1,r.nombre_apellido,r.cedula,`${r.edad} / ${sexoCanonico(r.sexo)}`,r.telefono,r.municipio,`Enfermedad: ${r.padece_enfermedad}${r.enfermedad_detalle?' — '+r.enfermedad_detalle:''}\nMedicamento: ${r.toma_medicamento}${r.medicamento_detalle?' — '+r.medicamento_detalle:''}`,r.direccion_habitacion,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro)]),styles:{fontSize:6.8,cellPadding:1.4,overflow:'linebreak',valign:'top'},headStyles:{fillColor:[124,45,18],fontSize:7.2},columnStyles:{0:{cellWidth:8},1:{cellWidth:31},2:{cellWidth:17},3:{cellWidth:22},4:{cellWidth:21},5:{cellWidth:25},6:{cellWidth:42},7:{cellWidth:44},8:{cellWidth:12},9:{cellWidth:25}},margin:{left:9,right:9,top:33,bottom:16},didDrawPage:()=>dibujarFooterPDF(doc)});
             doc.save(`caminata_nocturna_5k_informe_${new Date().toISOString().slice(0,10)}.pdf`);
         });
         function generarFichaPDF(r){
             const doc=prepararPDF('portrait');dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});
-            const filas=[['Nombre y apellido',r.nombre_apellido],['Cédula',r.cedula],['Teléfono',r.telefono],['Fecha de nacimiento',`${fechaCorta(r.fecha_nacimiento)} (${r.edad} años)`],['Sexo',r.sexo],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(r.fecha_registro)]];
+            const filas=[['N.º de inscripción','____________________________'],['Nombre y apellido',r.nombre_apellido],['Cédula',r.cedula],['Teléfono',r.telefono],['Fecha de nacimiento',`${fechaCorta(r.fecha_nacimiento)} (${r.edad} años)`],['Sexo',sexoCanonico(r.sexo)],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(r.fecha_registro)]];
             doc.autoTable({startY:35,body:filas,theme:'grid',styles:{fontSize:9,cellPadding:2.5,overflow:'linebreak'},columnStyles:{0:{cellWidth:52,fontStyle:'bold',fillColor:[255,247,237]},1:{cellWidth:137}},margin:{left:11,right:11,bottom:16}});
             let y=doc.lastAutoTable.finalY+7;const fotos=Object.values(r._fotos||{}).filter(Boolean);if(fotos.length){doc.setFontSize(11);doc.setTextColor(124,45,18);doc.text('Memoria fotográfica',11,y);y+=4;fotos.forEach((src,i)=>{if(y+48>260){dibujarFooterPDF(doc);doc.addPage();dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});y=35;}try{doc.addImage(src,'JPEG',11+(i%2)*96,y,90,46);if(i%2===1||i===fotos.length-1)y+=51;}catch(e){}});}dibujarFooterPDF(doc);doc.save(`inscripcion_caminata_${r.cedula}.pdf`);
         }

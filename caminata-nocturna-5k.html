@@ -40,8 +40,29 @@
         .ok h2 { color: #15803d; margin: 8px 0; }
         .ok p { color: #475569; }
         .ok button { margin-top: 20px; min-height: 46px; border: 0; border-radius: 9px; padding: 10px 20px; color: white; background: #7c2d12; font-weight: 750; cursor: pointer; }
+        .ok-acciones { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        #imprimir { background: #075985; }
+        .comprobante { display: none; }
         .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 8px 10px 20px; }
         @media (max-width: 560px) { .row2, .ops, .fotos { grid-template-columns: 1fr; } .top h1 { font-size: 20px; } .wrap { padding: 12px; } .card { padding: 16px; } }
+        @media print {
+            @page { size: letter portrait; margin: 14mm; }
+            body { background: #fff; color: #000; }
+            body > .top, body > .wrap, body > .pie, body > script { display: none !important; }
+            .comprobante { display: block !important; font-family: Arial, sans-serif; font-size: 11pt; }
+            .comp-head { text-align: center; border-bottom: 2px solid #7c2d12; padding-bottom: 10px; margin-bottom: 14px; }
+            .comp-head h1 { font-size: 17pt; margin: 0 0 5px; color: #7c2d12; }
+            .numero-inscripcion { border: 2px solid #111; padding: 12px; margin: 14px 0; font-size: 14pt; font-weight: bold; }
+            .numero-inscripcion span { display: inline-block; width: 90mm; border-bottom: 1.5px solid #111; margin-left: 8px; height: 8mm; vertical-align: bottom; }
+            .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #777; }
+            .comp-dato { padding: 8px 10px; border-right: 1px solid #aaa; border-bottom: 1px solid #aaa; min-height: 17mm; }
+            .comp-dato:nth-child(even) { border-right: 0; }
+            .comp-dato.ancho { grid-column: 1 / -1; border-right: 0; }
+            .comp-dato b { display: block; font-size: 8.5pt; text-transform: uppercase; color: #555; margin-bottom: 4px; }
+            .comp-firma { display: flex; gap: 20mm; justify-content: center; margin-top: 28mm; text-align: center; }
+            .comp-firma div { width: 70mm; border-top: 1px solid #111; padding-top: 4px; }
+            .comp-pie { margin-top: 14mm; text-align: center; font-size: 8pt; color: #666; }
+        }
     </style>
     <script defer src="municipios-data.js"></script>
     <script src="autofresh.js"></script>
@@ -64,7 +85,7 @@
                 <input id="nombre" autocomplete="name" maxlength="200" placeholder="Nombre completo" />
                 <div class="row2">
                     <div><label for="telefono">Teléfono *</label><input id="telefono" inputmode="tel" autocomplete="tel" maxlength="30" placeholder="0414-0000000" /></div>
-                    <div><label for="sexo">Sexo *</label><select id="sexo"><option value="">Selecciona</option><option>Femenino</option><option>Masculino</option><option>Otro</option><option>Prefiero no indicar</option></select></div>
+                    <div><label for="sexo">Sexo *</label><select id="sexo"><option value="">Selecciona</option><option>Hombre</option><option>Mujer</option></select></div>
                 </div>
                 <div class="row2">
                     <div><label for="fechaNacimiento">Fecha de nacimiento *</label><input id="fechaNacimiento" type="date" /></div>
@@ -107,10 +128,27 @@
         <section id="ok" class="ok">
             <div class="check">✅</div><h2>¡Inscripción registrada!</h2>
             <p>Tus datos y fotografías fueron recibidos correctamente.</p>
-            <button id="otra" type="button">Registrar otra persona</button>
+            <div class="ok-acciones"><button id="imprimir" type="button">🖨️ Imprimir inscripción</button><button id="otra" type="button">Registrar otra persona</button></div>
         </section>
     </main>
     <footer class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</footer>
+
+    <section id="comprobanteImpresion" class="comprobante" aria-hidden="true">
+        <div class="comp-head"><h1>1ra Caminata Nocturna 5K</h1><div>En conmemoración de la función Santa Rosa de Lima y el Día Mundial del Corazón</div><b>Ficha interna de inscripción</b></div>
+        <div class="numero-inscripcion">N.º de inscripción: <span></span></div>
+        <div class="comp-grid">
+            <div class="comp-dato ancho"><b>Nombre y apellido</b><span id="impNombre"></span></div>
+            <div class="comp-dato"><b>Cédula</b><span id="impCedula"></span></div><div class="comp-dato"><b>Teléfono</b><span id="impTelefono"></span></div>
+            <div class="comp-dato"><b>Fecha de nacimiento</b><span id="impNacimiento"></span></div><div class="comp-dato"><b>Edad</b><span id="impEdad"></span></div>
+            <div class="comp-dato"><b>Sexo</b><span id="impSexo"></span></div><div class="comp-dato"><b>Municipio</b><span id="impMunicipio"></span></div>
+            <div class="comp-dato ancho"><b>Dirección de habitación</b><span id="impDireccion"></span></div>
+            <div class="comp-dato"><b>Padece alguna enfermedad</b><span id="impEnfermedad"></span></div><div class="comp-dato"><b>Detalle</b><span id="impEnfermedadDetalle"></span></div>
+            <div class="comp-dato"><b>Toma algún medicamento</b><span id="impMedicamento"></span></div><div class="comp-dato"><b>Detalle</b><span id="impMedicamentoDetalle"></span></div>
+            <div class="comp-dato ancho"><b>Fecha de registro</b><span id="impRegistro"></span></div>
+        </div>
+        <div class="comp-firma"><div>Firma del participante</div><div>Recibido por</div></div>
+        <div class="comp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
+    </section>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -122,6 +160,7 @@
         const valor = id => ($(id).value || '').trim();
         const elegido = nombre => document.querySelector(`input[name="${nombre}"]:checked`)?.value || '';
         const FOTOS = { foto1:'', foto2:'', foto3:'' };
+        let ultimoRegistro = null;
 
         function mostrarError(texto, foco) { $('msg').textContent = texto; $('msg').className = 'msg err'; if (foco) $(foco).focus(); }
         function calcularEdad(fecha) {
@@ -200,12 +239,24 @@
             $('enviar').disabled = true; $('enviar').textContent = 'Enviando inscripción…'; $('msg').style.display = 'none';
             try {
                 await update(ref(database), cambios);
+                ultimoRegistro = registro;
                 $('formWrap').style.display = 'none'; $('ok').style.display = 'block'; window.scrollTo({top:0,behavior:'smooth'});
             } catch (error) {
                 const duplicada = error?.code === 'PERMISSION_DENIED' || String(error?.message || '').toLowerCase().includes('permission');
                 mostrarError(duplicada ? 'Esta cédula ya tiene una inscripción registrada. Si necesitas corregirla, comunícate con la organización.' : 'No se pudo completar el envío. Revisa tu conexión e intenta nuevamente; no se guardó una inscripción parcial.');
                 $('enviar').disabled = false; $('enviar').textContent = 'Enviar inscripción';
             }
+        });
+        $('imprimir').addEventListener('click', () => {
+            if (!ultimoRegistro) return;
+            const asignar = (id, valor) => { $(id).textContent = valor || '—'; };
+            asignar('impNombre', ultimoRegistro.nombre_apellido); asignar('impCedula', ultimoRegistro.cedula); asignar('impTelefono', ultimoRegistro.telefono);
+            asignar('impNacimiento', new Date(ultimoRegistro.fecha_nacimiento + 'T12:00:00').toLocaleDateString('es-VE')); asignar('impEdad', ultimoRegistro.edad + ' años'); asignar('impSexo', ultimoRegistro.sexo);
+            asignar('impMunicipio', ultimoRegistro.municipio); asignar('impDireccion', ultimoRegistro.direccion_habitacion);
+            asignar('impEnfermedad', ultimoRegistro.padece_enfermedad); asignar('impEnfermedadDetalle', ultimoRegistro.enfermedad_detalle || 'No aplica');
+            asignar('impMedicamento', ultimoRegistro.toma_medicamento); asignar('impMedicamentoDetalle', ultimoRegistro.medicamento_detalle || 'No aplica');
+            asignar('impRegistro', new Date(ultimoRegistro.fecha_registro).toLocaleString('es-VE', { dateStyle:'long', timeStyle:'short' }));
+            window.print();
         });
         $('otra').addEventListener('click', () => location.reload());
     </script>

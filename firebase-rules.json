@@ -112,7 +112,7 @@
         "telefono":            { ".validate": "newData.isString() && newData.val().length > 5 && newData.val().length <= 30" },
         "fecha_nacimiento":    { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)" },
         "edad":                { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120" },
-        "sexo":                { ".validate": "newData.isString() && (newData.val() === 'Femenino' || newData.val() === 'Masculino' || newData.val() === 'Otro' || newData.val() === 'Prefiero no indicar')" },
+        "sexo":                { ".validate": "newData.isString() && (newData.val() === 'Hombre' || newData.val() === 'Mujer')" },
         "padece_enfermedad":   { ".validate": "newData.val() === 'Sí' || newData.val() === 'No'" },
         "enfermedad_detalle":  { ".validate": "newData.isString() && newData.val().length <= 500" },
         "toma_medicamento":    { ".validate": "newData.val() === 'Sí' || newData.val() === 'No'" },

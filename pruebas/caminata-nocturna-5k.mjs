@@ -26,13 +26,23 @@ assert.match(formulario, /data-cne/, 'La cédula debe usar la consulta instituci
 assert.match(formulario, /capture="environment"/, 'Las fotos deben permitir abrir la cámara trasera');
 assert.match(formulario, /caminata_nocturna_5k_fotos/, 'Las fotos deben guardarse en un nodo separado');
 assert.match(formulario, /await update\(ref\(database\), cambios\)/, 'Registro y fotos deben enviarse atómicamente');
+assert.match(formulario, /<option>Hombre<\/option><option>Mujer<\/option>/, 'El sexo debe elegirse únicamente entre Hombre y Mujer');
+assert.match(formulario, /N\.º de inscripción:[\s\S]*<span><\/span>/, 'La impresión debe dejar en blanco el número de inscripción');
+assert.match(formulario, /window\.print\(\)/, 'Debe poder imprimirse la ficha después del registro');
 
-for (const texto of ['Descargar Excel', 'Descargar PDF', 'Fotografías', 'Actualización en tiempo real', 'caminata5kcharallave']) {
+for (const texto of ['Descargar Excel', 'Descargar PDF', 'Fotografías', 'Actualización en tiempo real', 'caminata5kcharallave', 'Distribución en tiempo real por sexo y edad', 'Detalle exacto por edad']) {
     assert.ok(resultados.includes(texto), `El panel debe incluir: ${texto}`);
 }
+for (const id of ['kTotal', 'kHombres', 'kMujeres', 'kPromedio', 'distSexo', 'distGrupos', 'distEdades']) {
+    assert.match(resultados, new RegExp(`id=["']${id}["']`), `Falta el indicador demográfico ${id}`);
+}
+assert.match(resultados, /\['N\.º de inscripción','_+?'/, 'El PDF individual debe dejar en blanco el número de inscripción');
 assert.ok(reglas.rules.caminata_nocturna_5k, 'Faltan reglas para las inscripciones');
 assert.ok(reglas.rules.caminata_nocturna_5k_fotos, 'Faltan reglas para las fotografías');
 assert.equal(reglas.rules.caminata_nocturna_5k_fotos.$cedula.$other['.validate'], false, 'Las fotos deben rechazar campos inesperados');
+const reglaSexo = reglas.rules.caminata_nocturna_5k.$cedula.sexo['.validate'];
+assert.ok(reglaSexo.includes("'Hombre'") && reglaSexo.includes("'Mujer'"), 'Las reglas deben aceptar Hombre y Mujer');
+assert.ok(!reglaSexo.includes("'Otro'") && !reglaSexo.includes("'Masculino'"), 'Las reglas no deben aceptar variantes libres o antiguas');
 
 const columnasExcel = 15;
 assert.match(resultados, /A1:O1/);
