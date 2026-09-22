@@ -57,7 +57,7 @@
         .modal-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
         .acciones-fila { display:flex; flex-wrap:wrap; gap:6px; min-width:205px; }
         .acciones-fila button { padding:7px 9px; font-size:11.5px; }
-        .ficha-impresion { display:none; }
+        .ficha-impresion, .imp-pagina-fotos { display:none; }
         @media(max-width:950px){ .kpis{grid-template-columns:repeat(2,1fr)} .filtros{grid-template-columns:1fr 1fr} }
         @media(max-width:560px){ header,main{padding:12px}.kpis,.filtros,.detalle,.galeria,.compartir,.distribucion{grid-template-columns:1fr}.compartir img{margin:auto}.kpi:last-child{grid-column:1/-1}.en-vivo{width:100%;margin:3px 0}.galeria img{height:auto}.header-actions{width:100%}.header-actions>*{flex:1}.modal-body{padding:14px} }
         @media print {
@@ -82,6 +82,18 @@
             .imp-firmas { display:flex; justify-content:space-between; gap:70px; margin-top:56px; }
             .imp-firma { width:42%; border-top:1px solid #111; text-align:center; padding-top:5px; font-size:12px; }
             .imp-pie { position:fixed; bottom:0; left:0; right:0; text-align:center; font-size:9px; color:#666; }
+            .imp-pagina-fotos { display:block; break-before:page; page-break-before:always; padding-top:1mm; font-family:Arial,sans-serif; }
+            .imp-pagina-fotos.sin-fotos { display:none !important; }
+            .imp-foto-head { text-align:center; border-bottom:2px solid #7c2d12; padding-bottom:7px; margin:5mm 0 7mm; }
+            .imp-foto-head h2 { color:#7c2d12; font-size:20px; margin:0 0 3px; }
+            .imp-foto-head p { font-size:11px; margin:0; }
+            .imp-foto-grid { display:grid; gap:5mm; height:190mm; }
+            .imp-foto-item { border:1px solid #aaa; border-radius:2mm; padding:2mm; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; }
+            .imp-foto-item img { width:100%; height:100%; object-fit:contain; display:block; }
+            .imp-foto-grid.cantidad-1 { grid-template-columns:1fr; }
+            .imp-foto-grid.cantidad-2 { grid-template-columns:1fr 1fr; height:185mm; }
+            .imp-foto-grid.cantidad-3 { grid-template-columns:1fr 1fr; grid-template-rows:95mm 82mm; height:auto; }
+            .imp-foto-grid.cantidad-3 .imp-foto-item:first-child { grid-column:1/-1; }
         }
     </style>
 </head>
@@ -154,6 +166,11 @@
         </div>
         <div class="imp-firmas"><div class="imp-firma">Firma del participante</div><div class="imp-firma">Recibido por</div></div>
         <div class="imp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
+        <div id="unoPaginaFotos" class="imp-pagina-fotos sin-fotos">
+            <div class="imp-superior"><div class="imp-numero">N.º de inscripción: <span></span></div><div class="imp-logos"><img class="imp-logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="imp-logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>
+            <div class="imp-foto-head"><h2>Memoria fotográfica</h2><p><b id="unoFotoNombre"></b> · Cédula: <span id="unoFotoCedula"></span></p></div>
+            <div id="unoFotoGrid" class="imp-foto-grid"></div>
+        </div>
     </section>
 
     <script type="module">
@@ -211,24 +228,38 @@
         $('limpiar').addEventListener('click',()=>{['buscar','fMunicipio','fSexo','fEnfermedad','fFotos'].forEach(id=>$(id).value='');pagina=1;actualizar();});
         $('anterior').addEventListener('click',()=>{if(pagina>1){pagina--;actualizar();}}); $('siguiente').addEventListener('click',()=>{if(pagina*POR_PAGINA<filtrados.length){pagina++;actualizar();}});
 
-        async function fotosDe(id){try{const s=await get(ref(database,`caminata_nocturna_5k_fotos/${id}`));return s.val()||{};}catch(e){return{};}}
+        async function fotosDe(id){const s=await get(ref(database,`caminata_nocturna_5k_fotos/${id}`));return s.val()||{};}
         async function abrirFicha(id){
             actual=registros.find(r=>r.id===id); if(!actual)return;
             $('modal').classList.remove('hidden'); $('modalBody').innerHTML='<p>Cargando ficha y fotografías…</p>';
-            const fotos=actual.tiene_fotos?await fotosDe(id):{}; actual={...actual,_fotos:fotos};
+            let fotos={};
+            try{fotos=actual.tiene_fotos?await fotosDe(id):{};}catch(e){$('modalBody').innerHTML='<p style="color:#b91c1c"><b>No se pudieron cargar las fotografías.</b><br />Cierra la ficha e intenta nuevamente.</p>';return;}
+            actual={...actual,_fotos:fotos};
             const campos=[['Nombre y apellido',actual.nombre_apellido],['Cédula',actual.cedula],['Teléfono',actual.telefono],['Fecha de nacimiento',fechaCorta(actual.fecha_nacimiento)],['Edad',actual.edad+' años'],['Sexo',sexoCanonico(actual.sexo)],['Municipio',actual.municipio],['Dirección de habitación',actual.direccion_habitacion,'completo'],['Padece alguna enfermedad',actual.padece_enfermedad],['Enfermedad o condición',actual.enfermedad_detalle||'No aplica'],['Toma algún medicamento',actual.toma_medicamento],['Medicamento',actual.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(actual.fecha_registro),'completo']];
             const galeria=Object.values(fotos).filter(Boolean).map((src,i)=>`<a href="${src}" download="caminata_${texto(actual.cedula)}_foto_${i+1}.jpg" title="Abrir o descargar foto"><img src="${src}" alt="Foto ${i+1} de ${texto(actual.nombre_apellido)}" /></a>`).join('');
             $('modalBody').innerHTML=`<div class="detalle">${campos.map(c=>`<div class="dato ${c[2]||''}"><b>${c[0]}</b>${texto(c[1])}</div>`).join('')}</div><h3 style="margin-top:16px;color:#7c2d12">Fotografías (${Object.values(fotos).filter(Boolean).length})</h3>${galeria?`<div class="galeria">${galeria}</div>`:'<p style="color:#64748b;margin-top:8px">Esta inscripción no tiene fotografías.</p>'}<div class="modal-actions"><button id="imprimirFicha" class="btn-blue">🖨 Imprimir este registro 1×1</button><button id="pdfFicha" class="btn-red">Descargar ficha PDF</button><button id="eliminar" class="btn-dark">Eliminar inscripción</button></div>`;
             $('imprimirFicha').addEventListener('click',()=>imprimirRegistro(actual)); $('pdfFicha').addEventListener('click',()=>generarFichaPDF(actual)); $('eliminar').addEventListener('click',eliminarActual);
         }
-        function imprimirRegistro(registroOId){
+        function prepararFotosImpresion(fotos,nombre,cedula){
+            const lista=Object.values(fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,3),pagina=$('unoPaginaFotos'),grid=$('unoFotoGrid');
+            pagina.classList.toggle('sin-fotos',lista.length===0);grid.className=`imp-foto-grid cantidad-${lista.length}`;grid.replaceChildren();
+            $('unoFotoNombre').textContent=nombre||'—';$('unoFotoCedula').textContent=cedula||'—';
+            return Promise.all(lista.map((src,i)=>new Promise((resolve,reject)=>{const caja=document.createElement('div'),img=document.createElement('img');caja.className='imp-foto-item';img.alt=`Fotografía ${i+1} de ${nombre||'la inscripción'}`;img.onload=resolve;img.onerror=()=>reject(new Error(`No se pudo preparar la fotografía ${i+1} para imprimir.`));img.src=src;caja.appendChild(img);grid.appendChild(caja);})));
+        }
+        async function imprimirRegistro(registroOId){
             const r=typeof registroOId==='string'?registros.find(item=>item.id===registroOId):registroOId;if(!r)return;
-            const asignar=(id,valor)=>{$(id).textContent=valor??'—';};
-            asignar('unoNombre',r.nombre_apellido);asignar('unoCedula',r.cedula);asignar('unoTelefono',r.telefono);
-            asignar('unoNacimiento',fechaCorta(r.fecha_nacimiento));asignar('unoEdad',r.edad+' años');asignar('unoSexo',sexoCanonico(r.sexo));asignar('unoMunicipio',r.municipio);
-            asignar('unoDireccion',r.direccion_habitacion);asignar('unoEnfermedad',r.padece_enfermedad);asignar('unoEnfermedadDetalle',r.enfermedad_detalle||'No aplica');
-            asignar('unoMedicamento',r.toma_medicamento);asignar('unoMedicamentoDetalle',r.medicamento_detalle||'No aplica');asignar('unoFotos',r.tiene_fotos?'Sí':'No');asignar('unoRegistro',fechaLarga(r.fecha_registro));
-            window.print();
+            const boton=document.activeElement?.tagName==='BUTTON'?document.activeElement:null,textoBoton=boton?.textContent;
+            if(boton){boton.disabled=true;boton.textContent='Preparando impresión…';}
+            try{
+                const fotos=r.tiene_fotos?(r._fotos||await fotosDe(r.id)):{};
+                const asignar=(id,valor)=>{$(id).textContent=valor??'—';};
+                asignar('unoNombre',r.nombre_apellido);asignar('unoCedula',r.cedula);asignar('unoTelefono',r.telefono);
+                asignar('unoNacimiento',fechaCorta(r.fecha_nacimiento));asignar('unoEdad',r.edad+' años');asignar('unoSexo',sexoCanonico(r.sexo));asignar('unoMunicipio',r.municipio);
+                asignar('unoDireccion',r.direccion_habitacion);asignar('unoEnfermedad',r.padece_enfermedad);asignar('unoEnfermedadDetalle',r.enfermedad_detalle||'No aplica');
+                asignar('unoMedicamento',r.toma_medicamento);asignar('unoMedicamentoDetalle',r.medicamento_detalle||'No aplica');asignar('unoFotos',r.tiene_fotos?'Sí':'No');asignar('unoRegistro',fechaLarga(r.fecha_registro));
+                await prepararFotosImpresion(fotos,r.nombre_apellido,r.cedula);window.print();
+            }catch(e){alert('No se pudo preparar la impresión con las fotografías. Intenta nuevamente.\n'+(e.message||e.code||''));}
+            finally{if(boton){boton.disabled=false;boton.textContent=textoBoton;}}
         }
         function cerrarModal(){$('modal').classList.add('hidden');actual=null;}$('cerrarModal').addEventListener('click',cerrarModal);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))cerrarModal();});
         async function eliminarActual(){if(!actual||!confirm(`¿Eliminar definitivamente la inscripción de ${actual.nombre_apellido}?`))return;try{await Promise.all([remove(ref(database,`caminata_nocturna_5k/${actual.id}`)),remove(ref(database,`caminata_nocturna_5k_fotos/${actual.id}`))]);cerrarModal();}catch(e){alert('No se pudo eliminar la inscripción: '+(e.message||e.code));}}

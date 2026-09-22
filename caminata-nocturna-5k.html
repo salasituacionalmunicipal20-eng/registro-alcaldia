@@ -55,6 +55,7 @@
         .ok-acciones { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
         #imprimir { background: #075985; }
         .comprobante { display: none; }
+        .comp-pagina-fotos { display:none; }
         .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 8px 10px 20px; }
         @media (max-width: 560px) { .row2, .ops, .fotos { grid-template-columns:1fr; } .top { padding:14px 12px 18px; } .top-inner { grid-template-columns:1fr 1fr; grid-template-areas:"escudo yuhismar" "titulo titulo"; gap:10px; } .top-logo { min-height:57px; } .top-logo.escudo img { width:58px; height:46px; } .top-logo.yuhismar img { width:122px; height:40px; } .top h1 { font-size:21px; } .top p { font-size:13px; } .wrap { padding:12px; } .card { padding:16px; } .fbtn { min-height:96px; } }
         @media print {
@@ -78,6 +79,20 @@
             .comp-firma { display: flex; gap: 20mm; justify-content: center; margin-top: 28mm; text-align: center; }
             .comp-firma div { width: 70mm; border-top: 1px solid #111; padding-top: 4px; }
             .comp-pie { margin-top: 14mm; text-align: center; font-size: 8pt; color: #666; }
+            .comp-pagina-fotos { display:block; break-before:page; page-break-before:always; padding-top:1mm; }
+            .comp-pagina-fotos.sin-fotos { display:none !important; }
+            .comp-foto-head { text-align:center; border-bottom:2px solid #7c2d12; padding-bottom:8px; margin-bottom:7mm; }
+            .comp-foto-head h2 { color:#7c2d12; font-size:17pt; margin:0 0 4px; }
+            .comp-foto-head p { font-size:10pt; margin:0; }
+            .comp-foto-grid { display:grid; grid-template-columns:1fr 1fr; gap:5mm; }
+            .comp-foto-item { display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid #aaa; border-radius:3mm; background:#f8fafc; padding:2mm; }
+            .comp-foto-item img { width:100%; height:100%; object-fit:contain; }
+            .comp-foto-grid.cantidad-1 { grid-template-columns:1fr; }
+            .comp-foto-grid.cantidad-1 .comp-foto-item { height:190mm; }
+            .comp-foto-grid.cantidad-2 .comp-foto-item { height:185mm; }
+            .comp-foto-grid.cantidad-3 .comp-foto-item:first-child { grid-column:1/-1; height:95mm; }
+            .comp-foto-grid.cantidad-3 .comp-foto-item:not(:first-child) { height:82mm; }
+            .comp-foto-pie { margin-top:6mm; text-align:center; font-size:8pt; color:#666; }
         }
     </style>
     <script defer src="municipios-data.js"></script>
@@ -167,6 +182,12 @@
         </div>
         <div class="comp-firma"><div>Firma del participante</div><div>Recibido por</div></div>
         <div class="comp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
+        <div id="compPaginaFotos" class="comp-pagina-fotos sin-fotos">
+            <div class="comp-superior"><div class="numero-inscripcion">N.º de inscripción: <span></span></div><div class="comp-logos"><img class="logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>
+            <div class="comp-foto-head"><h2>Memoria fotográfica</h2><p><b id="compFotoNombre"></b> · C.I. <span id="compFotoCedula"></span></p></div>
+            <div id="compFotoGrid" class="comp-foto-grid"></div>
+            <div class="comp-foto-pie">1ra Caminata Nocturna 5K · Alcaldía del Municipio Cristóbal Rojas</div>
+        </div>
     </section>
 
     <script type="module">
@@ -269,16 +290,26 @@
                 $('enviar').disabled = false; $('enviar').textContent = 'Enviar inscripción';
             }
         });
-        $('imprimir').addEventListener('click', () => {
+        function prepararFotosImpresion(fotos, nombre, cedula) {
+            const lista=Object.values(fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,3),pagina=$('compPaginaFotos'),grid=$('compFotoGrid');
+            pagina.classList.toggle('sin-fotos',lista.length===0);grid.replaceChildren();grid.className=`comp-foto-grid cantidad-${lista.length}`;$('compFotoNombre').textContent=nombre||'';$('compFotoCedula').textContent=cedula||'';
+            const cargas=lista.map((src,i)=>new Promise((resolve,reject)=>{const caja=document.createElement('div'),img=document.createElement('img'),fallar=()=>reject(new Error(`No se pudo preparar la fotografía ${i+1} para imprimir.`));caja.className='comp-foto-item';img.alt=`Fotografía ${i+1} de ${nombre||'la inscripción'}`;img.onload=resolve;img.onerror=fallar;img.src=src;caja.appendChild(img);grid.appendChild(caja);if(img.complete){if(img.naturalWidth>0)resolve();else fallar();}}));
+            return Promise.all(cargas);
+        }
+        $('imprimir').addEventListener('click', async () => {
             if (!ultimoRegistro) return;
+            const boton=$('imprimir'),textoOriginal=boton.textContent;boton.disabled=true;boton.textContent='Preparando impresión…';
             const asignar = (id, valor) => { $(id).textContent = valor || '—'; };
-            asignar('impNombre', ultimoRegistro.nombre_apellido); asignar('impCedula', ultimoRegistro.cedula); asignar('impTelefono', ultimoRegistro.telefono);
-            asignar('impNacimiento', new Date(ultimoRegistro.fecha_nacimiento + 'T12:00:00').toLocaleDateString('es-VE')); asignar('impEdad', ultimoRegistro.edad + ' años'); asignar('impSexo', ultimoRegistro.sexo);
-            asignar('impMunicipio', ultimoRegistro.municipio); asignar('impDireccion', ultimoRegistro.direccion_habitacion);
-            asignar('impEnfermedad', ultimoRegistro.padece_enfermedad); asignar('impEnfermedadDetalle', ultimoRegistro.enfermedad_detalle || 'No aplica');
-            asignar('impMedicamento', ultimoRegistro.toma_medicamento); asignar('impMedicamentoDetalle', ultimoRegistro.medicamento_detalle || 'No aplica');
-            asignar('impRegistro', new Date(ultimoRegistro.fecha_registro).toLocaleString('es-VE', { dateStyle:'long', timeStyle:'short' }));
-            window.print();
+            try {
+                asignar('impNombre', ultimoRegistro.nombre_apellido); asignar('impCedula', ultimoRegistro.cedula); asignar('impTelefono', ultimoRegistro.telefono);
+                asignar('impNacimiento', new Date(ultimoRegistro.fecha_nacimiento + 'T12:00:00').toLocaleDateString('es-VE')); asignar('impEdad', ultimoRegistro.edad + ' años'); asignar('impSexo', ultimoRegistro.sexo);
+                asignar('impMunicipio', ultimoRegistro.municipio); asignar('impDireccion', ultimoRegistro.direccion_habitacion);
+                asignar('impEnfermedad', ultimoRegistro.padece_enfermedad); asignar('impEnfermedadDetalle', ultimoRegistro.enfermedad_detalle || 'No aplica');
+                asignar('impMedicamento', ultimoRegistro.toma_medicamento); asignar('impMedicamentoDetalle', ultimoRegistro.medicamento_detalle || 'No aplica');
+                asignar('impRegistro', new Date(ultimoRegistro.fecha_registro).toLocaleString('es-VE', { dateStyle:'long', timeStyle:'short' }));
+                await prepararFotosImpresion(FOTOS,ultimoRegistro.nombre_apellido,ultimoRegistro.cedula);window.print();
+            } catch(error) { alert(error.message||'No se pudieron preparar las fotografías para imprimir.'); }
+            finally { boton.disabled=false;boton.textContent=textoOriginal; }
         });
         $('otra').addEventListener('click', () => location.reload());
     </script>
