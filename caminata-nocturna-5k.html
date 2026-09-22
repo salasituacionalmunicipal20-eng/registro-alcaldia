@@ -6,13 +6,19 @@
     <title>1ra Caminata Nocturna 5K | Cristóbal Rojas</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f7fb; color: #172033; line-height: 1.5; }
-        .top { background: linear-gradient(135deg, #7c2d12, #dc2626 55%, #f59e0b); color: white; padding: 24px 18px; text-align: center; }
-        .top h1 { font-size: 23px; line-height: 1.25; }
-        .top p { margin-top: 7px; font-size: 14px; opacity: .94; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: radial-gradient(circle at top,#fff7ed 0,#f4f7fb 360px); color: #172033; line-height: 1.5; }
+        .top { background: linear-gradient(135deg, #7c2d12, #dc2626 55%, #f59e0b); color: white; padding: 20px 18px; box-shadow:0 5px 18px rgba(124,45,18,.22); }
+        .top-inner { max-width:860px; margin:auto; display:grid; grid-template-columns:82px 1fr 154px; grid-template-areas:"escudo titulo yuhismar"; gap:18px; align-items:center; }
+        .top-logo { display:flex; align-items:center; justify-content:center; min-height:70px; padding:7px; background:rgba(255,255,255,.96); border-radius:13px; box-shadow:0 3px 12px rgba(0,0,0,.15); }
+        .top-logo.escudo { grid-area:escudo; } .top-logo.yuhismar { grid-area:yuhismar; }
+        .top-logo.escudo img { width:68px; height:55px; object-fit:contain; }
+        .top-logo.yuhismar img { width:138px; height:47px; object-fit:contain; }
+        .top-titulo { grid-area:titulo; text-align:center; }
+        .top h1 { font-size:25px; line-height:1.2; letter-spacing:-.25px; }
+        .top p { margin-top:7px; font-size:14px; opacity:.96; }
         .wrap { max-width: 720px; margin: auto; padding: 16px; }
-        .intro { background: #fff7ed; border: 1px solid #fed7aa; border-left: 5px solid #ea580c; border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; font-size: 14px; }
-        .card { background: white; border-radius: 14px; box-shadow: 0 2px 8px rgba(15,23,42,.08); padding: 18px; margin-bottom: 14px; }
+        .intro { background:linear-gradient(120deg,#fff7ed,#fff); border:1px solid #fed7aa; border-left:5px solid #ea580c; border-radius:14px; padding:15px 17px; margin-bottom:14px; font-size:14px; box-shadow:0 2px 8px rgba(124,45,18,.06); }
+        .card { background:white; border:1px solid #e9eef5; border-radius:16px; box-shadow:0 5px 18px rgba(15,23,42,.07); padding:19px; margin-bottom:15px; }
         .card h2 { color: #7c2d12; font-size: 15px; text-transform: uppercase; margin-bottom: 5px; }
         .sub { color: #64748b; font-size: 12.5px; margin-bottom: 12px; }
         label { display: block; color: #334155; font-size: 13px; font-weight: 750; margin: 13px 0 5px; }
@@ -26,11 +32,17 @@
         .op { display: flex; align-items: center; gap: 9px; min-height: 46px; margin: 0; padding: 10px 12px; border: 1.5px solid #cbd5e1; border-radius: 9px; background: #f8fafc; cursor: pointer; font-size: 14px; }
         .op input { width: 20px; min-height: 20px; height: 20px; padding: 0; accent-color: #dc2626; }
         .op.sel { border-color: #dc2626; color: #7f1d1d; background: #fef2f2; }
-        .fotos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .fbox { border: 1.5px dashed #f59e0b; border-radius: 10px; background: #fffbeb; padding: 10px; text-align: center; }
-        .fbtn { display: block; margin: 0; padding: 11px 8px; border-radius: 8px; color: white; background: #b91c1c; cursor: pointer; font-size: 13px; }
+        .fotos { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+        .fbox { border:1.5px dashed #f59e0b; border-radius:13px; background:linear-gradient(145deg,#fffbeb,#fff); padding:10px; text-align:center; transition:.2s ease; }
+        .fbox.foto-oculta { display:none; }
+        .fbox.tiene-foto { border-style:solid; border-color:#16a34a; background:#f0fdf4; }
+        .fbtn { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:118px; margin:0; padding:12px 8px; border-radius:10px; color:#7c2d12; background:#fff; border:1px solid #fed7aa; cursor:pointer; font-size:13px; font-weight:800; }
+        .fplus { display:flex; align-items:center; justify-content:center; width:46px; height:46px; margin-bottom:8px; border-radius:50%; color:#fff; background:linear-gradient(135deg,#dc2626,#f59e0b); font-size:33px; font-weight:400; line-height:1; box-shadow:0 4px 10px rgba(220,38,38,.2); }
+        .fdetalle { display:block; margin-top:3px; color:#64748b; font-size:11px; font-weight:600; }
         .fbtn input { display: none; }
-        .fbox img { display: none; width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-top: 8px; }
+        .fbox img { display:none; width:100%; height:120px; object-fit:cover; border-radius:9px; margin-top:8px; }
+        .fquitar { display:none; width:100%; margin-top:7px; padding:8px; border:0; border-radius:8px; background:#fee2e2; color:#991b1b; font-weight:800; cursor:pointer; }
+        .fbox.tiene-foto .fquitar { display:block; }
         .btn { width: 100%; min-height: 52px; border: 0; border-radius: 11px; color: white; background: #b91c1c; font-size: 17px; font-weight: 800; cursor: pointer; margin-top: 14px; }
         .btn:disabled { opacity: .65; cursor: wait; }
         .msg { display: none; margin-top: 12px; padding: 12px; border-radius: 9px; font-size: 14px; font-weight: 650; }
@@ -44,16 +56,20 @@
         #imprimir { background: #075985; }
         .comprobante { display: none; }
         .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 8px 10px 20px; }
-        @media (max-width: 560px) { .row2, .ops, .fotos { grid-template-columns: 1fr; } .top h1 { font-size: 20px; } .wrap { padding: 12px; } .card { padding: 16px; } }
+        @media (max-width: 560px) { .row2, .ops, .fotos { grid-template-columns:1fr; } .top { padding:14px 12px 18px; } .top-inner { grid-template-columns:1fr 1fr; grid-template-areas:"escudo yuhismar" "titulo titulo"; gap:10px; } .top-logo { min-height:57px; } .top-logo.escudo img { width:58px; height:46px; } .top-logo.yuhismar img { width:122px; height:40px; } .top h1 { font-size:21px; } .top p { font-size:13px; } .wrap { padding:12px; } .card { padding:16px; } .fbtn { min-height:96px; } }
         @media print {
             @page { size: letter portrait; margin: 14mm; }
             body { background: #fff; color: #000; }
             body > .top, body > .wrap, body > .pie, body > script { display: none !important; }
             .comprobante { display: block !important; font-family: Arial, sans-serif; font-size: 11pt; }
-            .comp-head { text-align: center; border-bottom: 2px solid #7c2d12; padding-bottom: 10px; margin-bottom: 14px; }
+            .comp-superior { display:flex; justify-content:space-between; align-items:flex-start; gap:12mm; margin-bottom:7mm; }
+            .comp-logos { display:flex; align-items:center; justify-content:flex-end; gap:7mm; }
+            .comp-logos .logo-alcaldia { width:24mm; height:20mm; object-fit:contain; }
+            .comp-logos .logo-yuhismar { width:43mm; height:15mm; object-fit:contain; }
+            .comp-head { text-align:center; border-bottom:2px solid #7c2d12; padding-bottom:8px; margin-bottom:10px; }
             .comp-head h1 { font-size: 17pt; margin: 0 0 5px; color: #7c2d12; }
-            .numero-inscripcion { border: 2px solid #111; padding: 12px; margin: 14px 0; font-size: 14pt; font-weight: bold; }
-            .numero-inscripcion span { display: inline-block; width: 90mm; border-bottom: 1.5px solid #111; margin-left: 8px; height: 8mm; vertical-align: bottom; }
+            .numero-inscripcion { width:92mm; border:2px solid #111; padding:10px; margin:0; font-size:13pt; font-weight:bold; }
+            .numero-inscripcion span { display:inline-block; width:45mm; border-bottom:1.5px solid #111; margin-left:5px; height:7mm; vertical-align:bottom; }
             .comp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #777; }
             .comp-dato { padding: 8px 10px; border-right: 1px solid #aaa; border-bottom: 1px solid #aaa; min-height: 17mm; }
             .comp-dato:nth-child(even) { border-right: 0; }
@@ -69,12 +85,15 @@
 </head>
 <body>
     <header class="top">
-        <h1>🌙 1ra Caminata Nocturna 5K</h1>
-        <p>En conmemoración de la función Santa Rosa de Lima y el Día Mundial del Corazón</p>
+        <div class="top-inner">
+            <div class="top-logo escudo"><img src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /></div>
+            <div class="top-titulo"><h1>🌙 1ra Caminata Nocturna 5K</h1><p>En conmemoración de la función Santa Rosa de Lima y el Día Mundial del Corazón</p></div>
+            <div class="top-logo yuhismar"><img src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div>
+        </div>
     </header>
     <main class="wrap">
         <div id="formWrap">
-            <div class="intro"><b>Formulario de inscripción.</b> Completa tus datos y agrega hasta tres fotografías. Los campos marcados con * son obligatorios.</div>
+            <div class="intro"><b>Formulario de inscripción.</b> Completa tus datos. Las fotografías son opcionales: puedes continuar sin agregarlas o subir hasta tres. Los campos marcados con * son obligatorios.</div>
 
             <section class="card">
                 <h2>Datos personales</h2>
@@ -114,11 +133,11 @@
 
             <section class="card">
                 <h2>Memoria fotográfica</h2>
-                <div class="sub">Puedes agregar hasta tres fotos. Se comprimen automáticamente para facilitar el envío desde el teléfono.</div>
+                <div class="sub">Opcional. Pulsa el símbolo + si deseas agregar una foto. Después aparecerá otro + para añadir la siguiente, hasta un máximo de tres.</div>
                 <div class="fotos">
-                    <div class="fbox"><label class="fbtn">📷 Agregar foto 1<input type="file" id="foto1" accept="image/*" capture="environment" /></label><img id="prev1" alt="Vista previa de la foto 1" /></div>
-                    <div class="fbox"><label class="fbtn">📷 Agregar foto 2<input type="file" id="foto2" accept="image/*" capture="environment" /></label><img id="prev2" alt="Vista previa de la foto 2" /></div>
-                    <div class="fbox"><label class="fbtn">📷 Agregar foto 3<input type="file" id="foto3" accept="image/*" capture="environment" /></label><img id="prev3" alt="Vista previa de la foto 3" /></div>
+                    <div class="fbox" id="cajaFoto1"><label class="fbtn"><span class="fplus">+</span><span class="fbtn-text">Agregar una foto</span><span class="fdetalle">Foto 1 de 3 · opcional</span><input type="file" id="foto1" accept="image/*" capture="environment" /></label><img id="prev1" alt="Vista previa de la foto 1" /><button class="fquitar" type="button" data-foto="foto1" data-prev="prev1">Quitar foto</button></div>
+                    <div class="fbox foto-oculta" id="cajaFoto2"><label class="fbtn"><span class="fplus">+</span><span class="fbtn-text">Agregar otra foto</span><span class="fdetalle">Foto 2 de 3 · opcional</span><input type="file" id="foto2" accept="image/*" capture="environment" /></label><img id="prev2" alt="Vista previa de la foto 2" /><button class="fquitar" type="button" data-foto="foto2" data-prev="prev2">Quitar foto</button></div>
+                    <div class="fbox foto-oculta" id="cajaFoto3"><label class="fbtn"><span class="fplus">+</span><span class="fbtn-text">Agregar otra foto</span><span class="fdetalle">Foto 3 de 3 · opcional</span><input type="file" id="foto3" accept="image/*" capture="environment" /></label><img id="prev3" alt="Vista previa de la foto 3" /><button class="fquitar" type="button" data-foto="foto3" data-prev="prev3">Quitar foto</button></div>
                 </div>
                 <button id="enviar" class="btn" type="button">Enviar inscripción</button>
                 <div id="msg" class="msg" role="alert"></div>
@@ -127,15 +146,15 @@
 
         <section id="ok" class="ok">
             <div class="check">✅</div><h2>¡Inscripción registrada!</h2>
-            <p>Tus datos y fotografías fueron recibidos correctamente.</p>
+            <p>Tu inscripción fue recibida correctamente.</p>
             <div class="ok-acciones"><button id="imprimir" type="button">🖨️ Imprimir inscripción</button><button id="otra" type="button">Registrar otra persona</button></div>
         </section>
     </main>
     <footer class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</footer>
 
     <section id="comprobanteImpresion" class="comprobante" aria-hidden="true">
+        <div class="comp-superior"><div class="numero-inscripcion">N.º de inscripción: <span></span></div><div class="comp-logos"><img class="logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>
         <div class="comp-head"><h1>1ra Caminata Nocturna 5K</h1><div>En conmemoración de la función Santa Rosa de Lima y el Día Mundial del Corazón</div><b>Ficha interna de inscripción</b></div>
-        <div class="numero-inscripcion">N.º de inscripción: <span></span></div>
         <div class="comp-grid">
             <div class="comp-dato ancho"><b>Nombre y apellido</b><span id="impNombre"></span></div>
             <div class="comp-dato"><b>Cédula</b><span id="impCedula"></span></div><div class="comp-dato"><b>Teléfono</b><span id="impTelefono"></span></div>
@@ -210,9 +229,12 @@
                 lector.readAsDataURL(file);
             });
         }
-        [['foto1','prev1'],['foto2','prev2'],['foto3','prev3']].forEach(([campo,prev]) => $(campo).addEventListener('change', async e => {
-            try { const dato = await comprimir(e.target.files?.[0]); FOTOS[campo] = dato; $(prev).src = dato; $(prev).style.display = 'block'; $('msg').style.display = 'none'; }
-            catch (error) { FOTOS[campo] = ''; $(prev).style.display = 'none'; e.target.value = ''; mostrarError(error.message); }
+        [['foto1','prev1','cajaFoto1','cajaFoto2'],['foto2','prev2','cajaFoto2','cajaFoto3'],['foto3','prev3','cajaFoto3','']].forEach(([campo,prev,caja,siguiente]) => $(campo).addEventListener('change', async e => {
+            try { const dato = await comprimir(e.target.files?.[0]); FOTOS[campo] = dato; $(prev).src = dato; $(prev).style.display = 'block'; $(caja).classList.add('tiene-foto'); $(caja).querySelector('.fbtn-text').textContent = 'Cambiar esta foto'; if (siguiente) $(siguiente).classList.remove('foto-oculta'); $('msg').style.display = 'none'; }
+            catch (error) { FOTOS[campo] = ''; $(prev).style.display = 'none'; $(caja).classList.remove('tiene-foto'); e.target.value = ''; mostrarError(error.message); }
+        }));
+        document.querySelectorAll('.fquitar').forEach(boton => boton.addEventListener('click', () => {
+            const campo=boton.dataset.foto, prev=boton.dataset.prev, caja=$(campo).closest('.fbox');FOTOS[campo]='';$(campo).value='';$(prev).removeAttribute('src');$(prev).style.display='none';caja.classList.remove('tiene-foto');caja.querySelector('.fbtn-text').textContent=campo==='foto1'?'Agregar una foto':'Agregar otra foto';
         }));
 
         $('enviar').addEventListener('click', async () => {

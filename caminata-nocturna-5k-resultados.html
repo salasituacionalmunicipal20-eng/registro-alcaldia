@@ -65,11 +65,15 @@
             body { background:#fff; color:#111; }
             body > header, body > main, body > .modal { display:none !important; }
             .ficha-impresion { display:block !important; font-family:Arial,sans-serif; }
+            .imp-superior { display:flex; justify-content:space-between; align-items:flex-start; gap:12mm; margin-bottom:7mm; }
+            .imp-logos { display:flex; align-items:center; justify-content:flex-end; gap:7mm; }
+            .imp-logo-alcaldia { width:24mm; height:20mm; object-fit:contain; }
+            .imp-logo-yuhismar { width:43mm; height:15mm; object-fit:contain; }
             .imp-cabecera { text-align:center; border-bottom:2px solid #7c2d12; padding-bottom:9px; margin-bottom:12px; }
             .imp-cabecera h1 { color:#7c2d12; font-size:21px; margin-bottom:4px; }
             .imp-cabecera p { font-size:12px; line-height:1.4; }
-            .imp-numero { border:2px solid #111; padding:13px; font-size:18px; font-weight:800; margin-bottom:12px; }
-            .imp-numero span { display:inline-block; min-width:220px; height:21px; border-bottom:1px solid #111; vertical-align:bottom; }
+            .imp-numero { width:92mm; border:2px solid #111; padding:10px; font-size:17px; font-weight:800; }
+            .imp-numero span { display:inline-block; width:45mm; height:21px; border-bottom:1px solid #111; vertical-align:bottom; }
             .imp-datos { display:grid; grid-template-columns:1fr 1fr; border:1px solid #888; }
             .imp-dato { min-height:52px; padding:8px 9px; border-right:1px solid #aaa; border-bottom:1px solid #aaa; font-size:13px; }
             .imp-dato:nth-child(even) { border-right:0; }
@@ -136,8 +140,8 @@
     </main>
     <div id="modal" class="modal hidden"><div class="modal-card"><div class="modal-head"><b>Ficha completa de la inscripción</b><button id="cerrarModal" aria-label="Cerrar">×</button></div><div id="modalBody" class="modal-body"></div></div></div>
     <section id="impresionIndividual" class="ficha-impresion">
+        <div class="imp-superior"><div class="imp-numero">N.º de inscripción: <span></span></div><div class="imp-logos"><img class="imp-logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="imp-logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>
         <div class="imp-cabecera"><h1>1ra Caminata Nocturna 5K</h1><p>En conmemoración de la función Santa Rosa de Lima y el Día Mundial del Corazón<br /><b>Ficha individual de inscripción</b></p></div>
-        <div class="imp-numero">N.º de inscripción: <span></span></div>
         <div class="imp-datos">
             <div class="imp-dato completo"><b>Nombre y apellido</b><span id="unoNombre"></span></div>
             <div class="imp-dato"><b>Cédula</b><span id="unoCedula"></span></div><div class="imp-dato"><b>Teléfono</b><span id="unoTelefono"></span></div>

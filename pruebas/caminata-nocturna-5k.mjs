@@ -26,9 +26,16 @@ assert.match(formulario, /data-cne/, 'La cédula debe usar la consulta instituci
 assert.match(formulario, /capture="environment"/, 'Las fotos deben permitir abrir la cámara trasera');
 assert.match(formulario, /caminata_nocturna_5k_fotos/, 'Las fotos deben guardarse en un nodo separado');
 assert.match(formulario, /await update\(ref\(database\), cambios\)/, 'Registro y fotos deben enviarse atómicamente');
+assert.match(formulario, /Las fotografías son opcionales/, 'El formulario debe explicar que las fotos son opcionales');
+assert.match(formulario, /<span class="fplus">\+<\/span>/, 'La carga opcional de fotos debe mostrarse con un símbolo +');
+assert.match(formulario, /if \(tieneFotos\) cambios\[`caminata_nocturna_5k_fotos/, 'El nodo de fotos solo debe enviarse cuando se agregó alguna');
+assert.doesNotMatch(formulario, /mostrarError\([^\n]*foto/i, 'La inscripción no debe exigir fotografías');
+assert.match(formulario, /logos\/cristobal-rojas\.png/, 'El formulario debe mostrar el logo de la Alcaldía');
+assert.match(formulario, /logos\/yuhismar\.png/, 'El formulario debe mostrar el logo de Yuhismar');
 assert.match(formulario, /<option>Hombre<\/option><option>Mujer<\/option>/, 'El sexo debe elegirse únicamente entre Hombre y Mujer');
 assert.match(formulario, /N\.º de inscripción:[\s\S]*<span><\/span>/, 'La impresión debe dejar en blanco el número de inscripción');
 assert.match(formulario, /window\.print\(\)/, 'Debe poder imprimirse la ficha después del registro');
+assert.ok(formulario.indexOf('class="comp-superior"') < formulario.indexOf('class="comp-head"'), 'El número de inscripción debe quedar arriba a la izquierda antes del título impreso');
 
 for (const texto of ['Descargar Excel', 'Descargar PDF', 'Fotografías', 'Actualización en tiempo real', 'caminata5kcharallave', 'Distribución en tiempo real por sexo y edad', 'Detalle exacto por edad']) {
     assert.ok(resultados.includes(texto), `El panel debe incluir: ${texto}`);
@@ -42,6 +49,9 @@ assert.match(resultados, /Imprimir este registro 1×1/, 'La ficha abierta debe p
 assert.match(resultados, /function imprimirRegistro\(registroOId\)/, 'Debe existir la impresión individual 1×1');
 assert.match(resultados, /N\.º de inscripción:[\s\S]*<span><\/span>/, 'La impresión individual debe dejar el número de inscripción en blanco');
 assert.match(resultados, /window\.print\(\)/, 'La impresión individual debe abrir el diálogo de impresión');
+assert.match(resultados, /imp-logo-alcaldia[\s\S]*logos\/cristobal-rojas\.png/, 'La impresión individual debe incluir el logo de la Alcaldía');
+assert.match(resultados, /imp-logo-yuhismar[\s\S]*logos\/yuhismar\.png/, 'La impresión individual debe incluir el logo de Yuhismar');
+assert.ok(resultados.indexOf('class="imp-superior"') < resultados.indexOf('class="imp-cabecera"'), 'El número debe ir en la parte superior izquierda de la impresión individual');
 assert.ok(reglas.rules.caminata_nocturna_5k, 'Faltan reglas para las inscripciones');
 assert.ok(reglas.rules.caminata_nocturna_5k_fotos, 'Faltan reglas para las fotografías');
 assert.equal(reglas.rules.caminata_nocturna_5k_fotos.$cedula.$other['.validate'], false, 'Las fotos deben rechazar campos inesperados');
