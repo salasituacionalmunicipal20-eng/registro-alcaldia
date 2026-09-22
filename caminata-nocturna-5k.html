@@ -76,8 +76,9 @@
             .comp-dato:nth-child(even) { border-right: 0; }
             .comp-dato.ancho { grid-column: 1 / -1; border-right: 0; }
             .comp-dato b { display: block; font-size: 8.5pt; text-transform: uppercase; color: #555; margin-bottom: 4px; }
-            .comp-firma { display: flex; gap: 20mm; justify-content: center; margin-top: 28mm; text-align: center; }
-            .comp-firma div { width: 70mm; border-top: 1px solid #111; padding-top: 4px; }
+            .comp-firma { display:grid; grid-template-columns:1fr 1fr; gap:10mm; margin-top:12mm; text-align:center; }
+            .firma-caja { height:30mm; border:1px solid #888; border-radius:2mm; padding:0 8mm 5mm; display:flex; align-items:flex-end; }
+            .firma-caja span { width:100%; border-top:1px solid #111; padding-top:4px; font-size:10pt; }
             .comp-pie { margin-top: 14mm; text-align: center; font-size: 8pt; color: #666; }
             .comp-pagina-fotos { display:block; break-before:page; page-break-before:always; padding-top:1mm; }
             .comp-pagina-fotos.sin-fotos { display:none !important; }
@@ -180,7 +181,7 @@
             <div class="comp-dato"><b>Toma algún medicamento</b><span id="impMedicamento"></span></div><div class="comp-dato"><b>Detalle</b><span id="impMedicamentoDetalle"></span></div>
             <div class="comp-dato ancho"><b>Fecha de registro</b><span id="impRegistro"></span></div>
         </div>
-        <div class="comp-firma"><div>Firma del participante</div><div>Recibido por</div></div>
+        <div class="comp-firma"><div class="firma-caja"><span>Firma del participante</span></div><div class="firma-caja"><span>Recibido por</span></div></div>
         <div class="comp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
         <div id="compPaginaFotos" class="comp-pagina-fotos sin-fotos">
             <div class="comp-superior"><div class="numero-inscripcion">N.º de inscripción: <span></span></div><div class="comp-logos"><img class="logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>

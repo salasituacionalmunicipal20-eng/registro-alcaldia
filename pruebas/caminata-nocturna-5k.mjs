@@ -44,6 +44,8 @@ assert.match(formulario, /\.comp-pagina-fotos\.sin-fotos\s*\{\s*display:none\s*!
 assert.match(formulario, /page-break-before:always/, 'Las fotos deben comenzar en una hoja carta separada');
 assert.match(formulario, /object-fit:contain/, 'Las fotos impresas deben conservar su proporción');
 assert.match(formulario, /await prepararFotosImpresion\(FOTOS,[^)]+\);window\.print\(\)/, 'La impresión pública debe esperar que carguen las fotos');
+assert.match(formulario, /\.firma-caja\s*\{[^}]*height:30mm/, 'La impresión pública debe reservar un espacio amplio para firmar');
+assert.match(formulario, /<span>Firma del participante<\/span>/, 'La impresión pública debe identificar la firma del participante');
 
 for (const texto of ['Descargar Excel', 'Descargar PDF', 'Fotografías', 'Actualización en tiempo real', 'caminata5kcharallave', 'Distribución en tiempo real por sexo y edad', 'Detalle exacto por edad']) {
     assert.ok(resultados.includes(texto), `El panel debe incluir: ${texto}`);
@@ -70,6 +72,13 @@ assert.match(resultados, /object-fit:contain/, 'Las fotos del panel deben conser
 assert.match(resultados, /r\._fotos\|\|await fotosDe\(r\.id\)/, 'La impresión desde una fila debe cargar las fotos guardadas');
 assert.match(resultados, /await prepararFotosImpresion\(fotos,r\.nombre_apellido,r\.cedula\);window\.print\(\)/, 'El panel debe esperar que carguen las fotos antes de imprimir');
 assert.doesNotMatch(resultados, /async function fotosDe\([^)]*\)\{[^}]*catch\s*\([^)]*\)\s*\{\s*return\s*\{\}/, 'Los errores al cargar fotos no deben ocultarse');
+assert.match(resultados, /\.imp-firma\s*\{[^}]*height:30mm/, 'La impresión 1×1 debe reservar un espacio amplio para firmar');
+assert.match(resultados, /async function generarFichaPDF\(r\)/, 'La ficha PDF debe prepararse de forma controlada');
+assert.match(resultados, /doc\.text\('Firma del participante'/, 'El PDF debe incluir el espacio para la firma del participante');
+assert.match(resultados, /doc\.addPage\(\);dibujarHeaderPDF\(doc,\{titulo:'Memoria fotográfica - Caminata Nocturna 5K'/, 'Las fotos del PDF deben comenzar en una hoja separada');
+assert.match(resultados, /doc\.getImageProperties\(src\)/, 'El PDF debe calcular la proporción real de cada fotografía');
+assert.match(resultados, /doc\.addImage\(src,formato/, 'El PDF debe insertar las fotografías cargadas');
+assert.doesNotMatch(resultados, /catch\s*\([^)]*\)\s*\{\s*\}/, 'Los errores al generar fotos o informes no deben ocultarse');
 assert.ok(reglas.rules.caminata_nocturna_5k, 'Faltan reglas para las inscripciones');
 assert.ok(reglas.rules.caminata_nocturna_5k_fotos, 'Faltan reglas para las fotografías');
 assert.equal(reglas.rules.caminata_nocturna_5k_fotos.$cedula.$other['.validate'], false, 'Las fotos deben rechazar campos inesperados');

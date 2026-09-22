@@ -79,8 +79,9 @@
             .imp-dato:nth-child(even) { border-right:0; }
             .imp-dato.completo { grid-column:1/-1; border-right:0; }
             .imp-dato b { display:block; color:#555; font-size:9px; text-transform:uppercase; margin-bottom:5px; }
-            .imp-firmas { display:flex; justify-content:space-between; gap:70px; margin-top:56px; }
-            .imp-firma { width:42%; border-top:1px solid #111; text-align:center; padding-top:5px; font-size:12px; }
+            .imp-firmas { display:grid; grid-template-columns:1fr 1fr; gap:10mm; margin-top:12mm; }
+            .imp-firma { height:30mm; border:1px solid #888; border-radius:2mm; padding:0 8mm 5mm; display:flex; align-items:flex-end; justify-content:center; text-align:center; font-size:12px; }
+            .imp-firma span { width:100%; border-top:1px solid #111; padding-top:5px; }
             .imp-pie { position:fixed; bottom:0; left:0; right:0; text-align:center; font-size:9px; color:#666; }
             .imp-pagina-fotos { display:block; break-before:page; page-break-before:always; padding-top:1mm; font-family:Arial,sans-serif; }
             .imp-pagina-fotos.sin-fotos { display:none !important; }
@@ -164,7 +165,7 @@
             <div class="imp-dato"><b>Toma algún medicamento</b><span id="unoMedicamento"></span></div><div class="imp-dato"><b>Detalle</b><span id="unoMedicamentoDetalle"></span></div>
             <div class="imp-dato"><b>Fotografías adjuntas</b><span id="unoFotos"></span></div><div class="imp-dato"><b>Fecha de inscripción</b><span id="unoRegistro"></span></div>
         </div>
-        <div class="imp-firmas"><div class="imp-firma">Firma del participante</div><div class="imp-firma">Recibido por</div></div>
+        <div class="imp-firmas"><div class="imp-firma"><span>Firma del participante</span></div><div class="imp-firma"><span>Recibido por</span></div></div>
         <div class="imp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
         <div id="unoPaginaFotos" class="imp-pagina-fotos sin-fotos">
             <div class="imp-superior"><div class="imp-numero">N.º de inscripción: <span></span></div><div class="imp-logos"><img class="imp-logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="imp-logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>
@@ -284,11 +285,34 @@
             doc.autoTable({startY:34,head:[['#','Nombre y apellido','Cédula','Edad / Sexo','Teléfono','Municipio','Salud','Dirección','Fotos','Registro']],body:filtrados.map((r,i)=>[i+1,r.nombre_apellido,r.cedula,`${r.edad} / ${sexoCanonico(r.sexo)}`,r.telefono,r.municipio,`Enfermedad: ${r.padece_enfermedad}${r.enfermedad_detalle?' — '+r.enfermedad_detalle:''}\nMedicamento: ${r.toma_medicamento}${r.medicamento_detalle?' — '+r.medicamento_detalle:''}`,r.direccion_habitacion,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro)]),styles:{fontSize:6.8,cellPadding:1.4,overflow:'linebreak',valign:'top'},headStyles:{fillColor:[124,45,18],fontSize:7.2},columnStyles:{0:{cellWidth:8},1:{cellWidth:31},2:{cellWidth:17},3:{cellWidth:22},4:{cellWidth:21},5:{cellWidth:25},6:{cellWidth:42},7:{cellWidth:44},8:{cellWidth:12},9:{cellWidth:25}},margin:{left:9,right:9,top:33,bottom:16},didDrawPage:()=>dibujarFooterPDF(doc)});
             doc.save(`caminata_nocturna_5k_informe_${new Date().toISOString().slice(0,10)}.pdf`);
         });
-        function generarFichaPDF(r){
-            const doc=prepararPDF('portrait');dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});
-            const filas=[['N.º de inscripción','____________________________'],['Nombre y apellido',r.nombre_apellido],['Cédula',r.cedula],['Teléfono',r.telefono],['Fecha de nacimiento',`${fechaCorta(r.fecha_nacimiento)} (${r.edad} años)`],['Sexo',sexoCanonico(r.sexo)],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(r.fecha_registro)]];
-            doc.autoTable({startY:35,body:filas,theme:'grid',styles:{fontSize:9,cellPadding:2.5,overflow:'linebreak'},columnStyles:{0:{cellWidth:52,fontStyle:'bold',fillColor:[255,247,237]},1:{cellWidth:137}},margin:{left:11,right:11,bottom:16}});
-            let y=doc.lastAutoTable.finalY+7;const fotos=Object.values(r._fotos||{}).filter(Boolean);if(fotos.length){doc.setFontSize(11);doc.setTextColor(124,45,18);doc.text('Memoria fotográfica',11,y);y+=4;fotos.forEach((src,i)=>{if(y+48>260){dibujarFooterPDF(doc);doc.addPage();dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});y=35;}try{doc.addImage(src,'JPEG',11+(i%2)*96,y,90,46);if(i%2===1||i===fotos.length-1)y+=51;}catch(e){}});}dibujarFooterPDF(doc);doc.save(`inscripcion_caminata_${r.cedula}.pdf`);
+        async function generarFichaPDF(r){
+            const boton=document.activeElement?.tagName==='BUTTON'?document.activeElement:null,textoBoton=boton?.textContent;
+            if(boton){boton.disabled=true;boton.textContent='Preparando PDF…';}
+            try{
+                const doc=prepararPDF('portrait');dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});
+                const filas=[['N.º de inscripción','____________________________'],['Nombre y apellido',r.nombre_apellido],['Cédula',r.cedula],['Teléfono',r.telefono],['Fecha de nacimiento',`${fechaCorta(r.fecha_nacimiento)} (${r.edad} años)`],['Sexo',sexoCanonico(r.sexo)],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(r.fecha_registro)]];
+                doc.autoTable({startY:35,body:filas,theme:'grid',styles:{fontSize:9,cellPadding:2.5,overflow:'linebreak'},columnStyles:{0:{cellWidth:52,fontStyle:'bold',fillColor:[255,247,237]},1:{cellWidth:137}},margin:{left:11,right:11,bottom:16}});
+
+                let yFirma=doc.lastAutoTable.finalY+8;if(yFirma+34>260){dibujarFooterPDF(doc);doc.addPage();dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});yFirma=38;}
+                doc.setDrawColor(130);doc.setLineWidth(0.25);doc.roundedRect(11,yFirma,91.5,30,2,2);doc.roundedRect(108.5,yFirma,91.5,30,2,2);
+                doc.setDrawColor(40);doc.line(20,yFirma+22,93.5,yFirma+22);doc.line(117.5,yFirma+22,191,yFirma+22);
+                doc.setFontSize(9);doc.setTextColor(35);doc.text('Firma del participante',56.75,yFirma+27,{align:'center'});doc.text('Recibido por',154.25,yFirma+27,{align:'center'});
+                dibujarFooterPDF(doc);
+
+                const fotos=Object.values(r._fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,3);
+                if(fotos.length){
+                    doc.addPage();dibujarHeaderPDF(doc,{titulo:'Memoria fotográfica - Caminata Nocturna 5K',subtitulo:`${r.nombre_apellido} · C.I. ${r.cedula}`});
+                    const cajas=fotos.length===1?[[11,42,189,204]]:fotos.length===2?[[11,42,92,204],[108,42,92,204]]:[[11,42,189,98],[11,148,92,98],[108,148,92,98]];
+                    fotos.forEach((src,i)=>{
+                        const [x,y,w,h]=cajas[i],prop=doc.getImageProperties(src),escala=Math.min((w-4)/prop.width,(h-4)/prop.height),ancho=prop.width*escala,alto=prop.height*escala,formato=src.startsWith('data:image/png')?'PNG':'JPEG';
+                        doc.setDrawColor(170);doc.setFillColor(250,250,250);doc.roundedRect(x,y,w,h,2,2,'FD');
+                        doc.addImage(src,formato,x+(w-ancho)/2,y+(h-alto)/2,ancho,alto,undefined,'FAST');
+                    });
+                    dibujarFooterPDF(doc);
+                }
+                doc.save(`inscripcion_caminata_${r.cedula}.pdf`);
+            }catch(e){alert('No se pudo generar el PDF con las fotografías. Intenta nuevamente.\n'+(e.message||e.code||''));}
+            finally{if(boton){boton.disabled=false;boton.textContent=textoBoton;}}
         }
     </script>
 </body>
