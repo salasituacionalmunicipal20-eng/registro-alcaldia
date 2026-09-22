@@ -75,6 +75,7 @@ assert.match(resultados, /await prepararFotosImpresion\(fotos,r\.nombre_apellido
 assert.doesNotMatch(resultados, /async function fotosDe\([^)]*\)\{[^}]*catch\s*\([^)]*\)\s*\{\s*return\s*\{\}/, 'Los errores al cargar fotos no deben ocultarse');
 assert.match(resultados, /\.imp-firma\s*\{[^}]*height:34mm/, 'La impresión 1×1 debe reservar un espacio amplio para firmar');
 assert.match(resultados, /async function generarFichaPDF\(r\)/, 'La ficha PDF debe prepararse de forma controlada');
+assert.match(resultados, /yInicio=dibujarHeaderPDF[\s\S]*startY:yInicio\+2/, 'La tabla del PDF debe comenzar después del encabezado institucional');
 assert.match(resultados, /doc\.text\('Firma del participante'/, 'El PDF debe incluir el espacio para la firma del participante');
 assert.match(resultados, /roundedRect\(11,yFirma,30,40/, 'El PDF debe colocar una foto personal tipo cédula de 30 por 40 mm');
 assert.doesNotMatch(resultados, /titulo:'Memoria fotográfica - Caminata Nocturna 5K'/, 'El PDF individual no debe crear una segunda hoja fotográfica');

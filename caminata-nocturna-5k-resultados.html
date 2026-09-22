@@ -284,9 +284,9 @@
             const boton=document.activeElement?.tagName==='BUTTON'?document.activeElement:null,textoBoton=boton?.textContent;
             if(boton){boton.disabled=true;boton.textContent='Preparando PDF…';}
             try{
-                const doc=prepararPDF('portrait');dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});
+                const doc=prepararPDF('portrait'),yInicio=dibujarHeaderPDF(doc,{titulo:'1ra Caminata Nocturna 5K',subtitulo:r.nombre_apellido});
                 const filas=[['N.º de inscripción','____________________________'],['Nombre y apellido',r.nombre_apellido],['Cédula',r.cedula],['Teléfono',r.telefono],['Fecha de nacimiento',`${fechaCorta(r.fecha_nacimiento)} (${r.edad} años)`],['Sexo',sexoCanonico(r.sexo)],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(r.fecha_registro)]];
-                doc.autoTable({startY:35,body:filas,theme:'grid',styles:{fontSize:8.5,cellPadding:2,overflow:'linebreak'},columnStyles:{0:{cellWidth:52,fontStyle:'bold',fillColor:[255,247,237]},1:{cellWidth:137}},margin:{left:11,right:11,bottom:16}});
+                doc.autoTable({startY:yInicio+2,body:filas,theme:'grid',styles:{fontSize:8.5,cellPadding:2,overflow:'linebreak'},columnStyles:{0:{cellWidth:52,fontStyle:'bold',fillColor:[255,247,237]},1:{cellWidth:137}},margin:{left:11,right:11,bottom:16}});
 
                 const fotos=Object.values(r._fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,1),yFirma=doc.lastAutoTable.finalY+7;
                 doc.setDrawColor(130);doc.setLineWidth(0.25);
