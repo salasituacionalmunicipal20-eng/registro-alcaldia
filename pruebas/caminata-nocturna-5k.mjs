@@ -37,6 +37,11 @@ for (const id of ['kTotal', 'kHombres', 'kMujeres', 'kPromedio', 'distSexo', 'di
     assert.match(resultados, new RegExp(`id=["']${id}["']`), `Falta el indicador demográfico ${id}`);
 }
 assert.match(resultados, /\['N\.º de inscripción','_+?'/, 'El PDF individual debe dejar en blanco el número de inscripción');
+assert.match(resultados, /Imprimir 1×1/, 'Cada fila debe permitir imprimir un registro por separado');
+assert.match(resultados, /Imprimir este registro 1×1/, 'La ficha abierta debe permitir imprimir ese único registro');
+assert.match(resultados, /function imprimirRegistro\(registroOId\)/, 'Debe existir la impresión individual 1×1');
+assert.match(resultados, /N\.º de inscripción:[\s\S]*<span><\/span>/, 'La impresión individual debe dejar el número de inscripción en blanco');
+assert.match(resultados, /window\.print\(\)/, 'La impresión individual debe abrir el diálogo de impresión');
 assert.ok(reglas.rules.caminata_nocturna_5k, 'Faltan reglas para las inscripciones');
 assert.ok(reglas.rules.caminata_nocturna_5k_fotos, 'Faltan reglas para las fotografías');
 assert.equal(reglas.rules.caminata_nocturna_5k_fotos.$cedula.$other['.validate'], false, 'Las fotos deben rechazar campos inesperados');

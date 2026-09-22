@@ -55,8 +55,30 @@
         .galeria { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:15px; }
         .galeria a { display:block; } .galeria img { width:100%; height:190px; object-fit:cover; border-radius:9px; border:1px solid #cbd5e1; }
         .modal-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+        .acciones-fila { display:flex; flex-wrap:wrap; gap:6px; min-width:205px; }
+        .acciones-fila button { padding:7px 9px; font-size:11.5px; }
+        .ficha-impresion { display:none; }
         @media(max-width:950px){ .kpis{grid-template-columns:repeat(2,1fr)} .filtros{grid-template-columns:1fr 1fr} }
         @media(max-width:560px){ header,main{padding:12px}.kpis,.filtros,.detalle,.galeria,.compartir,.distribucion{grid-template-columns:1fr}.compartir img{margin:auto}.kpi:last-child{grid-column:1/-1}.en-vivo{width:100%;margin:3px 0}.galeria img{height:auto}.header-actions{width:100%}.header-actions>*{flex:1}.modal-body{padding:14px} }
+        @media print {
+            @page { size:letter portrait; margin:10mm; }
+            body { background:#fff; color:#111; }
+            body > header, body > main, body > .modal { display:none !important; }
+            .ficha-impresion { display:block !important; font-family:Arial,sans-serif; }
+            .imp-cabecera { text-align:center; border-bottom:2px solid #7c2d12; padding-bottom:9px; margin-bottom:12px; }
+            .imp-cabecera h1 { color:#7c2d12; font-size:21px; margin-bottom:4px; }
+            .imp-cabecera p { font-size:12px; line-height:1.4; }
+            .imp-numero { border:2px solid #111; padding:13px; font-size:18px; font-weight:800; margin-bottom:12px; }
+            .imp-numero span { display:inline-block; min-width:220px; height:21px; border-bottom:1px solid #111; vertical-align:bottom; }
+            .imp-datos { display:grid; grid-template-columns:1fr 1fr; border:1px solid #888; }
+            .imp-dato { min-height:52px; padding:8px 9px; border-right:1px solid #aaa; border-bottom:1px solid #aaa; font-size:13px; }
+            .imp-dato:nth-child(even) { border-right:0; }
+            .imp-dato.completo { grid-column:1/-1; border-right:0; }
+            .imp-dato b { display:block; color:#555; font-size:9px; text-transform:uppercase; margin-bottom:5px; }
+            .imp-firmas { display:flex; justify-content:space-between; gap:70px; margin-top:56px; }
+            .imp-firma { width:42%; border-top:1px solid #111; text-align:center; padding-top:5px; font-size:12px; }
+            .imp-pie { position:fixed; bottom:0; left:0; right:0; text-align:center; font-size:9px; color:#666; }
+        }
     </style>
 </head>
 <body>
@@ -106,13 +128,29 @@
             </section>
             <section class="panel">
                 <h2 id="tituloTabla">Detalle de inscripciones</h2>
-                <div class="table-wrap"><table><thead><tr><th>#</th><th>Nombre y apellido</th><th>Cédula</th><th>Edad</th><th>Sexo</th><th>Teléfono</th><th>Municipio</th><th>Enfermedad</th><th>Medicamento</th><th>Fotos</th><th>Registrado</th><th>Acción</th></tr></thead><tbody id="tbody"></tbody></table></div>
+                <div class="table-wrap"><table><thead><tr><th>#</th><th>Nombre y apellido</th><th>Cédula</th><th>Edad</th><th>Sexo</th><th>Teléfono</th><th>Municipio</th><th>Enfermedad</th><th>Medicamento</th><th>Fotos</th><th>Registrado</th><th>Acciones</th></tr></thead><tbody id="tbody"></tbody></table></div>
                 <div id="sinDatos" class="vacio hidden">No hay inscripciones que coincidan con los filtros.</div>
                 <div class="pag"><button id="anterior" class="btn-dark">Anterior</button><span id="paginaInfo"></span><button id="siguiente" class="btn-dark">Siguiente</button></div>
             </section>
         </div>
     </main>
     <div id="modal" class="modal hidden"><div class="modal-card"><div class="modal-head"><b>Ficha completa de la inscripción</b><button id="cerrarModal" aria-label="Cerrar">×</button></div><div id="modalBody" class="modal-body"></div></div></div>
+    <section id="impresionIndividual" class="ficha-impresion">
+        <div class="imp-cabecera"><h1>1ra Caminata Nocturna 5K</h1><p>En conmemoración de la función Santa Rosa de Lima y el Día Mundial del Corazón<br /><b>Ficha individual de inscripción</b></p></div>
+        <div class="imp-numero">N.º de inscripción: <span></span></div>
+        <div class="imp-datos">
+            <div class="imp-dato completo"><b>Nombre y apellido</b><span id="unoNombre"></span></div>
+            <div class="imp-dato"><b>Cédula</b><span id="unoCedula"></span></div><div class="imp-dato"><b>Teléfono</b><span id="unoTelefono"></span></div>
+            <div class="imp-dato"><b>Fecha de nacimiento</b><span id="unoNacimiento"></span></div><div class="imp-dato"><b>Edad</b><span id="unoEdad"></span></div>
+            <div class="imp-dato"><b>Sexo</b><span id="unoSexo"></span></div><div class="imp-dato"><b>Municipio</b><span id="unoMunicipio"></span></div>
+            <div class="imp-dato completo"><b>Dirección de habitación</b><span id="unoDireccion"></span></div>
+            <div class="imp-dato"><b>Padece alguna enfermedad</b><span id="unoEnfermedad"></span></div><div class="imp-dato"><b>Detalle</b><span id="unoEnfermedadDetalle"></span></div>
+            <div class="imp-dato"><b>Toma algún medicamento</b><span id="unoMedicamento"></span></div><div class="imp-dato"><b>Detalle</b><span id="unoMedicamentoDetalle"></span></div>
+            <div class="imp-dato"><b>Fotografías adjuntas</b><span id="unoFotos"></span></div><div class="imp-dato"><b>Fecha de inscripción</b><span id="unoRegistro"></span></div>
+        </div>
+        <div class="imp-firmas"><div class="imp-firma">Firma del participante</div><div class="imp-firma">Recibido por</div></div>
+        <div class="imp-pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</div>
+    </section>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -160,9 +198,10 @@
             const porEdad=new Map();edades.forEach(e=>porEdad.set(e,(porEdad.get(e)||0)+1));$('distEdades').innerHTML=porEdad.size?[...porEdad.entries()].sort((a,b)=>a[0]-b[0]).map(([edad,cantidad])=>`<div class="edad-chip"><b>${cantidad}</b> persona${cantidad===1?'':'s'} de ${edad} año${edad===1?'':'s'}</div>`).join(''):'<span style="color:#64748b;font-size:13px">Aún no hay edades registradas.</span>';
             const paginas=Math.max(1,Math.ceil(filtrados.length/POR_PAGINA)); if(pagina>paginas)pagina=paginas;
             const inicio=(pagina-1)*POR_PAGINA, lista=filtrados.slice(inicio,inicio+POR_PAGINA);
-            $('tbody').innerHTML=lista.map((r,i)=>`<tr><td>${inicio+i+1}</td><td><b>${texto(r.nombre_apellido)}</b></td><td>${texto(r.cedula)}</td><td>${texto(r.edad)}</td><td>${texto(sexoCanonico(r.sexo))}</td><td>${texto(r.telefono)}</td><td>${texto(r.municipio)}</td><td class="${r.padece_enfermedad==='Sí'?'si':''}">${texto(r.padece_enfermedad)}</td><td class="${r.toma_medicamento==='Sí'?'si':''}">${texto(r.toma_medicamento)}</td><td class="${r.tiene_fotos?'foto':''}">${r.tiene_fotos?'Sí':'No'}</td><td>${fechaHora(r.fecha_registro)}</td><td><button class="btn-blue ver" data-id="${texto(r.id)}">Ver ficha</button></td></tr>`).join('');
+            $('tbody').innerHTML=lista.map((r,i)=>`<tr><td>${inicio+i+1}</td><td><b>${texto(r.nombre_apellido)}</b></td><td>${texto(r.cedula)}</td><td>${texto(r.edad)}</td><td>${texto(sexoCanonico(r.sexo))}</td><td>${texto(r.telefono)}</td><td>${texto(r.municipio)}</td><td class="${r.padece_enfermedad==='Sí'?'si':''}">${texto(r.padece_enfermedad)}</td><td class="${r.toma_medicamento==='Sí'?'si':''}">${texto(r.toma_medicamento)}</td><td class="${r.tiene_fotos?'foto':''}">${r.tiene_fotos?'Sí':'No'}</td><td>${fechaHora(r.fecha_registro)}</td><td><div class="acciones-fila"><button class="btn-blue ver" data-id="${texto(r.id)}">Ver ficha</button><button class="btn-red imprimir-uno" data-id="${texto(r.id)}">🖨 Imprimir 1×1</button></div></td></tr>`).join('');
             $('sinDatos').classList.toggle('hidden',lista.length>0); $('paginaInfo').textContent=`Página ${pagina} de ${paginas} · ${filtrados.length} resultado(s)`; $('anterior').disabled=pagina===1; $('siguiente').disabled=pagina===paginas; $('tituloTabla').textContent=`Detalle de inscripciones (${filtrados.length})`;
             document.querySelectorAll('.ver').forEach(b=>b.addEventListener('click',()=>abrirFicha(b.dataset.id)));
+            document.querySelectorAll('.imprimir-uno').forEach(b=>b.addEventListener('click',()=>imprimirRegistro(b.dataset.id)));
         }
         ['buscar','fMunicipio','fSexo','fEnfermedad','fFotos'].forEach(id=>$(id).addEventListener(id==='buscar'?'input':'change',()=>{pagina=1;actualizar();}));
         $('limpiar').addEventListener('click',()=>{['buscar','fMunicipio','fSexo','fEnfermedad','fFotos'].forEach(id=>$(id).value='');pagina=1;actualizar();});
@@ -175,8 +214,17 @@
             const fotos=actual.tiene_fotos?await fotosDe(id):{}; actual={...actual,_fotos:fotos};
             const campos=[['Nombre y apellido',actual.nombre_apellido],['Cédula',actual.cedula],['Teléfono',actual.telefono],['Fecha de nacimiento',fechaCorta(actual.fecha_nacimiento)],['Edad',actual.edad+' años'],['Sexo',sexoCanonico(actual.sexo)],['Municipio',actual.municipio],['Dirección de habitación',actual.direccion_habitacion,'completo'],['Padece alguna enfermedad',actual.padece_enfermedad],['Enfermedad o condición',actual.enfermedad_detalle||'No aplica'],['Toma algún medicamento',actual.toma_medicamento],['Medicamento',actual.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(actual.fecha_registro),'completo']];
             const galeria=Object.values(fotos).filter(Boolean).map((src,i)=>`<a href="${src}" download="caminata_${texto(actual.cedula)}_foto_${i+1}.jpg" title="Abrir o descargar foto"><img src="${src}" alt="Foto ${i+1} de ${texto(actual.nombre_apellido)}" /></a>`).join('');
-            $('modalBody').innerHTML=`<div class="detalle">${campos.map(c=>`<div class="dato ${c[2]||''}"><b>${c[0]}</b>${texto(c[1])}</div>`).join('')}</div><h3 style="margin-top:16px;color:#7c2d12">Fotografías (${Object.values(fotos).filter(Boolean).length})</h3>${galeria?`<div class="galeria">${galeria}</div>`:'<p style="color:#64748b;margin-top:8px">Esta inscripción no tiene fotografías.</p>'}<div class="modal-actions"><button id="pdfFicha" class="btn-red">Descargar ficha PDF</button><button id="eliminar" class="btn-dark">Eliminar inscripción</button></div>`;
-            $('pdfFicha').addEventListener('click',()=>generarFichaPDF(actual)); $('eliminar').addEventListener('click',eliminarActual);
+            $('modalBody').innerHTML=`<div class="detalle">${campos.map(c=>`<div class="dato ${c[2]||''}"><b>${c[0]}</b>${texto(c[1])}</div>`).join('')}</div><h3 style="margin-top:16px;color:#7c2d12">Fotografías (${Object.values(fotos).filter(Boolean).length})</h3>${galeria?`<div class="galeria">${galeria}</div>`:'<p style="color:#64748b;margin-top:8px">Esta inscripción no tiene fotografías.</p>'}<div class="modal-actions"><button id="imprimirFicha" class="btn-blue">🖨 Imprimir este registro 1×1</button><button id="pdfFicha" class="btn-red">Descargar ficha PDF</button><button id="eliminar" class="btn-dark">Eliminar inscripción</button></div>`;
+            $('imprimirFicha').addEventListener('click',()=>imprimirRegistro(actual)); $('pdfFicha').addEventListener('click',()=>generarFichaPDF(actual)); $('eliminar').addEventListener('click',eliminarActual);
+        }
+        function imprimirRegistro(registroOId){
+            const r=typeof registroOId==='string'?registros.find(item=>item.id===registroOId):registroOId;if(!r)return;
+            const asignar=(id,valor)=>{$(id).textContent=valor??'—';};
+            asignar('unoNombre',r.nombre_apellido);asignar('unoCedula',r.cedula);asignar('unoTelefono',r.telefono);
+            asignar('unoNacimiento',fechaCorta(r.fecha_nacimiento));asignar('unoEdad',r.edad+' años');asignar('unoSexo',sexoCanonico(r.sexo));asignar('unoMunicipio',r.municipio);
+            asignar('unoDireccion',r.direccion_habitacion);asignar('unoEnfermedad',r.padece_enfermedad);asignar('unoEnfermedadDetalle',r.enfermedad_detalle||'No aplica');
+            asignar('unoMedicamento',r.toma_medicamento);asignar('unoMedicamentoDetalle',r.medicamento_detalle||'No aplica');asignar('unoFotos',r.tiene_fotos?'Sí':'No');asignar('unoRegistro',fechaLarga(r.fecha_registro));
+            window.print();
         }
         function cerrarModal(){$('modal').classList.add('hidden');actual=null;}$('cerrarModal').addEventListener('click',cerrarModal);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))cerrarModal();});
         async function eliminarActual(){if(!actual||!confirm(`¿Eliminar definitivamente la inscripción de ${actual.nombre_apellido}?`))return;try{await Promise.all([remove(ref(database,`caminata_nocturna_5k/${actual.id}`)),remove(ref(database,`caminata_nocturna_5k_fotos/${actual.id}`))]);cerrarModal();}catch(e){alert('No se pudo eliminar la inscripción: '+(e.message||e.code));}}
