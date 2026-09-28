@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asistencia 1x10 por centro electoral</title>
+  <style>
+    :root { color-scheme: light; font-family: Arial, sans-serif; color: #17243b; background: #f2f5f9; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { background: #0a2351; color: white; padding: 18px 24px; }
+    header a { color: white; }
+    header h1 { margin: 8px 0 3px; font-size: 25px; }
+    header p { margin: 0; color: #dce7f7; }
+    main { max-width: 1360px; margin: auto; padding: 18px; }
+    section { background: white; border: 1px solid #dce3ed; border-radius: 12px; padding: 20px; margin-bottom: 18px; box-shadow: 0 3px 12px #17315b0d; }
+    h2 { margin: 0 0 14px; font-size: 20px; }
+    p { line-height: 1.45; }
+    .fila { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+    label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+    .campo { min-width: 190px; flex: 1 1 190px; }
+    input, select, button { font: inherit; min-height: 44px; }
+    input, select { width: 100%; padding: 8px 10px; border: 1px solid #a8b8cc; border-radius: 7px; background: white; }
+    button, .boton { border: 0; border-radius: 7px; padding: 10px 14px; color: white; background: #0a2351; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; font-weight: bold; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .secundario { background: #e8eef6; color: #0a2351; }
+    .aviso { padding: 12px; border-radius: 8px; background: #eef4ff; margin: 12px 0 0; }
+    .error { background: #fff0f0; color: #a51923; }
+    .oculto { display: none; }
+    .metricas { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: 10px; margin: 15px 0; }
+    .metrica { border: 1px solid #dce3ed; border-radius: 9px; padding: 12px; }
+    .metrica strong { display: block; font-size: 24px; }
+    .metrica span { font-size: 13px; }
+    .tabla { overflow-x: auto; margin-top: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px; border-bottom: 1px solid #e1e7ef; text-align: left; vertical-align: middle; }
+    th { background: #f0f4fa; position: sticky; top: 0; }
+    tr.asistio { background: #e5f7e8; }
+    tr.no_asistio { background: #fde7e8; }
+    .estado { font-weight: bold; white-space: nowrap; }
+    .acciones { display: flex; flex-wrap: wrap; gap: 6px; min-width: 190px; }
+    .acciones button { min-height: 38px; padding: 7px 10px; font-size: 13px; }
+    .si { background: #16823b; }
+    .no { background: #c22734; }
+    .limpiar { background: #e6ebf1; color: #334155; }
+    .muted { color: #596a7d; font-size: 13px; }
+    .paginacion { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 14px; }
+    @media (max-width: 700px) {
+      header { padding: 16px; } main { padding: 10px; } section { padding: 15px; }
+      .metricas { grid-template-columns: repeat(2, 1fr); }
+      table, tbody, tr, td { display: block; } thead { display: none; }
+      tr { border: 1px solid #dce3ed; border-radius: 9px; margin-bottom: 10px; padding: 8px; }
+      td { border: 0; padding: 4px; } td::before { content: attr(data-label) ': '; font-weight: bold; }
+      .acciones { margin-top: 6px; } .acciones::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="admin.html">← Volver al panel</a>
+    <h1>Asistencia 1x10 por centro electoral</h1>
+    <p>Registro de asistencia comunicado por teléfono. No registra preferencias ni contenido del voto.</p>
+  </header>
+  <main>
+    <div id="cargando" class="aviso">Verificando acceso y cargando registros…</div>
+    <section id="restringido" class="oculto"><h2>Acceso restringido</h2><p>Solo los administradores pueden consultar y modificar este panel.</p></section>
+    <div id="contenido" class="oculto">
+      <section>
+        <h2>Comuna y comunidad del jefe de calle</h2>
+        <p class="muted">Selecciona un jefe. Al guardar se actualizan su comuna, comunidad y centro según el catálogo territorial; los demás datos del 1x10 se conservan.</p>
+        <div class="fila">
+          <div class="campo"><label for="buscarJefe">Buscar jefe</label><input id="buscarJefe" type="search" placeholder="Nombre o cédula"></div>
+          <div class="campo" style="flex:2 1 300px"><label for="jefe">Jefe de calle</label><select id="jefe"><option value="">Selecciona un jefe</option></select></div>
+        </div>
+        <div class="fila" style="margin-top:12px">
+          <div class="campo"><label for="parroquia">Parroquia</label><select id="parroquia"><option value="">Selecciona</option></select></div>
+          <div class="campo"><label for="comuna">Comuna</label><select id="comuna"><option value="">Selecciona</option></select></div>
+          <div class="campo"><label for="comunidad">Comunidad</label><select id="comunidad"><option value="">Selecciona</option></select></div>
+          <button id="guardarUbicacion" type="button">Guardar ubicación</button>
+        </div>
+        <p id="centroUbicacion" class="muted"></p>
+        <p id="mensajeUbicacion" class="aviso oculto" role="status"></p>
+      </section>
+      <section>
+        <h2>Personas por centro electoral</h2>
+        <div class="fila">
+          <div class="campo"><label for="fecha">Fecha de la jornada</label><input id="fecha" type="date"></div>
+          <div class="campo" style="flex:2 1 300px"><label for="centro">Centro electoral</label><select id="centro"><option value="">Todos los centros</option></select></div>
+          <div class="campo"><label for="estadoFiltro">Estado</label><select id="estadoFiltro"><option value="">Todos</option><option value="pendiente">Pendiente</option><option value="asistio">Asistió</option><option value="no_asistio">No asistió</option></select></div>
+          <div class="campo"><label for="buscarPersona">Buscar persona o jefe</label><input id="buscarPersona" type="search" placeholder="Nombre, cédula o teléfono"></div>
+        </div>
+        <div class="metricas">
+          <div class="metrica"><strong id="total">0</strong><span>Personas del centro</span></div>
+          <div class="metrica"><strong id="asistieron">0</strong><span>Asistieron</span></div>
+          <div class="metrica"><strong id="noAsistieron">0</strong><span>No asistieron</span></div>
+          <div class="metrica"><strong id="pendientes">0</strong><span>Pendientes de confirmar</span></div>
+        </div>
+        <p class="muted">Los estados son informados por llamada; “pendiente” significa que aún no se confirmó. Una misma cédula conserva el mismo estado si figura en más de un 1x10. Si tiene centros distintos en registros diferentes, aparecerá en ambos para poder corregir la asignación.</p>
+        <p id="mensajeLista" class="aviso oculto" role="status"></p>
+        <div class="tabla"><table><thead><tr><th>Persona</th><th>Teléfono</th><th>Jefe de calle</th><th>Comuna y comunidad</th><th>Centro</th><th>Estado</th><th>Registrar</th></tr></thead><tbody id="filas"><tr><td colspan="7">Cargando…</td></tr></tbody></table></div>
+        <div class="paginacion"><span id="paginaTexto"></span><button id="anterior" class="secundario" type="button">Anterior</button><button id="siguiente" class="secundario" type="button">Siguiente</button></div>
+      </section>
+    </div>
+  </main>
+  <script src="territorio-data.js"></script>
+  <script src="autofresh.js"></script>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+    import { getDatabase, ref, get, child, onValue, update, set, remove, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+
+    const app = initializeApp({
+      apiKey: 'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',
+      authDomain: 'alcaldia-admin.firebaseapp.com',
+      databaseURL: 'https://alcaldia-admin-default-rtdb.firebaseio.com',
+      projectId: 'alcaldia-admin', storageBucket: 'alcaldia-admin.firebasestorage.app',
+      messagingSenderId: '945828226894', appId: '1:945828226894:web:0efeebeb270357e6f5201f'
+    });
+    const auth = getAuth(app), database = getDatabase(app);
+    const $ = id => document.getElementById(id);
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const catalogo = window.TERRITORIO?.comunidades || {};
+    const limite = 75;
+    let usuario = null, jefes = {}, afines = {}, estados = {}, personas = [], pagina = 1, detenerEstados = null;
+    let jefesListos = false, afinesListos = false, estadosListos = false;
+    const claveDia = () => $('fecha').value;
+    const hoyCaracas = () => {
+      const partes = new Intl.DateTimeFormat('en-US', {timeZone:'America/Caracas', year:'numeric', month:'2-digit', day:'2-digit'}).formatToParts(new Date());
+      const valor = tipo => partes.find(x => x.type === tipo).value;
+      return `${valor('year')}-${valor('month')}-${valor('day')}`;
+    };
+    $('fecha').value = hoyCaracas();
+
+    function aviso(id, mensaje, error = false) {
+      const el = $(id); el.textContent = mensaje; el.classList.toggle('oculto', !mensaje); el.classList.toggle('error', error);
+    }
+    function ubicacionDe(slug) { return catalogo[slug] || null; }
+    function opciones(id, valores, texto) {
+      $(id).replaceChildren(new Option(texto, ''), ...valores.map(x => new Option(x, x)));
+    }
+    const parroquias = [...new Set(Object.values(catalogo).filter(x => x.activo).map(x => x.parroquia))].sort((a,b) => a.localeCompare(b,'es'));
+    opciones('parroquia', parroquias, 'Selecciona');
+    function cambiarParroquia() {
+      const comunas = [...new Set(Object.values(catalogo).filter(x => x.activo && x.parroquia === $('parroquia').value).map(x => x.circuito_comunal))].sort((a,b)=>a.localeCompare(b,'es'));
+      opciones('comuna', comunas, 'Selecciona'); cambiarComuna();
+    }
+    function cambiarComuna() {
+      const comunidades = Object.entries(catalogo).filter(([,x]) => x.activo && x.parroquia === $('parroquia').value && x.circuito_comunal === $('comuna').value).sort((a,b)=>a[1].nombre.localeCompare(b[1].nombre,'es'));
+      $('comunidad').replaceChildren(new Option('Selecciona',''), ...comunidades.map(([slug,x]) => new Option(x.nombre,slug)));
+      mostrarCentroUbicacion();
+    }
+    function mostrarCentroUbicacion() {
+      const com = ubicacionDe($('comunidad').value);
+      $('centroUbicacion').textContent = com ? `Centro del catálogo: ${com.centro_electoral || 'sin centro asignado'}` : '';
+    }
+    $('parroquia').addEventListener('change', cambiarParroquia);
+    $('comuna').addEventListener('change', cambiarComuna);
+    $('comunidad').addEventListener('change', mostrarCentroUbicacion);
+
+    function llenarJefes() {
+      const anterior = $('jefe').value, q = $('buscarJefe').value.trim().toLowerCase();
+      const lista = Object.entries(jefes).filter(([id,j]) => `${id} ${j.nombres||''} ${j.apellidos||''}`.toLowerCase().includes(q)).sort((a,b)=>`${a[1].apellidos||''} ${a[1].nombres||''}`.localeCompare(`${b[1].apellidos||''} ${b[1].nombres||''}`,'es'));
+      $('jefe').replaceChildren(new Option(`Selecciona un jefe (${lista.length})`,''),...lista.map(([id,j]) => new Option(`${j.apellidos||''} ${j.nombres||''} · C.I. ${id}`,id)));
+      if (lista.some(([id]) => id === anterior)) $('jefe').value = anterior;
+    }
+    $('buscarJefe').addEventListener('input', llenarJefes);
+    $('jefe').addEventListener('change', () => {
+      aviso('mensajeUbicacion',''); const j = jefes[$('jefe').value];
+      $('parroquia').value = j?.parroquia || ''; cambiarParroquia();
+      $('comuna').value = j?.circuito || ''; cambiarComuna();
+      $('comunidad').value = j?.comunidad_slug || ''; mostrarCentroUbicacion();
+    });
+    $('guardarUbicacion').addEventListener('click', async () => {
+      const id = $('jefe').value, slug = $('comunidad').value, com = ubicacionDe(slug);
+      if (!jefes[id] || !com || com.parroquia !== $('parroquia').value || com.circuito_comunal !== $('comuna').value) {
+        aviso('mensajeUbicacion','Selecciona un jefe, su parroquia, comuna y comunidad.',true); return;
+      }
+      const boton = $('guardarUbicacion'); boton.disabled = true; aviso('mensajeUbicacion','Guardando…');
+      try {
+        await update(ref(database, `jefes_1x10/${id}`), {
+          parroquia: com.parroquia, circuito: com.circuito_comunal,
+          comunidad_slug: slug, comunidad_nombre: com.nombre,
+          centro_electoral: com.centro_electoral || null, mesas: com.mesas || null
+        });
+        aviso('mensajeUbicacion','Ubicación guardada para este jefe.');
+      } catch (e) { aviso('mensajeUbicacion',`No se pudo guardar: ${e.message}`,true); }
+      finally { boton.disabled = false; }
+    });
+
+    function reconstruir() {
+      if (!jefesListos || !afinesListos) return;
+      const filas = [];
+      Object.entries(jefes).forEach(([jefeId,j]) => {
+        const nombreJefe = `${j.nombres||''} ${j.apellidos||''}`.trim() || jefeId;
+        const agregar = (id,p,esJefe) => {
+          const propia = !esJefe && p.comunidad_slug ? ubicacionDe(p.comunidad_slug) : null;
+          const centro = (!esJefe && p.centro_electoral) || propia?.centro_electoral || j.centro_electoral || 'SIN CENTRO ASIGNADO';
+          filas.push({ id, nombre:`${p.nombres||''} ${p.apellidos||''}`.trim() || id, telefono:p.telefono||'',
+            jefeId, nombreJefe, esJefe, centro,
+            comuna: propia?.circuito_comunal || j.circuito || '',
+            comunidad: p.comunidad_nombre || propia?.nombre || j.comunidad_nombre || '' });
+        };
+        agregar(jefeId,j,true);
+        Object.entries(afines[jefeId]||{}).forEach(([id,p]) => agregar(id,p,false));
+      });
+      personas = filas.sort((a,b) => a.centro.localeCompare(b.centro,'es') || a.nombreJefe.localeCompare(b.nombreJefe,'es') || a.nombre.localeCompare(b.nombre,'es'));
+      const centroActual = $('centro').value;
+      const centros = [...new Set(filas.map(x=>x.centro))].sort((a,b)=>a.localeCompare(b,'es'));
+      opciones('centro', centros, 'Todos los centros');
+      if (centros.includes(centroActual)) $('centro').value = centroActual;
+      llenarJefes(); pintar();
+    }
+    function pintar() {
+      if (!jefesListos || !afinesListos || !estadosListos) return;
+      const centro=$('centro').value, q=$('buscarPersona').value.trim().toLowerCase(), estado=$('estadoFiltro').value;
+      const base=personas.filter(p=>!centro || p.centro===centro);
+      const unicas=new Map(base.map(p=>[p.id,estados[p.id]?.estado||'pendiente']));
+      $('total').textContent=unicas.size.toLocaleString('es-VE');
+      $('asistieron').textContent=[...unicas.values()].filter(x=>x==='asistio').length.toLocaleString('es-VE');
+      $('noAsistieron').textContent=[...unicas.values()].filter(x=>x==='no_asistio').length.toLocaleString('es-VE');
+      $('pendientes').textContent=[...unicas.values()].filter(x=>x==='pendiente').length.toLocaleString('es-VE');
+      const filtradas=base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || `${p.nombre} ${p.id} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`.toLowerCase().includes(q)));
+      const paginas=Math.max(1,Math.ceil(filtradas.length/limite)); pagina=Math.min(pagina,paginas);
+      const bloque=filtradas.slice((pagina-1)*limite,pagina*limite);
+      $('filas').innerHTML=bloque.map(p=>{
+        const e=estados[p.id]?.estado||'pendiente';
+        const tel=p.telefono.replace(/\D/g,'');
+        const link=tel.length>=10 && tel.length<=15 ? `<a class="boton secundario" href="tel:${tel}">Llamar</a>` : '<span class="muted">Sin teléfono</span>';
+        return `<tr class="${e==='pendiente'?'':e}">
+          <td data-label="Persona"><b>${esc(p.nombre)}</b><br><span class="muted">C.I. ${esc(p.id)} · ${p.esJefe?'Jefe':'Afín'}</span></td>
+          <td data-label="Teléfono">${link}${tel?`<br><span class="muted">${esc(p.telefono)}</span>`:''}</td>
+          <td data-label="Jefe de calle">${esc(p.nombreJefe)}<br><span class="muted">C.I. ${esc(p.jefeId)}</span></td>
+          <td data-label="Comuna y comunidad">${esc(p.comuna||'—')}<br><span class="muted">${esc(p.comunidad||'—')}</span></td>
+          <td data-label="Centro">${esc(p.centro)}</td>
+          <td data-label="Estado" class="estado">${e==='asistio'?'Asistió':e==='no_asistio'?'No asistió':'Pendiente'}</td>
+          <td data-label="Registrar"><div class="acciones"><button type="button" class="si" data-id="${esc(p.id)}" data-estado="asistio">Asistió</button><button type="button" class="no" data-id="${esc(p.id)}" data-estado="no_asistio">No asistió</button><button type="button" class="limpiar" data-id="${esc(p.id)}" data-estado="pendiente">Pendiente</button></div></td></tr>`;
+      }).join('') || '<tr><td colspan="7">No hay personas para los filtros seleccionados.</td></tr>';
+      $('paginaTexto').textContent=`${filtradas.length.toLocaleString('es-VE')} registro(s) · página ${pagina} de ${paginas}`;
+      $('anterior').disabled=pagina<=1; $('siguiente').disabled=pagina>=paginas;
+    }
+    function escucharEstados() {
+      if (detenerEstados) detenerEstados();
+      estados={}; estadosListos=false;
+      $('filas').innerHTML='<tr><td colspan="7">Cargando estados de la jornada…</td></tr>';
+      detenerEstados=onValue(ref(database,`asistencia_1x10/${claveDia()}`),snap=>{
+        estados=snap.val()||{}; estadosListos=true; pintar();
+      },err=>{ estadosListos=false; aviso('mensajeLista',`No se pudieron leer los estados: ${err.message}`,true); });
+    }
+    $('fecha').addEventListener('change',()=>{pagina=1; aviso('mensajeLista',''); escucharEstados();});
+    ['centro','estadoFiltro','buscarPersona'].forEach(id=>$(id).addEventListener(id==='buscarPersona'?'input':'change',()=>{pagina=1;pintar();}));
+    $('anterior').addEventListener('click',()=>{pagina--;pintar();});
+    $('siguiente').addEventListener('click',()=>{pagina++;pintar();});
+    $('filas').addEventListener('click',async event=>{
+      const boton=event.target.closest('button[data-estado]'); if(!boton || !usuario) return;
+      const id=boton.dataset.id, estado=boton.dataset.estado;
+      if(!/^\d{4,10}$/.test(id) || !['asistio','no_asistio','pendiente'].includes(estado) || !/^\d{4}-\d{2}-\d{2}$/.test(claveDia())) return;
+      boton.disabled=true; aviso('mensajeLista','Guardando estado…');
+      try {
+        const ruta=ref(database,`asistencia_1x10/${claveDia()}/${id}`);
+        if(estado==='pendiente') await remove(ruta);
+        else await set(ruta,{estado,actualizado_en:serverTimestamp(),actualizado_por:usuario.uid});
+        aviso('mensajeLista','Estado guardado.');
+      } catch(e) { aviso('mensajeLista',`No se pudo guardar el estado: ${e.message}`,true); boton.disabled=false; }
+    });
+
+    onAuthStateChanged(auth,async user=>{
+      if(!user){location.href='index.html';return;}
+      let permitido=user.email==='carlos.admin@alcaldia.com';
+      if(!permitido){
+        try{const snap=await get(child(ref(database),`operadores/${user.uid}/rol`));permitido=snap.val()==='admin';}
+        catch(e){permitido=false;}
+      }
+      $('cargando').classList.add('oculto');
+      if(!permitido){$('restringido').classList.remove('oculto');return;}
+      usuario=user; $('contenido').classList.remove('oculto');
+      onValue(ref(database,'jefes_1x10'),snap=>{jefes=snap.val()||{};jefesListos=true;reconstruir();},err=>aviso('mensajeLista',`No se cargaron los jefes: ${err.message}`,true));
+      onValue(ref(database,'afines_1x10'),snap=>{afines=snap.val()||{};afinesListos=true;reconstruir();},err=>aviso('mensajeLista',`No se cargaron los afines: ${err.message}`,true));
+      escucharEstados();
+    });
+  </script>
+</body>
+</html>
