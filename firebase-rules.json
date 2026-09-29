@@ -89,6 +89,59 @@
         ".validate": "newData.hasChildren(['nombres']) && newData.child('nombres').isString() && newData.child('nombres').val().length <= 200"
       }
     },
+    "atencion_comunitaria_salud": {
+      ".read": "auth !== null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$id": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['nombre','cedula','telefono','comuna','consejo_comunal','sector','calle','casa','oftalmologia','chequeo','diagnostico','medicamentos','fecha_captacion','captador','consentimiento','fecha_registro']) && (newData.child('fecha_nacimiento').exists() || newData.child('edad').exists()) && (newData.child('oftalmologia').val() === true || newData.child('chequeo').val() === true || newData.child('diagnostico').val() === true || newData.child('medicamentos').val() === true) && (newData.child('medicamentos').val() !== true || newData.child('medicamentos_detalle').exists())",
+        "nombre": { ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 200" },
+        "cedula": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{5,10}$/)" },
+        "fecha_nacimiento": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)" },
+        "edad": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120" },
+        "telefono": { ".validate": "newData.isString() && newData.val().length >= 7 && newData.val().length <= 30" },
+        "telefono_alterno": { ".validate": "newData.isString() && newData.val().length <= 30" },
+        "parroquia": { ".validate": "newData.isString() && newData.val().length <= 250" },
+        "comuna": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 250" },
+        "comunidad": { ".validate": "newData.isString() && newData.val().length <= 250" },
+        "otro_territorio": { ".validate": "newData.isString() && newData.val().length <= 250" },
+        "consejo_comunal": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 200" },
+        "sector": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 200" },
+        "calle": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 200" },
+        "casa": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100" },
+        "oftalmologia": { ".validate": "newData.isBoolean()" },
+        "oft_opciones": { ".validate": "newData.hasChildren()", "$indice": { ".validate": "newData.isString() && newData.val().length <= 100" } },
+        "cirugia_tipo": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "oft_observacion": { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "chequeo": { ".validate": "newData.isBoolean()" },
+        "especialidades": { ".validate": "newData.hasChildren()", "$indice": { ".validate": "newData.isString() && newData.val().length <= 100" } },
+        "especialidad_otra": { ".validate": "newData.isString() && newData.val().length <= 200" },
+        "motivo": { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "diagnostico": { ".validate": "newData.isBoolean()" },
+        "patologia": { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "patologia_otra": { ".validate": "newData.isString() && newData.val().length <= 500" },
+        "movilidad": { ".validate": "newData.val() === 'Ambulatorio' || newData.val() === 'Encamado' || newData.val() === 'Discapacidad'" },
+        "medicamentos": { ".validate": "newData.isBoolean()" },
+        "medicamentos_detalle": { ".validate": "newData.isString() && newData.val().length <= 1000" },
+        "documento_vigente": { ".validate": "newData.val() === 'Sí' || newData.val() === 'No'" },
+        "fecha_captacion": { ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)" },
+        "captador": { ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 200" },
+        "consentimiento": { ".validate": "newData.val() === true" },
+        "fecha_registro": { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
+      }
+    },
+    "atencion_comunitaria_salud_seguimiento": {
+      ".read": "auth !== null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$id": {
+        ".write": "auth !== null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin') && root.child('atencion_comunitaria_salud').child($id).exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['estado','actualizado_en','actualizado_por'])",
+        "estado": { ".validate": "newData.val() === 'pendiente' || newData.val() === 'en_proceso' || newData.val() === 'atendido'" },
+        "nota": { ".validate": "newData.isString() && newData.val().length <= 2000" },
+        "actualizado_en": { ".validate": "newData.isNumber()" },
+        "actualizado_por": { ".validate": "newData.val() === auth.uid" },
+        "$other": { ".validate": false }
+      }
+    },
     "alerta_temprana": {
       ".read": "auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'",
       "$id": {
