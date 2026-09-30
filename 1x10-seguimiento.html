@@ -75,6 +75,7 @@
       <section><h2>Detalle por centro electoral</h2><p id="corte" class="muted"></p><div class="tabla"><table><caption class="oculto">Cantidades de registros por comuna y centro electoral</caption><thead><tr><th>Comuna</th><th>Centro electoral</th><th class="numero">En el 1x10</th><th class="numero">Fuera del 1x10</th><th class="numero">15–35 años</th><th class="numero">36 en adelante</th><th class="numero">Menores de 15</th><th class="numero">Sin edad</th><th class="numero">Total</th></tr></thead><tbody id="filasCentro"></tbody><tfoot id="totalCentro"></tfoot></table></div><p class="muted">Cada persona del 1x10 se cuenta una vez. Las cargas adicionales son cantidades declaradas: no permiten comprobar duplicados entre personas.</p></section>
       <section id="diagnostico"><details><summary>Calidad de los datos y método de conteo</summary><p id="calidad"></p><p class="muted">Se usa la comuna y el centro registrados en el 1x10; cuando faltan, se utiliza el catálogo territorial y la ubicación del jefe. Un centro asignado por comunidad no confirma el centro real de cada persona. Si una cédula tiene ubicaciones incompatibles, aparece en «Ubicación por verificar». Las fechas inválidas o contradictorias se cuentan en «Sin edad». Se agrupan diferencias de mayúsculas, espacios y tildes en comunas y centros. Los nombres que difieren en otras letras se conservan en filas distintas.</p></details></section>
       <section id="cargas"><h2>Agregar cantidades fuera del 1x10</h2><p>Registra el total de personas que aún no aparecen en el 1x10. Usa una referencia distinta para cada lista y comprueba que no incluya personas ya contadas.</p>
+        <p class="muted">«Corregir» permite cambiar las cantidades. Si una lista está en el centro equivocado, corrige sus cantidades a cero y agrégala en el centro correcto.</p>
         <form id="formCarga"><div class="fila">
           <div class="campo"><label for="cargaComuna">Comuna</label><select id="cargaComuna" required><option value="">Selecciona una comuna</option></select></div>
           <div class="campo"><label for="cargaCentro">Centro electoral</label><select id="cargaCentro" required><option value="">Selecciona un centro</option></select></div>
@@ -94,8 +95,8 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
     import { getDatabase, ref, get, child, onValue, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
-    import { resumirRegistro, sumarFilas } from './1x10-seguimiento-datos.mjs?v=20260930b';
-    import { crearInforme } from './1x10-seguimiento-pdf.mjs?v=20260930b';
+    import { resumirRegistro, sumarFilas } from './1x10-seguimiento-datos.mjs?v=20260930c';
+    import { crearInforme } from './1x10-seguimiento-pdf.mjs?v=20260930c';
     // La configuración del cliente Firebase es pública; se comparte con las páginas existentes.
     const app = initializeApp({apiKey:'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',authDomain:'alcaldia-admin.firebaseapp.com',databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com',projectId:'alcaldia-admin',storageBucket:'alcaldia-admin.firebasestorage.app',messagingSenderId:'945828226894',appId:'1:945828226894:web:0efeebeb270357e6f5201f'});
     const auth=getAuth(app), database=getDatabase(app), $=id=>document.getElementById(id);
