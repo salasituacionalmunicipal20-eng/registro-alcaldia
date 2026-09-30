@@ -44,7 +44,7 @@ export function crearInforme(jsPDF, filas, { fecha, filtros, calidad, generado }
     'Generado el ' + generado + '.', filtros, calidad,
     'Las cantidades adicionales son declaradas, no verificadas por cédula. El total informado combina personas únicas del 1x10 y cantidades adicionales; requiere comprobar que las listas no se solapen.',
     'Las ubicaciones pueden ser heredadas del jefe o del catálogo territorial. No confirman el centro electoral individual.',
-    'Se conservan los nombres de comunas y centros tal como están registrados. Las variantes de escritura pueden aparecer en filas distintas.',
+    'Se agrupan diferencias de mayúsculas, espacios y tildes en comunas y centros. Los nombres que difieren en otras letras se conservan en filas distintas.',
     'Las cargas por rangos de edad corresponden al momento en que fueron declaradas. Cambiar la fecha solo recalcula las edades del 1x10.',
     'Los registros sin fecha de nacimiento válida se incluyen en Sin edad. Los menores de 15 se muestran aparte y están incluidos en el total.'
   ];

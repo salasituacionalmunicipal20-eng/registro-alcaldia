@@ -14,7 +14,7 @@ Panel administrativo: `1x10-seguimiento.html`.
 
 Lee `jefes_1x10`, `afines_1x10` y el catálogo `territorio-data.js`. No modifica estas fuentes ni el panel de asistencia existente.
 
-Los rangos se calculan al corte seleccionado usando fechas de nacimiento válidas. Si existen fechas distintas para una misma persona, su edad queda pendiente. Las ubicaciones incompatibles quedan agrupadas en «Ubicación por verificar». Se conservan las variantes de nombres territoriales: no se inventan equivalencias ni se corrigen datos de personas.
+Los rangos se calculan al corte seleccionado usando fechas de nacimiento válidas. Si existen fechas distintas para una misma persona, su edad queda pendiente. Las ubicaciones incompatibles quedan agrupadas en «Ubicación por verificar». Se agrupan diferencias de mayúsculas, espacios y tildes en los nombres territoriales. Si difieren en otras letras, se conservan separados: no se inventan equivalencias ni se corrigen datos de personas.
 
 La ubicación propia del jefe prevalece sobre la ubicación que hereda cuando aparece como afin en otra lista. Para los afines sin jefe también se cuenta su información disponible. Un centro heredado de una comunidad no confirma el centro electoral individual.
 

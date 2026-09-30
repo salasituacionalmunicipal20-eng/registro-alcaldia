@@ -3,6 +3,7 @@ export const SIN_COMUNA = 'Sin comuna asignada';
 export const SIN_CENTRO = 'Sin centro asignado';
 export const CONFLICTO = 'Ubicación por verificar';
 const texto = v => String(v ?? '').trim();
+const claveTerritorial = v => texto(v).normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/\s+/g,' ').toUpperCase();
 export function edadEn(fecha, corte) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(fecha));
   const c = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(corte));
@@ -21,6 +22,18 @@ export function grupoEdad(edad) {
 }
 export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}) {
   const personas = new Map();
+  const comunasCanonicas = new Map(), centrosCanonicos = new Map();
+  for (const c of Object.values(catalogo || {})) {
+    if (texto(c.circuito_comunal)) comunasCanonicas.set(claveTerritorial(c.circuito_comunal), texto(c.circuito_comunal));
+    if (texto(c.centro_electoral)) centrosCanonicos.set(claveTerritorial(c.centro_electoral), texto(c.centro_electoral));
+  }
+  function canonico(valor, indice, vacio) {
+    const limpio = texto(valor).replace(/\s+/g,' ');
+    if (!limpio) return vacio;
+    const clave = claveTerritorial(limpio);
+    if (!indice.has(clave)) indice.set(clave, limpio);
+    return indice.get(clave);
+  }
   let relaciones = 0, sinIdentidad = 0, huerfanos = 0;
   function agregar(id, p, j, esJefe) {
     relaciones++;
@@ -31,8 +44,8 @@ export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}
     const clave = `${nacionalidad}:${cedula.replace(/^0+(?=\d)/, '')}`;
     const propia = catalogo[p.comunidad_slug] || {};
     const delJefe = catalogo[j.comunidad_slug] || {};
-    const comuna = texto(p.comuna || p.circuito || propia.circuito_comunal || j.comuna || j.circuito || delJefe.circuito_comunal) || SIN_COMUNA;
-    const centro = texto(p.centro_electoral || propia.centro_electoral || j.centro_electoral || delJefe.centro_electoral) || SIN_CENTRO;
+    const comuna = canonico(p.comuna || p.circuito || propia.circuito_comunal || j.comuna || j.circuito || delJefe.circuito_comunal, comunasCanonicas, SIN_COMUNA);
+    const centro = canonico(p.centro_electoral || propia.centro_electoral || j.centro_electoral || delJefe.centro_electoral, centrosCanonicos, SIN_CENTRO);
     const dato = { comuna, centro, fecha: texto(p.fecha_nacimiento), esJefe };
     if (!personas.has(clave)) personas.set(clave, []);
     personas.get(clave).push(dato);
@@ -70,7 +83,7 @@ export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}
   for (const carga of Object.values(adicionales || {})) {
     const campos = ['jovenes', 'adultos', 'menores', 'sinEdad'];
     if (!texto(carga.comuna) || !texto(carga.centro) || !campos.every(k => Number.isSafeInteger(carga[k]) && carga[k] >= 0 && carga[k] <= 1000000)) { cargasInvalidas++; continue; }
-    const fila = obtener(carga.comuna, carga.centro);
+    const fila = obtener(canonico(carga.comuna,comunasCanonicas,SIN_COMUNA), canonico(carga.centro,centrosCanonicos,SIN_CENTRO));
     for (const k of campos) { fila[k] += carga[k]; fila.adicionales += carga[k]; fila.total += carga[k]; }
   }
   return {

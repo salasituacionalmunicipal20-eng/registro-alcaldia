@@ -39,4 +39,6 @@ assert.equal(resultado.filas.find(f=>f.comuna==='Comuna B').base,2);
 const nacionalidades=resumirRegistro({'90000009':{cedula:'90000009'}},{'90000009':{otro:{cedula:'E-90000009'}}},{},corte);
 assert.equal(nacionalidades.diagnostico.personas,2);
 assert.equal(sumarFilas(resumirRegistro({}, {}, {}, corte).filas).total,0);
+const variantes=resumirRegistro({'90000010':{cedula:'90000010',circuito:'comuna   Á',centro_electoral:'Centro BÁSICO'}},{'90000010':{'90000011':{cedula:'90000011',comuna:'COMUNA A',centro_electoral:'CENTRO BASICO'}}},{a:{circuito_comunal:'COMUNA A',centro_electoral:'CENTRO BÁSICO'}},corte);
+assert.equal(variantes.filas.length,1); assert.equal(variantes.filas[0].total,2);
 console.log('Verificado: límites de edad, fechas inválidas, cédulas únicas, nacionalidades, conflictos, afines sin jefe y cargas adicionales.');
