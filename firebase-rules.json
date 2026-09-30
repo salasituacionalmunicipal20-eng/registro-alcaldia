@@ -1336,6 +1336,177 @@
             }
           }
         }
+      },
+    "censos_definiciones": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$censo": {
+        ".read": "root.child('censos_definiciones').child($censo).child('acceso').val() === 'publico' || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
+        ".write": "(auth != null && auth.token.email === 'carlos.admin@alcaldia.com') && newData.exists() && $censo.matches(/^[a-z0-9-]{3,60}$/)",
+        ".validate": "newData.hasChildren(['titulo','acceso','lectura','seguimiento','activo','creado_en','actualizado_en','version'])",
+        "titulo": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 120"
+        },
+        "descripcion": {
+          ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 1500"
+        },
+        "acceso": {
+          ".validate": "newData.val() === 'publico' || newData.val() === 'administradores'"
+        },
+        "lectura": {
+          ".validate": "newData.val() === 'carlos' || newData.val() === 'administradores'"
+        },
+        "seguimiento": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100"
+        },
+        "activo": {
+          ".validate": "newData.isBoolean()"
+        },
+        "creado_en": {
+          ".validate": "newData.isNumber() && ((!data.exists() && newData.val() === now) || newData.val() === data.val())"
+        },
+        "actualizado_en": {
+          ".validate": "newData.val() === now"
+        },
+        "version": {
+          ".validate": "newData.val() === 1"
+        },
+        "$otro": {
+          ".validate": false
+        }
       }
+    },
+    "censos_grupos": {
+      "$censo": {
+        ".read": "(auth != null && auth.token.email === 'carlos.admin@alcaldia.com') || ((auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')) && root.child('censos_definiciones').child($censo).child('lectura').val() === 'administradores')",
+        ".indexOn": [
+          "creado_en"
+        ],
+        "$grupo": {
+          ".write": "newData.exists() && $grupo.matches(/^[A-Za-z0-9_-]{20}$/) && ((data.exists() && ((auth != null && auth.token.email === 'carlos.admin@alcaldia.com') || ((auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')) && root.child('censos_definiciones').child($censo).child('lectura').val() === 'administradores'))) || (!data.exists() && root.child('censos_definiciones').child($censo).child('activo').val() === true && (root.child('censos_definiciones').child($censo).child('acceso').val() === 'publico' || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')))))",
+          ".validate": "newData.hasChildren(['responsable','personas','cantidad','creado_en','actualizado_en','version']) && newData.child('cantidad').val() === ((newData.child('personas/p001').exists() ? 1 : 0) + (newData.child('personas/p002').exists() ? 1 : 0) + (newData.child('personas/p003').exists() ? 1 : 0) + (newData.child('personas/p004').exists() ? 1 : 0) + (newData.child('personas/p005').exists() ? 1 : 0) + (newData.child('personas/p006').exists() ? 1 : 0) + (newData.child('personas/p007').exists() ? 1 : 0) + (newData.child('personas/p008').exists() ? 1 : 0) + (newData.child('personas/p009').exists() ? 1 : 0) + (newData.child('personas/p010').exists() ? 1 : 0) + (newData.child('personas/p011').exists() ? 1 : 0) + (newData.child('personas/p012').exists() ? 1 : 0) + (newData.child('personas/p013').exists() ? 1 : 0) + (newData.child('personas/p014').exists() ? 1 : 0) + (newData.child('personas/p015').exists() ? 1 : 0) + (newData.child('personas/p016').exists() ? 1 : 0) + (newData.child('personas/p017').exists() ? 1 : 0) + (newData.child('personas/p018').exists() ? 1 : 0) + (newData.child('personas/p019').exists() ? 1 : 0) + (newData.child('personas/p020').exists() ? 1 : 0) + (newData.child('personas/p021').exists() ? 1 : 0) + (newData.child('personas/p022').exists() ? 1 : 0) + (newData.child('personas/p023').exists() ? 1 : 0) + (newData.child('personas/p024').exists() ? 1 : 0) + (newData.child('personas/p025').exists() ? 1 : 0) + (newData.child('personas/p026').exists() ? 1 : 0) + (newData.child('personas/p027').exists() ? 1 : 0) + (newData.child('personas/p028').exists() ? 1 : 0) + (newData.child('personas/p029').exists() ? 1 : 0) + (newData.child('personas/p030').exists() ? 1 : 0) + (newData.child('personas/p031').exists() ? 1 : 0) + (newData.child('personas/p032').exists() ? 1 : 0) + (newData.child('personas/p033').exists() ? 1 : 0) + (newData.child('personas/p034').exists() ? 1 : 0) + (newData.child('personas/p035').exists() ? 1 : 0) + (newData.child('personas/p036').exists() ? 1 : 0) + (newData.child('personas/p037').exists() ? 1 : 0) + (newData.child('personas/p038').exists() ? 1 : 0) + (newData.child('personas/p039').exists() ? 1 : 0) + (newData.child('personas/p040').exists() ? 1 : 0) + (newData.child('personas/p041').exists() ? 1 : 0) + (newData.child('personas/p042').exists() ? 1 : 0) + (newData.child('personas/p043').exists() ? 1 : 0) + (newData.child('personas/p044').exists() ? 1 : 0) + (newData.child('personas/p045').exists() ? 1 : 0) + (newData.child('personas/p046').exists() ? 1 : 0) + (newData.child('personas/p047').exists() ? 1 : 0) + (newData.child('personas/p048').exists() ? 1 : 0) + (newData.child('personas/p049').exists() ? 1 : 0) + (newData.child('personas/p050').exists() ? 1 : 0) + (newData.child('personas/p051').exists() ? 1 : 0) + (newData.child('personas/p052').exists() ? 1 : 0) + (newData.child('personas/p053').exists() ? 1 : 0) + (newData.child('personas/p054').exists() ? 1 : 0) + (newData.child('personas/p055').exists() ? 1 : 0) + (newData.child('personas/p056').exists() ? 1 : 0) + (newData.child('personas/p057').exists() ? 1 : 0) + (newData.child('personas/p058').exists() ? 1 : 0) + (newData.child('personas/p059').exists() ? 1 : 0) + (newData.child('personas/p060').exists() ? 1 : 0) + (newData.child('personas/p061').exists() ? 1 : 0) + (newData.child('personas/p062').exists() ? 1 : 0) + (newData.child('personas/p063').exists() ? 1 : 0) + (newData.child('personas/p064').exists() ? 1 : 0) + (newData.child('personas/p065').exists() ? 1 : 0) + (newData.child('personas/p066').exists() ? 1 : 0) + (newData.child('personas/p067').exists() ? 1 : 0) + (newData.child('personas/p068').exists() ? 1 : 0) + (newData.child('personas/p069').exists() ? 1 : 0) + (newData.child('personas/p070').exists() ? 1 : 0) + (newData.child('personas/p071').exists() ? 1 : 0) + (newData.child('personas/p072').exists() ? 1 : 0) + (newData.child('personas/p073').exists() ? 1 : 0) + (newData.child('personas/p074').exists() ? 1 : 0) + (newData.child('personas/p075').exists() ? 1 : 0) + (newData.child('personas/p076').exists() ? 1 : 0) + (newData.child('personas/p077').exists() ? 1 : 0) + (newData.child('personas/p078').exists() ? 1 : 0) + (newData.child('personas/p079').exists() ? 1 : 0) + (newData.child('personas/p080').exists() ? 1 : 0) + (newData.child('personas/p081').exists() ? 1 : 0) + (newData.child('personas/p082').exists() ? 1 : 0) + (newData.child('personas/p083').exists() ? 1 : 0) + (newData.child('personas/p084').exists() ? 1 : 0) + (newData.child('personas/p085').exists() ? 1 : 0) + (newData.child('personas/p086').exists() ? 1 : 0) + (newData.child('personas/p087').exists() ? 1 : 0) + (newData.child('personas/p088').exists() ? 1 : 0) + (newData.child('personas/p089').exists() ? 1 : 0) + (newData.child('personas/p090').exists() ? 1 : 0) + (newData.child('personas/p091').exists() ? 1 : 0) + (newData.child('personas/p092').exists() ? 1 : 0) + (newData.child('personas/p093').exists() ? 1 : 0) + (newData.child('personas/p094').exists() ? 1 : 0) + (newData.child('personas/p095').exists() ? 1 : 0) + (newData.child('personas/p096').exists() ? 1 : 0) + (newData.child('personas/p097').exists() ? 1 : 0) + (newData.child('personas/p098').exists() ? 1 : 0) + (newData.child('personas/p099').exists() ? 1 : 0) + (newData.child('personas/p100').exists() ? 1 : 0))",
+          "responsable": {
+            ".validate": "newData.hasChildren(['nacionalidad','cedula','primer_nombre','primer_apellido','parroquia','comuna','comunidad'])",
+            "nacionalidad": {
+              ".validate": "newData.val() === 'V' || newData.val() === 'E'"
+            },
+            "cedula": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{5,10}$/)"
+            },
+            "primer_nombre": {
+              ".validate": "newData.isString() && newData.val().length <= 300 && (newData.val().matches(/^[A-Za-zÀ-ÖØ-öø-ÿ .'-]+$/))"
+            },
+            "segundo_nombre": {
+              ".validate": "newData.isString() && newData.val().length <= 300 && (newData.val() === '' || newData.val().matches(/^[A-Za-zÀ-ÖØ-öø-ÿ .'-]+$/))"
+            },
+            "primer_apellido": {
+              ".validate": "newData.isString() && newData.val().length <= 300 && (newData.val().matches(/^[A-Za-zÀ-ÖØ-öø-ÿ .'-]+$/))"
+            },
+            "segundo_apellido": {
+              ".validate": "newData.isString() && newData.val().length <= 300 && (newData.val() === '' || newData.val().matches(/^[A-Za-zÀ-ÖØ-öø-ÿ .'-]+$/))"
+            },
+            "telefono": {
+              ".validate": "newData.isString() && (newData.val() === '' || newData.val().matches(/^[0-9+() -]{7,25}$/))"
+            },
+            "parroquia": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+            },
+            "comuna": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+            },
+            "comunidad": {
+              ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+            },
+            "necesidad": {
+              ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 3000"
+            },
+            "$otro": {
+              ".validate": false
+            }
+          },
+          "personas": {
+            "$persona": {
+              ".validate": "$persona.matches(/^p(0[0-9][1-9]|0[1-9]0|100)$/) && newData.hasChildren(['nacionalidad','cedula','primer_nombre','primer_apellido','parroquia','comuna','comunidad'])",
+              "nacionalidad": {
+                ".validate": "newData.val() === 'V' || newData.val() === 'E'"
+              },
+              "cedula": {
+                ".validate": "newData.isString() && newData.val().matches(/^[0-9]{5,10}$/)"
+              },
+              "primer_nombre": {
+                ".validate": "newData.isString() && newData.val().length <= 300 && (newData.val().matches(/^[A-Za-zÀ-ÖØ-öø-ÿ .'-]+$/))"
+              },
+              "segundo_nombre": {
+                ".validate": "newData.isString() && newData.val().length <= 300 && (newData.val() === '' || newData.val().matches(/^[A-Za-zÀ-ÖØ-öø-ÿ .'-]+$/))"
+              },
+              "primer_apellido": {
+                ".validate": "newData.isString() && newData.val().length <= 300 && (newData.val().matches(/^[A-Za-zÀ-ÖØ-öø-ÿ .'-]+$/))"
+              },
+              "segundo_apellido": {
+                ".validate": "newData.isString() && newData.val().length <= 300 && (newData.val() === '' || newData.val().matches(/^[A-Za-zÀ-ÖØ-öø-ÿ .'-]+$/))"
+              },
+              "telefono": {
+                ".validate": "newData.isString() && (newData.val() === '' || newData.val().matches(/^[0-9+() -]{7,25}$/))"
+              },
+              "parroquia": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+              },
+              "comuna": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+              },
+              "comunidad": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+              },
+              "necesidad": {
+                ".validate": "newData.isString() && newData.val().length >= 0 && newData.val().length <= 3000"
+              },
+              "$otro": {
+                ".validate": false
+              }
+            }
+          },
+          "cantidad": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100"
+          },
+          "creado_en": {
+            ".validate": "newData.isNumber() && ((!data.exists() && newData.val() === now) || newData.val() === data.val())"
+          },
+          "actualizado_en": {
+            ".validate": "newData.val() === now"
+          },
+          "version": {
+            ".validate": "newData.val() === 1"
+          },
+          "$otro": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "censos_seguimiento": {
+      "$censo": {
+        ".read": "(auth != null && auth.token.email === 'carlos.admin@alcaldia.com') || ((auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')) && root.child('censos_definiciones').child($censo).child('lectura').val() === 'administradores')",
+        "$grupo": {
+          "$persona": {
+            ".write": "((auth != null && auth.token.email === 'carlos.admin@alcaldia.com') || ((auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')) && root.child('censos_definiciones').child($censo).child('lectura').val() === 'administradores')) && newData.exists() && ($persona === 'responsable' || $persona.matches(/^p(0[0-9][1-9]|0[1-9]0|100)$/)) && root.child('censos_grupos').child($censo).child($grupo).child($persona === 'responsable' ? 'responsable' : 'personas/' + $persona).exists()",
+            ".validate": "newData.hasChildren(['valor','documento','actualizado_en','por'])",
+            "valor": {
+              ".validate": "newData.val() === 'Sí' || newData.val() === 'No' || newData.val() === ''"
+            },
+            "documento": {
+              ".validate": "newData.val() === root.child('censos_grupos').child($censo).child($grupo).child($persona === 'responsable' ? 'responsable' : 'personas/' + $persona).child('nacionalidad').val() + '-' + root.child('censos_grupos').child($censo).child($grupo).child($persona === 'responsable' ? 'responsable' : 'personas/' + $persona).child('cedula').val()"
+            },
+            "actualizado_en": {
+              ".validate": "newData.val() === now"
+            },
+            "por": {
+              ".validate": "auth != null && newData.val() === auth.uid"
+            },
+            "$otro": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    }
   }
 }

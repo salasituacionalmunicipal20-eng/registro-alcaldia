@@ -105,7 +105,7 @@
       var num = digits(cedulaEl.value); if (num.length < 4 || num.length > 10) return;
       var nac = opts.nacEl ? opts.nacEl.value : 'V';
       var bg = cedulaEl.style.background, ph = cedulaEl.placeholder;
-      cedulaEl.style.background = '#fef3c7'; cedulaEl.placeholder = 'Consultando CNE…';
+      cedulaEl.style.background = '#fef3c7'; cedulaEl.placeholder = opts.soloIdentidad ? 'Consultando identidad…' : 'Consultando CNE…';
       var d = await consultar(num, nac);
       cedulaEl.placeholder = ph;
       if (d) {
@@ -113,8 +113,8 @@
         if (opts.nombreEl && !opts.nombreEl.value.trim()) { opts.nombreEl.value = [d.primer_nombre, d.segundo_nombre, d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim(); opts.nombreEl.dispatchEvent(new Event('input', { bubbles: true })); }
         if (opts.fechaEl && !opts.fechaEl.value && fechaValida(d.fecha_nac)) { opts.fechaEl.value = d.fecha_nac; opts.fechaEl.dispatchEvent(new Event('change', { bubbles: true })); }
         if (typeof opts.onData === 'function') { try { opts.onData(d); } catch (e) { } }
-        verBotonCNE(cedulaEl, d);
-      } else { cedulaEl.style.background = bg; verBotonDateas(cedulaEl, num); }
+        if (!opts.soloIdentidad) verBotonCNE(cedulaEl, d);
+      } else { cedulaEl.style.background = bg; if (!opts.soloIdentidad) verBotonDateas(cedulaEl, num); }
     };
     cedulaEl.addEventListener('blur', run);
   }

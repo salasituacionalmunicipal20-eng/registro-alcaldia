@@ -1,0 +1,62 @@
+/* Permisos y límite reales; sólo datos sintéticos que se retiran al finalizar. */
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {initializeApp,cert,deleteApp} from 'firebase-admin/app';
+import {getAuth} from 'firebase-admin/auth';
+import {getDatabase} from 'firebase-admin/database';
+const require=createRequire(import.meta.url);globalThis.Formularios=require('../formularios-core.js');const C=require('../censo-core.js');
+const DB='https://alcaldia-admin-default-rtdb.firebaseio.com',app=initializeApp({credential:cert(JSON.parse(fs.readFileSync('C:/Users/carlo/Documents/Alcaldia BDD/alcaldia-admin-firebase-adminsdk-fbsvc-207472a5bd.json','utf8'))),databaseURL:DB}),db=getDatabase(app),auth=getAuth(app);
+const id='prueba-censo-'+Date.now(),key=n=>('-censo-'+n).padEnd(20,'x');let ok=0,adminPrueba;
+const prueba=(n,v)=>{assert.ok(v,n);ok++;console.log('OK '+n);};
+async function token(uid){const r=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:await auth.createCustomToken(uid),returnSecureToken:true})});const j=await r.json();assert.ok(j.idToken);return j.idToken;}
+async function rest(ruta,valor,tk){const r=await fetch(DB+'/'+ruta+'.json'+(tk?'?auth='+encodeURIComponent(tk):''),valor===undefined?{}:{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(valor)});return {ok:r.ok,status:r.status};}
+const persona=n=>({nacionalidad:'V',cedula:String(90000000+n),primer_nombre:'Persona',segundo_nombre:'',primer_apellido:'Sintética',segundo_apellido:'',telefono:'',parroquia:'Prueba',comuna:'Comuna de prueba',comunidad:'Comunidad de prueba',necesidad:'Dato sintético'});
+const grupo=(n=1)=>({responsable:persona(0),personas:Object.fromEntries(Array.from({length:n},(_,i)=>[C.clave(i+1),persona(i+1)])),cantidad:n,creado_en:{'.sv':'timestamp'},actualizado_en:{'.sv':'timestamp'},version:1});
+const definicion=()=>({titulo:'Prueba técnica temporal',descripcion:'Sin datos reales',acceso:'publico',lectura:'carlos',seguimiento:'Contactado',activo:true,creado_en:{'.sv':'timestamp'},actualizado_en:{'.sv':'timestamp'},version:1});
+try{
+ const carlos=await auth.getUserByEmail('carlos.admin@alcaldia.com'),tk=await token(carlos.uid);
+ prueba('Carlos crea censo',(await rest('censos_definiciones/'+id,definicion(),tk)).ok);
+ prueba('público no crea definiciones',!(await rest('censos_definiciones/'+id+'-otro',definicion())).ok);
+ prueba('público lee sólo definición',(await rest('censos_definiciones/'+id)).ok);
+ prueba('público no enumera censos',!(await rest('censos_definiciones')).ok);
+ prueba('grupo público de una persona',(await rest('censos_grupos/'+id+'/'+key(1),grupo())).ok);
+ prueba('grupo público de cien personas',(await rest('censos_grupos/'+id+'/'+key(100),grupo(100))).ok);
+ prueba('rechazar persona ciento uno',!(await rest('censos_grupos/'+id+'/'+key(101),grupo(101))).ok);
+ prueba('contador falso rechazado',!(await rest('censos_grupos/'+id+'/'+key(2),{...grupo(),cantidad:2})).ok);
+ prueba('grupo vacío rechazado',!(await rest('censos_grupos/'+id+'/'+key(0),grupo(0))).ok);
+ const saltos=grupo();saltos.personas={p100:persona(1)};prueba('claves estables admiten quitar otras fichas',(await rest('censos_grupos/'+id+'/'+key(3),saltos)).ok);
+ prueba('público no lee personas',!(await rest('censos_grupos/'+id)).ok);
+ prueba('Carlos lee personas',(await rest('censos_grupos/'+id,undefined,tk)).ok);
+ prueba('público no corrige grupo',!(await rest('censos_grupos/'+id+'/'+key(1),grupo())).ok);
+ prueba('público no borra grupo',!(await rest('censos_grupos/'+id+'/'+key(1),null)).ok);
+ const malo=grupo();malo.personas.p001.cedula='abc';prueba('cédula inválida rechazada',!(await rest('censos_grupos/'+id+'/'+key(4),malo)).ok);
+ const sinNombre=grupo();delete sinNombre.personas.p001.primer_nombre;prueba('nombre obligatorio rechazado',!(await rest('censos_grupos/'+id+'/'+key(5),sinNombre)).ok);
+ const estado={valor:'Sí',documento:C.documento(persona(1)),actualizado_en:{'.sv':'timestamp'},por:carlos.uid},ruta='censos_seguimiento/'+id+'/'+key(1)+'/p001';
+ prueba('Carlos marca Sí',(await rest(ruta,estado,tk)).ok);
+ prueba('público no marca seguimiento',!(await rest(ruta,estado)).ok);
+ prueba('No explícito admitido',(await rest(ruta,{...estado,valor:'No'},tk)).ok);
+ prueba('sin marcar admitido',(await rest(ruta,{...estado,valor:''},tk)).ok);
+ prueba('seguimiento ajeno rechazado',!(await rest(ruta,{...estado,valor:'Tal vez'},tk)).ok);
+ prueba('no confundir seguimiento de otra persona',!(await rest(ruta,{...estado,documento:'V-00000'},tk)).ok);
+ adminPrueba=await auth.createUser({uid:id+'-admin'});await db.ref('operadores/'+adminPrueba.uid).set({rol:'admin'});const at=await token(adminPrueba.uid);
+ prueba('otro admin no lee censo de Carlos',!(await rest('censos_grupos/'+id,undefined,at)).ok);
+ prueba('otro admin no configura censo',!(await rest('censos_definiciones/'+id,definicion(),at)).ok);
+ await db.ref('censos_definiciones/'+id+'/lectura').set('administradores');
+ prueba('admin autorizado lee',(await rest('censos_grupos/'+id,undefined,at)).ok);
+ const actual=(await db.ref('censos_grupos/'+id+'/'+key(1)).get()).val();
+ prueba('admin autorizado amplía grupo',(await rest('censos_grupos/'+id+'/'+key(1),{...grupo(2),creado_en:actual.creado_en},at)).ok);
+ prueba('fecha original protegida',!(await rest('censos_grupos/'+id+'/'+key(1),grupo(2),at)).ok);
+ await db.ref('censos_definiciones/'+id+'/activo').set(false);
+ prueba('recepción cerrada bloquea nuevos grupos',!(await rest('censos_grupos/'+id+'/'+key(6),grupo())).ok);
+ prueba('recepción cerrada permite corrección autorizada',(await rest('censos_grupos/'+id+'/'+key(1),{...grupo(2),creado_en:actual.creado_en},at)).ok);
+ await db.ref('censos_definiciones/'+id).update({activo:true,acceso:'administradores'});
+ prueba('censo interno bloquea registro público',!(await rest('censos_grupos/'+id+'/'+key(7),grupo())).ok);
+ prueba('censo interno acepta admin',(await rest('censos_grupos/'+id+'/'+key(8),grupo(),at)).ok);
+ assert.throws(()=>C.validarGrupo(persona(0),[persona(1),persona(1)]));prueba('validación de cédulas repetidas en formulario',true);
+ const rows=C.filas({g:grupo(100)},{});prueba('cien filas de personas',rows.length===100);prueba('filtro por comuna',C.filtrar(rows,{comuna:'Comuna de prueba'}).length===100);prueba('búsqueda por cédula',C.filtrar(rows,{buscar:'90000100'}).length===1);prueba('sin marcar distinto a No',C.filtrar(rows,{estado:'No'}).length===0&&C.filtrar(rows,{estado:'pendiente'}).length===100);
+ const t=C.tabla(rows,'Contactado','personas');prueba('exportación completa y cuadrada',t.filas.length===100&&t.filas.every(r=>r.length===t.encabezados.length));
+ const gs={g:{...grupo(),creado_en:Date.now()}};const st={g:{p001:{valor:'Sí',documento:C.documento(persona(1))}}};prueba('seguimiento correcto por documento',C.filas(gs,st)[0].estado==='Sí');gs.g.personas.p001=persona(2);prueba('una ficha reemplazada no hereda estado',C.filas(gs,st)[0].estado==='');
+ console.log(ok+' verificaciones correctas.');
+}finally{await db.ref().update({['censos_definiciones/'+id]:null,['censos_grupos/'+id]:null,['censos_seguimiento/'+id]:null,...(adminPrueba?{['operadores/'+adminPrueba.uid]:null}:{})});if(adminPrueba)await auth.deleteUser(adminPrueba.uid);for(const nodo of ['censos_definiciones','censos_grupos','censos_seguimiento'])assert.equal((await db.ref(nodo+'/'+id).get()).exists(),false);console.log('Datos sintéticos retirados y ausencia comprobada.');await deleteApp(app);}
+process.exit(0);
