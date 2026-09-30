@@ -295,6 +295,11 @@
                 <div class="card-desc">Situación de los empleados por el terremoto: salud, afectación de la vivienda, situación física y psicológica, cargo y recomendaciones. Registra, edita y exporta Excel y PDF.</div>
             </div>
 
+            <div id="cardConstructorFormularios" class="card hidden" onclick="location.href='constructor-formularios.html'" style="border-top: 4px solid #174b84;">
+                <div class="card-icon">📋</div>
+                <h3>Constructor de formularios</h3>
+                <p>Crea tus preguntas, comparte el enlace y consulta las respuestas con filtros, PDF y Excel.</p>
+            </div>
             <div class="card card-gforms" onclick="location.href='formularios-google.html'" style="border-top: 4px solid #7c3aed;">
                 <span class="card-icon">📋</span>
                 <div class="card-title">Formularios de Google</div>
@@ -523,6 +528,7 @@
                 // Las herramientas críticas de Carlos (migrador, bóveda) quedan reservadas solo para él.
                 let esAdmin = false;
                 if (user.email === "carlos.admin@alcaldia.com") {
+                    document.getElementById('cardConstructorFormularios').classList.remove('hidden');
                     document.getElementById('cardMigracion').classList.remove('hidden');
                     document.getElementById('cardRespaldo').classList.remove('hidden');
                     document.getElementById('cardGestionTerritorial').classList.remove('hidden');
