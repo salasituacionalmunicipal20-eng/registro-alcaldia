@@ -1,5 +1,5 @@
 import {db,ref,get,set,update,onValue,serverTimestamp,sesion,SUPER,mensaje} from './formularios-firebase.js';
-import {enlaces,copiar} from './censo-ui.js';
+import {enlaces,copiar} from './censo-ui.js?v=20260930-3';
 const $=id=>document.getElementById(id),e=window.Formularios.escapar;let censos={},actual=null;
 function abrir(id=null){actual=id;const d=censos[id]||{titulo:'',descripcion:'',acceso:'publico',lectura:'carlos',seguimiento:'Contactado'};for(const k of ['titulo','descripcion','acceso','lectura','seguimiento'])$(k).value=d[k];$('editor').hidden=false;$('guardar').textContent=id?'Guardar configuración':'Crear censo y generar enlaces';$('titulo').focus();}
 function compartir(id){$('enlaces').innerHTML=enlaces(id);copiar($('enlaces'));$('compartir').hidden=false;$('compartir').scrollIntoView({block:'start',behavior:'smooth'});}

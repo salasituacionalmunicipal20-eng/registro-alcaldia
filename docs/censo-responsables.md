@@ -15,3 +15,13 @@ Cerrar la recepción impide nuevos grupos, conservando la consulta y corrección
 Los nodos `censos_definiciones`, `censos_grupos` y `censos_seguimiento` son independientes de los módulos anteriores. Las reglas reutilizables preparan permisos para cada censo creado desde el panel: únicamente Carlos configura; cada censo decide el acceso administrativo. El servidor verifica campos, cédulas, contador y un máximo de cien espacios de personas, rechaza lecturas públicas, modificaciones públicas y estados de seguimiento ajenos. Publicar reglas con `scripts/preparar-reglas-censo.cjs` y Firebase antes de publicar las páginas.
 
 No se importan ni modifican registros de las estructuras anteriores. Este módulo se dedica al censo territorial y a la organización de necesidades comunitarias.
+
+## Funciones adaptadas del panel existente
+
+El panel abre por responsables y muestra el contador de cada grupo (hasta 100), promedio por responsable y cantidad de grupos al máximo de capacidad. El contador abre la ficha del grupo. La vista Personas permite filtrar la población directamente por comuna y comunidad, además de edad y género declarado. El resumen territorial muestra cuántos registros y responsables hay en cada comunidad y cuántos tienen seguimiento Sí, No o Sin marcar. Se puede abrir el listado pulsando la comunidad.
+
+La fecha de nacimiento y el género son opcionales en ambas fichas. La edad se calcula desde la fecha registrada; no se infiere ningún dato. Al activar filtros de edad se excluyen registros sin fecha válida. Las estadísticas indican explícitamente los datos faltantes y corresponden a la vista activa.
+
+Excel organizado contiene tres hojas: resultados filtrados, fichas relacionadas y resumen territorial. La hoja relacionada contiene todas las personas de los grupos elegidos cuando la vista es Responsables, o las fichas de sus responsables cuando la vista es Personas; esta diferencia se explica en la hoja. Todas las hojas tienen filtros y tres filas congeladas. CSV y PDF completo usan la selección actual. El PDF de resumen incluye conteos y territorio; la hoja de firmas tiene espacio de firma para cada resultado; las fichas por responsable agrupan todos los datos y continúan en varias páginas si el grupo es grande. El QR tiene enlace de descarga.
+
+Archivar un grupo lo oculta de la vista activa, conservando las fichas y el seguimiento. Desde Ver archivados se puede abrir su ficha y restaurarlo. No se borra información municipal. Los módulos anteriores conservan su código, datos y permisos; se reutilizan sus funciones civiles en el nuevo censo.
