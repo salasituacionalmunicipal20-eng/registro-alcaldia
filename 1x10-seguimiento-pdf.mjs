@@ -1,0 +1,68 @@
+import { dibujarHeaderPDF, dibujarFooterPDF } from './pdf-header.js';
+import { sumarFilas } from './1x10-seguimiento-datos.mjs';
+
+export function crearInforme(jsPDF, filas, { fecha, filtros, calidad, generado }) {
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const numero = n => n.toLocaleString('es-VE');
+  const columnas = ['base','adicionales','jovenes','adultos','menores','sinEdad','total'];
+  const encabezados = ['En el 1x10','Fuera del 1x10','15–35','36+','Menores de 15','Sin edad','Total'];
+  const subtitulo = 'Edades al ' + fecha;
+  const encabezado = () => dibujarHeaderPDF(doc, { titulo:'Seguimiento de registros 1x10', subtitulo });
+  const y = encabezado();
+  doc.setFontSize(9);
+  const lineas = doc.splitTextToSize(filtros, 265);
+  doc.text(lineas, 14, y + 5);
+  const totales = sumarFilas(filas);
+  doc.text(`En el 1x10: ${numero(totales.base)}  |  Fuera del 1x10: ${numero(totales.adicionales)}  |  Total informado: ${numero(totales.total)}`, 14, y + 11 + lineas.length * 4);
+  const grupos = new Map();
+  for (const fila of filas) {
+    if (!grupos.has(fila.comuna)) grupos.set(fila.comuna, []);
+    grupos.get(fila.comuna).push(fila);
+  }
+  const tabla = {
+    margin:{left:14,right:14,top:58,bottom:20},
+    styles:{fontSize:8,cellPadding:2,overflow:'linebreak'},
+    headStyles:{fillColor:[10,35,81]},
+    showHead:'everyPage',
+    rowPageBreak:'avoid',
+    willDrawPage: () => encabezado()
+  };
+  doc.autoTable({ ...tabla, startY:y + 19 + lineas.length * 4,
+    head:[['Comuna', ...encabezados]],
+    body:[...[...grupos].map(([comuna, grupo]) => [comuna, ...columnas.map(k => numero(sumarFilas(grupo)[k]))]), ['TOTAL', ...columnas.map(k => numero(totales[k]))]],
+    columnStyles:{0:{cellWidth:73}}
+  });
+  doc.addPage();
+  doc.autoTable({ ...tabla, startY:58,
+    head:[['Comuna','Centro electoral', ...encabezados]],
+    body:[...filas.map(f => [f.comuna,f.centro,...columnas.map(k => numero(f[k]))]), ['TOTAL','',...columnas.map(k => numero(totales[k]))]],
+    columnStyles:{0:{cellWidth:46},1:{cellWidth:70}}
+  });
+  doc.addPage();
+  let posicion = dibujarHeaderPDF(doc, { titulo:'Método y calidad de los registros', subtitulo }) + 6;
+  const notas = [
+    'Generado el ' + generado + '.', filtros, calidad,
+    'Las cantidades adicionales son declaradas, no verificadas por cédula. El total informado combina personas únicas del 1x10 y cantidades adicionales; requiere comprobar que las listas no se solapen.',
+    'Las ubicaciones pueden ser heredadas del jefe o del catálogo territorial. No confirman el centro electoral individual.',
+    'Se conservan los nombres de comunas y centros tal como están registrados. Las variantes de escritura pueden aparecer en filas distintas.',
+    'Las cargas por rangos de edad corresponden al momento en que fueron declaradas. Cambiar la fecha solo recalcula las edades del 1x10.',
+    'Los registros sin fecha de nacimiento válida se incluyen en Sin edad. Los menores de 15 se muestran aparte y están incluidos en el total.'
+  ];
+  doc.setFontSize(10);
+  for (const nota of notas) {
+    const renglones = doc.splitTextToSize(nota, 265);
+    const alto = renglones.length * 5 + 7;
+    if (posicion + alto > 188) { doc.addPage(); posicion = encabezado() + 6; doc.setFontSize(10); }
+    doc.text(renglones, 14, posicion); posicion += alto;
+  }
+  // El helper utiliza el número total de páginas; se ajusta la leyenda a cada hoja.
+  const paginas = doc.internal.getNumberOfPages();
+  for (let pagina=1; pagina<=paginas; pagina++) {
+    doc.setPage(pagina);
+    dibujarFooterPDF(doc);
+    doc.setFillColor(255,255,255); doc.rect(256,200,30,6,'F');
+    doc.setTextColor(120,120,120); doc.setFontSize(8);
+    doc.text(`Página ${pagina} de ${paginas}`,283,203,{align:'right'});
+  }
+  return doc;
+}

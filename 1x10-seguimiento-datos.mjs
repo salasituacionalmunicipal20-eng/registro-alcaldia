@@ -1,0 +1,83 @@
+// Este módulo produce cantidades; las identidades no salen en el resultado.
+export const SIN_COMUNA = 'Sin comuna asignada';
+export const SIN_CENTRO = 'Sin centro asignado';
+export const CONFLICTO = 'Ubicación por verificar';
+const texto = v => String(v ?? '').trim();
+export function edadEn(fecha, corte) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(fecha));
+  const c = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(corte));
+  if (!m || !c) return null;
+  const [a, mes, dia] = m.slice(1).map(Number);
+  const fechaReal = new Date(Date.UTC(a, mes - 1, dia));
+  if (fechaReal.getUTCFullYear() !== a || fechaReal.getUTCMonth() !== mes - 1 || fechaReal.getUTCDate() !== dia) return null;
+  const [ac, mc, dc] = c.slice(1).map(Number);
+  const corteReal = new Date(Date.UTC(ac, mc - 1, dc));
+  if (corteReal.getUTCFullYear() !== ac || corteReal.getUTCMonth() !== mc - 1 || corteReal.getUTCDate() !== dc) return null;
+  const edad = ac - a - (mc < mes || (mc === mes && dc < dia) ? 1 : 0);
+  return edad >= 0 && edad <= 120 ? edad : null;
+}
+export function grupoEdad(edad) {
+  return edad === null ? 'sinEdad' : edad < 15 ? 'menores' : edad <= 35 ? 'jovenes' : 'adultos';
+}
+export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}) {
+  const personas = new Map();
+  let relaciones = 0, sinIdentidad = 0, huerfanos = 0;
+  function agregar(id, p, j, esJefe) {
+    relaciones++;
+    const identificador = texto(p.cedula || (/^\d+$/.test(id) ? id : ''));
+    const cedula = identificador.replace(/^[VEve][\s-]*/, '').replace(/[\s.-]/g, '');
+    if (!/^\d{4,10}$/.test(cedula)) { sinIdentidad++; return; }
+    const nacionalidad = texto(p.nacionalidad || (/^E/i.test(identificador) ? 'E' : 'V')).toUpperCase();
+    const clave = `${nacionalidad}:${cedula.replace(/^0+(?=\d)/, '')}`;
+    const propia = catalogo[p.comunidad_slug] || {};
+    const delJefe = catalogo[j.comunidad_slug] || {};
+    const comuna = texto(p.comuna || p.circuito || propia.circuito_comunal || j.comuna || j.circuito || delJefe.circuito_comunal) || SIN_COMUNA;
+    const centro = texto(p.centro_electoral || propia.centro_electoral || j.centro_electoral || delJefe.centro_electoral) || SIN_CENTRO;
+    const dato = { comuna, centro, fecha: texto(p.fecha_nacimiento), esJefe };
+    if (!personas.has(clave)) personas.set(clave, []);
+    personas.get(clave).push(dato);
+  }
+  for (const [id, jefe] of Object.entries(jefes || {})) agregar(id, jefe, jefe, true);
+  for (const [jefeId, lista] of Object.entries(afines || {})) {
+    const jefe = jefes?.[jefeId] || {};
+    if (!jefes?.[jefeId]) huerfanos += Object.keys(lista || {}).length;
+    for (const [id, afin] of Object.entries(lista || {})) agregar(id, afin, jefe, false);
+  }
+  const filas = new Map();
+  const obtener = (comuna, centro) => {
+    const clave = JSON.stringify([comuna, centro]);
+    if (!filas.has(clave)) filas.set(clave, { comuna, centro, base: 0, adicionales: 0, jovenes: 0, adultos: 0, menores: 0, sinEdad: 0, total: 0 });
+    return filas.get(clave);
+  };
+  let ubicacionesEnConflicto = 0, fechasEnConflicto = 0;
+  for (const datos of personas.values()) {
+    // La ubicación propia del jefe tiene prioridad sobre ubicaciones heredadas.
+    const propios = datos.filter(p => p.esJefe);
+    const ubicaciones = propios.length ? propios : datos;
+    const comunas = [...new Set(ubicaciones.map(p => p.comuna).filter(c => c !== SIN_COMUNA))];
+    const centros = [...new Set(ubicaciones.map(p => p.centro).filter(c => c !== SIN_CENTRO))];
+    const conflicto = comunas.length > 1 || centros.length > 1;
+    if (conflicto) ubicacionesEnConflicto++;
+    const comuna = conflicto ? CONFLICTO : comunas[0] || SIN_COMUNA;
+    const centro = conflicto ? CONFLICTO : centros[0] || SIN_CENTRO;
+    const fechas = [...new Set(datos.map(p => p.fecha).filter(f => edadEn(f, corte) !== null))];
+    if (fechas.length > 1) fechasEnConflicto++;
+    const edad = fechas.length === 1 ? edadEn(fechas[0], corte) : null;
+    const fila = obtener(comuna, centro);
+    fila.base++; fila.total++; fila[grupoEdad(edad)]++;
+  }
+  let cargasInvalidas = 0;
+  for (const carga of Object.values(adicionales || {})) {
+    const campos = ['jovenes', 'adultos', 'menores', 'sinEdad'];
+    if (!texto(carga.comuna) || !texto(carga.centro) || !campos.every(k => Number.isSafeInteger(carga[k]) && carga[k] >= 0 && carga[k] <= 1000000)) { cargasInvalidas++; continue; }
+    const fila = obtener(carga.comuna, carga.centro);
+    for (const k of campos) { fila[k] += carga[k]; fila.adicionales += carga[k]; fila.total += carga[k]; }
+  }
+  return {
+    filas: [...filas.values()].sort((a,b) => a.comuna.localeCompare(b.comuna,'es') || a.centro.localeCompare(b.centro,'es')),
+    diagnostico: { relaciones, personas: personas.size, duplicados: relaciones - sinIdentidad - personas.size, sinIdentidad, huerfanos, ubicacionesEnConflicto, fechasEnConflicto, cargasInvalidas }
+  };
+}
+export function sumarFilas(filas) {
+  return filas.reduce((s,f) => { for (const k of ['base','adicionales','jovenes','adultos','menores','sinEdad','total']) s[k] += f[k]; return s; }, {base:0,adicionales:0,jovenes:0,adultos:0,menores:0,sinEdad:0,total:0});
+}

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguimiento de registros 1x10</title>
+  <style>
+    :root { font-family: Arial, sans-serif; color: #17243b; background: #f2f5f9; color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { background: #0a2351; color: white; padding: 18px 24px; }
+    header a { color: white; text-underline-offset: 3px; }
+    h1 { margin: 10px 0 6px; font-size: 26px; }
+    header p { color: #dce7f7; margin: 0; }
+    main { max-width: 1360px; margin: auto; padding: 18px; }
+    section { background: white; border: 1px solid #dce3ed; border-radius: 12px; padding: 20px; margin-bottom: 18px; box-shadow: 0 3px 12px #17315b0d; }
+    h2 { font-size: 20px; margin: 0 0 14px; }
+    p { line-height: 1.5; }
+    .muted, small { color: #52647a; }
+    .fila { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+    .campo { flex: 1 1 180px; min-width: 0; }
+    label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 6px; }
+    input, select, button { font: inherit; min-height: 44px; }
+    input, select { width: 100%; border: 1px solid #a8b8cc; border-radius: 7px; padding: 9px 10px; background: white; }
+    input::placeholder { color: #52647a; }
+    button { border: 0; border-radius: 7px; background: #0a2351; color: white; padding: 10px 14px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #183b73; }
+    button.secundario { background: #e6edf7; color: #0a2351; }
+    button:disabled { opacity: .55; cursor: default; }
+    :focus-visible { outline: 3px solid #397bd1; outline-offset: 3px; }
+    ::selection { background: #c9dcfb; color: #0a2351; }
+    .indicadores { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; margin-bottom: 18px; }
+    .indicador { background: white; padding: 18px; border: 1px solid #dce3ed; border-radius: 10px; }
+    .indicador strong { display: block; font-size: 30px; color: #0a2351; margin: 8px 0; font-variant-numeric: tabular-nums; }
+    .tabla { overflow-x: auto; scrollbar-color: #a8b8cc #f2f5f9; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { padding: 12px 10px; border-bottom: 1px solid #dce3ed; text-align: left; }
+    th { background: #edf2f9; color: #0a2351; white-space: nowrap; }
+    .numero { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    tfoot { font-weight: bold; background: #edf2f9; }
+    .oculto { display: none !important; }
+    .estado { display: inline-block; font-size: 14px; margin: 12px 0 0; }
+    .error { color: #9d2020; }
+    .mensaje { padding: 12px 14px; background: #edf2f9; border-radius: 7px; margin: 12px 0; }
+    summary { cursor: pointer; min-height: 44px; font-weight: bold; color: #0a2351; padding: 10px 0; }
+    .cargas td:last-child { white-space: nowrap; }
+    @media(max-width: 700px) { header { padding: 16px; } main { padding: 12px; } section { padding: 16px; } h1 { font-size: 23px; } .indicadores { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; } .indicador { padding: 14px; } .campo { flex-basis: 100%; } .fila button { width: 100%; } }
+    @media print { header a, .controles, #cargas, #diagnostico { display: none !important; } body { background: white; } main { max-width: none; padding: 0; } section { box-shadow: none; border-radius: 0; } .tabla { overflow: visible; } th,td { font-size: 9pt; padding: 5px; } tr { break-inside: avoid; } }
+  </style>
+  <script src="autofresh.js"></script>
+  <script src="territorio-data.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <header><a href="admin.html">← Panel administrativo</a><h1>Seguimiento de registros 1x10</h1><p>Cuántas personas están registradas, por comuna y centro electoral.</p><span id="conexion" class="estado" role="status">Conectando…</span></header>
+  <main>
+    <p id="cargando" role="status">Comprobando acceso…</p>
+    <section id="restringido" class="oculto"><h2>Acceso restringido</h2><p>Este panel está disponible para administradores.</p></section>
+    <div id="contenido" class="oculto">
+      <section class="controles"><div class="fila">
+        <div class="campo"><label for="comuna">Comuna</label><select id="comuna"><option value="">Todas las comunas</option></select></div>
+        <div class="campo"><label for="centro">Centro electoral</label><select id="centro"><option value="">Todos los centros</option></select></div>
+        <div class="campo"><label for="fecha">Calcular edades al</label><input id="fecha" type="date" required></div>
+        <button id="pdf" disabled>Descargar informe PDF</button><button id="imprimir" class="secundario" disabled>Imprimir</button>
+      </div><p class="muted">Los filtros se aplican a las tablas y al informe. Las edades se calculan con las fechas de nacimiento registradas.</p></section>
+      <div id="mensaje" class="mensaje oculto" role="alert"></div>
+      <div class="indicadores" aria-label="Totales de la selección">
+        <div class="indicador">Personas en el 1x10<strong id="base">—</strong><small>Cédulas únicas</small></div>
+        <div class="indicador">Fuera del 1x10<strong id="adicionales">—</strong><small>Cantidades declaradas</small></div>
+        <div class="indicador">Total informado<strong id="total">—</strong><small>1x10 + carga declarada</small></div>
+        <div class="indicador">Sin edad registrada<strong id="sinEdad">—</strong><small>Incluidas en el total</small></div>
+      </div>
+      <section><h2>Avance por comuna</h2><div class="tabla"><table><caption class="oculto">Cantidades de registros por comuna</caption><thead><tr><th>Comuna</th><th class="numero">En el 1x10</th><th class="numero">Fuera del 1x10</th><th class="numero">15–35 años</th><th class="numero">36 en adelante</th><th class="numero">Menores de 15</th><th class="numero">Sin edad</th><th class="numero">Total</th></tr></thead><tbody id="filasComuna"></tbody><tfoot id="totalComuna"></tfoot></table></div></section>
+      <section><h2>Detalle por centro electoral</h2><p id="corte" class="muted"></p><div class="tabla"><table><caption class="oculto">Cantidades de registros por comuna y centro electoral</caption><thead><tr><th>Comuna</th><th>Centro electoral</th><th class="numero">En el 1x10</th><th class="numero">Fuera del 1x10</th><th class="numero">15–35 años</th><th class="numero">36 en adelante</th><th class="numero">Menores de 15</th><th class="numero">Sin edad</th><th class="numero">Total</th></tr></thead><tbody id="filasCentro"></tbody><tfoot id="totalCentro"></tfoot></table></div><p class="muted">Cada persona del 1x10 se cuenta una vez. Las cargas adicionales son cantidades declaradas: no permiten comprobar duplicados entre personas.</p></section>
+      <section id="diagnostico"><details><summary>Calidad de los datos y método de conteo</summary><p id="calidad"></p><p class="muted">Se usa la comuna y el centro registrados en el 1x10; cuando faltan, se utiliza el catálogo territorial y la ubicación del jefe. Un centro asignado por comunidad no confirma el centro real de cada persona. Si una cédula tiene ubicaciones incompatibles, aparece en «Ubicación por verificar». Las fechas inválidas o contradictorias se cuentan en «Sin edad». Se conservan los nombres de comunas y centros tal como están registrados; las variantes de escritura pueden aparecer en filas distintas.</p></details></section>
+      <section id="cargas"><h2>Agregar cantidades fuera del 1x10</h2><p>Registra el total de personas que aún no aparecen en el 1x10. Usa una referencia distinta para cada lista y comprueba que no incluya personas ya contadas.</p>
+        <form id="formCarga"><div class="fila">
+          <div class="campo"><label for="cargaComuna">Comuna</label><select id="cargaComuna" required><option value="">Selecciona una comuna</option></select></div>
+          <div class="campo"><label for="cargaCentro">Centro electoral</label><select id="cargaCentro" required><option value="">Selecciona un centro</option></select></div>
+          <div class="campo"><label for="referencia">Referencia de la lista</label><input id="referencia" required maxlength="100" placeholder="Ej. Lista adicional 01"><small>Usa un código, sin nombres ni cédulas.</small></div>
+        </div><div class="fila" style="margin-top:14px">
+          <div class="campo"><label for="cargaJovenes">15–35 años</label><input id="cargaJovenes" type="number" min="0" max="1000000" step="1" value="0" required></div>
+          <div class="campo"><label for="cargaAdultos">36 en adelante</label><input id="cargaAdultos" type="number" min="0" max="1000000" step="1" value="0" required></div>
+          <div class="campo"><label for="cargaMenores">Menores de 15</label><input id="cargaMenores" type="number" min="0" max="1000000" step="1" value="0" required></div>
+          <div class="campo"><label for="cargaSinEdad">Sin edad</label><input id="cargaSinEdad" type="number" min="0" max="1000000" step="1" value="0" required></div>
+          <button id="guardarCarga" disabled>Guardar cantidades</button><button type="button" id="cancelar" class="secundario oculto">Cancelar edición</button>
+        </div></form><p id="mensajeCarga" role="status"></p>
+        <details><summary>Ver y corregir cargas adicionales</summary><div class="tabla"><table class="cargas"><thead><tr><th>Referencia</th><th>Comuna / Centro</th><th class="numero">Total</th><th>Acciones</th></tr></thead><tbody id="listaCargas"></tbody></table></div></details>
+      </section>
+    </div>
+  </main>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+    import { getDatabase, ref, get, child, onValue, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+    import { resumirRegistro, sumarFilas } from './1x10-seguimiento-datos.mjs';
+    import { crearInforme } from './1x10-seguimiento-pdf.mjs';
+    // La configuración del cliente Firebase es pública; se comparte con las páginas existentes.
+    const app = initializeApp({apiKey:'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',authDomain:'alcaldia-admin.firebaseapp.com',databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com',projectId:'alcaldia-admin',storageBucket:'alcaldia-admin.firebasestorage.app',messagingSenderId:'945828226894',appId:'1:945828226894:web:0efeebeb270357e6f5201f'});
+    const auth=getAuth(app), database=getDatabase(app), $=id=>document.getElementById(id);
+    const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const catalogo=window.TERRITORIO?.comunidades||{}, NODO='seguimiento_1x10_cargas';
+    const numero=n=>n.toLocaleString('es-VE'), columnas=['base','adicionales','jovenes','adultos','menores','sinEdad','total'];
+    let jefes={},afines={},cargas={},resumen=null,visibles=[],usuario=null,editando=null,versionEditada=null,detener=[],conectado=false,errorLectura=false,guardando=false;
+    const listos=new Set();
+    const hoy=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+    $('fecha').value=['year','month','day'].map(k=>hoy.find(p=>p.type===k).value).join('-');
+    const fechaLarga=iso=>new Date(iso+'T12:00:00').toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+iso.split('-').reverse().join('/');
+    function opciones(id,valores,inicial){const s=$(id),v=s.value;s.replaceChildren(new Option(inicial,''),...valores.map(x=>new Option(x,x)));if(valores.includes(v))s.value=v;}
+    function cargarCentros(){const comuna=$('cargaComuna').value;const centros=[...new Set([...Object.values(catalogo).filter(c=>c.circuito_comunal===comuna).map(c=>c.centro_electoral),...resumen?.filas.filter(f=>f.comuna===comuna).map(f=>f.centro)||[]].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));opciones('cargaCentro',centros,'Selecciona un centro');}
+    function estado(){const listo=listos.size===3&&!errorLectura&&!!$('fecha').value;$('conexion').textContent=errorLectura?'No se pudieron cargar todos los datos':!listo?'Cargando registros…':conectado?'En vivo · datos actualizados':'Sin conexión · mostrando la última carga';for(const id of ['pdf','imprimir'])$(id).disabled=!listo;$('guardarCarga').disabled=!listo||!conectado||guardando;}
+    function reconstruir(){estado();if(listos.size!==3||errorLectura)return;resumen=resumirRegistro(jefes,afines,catalogo,$('fecha').value,cargas);opciones('comuna',[...new Set(resumen.filas.map(f=>f.comuna))],'Todas las comunas');const comunas=[...new Set(Object.values(catalogo).map(c=>c.circuito_comunal).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));opciones('cargaComuna',comunas,'Selecciona una comuna');cargarCentros();pintar();}
+    function fila(f,centro=true){return `<tr><td>${esc(f.comuna)}</td>${centro?`<td>${esc(f.centro)}</td>`:''}${columnas.map(k=>`<td class="numero">${numero(f[k])}</td>`).join('')}</tr>`;}
+    function pintar(){if(!resumen)return;const comuna=$('comuna').value;opciones('centro',[...new Set(resumen.filas.filter(f=>!comuna||f.comuna===comuna).map(f=>f.centro))],'Todos los centros');const centro=$('centro').value;visibles=resumen.filas.filter(f=>(!comuna||f.comuna===comuna)&&(!centro||f.centro===centro));const totales=sumarFilas(visibles);for(const k of ['base','adicionales','total','sinEdad'])$(k).textContent=numero(totales[k]);const grupos=new Map();for(const f of visibles){if(!grupos.has(f.comuna))grupos.set(f.comuna,[]);grupos.get(f.comuna).push(f);}const porComuna=[...grupos].map(([comuna,filas])=>({comuna,...sumarFilas(filas)}));$('filasComuna').innerHTML=porComuna.length?porComuna.map(f=>fila(f,false)).join(''):'<tr><td colspan="8">No hay registros para esta selección.</td></tr>';$('filasCentro').innerHTML=visibles.length?visibles.map(f=>fila(f)).join(''):'<tr><td colspan="9">No hay registros para esta selección.</td></tr>';$('totalComuna').innerHTML=fila({comuna:'Total',...totales},false);$('totalCentro').innerHTML=fila({comuna:'Total',centro:'',...totales});$('corte').textContent='Edades al '+fechaLarga($('fecha').value);const d=resumen.diagnostico;$('calidad').textContent=`Base completa: ${numero(d.personas)} personas únicas; ${numero(d.duplicados)} relaciones repetidas agrupadas; ${numero(d.sinIdentidad)} registros sin cédula, excluidos del conteo único; ${numero(d.ubicacionesEnConflicto)} ubicaciones por verificar; ${numero(d.fechasEnConflicto)} fechas de nacimiento contradictorias; ${numero(d.huerfanos)} afines sin jefe registrado; ${numero(d.cargasInvalidas)} cargas adicionales inválidas, excluidas.`;$('listaCargas').innerHTML=Object.entries(cargas).sort((a,b)=>(b[1].actualizado_en||0)-(a[1].actualizado_en||0)).map(([id,c])=>`<tr><td>${esc(c.referencia)}</td><td>${esc(c.comuna)}<br><span class="muted">${esc(c.centro)}</span></td><td class="numero">${numero(['jovenes','adultos','menores','sinEdad'].reduce((s,k)=>s+(Number(c[k])||0),0))}</td><td><button type="button" data-editar="${esc(id)}" class="secundario">Corregir</button></td></tr>`).join('')||'<tr><td colspan="4">No hay cargas adicionales.</td></tr>';}
+    function cancelar() {for(const id of ['cargaComuna','cargaCentro','referencia'])$(id).disabled=false;editando=null;versionEditada=null;$('formCarga').reset();$('cancelar').classList.add('oculto');$('guardarCarga').textContent='Guardar cantidades';cargarCentros();}
+    $('cancelar').addEventListener('click',cancelar);
+    $('listaCargas').addEventListener('click',e=>{const b=e.target.closest('[data-editar]');if(!b)return;editando=b.dataset.editar;const c=cargas[editando];versionEditada=c.actualizado_en;$('cargaComuna').value=c.comuna;cargarCentros();$('cargaCentro').value=c.centro;$('referencia').value=c.referencia;for(const [id,k] of [['cargaJovenes','jovenes'],['cargaAdultos','adultos'],['cargaMenores','menores'],['cargaSinEdad','sinEdad']])$(id).value=c[k];for(const id of ['cargaComuna','cargaCentro','referencia'])$(id).disabled=true;$('guardarCarga').textContent='Guardar corrección';$('cancelar').classList.remove('oculto');$('referencia').focus();});
+    $('formCarga').addEventListener('submit',async e=>{e.preventDefault();if(guardando)return;if(!conectado){$('mensajeCarga').textContent='Espera a recuperar la conexión antes de guardar.';return;}const dato={comuna:$('cargaComuna').value,centro:$('cargaCentro').value,referencia:$('referencia').value.trim(),jovenes:Number($('cargaJovenes').value),adultos:Number($('cargaAdultos').value),menores:Number($('cargaMenores').value),sinEdad:Number($('cargaSinEdad').value),actualizado_en:serverTimestamp(),actualizado_por:usuario.uid};if(!dato.referencia||!['jovenes','adultos','menores','sinEdad'].every(k=>Number.isSafeInteger(dato[k])&&dato[k]>=0&&dato[k]<=1000000)){ $('mensajeCarga').textContent='Revisa la referencia y escribe cantidades enteras válidas.';return;}if(!editando&&['jovenes','adultos','menores','sinEdad'].reduce((s,k)=>s+dato[k],0)===0){$('mensajeCarga').textContent='Agrega al menos una persona.';return;}if(Object.entries(cargas).some(([id,c])=>id!==editando&&c.comuna===dato.comuna&&c.centro===dato.centro&&String(c.referencia).trim().toLocaleLowerCase('es')===dato.referencia.toLocaleLowerCase('es'))){$('mensajeCarga').textContent='Esa referencia ya existe en el mismo centro. Usa «Corregir» para actualizarla.';return;}guardando=true;$('guardarCarga').disabled=true;const version=versionEditada;try{const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([dato.comuna,dato.centro,dato.referencia.toLocaleLowerCase('es')])));const id=editando||'-'+Array.from(new Uint8Array(digest)).slice(0,19).map(n=>'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-'[n%64]).join('');const r=await runTransaction(ref(database,`${NODO}/${id}`),actual=>{if(editando&&(!actual||actual.actualizado_en!==version))return;if(!editando&&actual)return;return dato;},{applyLocally:false});if(!r.committed)throw Error('La carga cambió en otro panel. Vuelve a abrir «Corregir».');cancelar();$('mensajeCarga').textContent='Cantidades guardadas. El panel se actualizó.';}catch(err){$('mensajeCarga').textContent='No se pudo guardar: '+err.message;}finally{guardando=false;estado();}});
+    $('cargaComuna').addEventListener('change',cargarCentros);$('comuna').addEventListener('change',pintar);$('centro').addEventListener('change',pintar);$('fecha').addEventListener('change',()=>{if(!$('fecha').value){estado();$('mensaje').textContent='Selecciona una fecha válida para calcular las edades.';$('mensaje').classList.remove('oculto');return;}$('mensaje').classList.add('oculto');reconstruir();});$('imprimir').addEventListener('click',()=>window.print());
+    $('pdf').addEventListener('click',()=>{
+      if(!window.jspdf?.jsPDF){$('mensaje').textContent='No se cargó el generador PDF. Recarga la página o usa «Imprimir».';$('mensaje').classList.remove('oculto');return;}
+      try{crearInforme(window.jspdf.jsPDF,visibles,{fecha:fechaLarga($('fecha').value),filtros:($('comuna').value||'Todas las comunas')+' · '+($('centro').value||'Todos los centros'),calidad:$('calidad').textContent,generado:fechaLarga($('fecha').value)+' (corte de edades); emisión '+new Date().toLocaleString('es-VE',{timeZone:'America/Caracas'})}).save('Seguimiento_1x10_'+$('fecha').value+'.pdf');}
+      catch(err){$('mensaje').textContent='No se pudo generar el PDF: '+err.message;$('mensaje').classList.remove('oculto');}
+    });
+    onAuthStateChanged(auth,async user=>{for(const stop of detener)stop();detener=[];listos.clear();errorLectura=false;$('contenido').classList.add('oculto');if(!user){location.href='index.html';return;}let permitido=user.email==='carlos.admin@alcaldia.com';if(!permitido){try{const s=await get(child(ref(database),`operadores/${user.uid}/rol`));permitido=s.val()==='admin';}catch(e){permitido=false;}}$('cargando').classList.add('oculto');if(!permitido){$('restringido').classList.remove('oculto');return;}usuario=user;$('contenido').classList.remove('oculto');detener.push(onValue(ref(database,'.info/connected'),s=>{conectado=s.val()===true;estado();}));for(const [nodo,poner] of [['jefes_1x10',v=>jefes=v],['afines_1x10',v=>afines=v],[NODO,v=>cargas=v]])detener.push(onValue(ref(database,nodo),s=>{poner(s.val()||{});listos.add(nodo);reconstruir();},err=>{errorLectura=true;estado();$('mensaje').textContent='No se pudieron cargar los registros: '+err.message;$('mensaje').classList.remove('oculto');}));});
+  </script>
+</body>
+</html>
