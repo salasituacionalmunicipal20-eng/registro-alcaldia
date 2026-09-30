@@ -65,6 +65,11 @@ try{
  prueba('CSV protege fórmulas',C.csv({encabezados:['Dato'],filas:[['=SUM(1)']]}).includes("'=SUM(1)"));
  const base=(await db.ref('censos_grupos/'+id+'/'+key(1)).get()).val();prueba('archivar grupo con permiso',(await rest('censos_grupos/'+id+'/'+key(1),{...base,archivado:true,actualizado_en:{'.sv':'timestamp'}},at)).ok);prueba('restaurar grupo con permiso',(await rest('censos_grupos/'+id+'/'+key(1),{...base,archivado:false,actualizado_en:{'.sv':'timestamp'}},at)).ok);
  await db.ref('censos_definiciones/'+id+'/acceso').set('publico');prueba('público no crea registros archivados',!(await rest('censos_grupos/'+id+'/'+key(12),{...grupo(),archivado:true})).ok);
+ const antesNombre=(await db.ref('censos_definiciones/'+id).get()).val(),antesGrupos=(await db.ref('censos_grupos/'+id).get()).val(),antesSeguimiento=(await db.ref('censos_seguimiento/'+id).get()).val();
+ prueba('Carlos cambia el nombre conservando el identificador',(await rest('censos_definiciones/'+id,{...antesNombre,titulo:'Censo renombrado para prueba',actualizado_en:{'.sv':'timestamp'}},tk)).ok);
+ const nombrePublico=await fetch(DB+'/censos_definiciones/'+id+'.json');prueba('mismo enlace público muestra el nombre nuevo',(await nombrePublico.json()).titulo==='Censo renombrado para prueba');
+ assert.deepEqual((await db.ref('censos_grupos/'+id).get()).val(),antesGrupos);prueba('cambiar nombre conserva todos los grupos',true);
+ assert.deepEqual((await db.ref('censos_seguimiento/'+id).get()).val(),antesSeguimiento);prueba('cambiar nombre conserva seguimiento Sí y No',true);
  console.log(ok+' verificaciones correctas.');
 }finally{await db.ref().update({['censos_definiciones/'+id]:null,['censos_grupos/'+id]:null,['censos_seguimiento/'+id]:null,...(adminPrueba?{['operadores/'+adminPrueba.uid]:null}:{})});if(adminPrueba)await auth.deleteUser(adminPrueba.uid);for(const nodo of ['censos_definiciones','censos_grupos','censos_seguimiento'])assert.equal((await db.ref(nodo+'/'+id).get()).exists(),false);console.log('Datos sintéticos retirados y ausencia comprobada.');await deleteApp(app);}
 process.exit(0);

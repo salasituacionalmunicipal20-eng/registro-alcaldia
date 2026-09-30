@@ -1,13 +1,13 @@
 /* Controles independientes por ficha; nunca se deduce el domicilio del CNE. */
 const C=window.Censo,F=window.Formularios,e=F.escapar;
-export function persona(contenedor, prefijo, valores={}) {
+export function persona(contenedor, prefijo, valores={}, alcance=contenedor) {
   contenedor.innerHTML='<div class="campos-publicos">'+C.campos.map(c=>{
     const id=prefijo+'-'+c.rol,atr=`id="${id}" data-rol="${c.rol}" ${c.obligatorio?'required':''}`;
     const select=['lista','nacionalidad','parroquia','comuna','comunidad'].includes(c.tipo);
     const control=select?`<select ${atr}><option value="">Selecciona…</option>${c.tipo==='nacionalidad'?'<option value="V">Venezolana</option><option value="E">Extranjera</option>':c.tipo==='lista'?F.opciones(c).map(v=>`<option>${e(v)}</option>`).join(''):''}</select>`:c.tipo==='parrafo'?`<textarea ${atr} maxlength="3000" rows="2"></textarea>`:`<input ${atr} type="${c.tipo==='telefono'?'tel':c.tipo==='fecha'?'date':'text'}" maxlength="${c.tipo==='cedula'?10:300}" ${c.tipo==='cedula'?'inputmode="numeric" pattern="[0-9]{5,10}"':''} autocomplete="off">`;
     return `<div class="campo ${c.tipo==='parrafo'?'ancho':''}"><label for="${id}">${e(c.etiqueta)}${c.obligatorio?' *':''}</label>${control}</div>`;
   }).join('')+'</div>';
-  const el=k=>contenedor.querySelector('[data-rol="'+k+'"]');
+  const el=k=>alcance.querySelector('[data-rol="'+k+'"]');
   const territorio=Object.values(window.TERRITORIO.comunidades).filter(x=>x.activo!==false);
   const poblar=(k,vals)=>{el(k).innerHTML='<option value="">Selecciona…</option>'+[...new Set(vals)].sort((a,b)=>a.localeCompare(b,'es')).map(v=>`<option value="${e(v)}">${e(v)}</option>`).join('');};
   poblar('parroquia',territorio.map(x=>x.parroquia));

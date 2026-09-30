@@ -1,5 +1,13 @@
 # Censo municipal con responsables
 
+## Registro en tres pasos y nombre editable
+
+El censo usa el recorrido de la estructura original: datos del responsable, comunidad del responsable y fichas de las personas vinculadas. Permite entre 1 y 100 personas, conserva las fichas al volver entre pasos y valida todos los datos antes de guardar. Las personas pueden tener una ubicación distinta a la del responsable.
+
+Se preparó un censo inicial llamado **Censo municipal**, con identificador `censo-municipal`: formulario `censo.html?id=censo-municipal` y panel `censo-panel.html?id=censo-municipal`. El panel queda reservado a Carlos. El formulario permite crear grupos mediante el enlace; los datos y las correcciones siguen protegidos por las reglas existentes.
+
+Para cambiar el nombre: **Censos con responsables → Mis censos → Cambiar nombre / configurar**. Cambiar el título conserva el identificador, los enlaces, los grupos y el seguimiento Sí/No. El título actualizado también aparece en la cabecera y en la pestaña del formulario. No se copian registros de otros módulos.
+
 Entra como `carlos.admin` al panel de Sala Situacional y abre **Censo con responsables**. También está disponible desde el Constructor de formularios, mediante **Responsable + hasta 100 personas**.
 
 1. Pulsa **Crear censo**. Escribe su nombre, instrucciones y el nombre del seguimiento Sí/No (por ejemplo, Contactado o Encuestado).
