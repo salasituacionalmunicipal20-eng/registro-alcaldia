@@ -74,4 +74,3 @@ try{
   if(adminPrueba)await auth.deleteUser(adminPrueba.uid);
   assert.equal((await db.ref('formularios_definiciones/'+id).get()).exists(),false);console.log('Datos sintéticos retirados y ausencia comprobada.');await deleteApp(app);
 }
-process.exit(0);
