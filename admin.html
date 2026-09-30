@@ -295,7 +295,8 @@
                 <div class="card-desc">Situación de los empleados por el terremoto: salud, afectación de la vivienda, situación física y psicológica, cargo y recomendaciones. Registra, edita y exporta Excel y PDF.</div>
             </div>
 
-            <div id="cardCensoResponsables" class="card hidden" onclick="location.href='censo-constructor.html'" style="border-top:4px solid #174b84;"><div class="card-icon">👥</div><div class="card-title">Censo con responsables</div><div class="card-desc">Organiza hasta 100 personas por responsable. Crea censos con enlace propio y panel por comuna.</div></div>
+            <div id="cardCensoMunicipal" class="card hidden" onclick="location.href='censo-panel.html?id=censo-municipal'" style="border-top:4px solid #174b84;"><div class="card-icon">👥</div><div class="card-title" id="tituloCensoMunicipal">Censo municipal</div><div class="card-desc">Tu censo está creado. Abre sus responsables, personas, filtros y seguimiento Sí/No. Desde el panel puedes compartir el formulario y cambiar su nombre.</div></div>
+            <div id="cardCensoResponsables" class="card hidden" onclick="location.href='censo-constructor.html'" style="border-top:4px solid #174b84;"><div class="card-icon">＋</div><div class="card-title">Crear y configurar censos</div><div class="card-desc">Crea otros censos con la misma estructura o cambia el nombre y la configuración de los existentes.</div></div>
             <div id="cardConstructorFormularios" class="card hidden" onclick="location.href='constructor-formularios.html'" style="border-top: 4px solid #174b84;">
                 <span class="card-icon">📋</span>
                 <div class="card-title">Constructor de formularios</div>
@@ -531,6 +532,10 @@
                 if (user.email === "carlos.admin@alcaldia.com") {
                     document.getElementById('cardConstructorFormularios').classList.remove('hidden');
                     document.getElementById('cardCensoResponsables').classList.remove('hidden');
+                    document.getElementById('cardCensoMunicipal').classList.remove('hidden');
+                    get(ref(database, 'censos_definiciones/censo-municipal')).then(s => {
+                        if (s.exists()) document.getElementById('tituloCensoMunicipal').textContent = s.val().titulo;
+                    }).catch(() => { document.getElementById('tituloCensoMunicipal').textContent = 'Censo municipal'; });
                     document.getElementById('cardMigracion').classList.remove('hidden');
                     document.getElementById('cardRespaldo').classList.remove('hidden');
                     document.getElementById('cardGestionTerritorial').classList.remove('hidden');
