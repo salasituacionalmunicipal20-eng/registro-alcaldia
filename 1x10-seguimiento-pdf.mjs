@@ -1,5 +1,5 @@
 import { dibujarHeaderPDF, dibujarFooterPDF } from './pdf-header.js';
-import { sumarFilas } from './1x10-seguimiento-datos.mjs?v=20260930c';
+import { sumarFilas } from './1x10-seguimiento-datos.mjs?v=20261001a';
 
 export function crearInforme(jsPDF, filas, { fecha, filtros, calidad, generado }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -42,7 +42,7 @@ export function crearInforme(jsPDF, filas, { fecha, filtros, calidad, generado }
   let posicion = dibujarHeaderPDF(doc, { titulo:'Método y calidad de los registros', subtitulo }) + 6;
   const notas = [
     'Generado el ' + generado + '.', filtros, calidad,
-    'Las cantidades adicionales son declaradas, no verificadas por cédula. El total informado combina personas únicas del 1x10 y cantidades adicionales; requiere comprobar que las listas no se solapen.',
+    'Las cantidades adicionales son declaradas, no verificadas por cédula. El total informado combina todos los registros de jefes y afines de las siete variantes del 1x10 y cantidades adicionales. Las repeticiones y los registros sin cédula se incluyen; no equivale a personas únicas.',
     'Las ubicaciones pueden ser heredadas del jefe o del catálogo territorial. No confirman el centro electoral individual.',
     'Se agrupan diferencias de mayúsculas, espacios y tildes en comunas y centros. Los nombres que difieren en otras letras se conservan en filas distintas.',
     'Las cargas por rangos de edad corresponden al momento en que fueron declaradas. Cambiar la fecha solo recalcula las edades del 1x10.',

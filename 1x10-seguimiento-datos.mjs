@@ -4,6 +4,7 @@ export const SIN_CENTRO = 'Sin centro asignado';
 export const CONFLICTO = 'Ubicación por verificar';
 const texto = v => String(v ?? '').trim();
 const claveTerritorial = v => texto(v).normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/\s+/g,' ').toUpperCase();
+export const SISTEMAS_1X10 = ['', '_empleados', '_cristianos', '_abuelos', '_cristianos_abuelos', '_salud', '_educacion'];
 export function edadEn(fecha, corte) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(fecha));
   const c = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(corte));
@@ -20,8 +21,9 @@ export function edadEn(fecha, corte) {
 export function grupoEdad(edad) {
   return edad === null ? 'sinEdad' : edad < 15 ? 'menores' : edad <= 35 ? 'jovenes' : 'adultos';
 }
-export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}) {
+export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}, sistemas = [{ jefes, afines }]) {
   const personas = new Map();
+  const registros = [];
   const comunasCanonicas = new Map(), centrosCanonicos = new Map();
   for (const c of Object.values(catalogo || {})) {
     if (texto(c.circuito_comunal)) comunasCanonicas.set(claveTerritorial(c.circuito_comunal), texto(c.circuito_comunal));
@@ -39,7 +41,6 @@ export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}
     relaciones++;
     const identificador = texto(p.cedula || (/^\d+$/.test(id) ? id : ''));
     const cedula = identificador.replace(/^[VEve][\s-]*/, '').replace(/[\s.-]/g, '');
-    if (!/^\d{4,10}$/.test(cedula)) { sinIdentidad++; return; }
     const nacionalidad = texto(p.nacionalidad || (/^E/i.test(identificador) ? 'E' : 'V')).toUpperCase();
     const clave = `${nacionalidad}:${cedula.replace(/^0+(?=\d)/, '')}`;
     const propia = catalogo[p.comunidad_slug] || {};
@@ -47,14 +48,18 @@ export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}
     const comuna = canonico(p.comuna || p.circuito || propia.circuito_comunal || j.comuna || j.circuito || delJefe.circuito_comunal, comunasCanonicas, SIN_COMUNA);
     const centro = canonico(p.centro_electoral || propia.centro_electoral || j.centro_electoral || delJefe.centro_electoral, centrosCanonicos, SIN_CENTRO);
     const dato = { comuna, centro, fecha: texto(p.fecha_nacimiento), esJefe };
+    registros.push(dato);
+    if (!/^\d{4,10}$/.test(cedula)) { sinIdentidad++; return; }
     if (!personas.has(clave)) personas.set(clave, []);
     personas.get(clave).push(dato);
   }
-  for (const [id, jefe] of Object.entries(jefes || {})) agregar(id, jefe, jefe, true);
-  for (const [jefeId, lista] of Object.entries(afines || {})) {
-    const jefe = jefes?.[jefeId] || {};
-    if (!jefes?.[jefeId]) huerfanos += Object.keys(lista || {}).length;
-    for (const [id, afin] of Object.entries(lista || {})) agregar(id, afin, jefe, false);
+  for (const sistema of sistemas) {
+    for (const [id, jefe] of Object.entries(sistema.jefes || {})) agregar(id, jefe, jefe, true);
+    for (const [jefeId, lista] of Object.entries(sistema.afines || {})) {
+      const jefe = sistema.jefes?.[jefeId] || {};
+      if (!sistema.jefes?.[jefeId]) huerfanos += Object.keys(lista || {}).length;
+      for (const [id, afin] of Object.entries(lista || {})) agregar(id, afin, jefe, false);
+    }
   }
   const filas = new Map();
   const obtener = (comuna, centro) => {
@@ -71,13 +76,13 @@ export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}
     const centros = [...new Set(ubicaciones.map(p => p.centro).filter(c => c !== SIN_CENTRO))];
     const conflicto = comunas.length > 1 || centros.length > 1;
     if (conflicto) ubicacionesEnConflicto++;
-    const comuna = conflicto ? CONFLICTO : comunas[0] || SIN_COMUNA;
-    const centro = conflicto ? CONFLICTO : centros[0] || SIN_CENTRO;
     const fechas = [...new Set(datos.map(p => p.fecha).filter(f => edadEn(f, corte) !== null))];
     if (fechas.length > 1) fechasEnConflicto++;
-    const edad = fechas.length === 1 ? edadEn(fechas[0], corte) : null;
-    const fila = obtener(comuna, centro);
-    fila.base++; fila.total++; fila[grupoEdad(edad)]++;
+  }
+  // Cada jefe y cada afin almacenado cuenta, incluso si se repite o no tiene cédula.
+  for (const registro of registros) {
+    const fila = obtener(registro.comuna, registro.centro);
+    fila.base++; fila.total++; fila[grupoEdad(edadEn(registro.fecha, corte))]++;
   }
   let cargasInvalidas = 0;
   for (const carga of Object.values(adicionales || {})) {
