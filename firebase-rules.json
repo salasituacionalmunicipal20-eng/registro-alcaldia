@@ -450,6 +450,20 @@
       ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
       ".write": false
     },
+    "asistencia_centros": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$fecha": {
+        ".validate": "$fecha.matches(/^\\d{4}-(0[1-9]|1[0-2])-([0-2]\\d|3[01])$/)",
+        "$persona": {
+          ".validate": "$persona.matches(/^[VE]_[0-9]{4,10}$/) && newData.hasChildren(['estado', 'actualizado_en', 'actualizado_por'])",
+          "estado": { ".validate": "newData.isString() && (newData.val() === 'asistio' || newData.val() === 'no_asistio' || newData.val() === 'pendiente')" },
+          "actualizado_en": { ".validate": "newData.isNumber() && newData.val() <= now && newData.val() >= now - 60000" },
+          "actualizado_por": { ".validate": "newData.isString() && newData.val() === auth.uid" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
     "asistencia_1x10": {
       ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
       ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
