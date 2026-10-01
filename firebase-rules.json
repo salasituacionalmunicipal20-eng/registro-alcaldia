@@ -426,7 +426,7 @@
       "$cedula": {
         ".read": true,
         ".write": "newData.exists() || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-        ".validate": "$cedula.matches(/^[0-9]{4,10}$/)",
+        ".validate": "$cedula.matches(/^[0-9]{4,10}$/) && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)))",
         "cedula":            { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
         "nombres":           { ".validate": "newData.isString() && newData.val().length <= 100" },
         "apellidos":         { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -486,7 +486,7 @@
         ".validate": "$cedula_jefe.matches(/^[0-9]{4,10}$/)",
         "$cedula_afin": {
           ".write": "(newData.exists() && root.child('jefes_1x10').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe",
+          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)) || (!newData.hasChild('parroquia') && !newData.hasChild('circuito') && !newData.hasChild('comunidad_slug') && !newData.hasChild('comunidad_nombre') && root.child('jefes_1x10').child($cedula_jefe).child('parroquia').isString() && root.child('jefes_1x10').child($cedula_jefe).child('parroquia').val().matches(/.*\\S.*/) && root.child('jefes_1x10').child($cedula_jefe).child('circuito').isString() && root.child('jefes_1x10').child($cedula_jefe).child('circuito').val().matches(/.*\\S.*/) && root.child('jefes_1x10').child($cedula_jefe).child('comunidad_slug').isString() && root.child('jefes_1x10').child($cedula_jefe).child('comunidad_slug').val().matches(/.*\\S.*/) && root.child('jefes_1x10').child($cedula_jefe).child('comunidad_nombre').isString() && root.child('jefes_1x10').child($cedula_jefe).child('comunidad_nombre').val().matches(/.*\\S.*/)))",
           "cedula":          { ".validate": "newData.isString() && newData.val() === $cedula_afin && newData.val().length <= 20" },
           "nombres":         { ".validate": "newData.isString() && newData.val().length <= 100" },
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -511,7 +511,7 @@
       "$cedula": {
         ".read": true,
         ".write": "newData.exists() || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-        ".validate": "$cedula.matches(/^[0-9]{4,10}$/)",
+        ".validate": "$cedula.matches(/^[0-9]{4,10}$/) && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)))",
         "cedula":            { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
         "nombres":           { ".validate": "newData.isString() && newData.val().length <= 100" },
         "apellidos":         { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -540,7 +540,7 @@
         ".validate": "$cedula_jefe.matches(/^[0-9]{4,10}$/)",
         "$cedula_afin": {
           ".write": "(newData.exists() && root.child('jefes_1x10_empleados').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe",
+          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)) || (!newData.hasChild('parroquia') && !newData.hasChild('circuito') && !newData.hasChild('comunidad_slug') && !newData.hasChild('comunidad_nombre') && root.child('jefes_1x10_empleados').child($cedula_jefe).child('parroquia').isString() && root.child('jefes_1x10_empleados').child($cedula_jefe).child('parroquia').val().matches(/.*\\S.*/) && root.child('jefes_1x10_empleados').child($cedula_jefe).child('circuito').isString() && root.child('jefes_1x10_empleados').child($cedula_jefe).child('circuito').val().matches(/.*\\S.*/) && root.child('jefes_1x10_empleados').child($cedula_jefe).child('comunidad_slug').isString() && root.child('jefes_1x10_empleados').child($cedula_jefe).child('comunidad_slug').val().matches(/.*\\S.*/) && root.child('jefes_1x10_empleados').child($cedula_jefe).child('comunidad_nombre').isString() && root.child('jefes_1x10_empleados').child($cedula_jefe).child('comunidad_nombre').val().matches(/.*\\S.*/)))",
           "cedula":          { ".validate": "newData.isString() && newData.val() === $cedula_afin && newData.val().length <= 20" },
           "nombres":         { ".validate": "newData.isString() && newData.val().length <= 100" },
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -565,7 +565,7 @@
       "$cedula": {
         ".read": true,
         ".write": "newData.exists() || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-        ".validate": "$cedula.matches(/^[0-9]{4,10}$/)",
+        ".validate": "$cedula.matches(/^[0-9]{4,10}$/) && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)))",
         "cedula":            { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
         "nombres":           { ".validate": "newData.isString() && newData.val().length <= 100" },
         "apellidos":         { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -594,7 +594,7 @@
         ".validate": "$cedula_jefe.matches(/^[0-9]{4,10}$/)",
         "$cedula_afin": {
           ".write": "(newData.exists() && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe",
+          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)) || (!newData.hasChild('parroquia') && !newData.hasChild('circuito') && !newData.hasChild('comunidad_slug') && !newData.hasChild('comunidad_nombre') && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).child('parroquia').isString() && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).child('parroquia').val().matches(/.*\\S.*/) && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).child('circuito').isString() && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).child('circuito').val().matches(/.*\\S.*/) && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).child('comunidad_slug').isString() && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).child('comunidad_slug').val().matches(/.*\\S.*/) && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).child('comunidad_nombre').isString() && root.child('jefes_1x10_cristianos_abuelos').child($cedula_jefe).child('comunidad_nombre').val().matches(/.*\\S.*/)))",
           "cedula":          { ".validate": "newData.isString() && newData.val() === $cedula_afin && newData.val().length <= 20" },
           "nombres":         { ".validate": "newData.isString() && newData.val().length <= 100" },
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -619,7 +619,7 @@
       "$cedula": {
         ".read": true,
         ".write": "newData.exists() || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-        ".validate": "$cedula.matches(/^[0-9]{4,10}$/)",
+        ".validate": "$cedula.matches(/^[0-9]{4,10}$/) && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)))",
         "cedula":            { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
         "nombres":           { ".validate": "newData.isString() && newData.val().length <= 100" },
         "apellidos":         { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -647,7 +647,7 @@
         ".validate": "$cedula_jefe.matches(/^[0-9]{4,10}$/)",
         "$cedula_afin": {
           ".write": "(newData.exists() && root.child('jefes_1x10_cristianos').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe",
+          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)) || (!newData.hasChild('parroquia') && !newData.hasChild('circuito') && !newData.hasChild('comunidad_slug') && !newData.hasChild('comunidad_nombre') && root.child('jefes_1x10_cristianos').child($cedula_jefe).child('parroquia').isString() && root.child('jefes_1x10_cristianos').child($cedula_jefe).child('parroquia').val().matches(/.*\\S.*/) && root.child('jefes_1x10_cristianos').child($cedula_jefe).child('circuito').isString() && root.child('jefes_1x10_cristianos').child($cedula_jefe).child('circuito').val().matches(/.*\\S.*/) && root.child('jefes_1x10_cristianos').child($cedula_jefe).child('comunidad_slug').isString() && root.child('jefes_1x10_cristianos').child($cedula_jefe).child('comunidad_slug').val().matches(/.*\\S.*/) && root.child('jefes_1x10_cristianos').child($cedula_jefe).child('comunidad_nombre').isString() && root.child('jefes_1x10_cristianos').child($cedula_jefe).child('comunidad_nombre').val().matches(/.*\\S.*/)))",
           "cedula":          { ".validate": "newData.isString() && newData.val() === $cedula_afin && newData.val().length <= 20" },
           "nombres":         { ".validate": "newData.isString() && newData.val().length <= 100" },
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -672,7 +672,7 @@
       "$cedula": {
         ".read": true,
         ".write": "newData.exists() || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-        ".validate": "$cedula.matches(/^[0-9]{4,10}$/)",
+        ".validate": "$cedula.matches(/^[0-9]{4,10}$/) && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)))",
         "cedula":            { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
         "nombres":           { ".validate": "newData.isString() && newData.val().length <= 100" },
         "apellidos":         { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -700,7 +700,7 @@
         ".validate": "$cedula_jefe.matches(/^[0-9]{4,10}$/)",
         "$cedula_afin": {
           ".write": "(newData.exists() && root.child('jefes_1x10_abuelos').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe",
+          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)) || (!newData.hasChild('parroquia') && !newData.hasChild('circuito') && !newData.hasChild('comunidad_slug') && !newData.hasChild('comunidad_nombre') && root.child('jefes_1x10_abuelos').child($cedula_jefe).child('parroquia').isString() && root.child('jefes_1x10_abuelos').child($cedula_jefe).child('parroquia').val().matches(/.*\\S.*/) && root.child('jefes_1x10_abuelos').child($cedula_jefe).child('circuito').isString() && root.child('jefes_1x10_abuelos').child($cedula_jefe).child('circuito').val().matches(/.*\\S.*/) && root.child('jefes_1x10_abuelos').child($cedula_jefe).child('comunidad_slug').isString() && root.child('jefes_1x10_abuelos').child($cedula_jefe).child('comunidad_slug').val().matches(/.*\\S.*/) && root.child('jefes_1x10_abuelos').child($cedula_jefe).child('comunidad_nombre').isString() && root.child('jefes_1x10_abuelos').child($cedula_jefe).child('comunidad_nombre').val().matches(/.*\\S.*/)))",
           "cedula":          { ".validate": "newData.isString() && newData.val() === $cedula_afin && newData.val().length <= 20" },
           "nombres":         { ".validate": "newData.isString() && newData.val().length <= 100" },
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -725,7 +725,7 @@
       "$cedula": {
         ".read": true,
         ".write": "newData.exists() || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-        ".validate": "$cedula.matches(/^[0-9]{4,10}$/)",
+        ".validate": "$cedula.matches(/^[0-9]{4,10}$/) && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)))",
         "cedula":            { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
         "nombres":           { ".validate": "newData.isString() && newData.val().length <= 100" },
         "apellidos":         { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -754,7 +754,7 @@
         ".validate": "$cedula_jefe.matches(/^[0-9]{4,10}$/)",
         "$cedula_afin": {
           ".write": "(newData.exists() && root.child('jefes_1x10_salud').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe",
+          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)) || (!newData.hasChild('parroquia') && !newData.hasChild('circuito') && !newData.hasChild('comunidad_slug') && !newData.hasChild('comunidad_nombre') && root.child('jefes_1x10_salud').child($cedula_jefe).child('parroquia').isString() && root.child('jefes_1x10_salud').child($cedula_jefe).child('parroquia').val().matches(/.*\\S.*/) && root.child('jefes_1x10_salud').child($cedula_jefe).child('circuito').isString() && root.child('jefes_1x10_salud').child($cedula_jefe).child('circuito').val().matches(/.*\\S.*/) && root.child('jefes_1x10_salud').child($cedula_jefe).child('comunidad_slug').isString() && root.child('jefes_1x10_salud').child($cedula_jefe).child('comunidad_slug').val().matches(/.*\\S.*/) && root.child('jefes_1x10_salud').child($cedula_jefe).child('comunidad_nombre').isString() && root.child('jefes_1x10_salud').child($cedula_jefe).child('comunidad_nombre').val().matches(/.*\\S.*/)))",
           "cedula":          { ".validate": "newData.isString() && newData.val() === $cedula_afin && newData.val().length <= 20" },
           "nombres":         { ".validate": "newData.isString() && newData.val().length <= 100" },
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -779,7 +779,7 @@
       "$cedula": {
         ".read": true,
         ".write": "newData.exists() || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-        ".validate": "$cedula.matches(/^[0-9]{4,10}$/)",
+        ".validate": "$cedula.matches(/^[0-9]{4,10}$/) && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)))",
         "cedula":            { ".validate": "newData.isString() && newData.val() === $cedula && newData.val().length <= 20" },
         "nombres":           { ".validate": "newData.isString() && newData.val().length <= 100" },
         "apellidos":         { ".validate": "newData.isString() && newData.val().length <= 100" },
@@ -808,7 +808,7 @@
         ".validate": "$cedula_jefe.matches(/^[0-9]{4,10}$/)",
         "$cedula_afin": {
           ".write": "(newData.exists() && root.child('jefes_1x10_educacion').child($cedula_jefe).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
-          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe",
+          ".validate": "$cedula_afin.matches(/^[0-9]{4,10}$/) && $cedula_afin != $cedula_jefe && (data.exists() || (newData.child('parroquia').isString() && newData.child('parroquia').val().matches(/.*\\S.*/) && newData.child('circuito').isString() && newData.child('circuito').val().matches(/.*\\S.*/) && newData.child('comunidad_slug').isString() && newData.child('comunidad_slug').val().matches(/.*\\S.*/) && newData.child('comunidad_nombre').isString() && newData.child('comunidad_nombre').val().matches(/.*\\S.*/)) || (!newData.hasChild('parroquia') && !newData.hasChild('circuito') && !newData.hasChild('comunidad_slug') && !newData.hasChild('comunidad_nombre') && root.child('jefes_1x10_educacion').child($cedula_jefe).child('parroquia').isString() && root.child('jefes_1x10_educacion').child($cedula_jefe).child('parroquia').val().matches(/.*\\S.*/) && root.child('jefes_1x10_educacion').child($cedula_jefe).child('circuito').isString() && root.child('jefes_1x10_educacion').child($cedula_jefe).child('circuito').val().matches(/.*\\S.*/) && root.child('jefes_1x10_educacion').child($cedula_jefe).child('comunidad_slug').isString() && root.child('jefes_1x10_educacion').child($cedula_jefe).child('comunidad_slug').val().matches(/.*\\S.*/) && root.child('jefes_1x10_educacion').child($cedula_jefe).child('comunidad_nombre').isString() && root.child('jefes_1x10_educacion').child($cedula_jefe).child('comunidad_nombre').val().matches(/.*\\S.*/)))",
           "cedula":          { ".validate": "newData.isString() && newData.val() === $cedula_afin && newData.val().length <= 20" },
           "nombres":         { ".validate": "newData.isString() && newData.val().length <= 100" },
           "apellidos":       { ".validate": "newData.isString() && newData.val().length <= 100" },

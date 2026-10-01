@@ -452,21 +452,21 @@
 
                     <div class="campo">
                         <label>Parroquia <span class="req">*</span></label>
-                        <select id="jefe_parroquia">
+                        <select id="jefe_parroquia" required aria-required="true">
                             <option value="">Selecciona tu parroquia</option>
                         </select>
                     </div>
 
                     <div class="campo hidden" id="campoCircuito">
                         <label>Comuna (Circuito Comunal) <span class="req">*</span></label>
-                        <select id="jefe_circuito">
+                        <select id="jefe_circuito" required aria-required="true">
                             <option value="">Selecciona tu comuna</option>
                         </select>
                     </div>
 
                     <div class="campo hidden" id="campoComunidad">
                         <label>Comunidad <span class="req">*</span></label>
-                        <select id="jefe_comunidad">
+                        <select id="jefe_comunidad" required aria-required="true">
                             <option value="">Selecciona tu comunidad</option>
                         </select>
                     </div>
@@ -521,6 +521,7 @@
     </div>
 
     <script type="module">
+        import {territorioValido, camposTerritoriales} from './1x10-territorio-validacion.mjs?v=20261001b';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
@@ -880,7 +881,7 @@
                 estado.jefe.mesas = null;
             } else {
                 const com = TERRITORIO.comunidades[comunidadSlug];
-                if (!com) { mostrarMensaje('La comunidad seleccionada no es válida.'); return; }
+                if (!territorioValido(TERRITORIO, parroquia, circuito, comunidadSlug)) { mostrarMensaje('Selecciona una comunidad válida de la comuna elegida.'); return; }
 
                 estado.jefe.parroquia = parroquia;
                 estado.jefe.circuito = circuito;
@@ -1051,20 +1052,20 @@
                         </select>
                     </div>
                     <div style="margin-top: 10px;">
-                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Parroquia del afín <span style="text-transform: none; font-weight: 400; color: #94a3b8;">(si vive en otra comunidad que el jefe)</span></label>
-                        <select id="afin_parroquia_${id}" name="afin_parroquia_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
+                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Parroquia del afín <span style="text-transform: none; font-weight: 400; color: #94a3b8;">(confirma dónde vive)</span></label>
+                        <select id="afin_parroquia_${id}" required aria-required="true" name="afin_parroquia_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
                             <option value="">-- Seleccione --</option>
                         </select>
                     </div>
                     <div style="margin-top: 10px;">
-                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Circuito Comunal del afín</label>
-                        <select id="afin_circuito_${id}" name="afin_circuito_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
+                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Comuna del afín (obligatoria)</label>
+                        <select id="afin_circuito_${id}" required aria-required="true" name="afin_circuito_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
                             <option value="">-- Seleccione --</option>
                         </select>
                     </div>
                     <div style="margin-top: 10px;">
-                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Comunidad del afín</label>
-                        <select id="afin_comunidad_${id}" name="afin_comunidad_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
+                        <label style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Comunidad del afín (obligatoria)</label>
+                        <select id="afin_comunidad_${id}" required aria-required="true" name="afin_comunidad_${id}" autocomplete="off" style="width: 100%; padding: 11px 13px; border-radius: 4px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 16px; font-weight: 400; outline: none; box-sizing: border-box; margin-top: 4px;">
                             <option value="">-- Seleccione --</option>
                         </select>
                         <div id="afin_centro_panel_${id}" style="display:none; margin-top:10px; padding:10px 12px; background:#eff6ff; border:1px solid #93c5fd; border-radius:6px; font-size:13px; color:#1e3a8a;">
@@ -1318,6 +1319,11 @@
         $('btnPaso3Volver').addEventListener('click', () => mostrarPaso(2));
         $('btnGuardar').addEventListener('click', async () => {
             limpiarMensaje();
+            if (!territorioValido(TERRITORIO, estado.jefe.parroquia, estado.jefe.circuito, estado.jefe.comunidad_slug)) {
+                mostrarPaso(2);
+                mostrarMensaje('Selecciona la comuna y la comunidad del jefe antes de guardar.');
+                return;
+            }
 
             // Recolectar afines validos recorriendo los bloques EN ORDEN VISUAL
             // (no IDs fijos del 1 al 10). El "orden" guardado es la posicion visual.
@@ -1335,6 +1341,13 @@
                 const aPar = (v(`afin_parroquia_${id}`) || '').trim();
                 const aCirc = (v(`afin_circuito_${id}`) || '').trim();
                 const aComSlug = (v(`afin_comunidad_${id}`) || '').trim();
+                if (!territorioValido(TERRITORIO, aPar, aCirc, aComSlug)) {
+                    mostrarMensaje('Afín #' + posicion + ': selecciona su comuna y su comunidad antes de guardar.');
+                    const campo = !aPar ? $(`afin_parroquia_${id}`) : !aCirc ? $(`afin_circuito_${id}`) : $(`afin_comunidad_${id}`);
+                    campo?.focus();
+                    campo?.reportValidity();
+                    return;
+                }
                 afinesValidos.push({
                     cedula: num,
                     nacionalidad: v(`afin_nacionalidad_${id}`) || 'V',
@@ -1478,21 +1491,7 @@
                     }
                     // Genero del afin: solo si tiene valor valido ('' = omitir)
                     if (a.genero === 'M' || a.genero === 'F') payloadAfin.genero = a.genero;
-                    // Cascada territorial del afin: solo si eligio comunidad PROPIA
-                    // distinta a la del jefe. Si coincide con la del jefe, omitir
-                    // (queda implicita en el jefe).
-                    if (a.parroquia && a.circuito && a.comunidad_slug
-                        && a.comunidad_slug !== estado.jefe.comunidad_slug) {
-                        const com = TERRITORIO.comunidades[a.comunidad_slug];
-                        if (com) {
-                            payloadAfin.parroquia = a.parroquia;
-                            payloadAfin.circuito = a.circuito;
-                            payloadAfin.comunidad_slug = a.comunidad_slug;
-                            payloadAfin.comunidad_nombre = com.nombre;
-                            if (com.centro_electoral) payloadAfin.centro_electoral = com.centro_electoral;
-                            if (com.mesas != null && com.mesas !== '') payloadAfin.mesas = com.mesas;
-                        }
-                    }
+                    Object.assign(payloadAfin, camposTerritoriales(TERRITORIO, a.parroquia, a.circuito, a.comunidad_slug));
                     return set(
                         ref(database, `afines_1x10_empleados/${estado.jefe.cedula}/${a.cedula}`),
                         payloadAfin
