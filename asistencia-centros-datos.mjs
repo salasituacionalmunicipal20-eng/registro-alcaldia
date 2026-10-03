@@ -17,6 +17,10 @@ export function consolidarPersonas(sistemas, catalogo={}) {
     if(c.circuito_comunal) canonComunas.set(normalizar(c.circuito_comunal),c.circuito_comunal);
     if(c.nombre) canonComunidades.set(normalizar(c.nombre),c.nombre);
   }
+  // Dos formas del mismo nombre: uso el nombre del catálogo territorial.
+  const ezequielZamora='EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES';
+  canonComunas.set(normalizar(ezequielZamora),ezequielZamora);
+  canonComunas.set(normalizar('EZEQUIEL ZAMORA TIERRA DE MUJERES Y HOMBRES LIBRES'),ezequielZamora);
   let registros=0,sinIdentidad=0;
   function agregar(id,p,j,esJefe) {
     registros++;

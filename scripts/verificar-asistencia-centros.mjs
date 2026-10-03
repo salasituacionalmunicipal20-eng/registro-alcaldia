@@ -26,4 +26,11 @@ assert.equal(consolidarPersonas([{jefes:{},afines:{huerfano:{'45678901':{nombres
 const territorio=consolidarPersonas([{jefes:{'12345678':{nombres:'ANA',comunidad_slug:'a'}},afines:{'12345678':{'23456789':{nombres:'LUIS'}}}}],{a:{nombre:'COMUNIDAD A',circuito_comunal:'COMUNA A',centro_electoral:'CENTRO A'}});
 assert.equal(territorio.personas[1].centro,'CENTRO A');
 assert.equal(filtrarPersonas(territorio.personas,{comuna:'COMUNA A',comunidad:'COMUNIDAD A',centro:'CENTRO A'}).length,2);
+const comunaZamora='EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES';
+const variantesZamora=consolidarPersonas([{jefes:{},afines:{a:{'12345678':{nombre:'PRUEBA',comuna:comunaZamora,comunidad:'A',centro_electoral:'CENTRO'}},b:{'12345678':{nombre:'PRUEBA',comuna:'EZEQUIEL ZAMORA TIERRA DE MUJERES Y HOMBRES LIBRES',comunidad:'A',centro_electoral:'CENTRO'}}}}]);
+assert.equal(variantesZamora.diagnostico.registros,2);
+assert.equal(variantesZamora.personas.length,1);
+assert.equal(variantesZamora.diagnostico.ubicacionesPorVerificar,0);
+assert.equal(filtrarPersonas(variantesZamora.registrosLista,{comuna:comunaZamora}).length,2);
+assert.equal(variantesZamora.personas[0].comuna,comunaZamora);
 console.log('Verificado: personas únicas, nacionalidades, herencia territorial, conflictos, filtros por comuna/comunidad/centro, asistencia y exportación completa.');
