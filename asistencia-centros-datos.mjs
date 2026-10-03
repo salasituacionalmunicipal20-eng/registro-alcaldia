@@ -12,7 +12,7 @@ export function identidad(id, p) {
 }
 
 export function consolidarPersonas(sistemas, catalogo={}) {
-  const porPersona=new Map(), canonComunas=new Map(), canonComunidades=new Map();
+  const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map();
   for (const c of Object.values(catalogo)) {
     if(c.circuito_comunal) canonComunas.set(normalizar(c.circuito_comunal),c.circuito_comunal);
     if(c.nombre) canonComunidades.set(normalizar(c.nombre),c.nombre);
@@ -21,13 +21,15 @@ export function consolidarPersonas(sistemas, catalogo={}) {
   function agregar(id,p,j,esJefe) {
     registros++;
     const quien=identidad(id,p);
-    if(!quien){sinIdentidad++;return;}
+    if(!quien)sinIdentidad++;
     const propia=catalogo[p.comunidad_slug]||{}, heredada=catalogo[j.comunidad_slug]||{};
     const comuna=texto(p.comuna||p.circuito||propia.circuito_comunal||j.comuna||j.circuito||heredada.circuito_comunal)||'Sin comuna registrada';
     const comunidad=texto(p.comunidad_nombre||propia.nombre||p.comunidad||j.comunidad_nombre||heredada.nombre||j.comunidad)||'Sin comunidad registrada';
     const centro=texto(p.centro_electoral||propia.centro_electoral||j.centro_electoral||heredada.centro_electoral)||'Sin centro registrado';
     const nombre=texto([p.nombres,p.apellidos].filter(Boolean).join(' '))||texto(p.nombre)||'Nombre no registrado';
-    const dato={...quien,nombre,comuna:canonComunas.get(normalizar(comuna))||comuna,comunidad:canonComunidades.get(normalizar(comunidad))||comunidad,centro,esJefe};
+    const dato={...(quien||{id:null,cedula:texto(p.cedula),nacionalidad:texto(p.nacionalidad)}),nombre,comuna:canonComunas.get(normalizar(comuna))||comuna,comunidad:canonComunidades.get(normalizar(comunidad))||comunidad,centro,esJefe};
+    registrosLista.push(dato);
+    if(!quien)return;
     if(!porPersona.has(quien.id))porPersona.set(quien.id,[]);
     porPersona.get(quien.id).push(dato);
   }
@@ -50,7 +52,8 @@ export function consolidarPersonas(sistemas, catalogo={}) {
       comunidad:conflicto?'Ubicación por verificar':elegido.comunidad,
       centro:conflicto?'Centro por verificar':elegido.centro};
   }).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es')||a.id.localeCompare(b.id));
-  return {personas,diagnostico:{registros,personas:personas.length,repetidos:registros-sinIdentidad-personas.length,sinIdentidad,ubicacionesPorVerificar}};
+  registrosLista.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es')||String(a.id||'').localeCompare(String(b.id||'')));
+  return {personas,registrosLista,diagnostico:{registros,personas:personas.length,repetidos:registros-sinIdentidad-personas.length,sinIdentidad,ubicacionesPorVerificar}};
 }
 
 export function filtrarPersonas(personas,{comuna='',comunidad='',centro='',buscar='',estado=''}={}) {
@@ -61,7 +64,7 @@ export function filtrarPersonas(personas,{comuna='',comunidad='',centro='',busca
 }
 
 export function conAsistencia(personas,estados={}) {
-  return personas.map(p=>({...p,estado:estados[p.id]?.estado||'pendiente'}));
+  return personas.map(p=>({...p,estado:p.id ? estados[p.id]?.estado||'pendiente' : 'pendiente'}));
 }
 
 export function contarAsistencia(personas) {
@@ -71,6 +74,7 @@ export function contarAsistencia(personas) {
 }
 
 export function filasExportacion(personas) {
-  return personas.map((p,i)=>[i+1,p.nacionalidad+'-'+p.cedula,p.nombre,p.comuna,p.comunidad,p.centro,ESTADOS[p.estado]||ESTADOS.pendiente]);
+  return personas.map((p,i)=>[i+1,cedulaVisible(p),p.nombre,p.comuna,p.comunidad,p.centro,p.id ? ESTADOS[p.estado]||ESTADOS.pendiente : 'Cédula por corregir']);
 }
+export function cedulaVisible(p) { return p.cedula ? [p.nacionalidad,p.cedula].filter(Boolean).join('-') : 'Sin cédula registrada'; }
 export const CABECERAS=['N.º','Cédula','Nombre y apellido','Comuna','Comunidad','Centro electoral','Asistencia'];

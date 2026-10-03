@@ -1,5 +1,5 @@
 import {dibujarHeaderPDF,dibujarFooterPDF} from './pdf-header.js';
-import {CABECERAS,filasExportacion,contarAsistencia,ESTADOS} from './asistencia-centros-datos.mjs?v=20261001a';
+import {CABECERAS,filasExportacion,contarAsistencia,cedulaVisible,ESTADOS} from './asistencia-centros-datos.mjs?v=20261003a';
 const numero=n=>n.toLocaleString('es-VE');
 export function fechaLarga(fecha){return new Date(fecha+'T12:00:00Z').toLocaleDateString('es-VE',{timeZone:'America/Caracas',weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+fecha.split('-').reverse().join('/');}
 function nombreArchivo(personas,fecha,extension){const centros=[...new Set(personas.map(p=>p.centro))];const nombre=centros.length===1?centros[0]:'Todos_los_centros';return 'Asistencia_'+nombre.normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9_-]+/g,'_').slice(0,65)+'_'+fecha+'.'+extension;}
@@ -22,7 +22,7 @@ export function crearPDF(jsPDF,personas,{fecha,filtros}) {
     const y=encabezado();
     doc.autoTable({startY:y,margin:{left:14,right:14,top:y,bottom:21},styles:{fontSize:8,cellPadding:1.7,overflow:'linebreak'},headStyles:{fillColor:[10,35,81]},showHead:'everyPage',rowPageBreak:'avoid',willDrawPage:encabezado,
       head:[['N.º','Cédula','Nombre y apellido','Comuna','Comunidad','Asistencia']],
-      body:filas.map((p,i)=>[i+1,p.nacionalidad+'-'+p.cedula,p.nombre,p.comuna,p.comunidad,ESTADOS[p.estado]||ESTADOS.pendiente]),
+      body:filas.map((p,i)=>[i+1,cedulaVisible(p),p.nombre,p.comuna,p.comunidad,p.id ? ESTADOS[p.estado]||ESTADOS.pendiente : 'C\u00e9dula por corregir']),
       columnStyles:{0:{cellWidth:8},1:{cellWidth:25},2:{cellWidth:68},3:{cellWidth:54},4:{cellWidth:80},5:{cellWidth:34}}
     });
   }

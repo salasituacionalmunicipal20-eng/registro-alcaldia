@@ -4,10 +4,18 @@ const a={jefes:{'12345678':{nombres:'ANA',apellidos:'PEREZ',circuito:'COMUNA A',
 const b={jefes:{'12345678':{nombres:'ANA',apellidos:'PEREZ',circuito:'COMUNA A',comunidad_nombre:'COMUNIDAD A'}},afines:{'12345678':{'23456789':{nombres:'LUIS'},extranjero:{cedula:'E-23456789',nombres:'ELENA'}}}};
 const c=consolidarPersonas([a,b]);
 assert.equal(c.personas.length,3);assert.equal(c.diagnostico.registros,6);assert.equal(c.diagnostico.repetidos,2);assert.equal(c.diagnostico.sinIdentidad,1);
+assert.equal(c.registrosLista.length,6);
+assert.equal(c.registrosLista.filter(p=>p.id===null).length,1);
 assert.equal(c.personas.find(p=>p.id==='V_23456789').comunidad,'COMUNIDAD A');
 assert.equal(filtrarPersonas(c.personas,{buscar:'perez'}).length,1);
 const actual={'V_12345678':{estado:'asistio'},'V_23456789':{estado:'no_asistio'}};
 const lista=conAsistencia(c.personas,actual);
+const completa=conAsistencia(c.registrosLista,actual);
+assert.deepEqual(contarAsistencia(completa),{total:6,asistio:2,no_asistio:2,pendiente:2});
+assert.equal(filtrarPersonas(completa,{buscar:'perez'}).length,2);
+assert.equal(filasExportacion(completa).length,6);
+assert.equal(filasExportacion(completa).find(f=>f[2]==='SIN IDENTIDAD')[6],'Cédula por corregir');
+assert.ok(filasExportacion(completa).every(f=>f.length===CABECERAS.length));
 assert.deepEqual(actual,{'V_12345678':{estado:'asistio'},'V_23456789':{estado:'no_asistio'}});
 assert.deepEqual(contarAsistencia(lista),{total:3,asistio:1,no_asistio:1,pendiente:1});
 assert.equal(filtrarPersonas(lista,{estado:'pendiente'}).length,1);
