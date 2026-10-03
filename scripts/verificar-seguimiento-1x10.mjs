@@ -62,6 +62,7 @@ console.log('Verificado: siete variantes, claves repetidas, registros sin cédul
 // Los nombres confirmados se agrupan también en las cargas adicionales.
 const bicentenario='CENTRO DE EDUCACION INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811';
 for (const [a,b,oficial] of [
+  ['IMPERIAL','LA IMPERIAL','LA IMPERIAL'],
   ['ARAÑEROS DE SABANETA','SOCIALISTA EL ARAÑERO DE SABANETA EJE LA MATA','COMUNA SOCIALISTA ARAÑERO DE SABANETA'],
   ['INDIO CHARAVARE','INDIOS CHARAVARES','INDIO CHARAVARE'],
   ['8VA ESTRELLA EL SEUÑO DE BOLIVAR','OCTAVA ESTRELLA SUEÑOS DE BOLIVAR','OCTAVA ESTRELLA SUEÑOS DE BOLIVAR'],
