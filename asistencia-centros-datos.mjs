@@ -12,7 +12,7 @@ export function identidad(id, p) {
 }
 
 export function consolidarPersonas(sistemas, catalogo={}) {
-  const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map();
+  const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map(), canonCentros=new Map();
   for (const c of Object.values(catalogo)) {
     if(c.circuito_comunal) canonComunas.set(normalizar(c.circuito_comunal),c.circuito_comunal);
     if(c.nombre) canonComunidades.set(normalizar(c.nombre),c.nombre);
@@ -21,6 +21,9 @@ export function consolidarPersonas(sistemas, catalogo={}) {
   const ezequielZamora='EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES';
   canonComunas.set(normalizar(ezequielZamora),ezequielZamora);
   canonComunas.set(normalizar('EZEQUIEL ZAMORA TIERRA DE MUJERES Y HOMBRES LIBRES'),ezequielZamora);
+  const bicentenario='CENTRO DE EDUCACION INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811';
+  canonCentros.set(normalizar(bicentenario),bicentenario);
+  canonCentros.set(normalizar('CEIM BICENTENARIO 5 DE JULIO 1811'),bicentenario);
   let registros=0,sinIdentidad=0;
   function agregar(id,p,j,esJefe) {
     registros++;
@@ -31,7 +34,7 @@ export function consolidarPersonas(sistemas, catalogo={}) {
     const comunidad=texto(p.comunidad_nombre||propia.nombre||p.comunidad||j.comunidad_nombre||heredada.nombre||j.comunidad)||'Sin comunidad registrada';
     const centro=texto(p.centro_electoral||propia.centro_electoral||j.centro_electoral||heredada.centro_electoral)||'Sin centro registrado';
     const nombre=texto([p.nombres,p.apellidos].filter(Boolean).join(' '))||texto(p.nombre)||'Nombre no registrado';
-    const dato={...(quien||{id:null,cedula:texto(p.cedula),nacionalidad:texto(p.nacionalidad)}),nombre,comuna:canonComunas.get(normalizar(comuna))||comuna,comunidad:canonComunidades.get(normalizar(comunidad))||comunidad,centro,esJefe};
+    const dato={...(quien||{id:null,cedula:texto(p.cedula),nacionalidad:texto(p.nacionalidad)}),nombre,comuna:canonComunas.get(normalizar(comuna))||comuna,comunidad:canonComunidades.get(normalizar(comunidad))||comunidad,centro:canonCentros.get(normalizar(centro))||centro,esJefe};
     registrosLista.push(dato);
     if(!quien)return;
     if(!porPersona.has(quien.id))porPersona.set(quien.id,[]);
