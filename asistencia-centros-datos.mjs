@@ -21,6 +21,9 @@ export function consolidarPersonas(sistemas, catalogo={}) {
   const ezequielZamora='EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES';
   canonComunas.set(normalizar(ezequielZamora),ezequielZamora);
   canonComunas.set(normalizar('EZEQUIEL ZAMORA TIERRA DE MUJERES Y HOMBRES LIBRES'),ezequielZamora);
+  const gigantePatria='GIGANTE DE LA PATRIA';
+  canonComunas.set(normalizar(gigantePatria),gigantePatria);
+  canonComunas.set(normalizar('EL GIGANTE DE LA PATRIA'),gigantePatria);
   const bicentenario='CENTRO DE EDUCACION INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811';
   canonCentros.set(normalizar(bicentenario),bicentenario);
   canonCentros.set(normalizar('CEIM BICENTENARIO 5 DE JULIO 1811'),bicentenario);
