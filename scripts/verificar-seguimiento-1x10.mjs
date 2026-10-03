@@ -59,3 +59,22 @@ assert.equal(completo.diagnostico.duplicados,12);
 assert.equal(sumaCompleta.sinEdad,25);
 for (let i=0;i<7;i++) assert.equal(completo.filas.find(f=>f.comuna==='Comuna '+i).base,3);
 console.log('Verificado: siete variantes, claves repetidas, registros sin cédula y coherencia del total y desgloses.');
+// Los nombres confirmados se agrupan también en las cargas adicionales.
+const bicentenario='CENTRO DE EDUCACION INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811';
+for (const [a,b,oficial] of [
+  ['8VA ESTRELLA EL SEUÑO DE BOLIVAR','OCTAVA ESTRELLA SUEÑOS DE BOLIVAR','OCTAVA ESTRELLA SUEÑOS DE BOLIVAR'],
+  ['EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES','EZEQUIEL ZAMORA TIERRA DE MUJERES Y HOMBRES LIBRES','EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES'],
+  ['GIGANTE DE LA PATRIA','EL GIGANTE DE LA PATRIA','GIGANTE DE LA PATRIA'],
+  ['FLOR DEL ARAGUANEY','FLOR DEL ARANGUEY','FLOR DEL ARAGUANEY'],
+  ['AGRARIA SOCIALISTA EL PARAISO DE CHARALLAVE','AGRARIO SOCIALISTA EL PARAISO','COMUNA AGRARIA SOCIALISTA EL PARAISO DE CHARALLAVE']
+]) {
+  const agrupado=resumirRegistro({}, {a:{'90000001':{comuna:a,centro_electoral:'CEIM BICENTENARIO 5 DE JULIO 1811'}},b:{'90000001':{comuna:b,centro_electoral:'CENTRO DE EDUCACIÓN INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811'}}}, {x:{circuito_comunal:b,centro_electoral:'CENTRO DE EDUCACIÓN INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811'}}, corte, {c:{comuna:b,centro:'CEIM BICENTENARIO 5 DE JULIO 1811',jovenes:1,adultos:0,menores:0,sinEdad:0}});
+  assert.equal(agrupado.filas.length,1);
+  assert.equal(agrupado.filas[0].comuna,oficial);
+  assert.equal(agrupado.filas[0].centro,bicentenario);
+  assert.equal(agrupado.filas[0].base,2);
+  assert.equal(agrupado.filas[0].adicionales,1);
+  assert.equal(agrupado.filas[0].total,3);
+  assert.equal(agrupado.diagnostico.ubicacionesEnConflicto,0);
+}
+console.log('Verificado: nombres territoriales unificados, catálogo y cargas adicionales sin pérdida de registros.');

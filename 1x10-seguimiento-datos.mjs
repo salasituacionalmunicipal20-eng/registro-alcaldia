@@ -1,4 +1,5 @@
 // Este módulo produce cantidades; las identidades no salen en el resultado.
+import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261003h';
 export const SIN_COMUNA = 'Sin comuna asignada';
 export const SIN_CENTRO = 'Sin centro asignado';
 export const CONFLICTO = 'Ubicación por verificar';
@@ -26,11 +27,13 @@ export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}
   const registros = [];
   const comunasCanonicas = new Map(), centrosCanonicos = new Map();
   for (const c of Object.values(catalogo || {})) {
-    if (texto(c.circuito_comunal)) comunasCanonicas.set(claveTerritorial(c.circuito_comunal), texto(c.circuito_comunal));
-    if (texto(c.centro_electoral)) centrosCanonicos.set(claveTerritorial(c.centro_electoral), texto(c.centro_electoral));
+    const comuna = nombreTerritorial(texto(c.circuito_comunal),'comuna');
+    const centro = nombreTerritorial(texto(c.centro_electoral),'centro');
+    if (comuna) comunasCanonicas.set(claveTerritorial(comuna),comuna);
+    if (centro) centrosCanonicos.set(claveTerritorial(centro),centro);
   }
   function canonico(valor, indice, vacio) {
-    const limpio = texto(valor).replace(/\s+/g,' ');
+    const limpio = nombreTerritorial(texto(valor).replace(/\s+/g,' '),indice === comunasCanonicas ? 'comuna' : 'centro');
     if (!limpio) return vacio;
     const clave = claveTerritorial(limpio);
     if (!indice.has(clave)) indice.set(clave, limpio);

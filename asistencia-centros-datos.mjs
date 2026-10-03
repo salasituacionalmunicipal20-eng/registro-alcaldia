@@ -1,4 +1,5 @@
-import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261001a';
+import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261003h';
+import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261003h';
 export { SISTEMAS_1X10 };
 export const ESTADOS = { pendiente:'Pendiente', asistio:'Sí asistió', no_asistio:'No asistió' };
 const texto = v => String(v ?? '').trim().replace(/\s+/g,' ');
@@ -12,21 +13,11 @@ export function identidad(id, p) {
 }
 
 export function consolidarPersonas(sistemas, catalogo={}) {
-  const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map(), canonCentros=new Map();
+  const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map();
   for (const c of Object.values(catalogo)) {
     if(c.circuito_comunal) canonComunas.set(normalizar(c.circuito_comunal),c.circuito_comunal);
     if(c.nombre) canonComunidades.set(normalizar(c.nombre),c.nombre);
   }
-  // Dos formas del mismo nombre: uso el nombre del catálogo territorial.
-  const ezequielZamora='EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES';
-  canonComunas.set(normalizar(ezequielZamora),ezequielZamora);
-  canonComunas.set(normalizar('EZEQUIEL ZAMORA TIERRA DE MUJERES Y HOMBRES LIBRES'),ezequielZamora);
-  const gigantePatria='GIGANTE DE LA PATRIA';
-  canonComunas.set(normalizar(gigantePatria),gigantePatria);
-  canonComunas.set(normalizar('EL GIGANTE DE LA PATRIA'),gigantePatria);
-  const bicentenario='CENTRO DE EDUCACION INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811';
-  canonCentros.set(normalizar(bicentenario),bicentenario);
-  canonCentros.set(normalizar('CEIM BICENTENARIO 5 DE JULIO 1811'),bicentenario);
   let registros=0,sinIdentidad=0;
   function agregar(id,p,j,esJefe) {
     registros++;
@@ -37,7 +28,7 @@ export function consolidarPersonas(sistemas, catalogo={}) {
     const comunidad=texto(p.comunidad_nombre||propia.nombre||p.comunidad||j.comunidad_nombre||heredada.nombre||j.comunidad)||'Sin comunidad registrada';
     const centro=texto(p.centro_electoral||propia.centro_electoral||j.centro_electoral||heredada.centro_electoral)||'Sin centro registrado';
     const nombre=texto([p.nombres,p.apellidos].filter(Boolean).join(' '))||texto(p.nombre)||'Nombre no registrado';
-    const dato={...(quien||{id:null,cedula:texto(p.cedula),nacionalidad:texto(p.nacionalidad)}),nombre,comuna:canonComunas.get(normalizar(comuna))||comuna,comunidad:canonComunidades.get(normalizar(comunidad))||comunidad,centro:canonCentros.get(normalizar(centro))||centro,esJefe};
+    const dato={...(quien||{id:null,cedula:texto(p.cedula),nacionalidad:texto(p.nacionalidad)}),nombre,comuna:nombreTerritorial(canonComunas.get(normalizar(comuna))||comuna,'comuna'),comunidad:canonComunidades.get(normalizar(comunidad))||comunidad,centro:nombreTerritorial(centro,'centro'),esJefe};
     registrosLista.push(dato);
     if(!quien)return;
     if(!porPersona.has(quien.id))porPersona.set(quien.id,[]);
