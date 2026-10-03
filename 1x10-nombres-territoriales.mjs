@@ -1,6 +1,9 @@
 // Equivalencias confirmadas por Carlos para los paneles y sus descargas.
 const clave = valor => String(valor ?? '').trim().normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/\s+/g,' ').toUpperCase();
 const comunas = new Map([
+  ['ARANEROS DE SABANETA','COMUNA SOCIALISTA ARAÑERO DE SABANETA'],
+  ['SOCIALISTA EL ARANERO DE SABANETA EJE LA MATA','COMUNA SOCIALISTA ARAÑERO DE SABANETA'],
+  ['COMUNA SOCIALISTA ARANERO DE SABANETA','COMUNA SOCIALISTA ARAÑERO DE SABANETA'],
   ['INDIO CHARAVARE','INDIO CHARAVARE'],
   ['INDIOS CHARAVARES','INDIO CHARAVARE'],
   ['8VA ESTRELLA EL SEUNO DE BOLIVAR','OCTAVA ESTRELLA SUEÑOS DE BOLIVAR'],
