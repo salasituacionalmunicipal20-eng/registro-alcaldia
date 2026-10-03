@@ -21,9 +21,6 @@ export function consolidarPersonas(sistemas, catalogo={}) {
   const ezequielZamora='EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES';
   canonComunas.set(normalizar(ezequielZamora),ezequielZamora);
   canonComunas.set(normalizar('EZEQUIEL ZAMORA TIERRA DE MUJERES Y HOMBRES LIBRES'),ezequielZamora);
-  const florAraguaney='FLOR DEL ARAGUANEY';
-  canonComunas.set(normalizar(florAraguaney),florAraguaney);
-  canonComunas.set(normalizar('FLOR DEL ARANGUEY'),florAraguaney);
   let registros=0,sinIdentidad=0;
   function agregar(id,p,j,esJefe) {
     registros++;
