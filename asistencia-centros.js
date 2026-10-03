@@ -1,8 +1,8 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 import {getDatabase,ref,get,child,onValue,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
-import {SISTEMAS_1X10,consolidarPersonas,conAsistencia,filtrarPersonas,contarAsistencia,cedulaVisible,ESTADOS} from './asistencia-centros-datos.mjs?v=20261003h';
-import {descargarPDF,descargarExcel} from './asistencia-centros-exportar.mjs?v=20261003h';
+import {SISTEMAS_1X10,consolidarPersonas,conAsistencia,filtrarPersonas,contarAsistencia,cedulaVisible,ESTADOS} from './asistencia-centros-datos.mjs?v=20261003i';
+import {descargarPDF,descargarExcel} from './asistencia-centros-exportar.mjs?v=20261003i';
 
 const app=initializeApp({apiKey:'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',authDomain:'alcaldia-admin.firebaseapp.com',databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com',projectId:'alcaldia-admin',storageBucket:'alcaldia-admin.firebasestorage.app',messagingSenderId:'945828226894',appId:'1:945828226894:web:0efeebeb270357e6f5201f'});
 const auth=getAuth(app),database=getDatabase(app),$=id=>document.getElementById(id);

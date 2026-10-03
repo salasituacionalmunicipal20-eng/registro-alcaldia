@@ -1,6 +1,8 @@
 // Equivalencias confirmadas por Carlos para los paneles y sus descargas.
 const clave = valor => String(valor ?? '').trim().normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/\s+/g,' ').toUpperCase();
 const comunas = new Map([
+  ['INDIO CHARAVARE','INDIO CHARAVARE'],
+  ['INDIOS CHARAVARES','INDIO CHARAVARE'],
   ['8VA ESTRELLA EL SEUNO DE BOLIVAR','OCTAVA ESTRELLA SUEÑOS DE BOLIVAR'],
   ['8VA ESTRELLA EL SUENO DE BOLIVAR','OCTAVA ESTRELLA SUEÑOS DE BOLIVAR'],
   ['OCTAVA ESTRELLA SUENOS DE BOLIVAR','OCTAVA ESTRELLA SUEÑOS DE BOLIVAR'],
