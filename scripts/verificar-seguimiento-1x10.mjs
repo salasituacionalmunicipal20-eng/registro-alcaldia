@@ -103,3 +103,7 @@ for(const [canonico,variantes] of [['EL DIVIDIVI',['EL DIVIDIVE','EL DIVIDIVI']]
  assert.equal(comunidades.length,1);assert.equal(comunidades[0].comunidad,canonico);assert.equal(comunidades[0].total,variantes.length);
 }
 console.log('Verificado: las cinco comunidades confirmadas se unifican sin perder registros.');
+const boulevar=resumirRegistro({j:{comuna:'LA IMPERIAL',comunidad_nombre:'BOULEVAR EVENCIO GAMEZ'}},{j:{a:{comunidad_nombre:'BOULEVARD EVENCIO GAMEZ'}}},{},corte,{});
+const comunidadesBoulevar=agruparComunidades(boulevar.comunidades).flatMap(g=>g.comunidades).filter(c=>c.total);
+assert.equal(comunidadesBoulevar.length,1);assert.equal(comunidadesBoulevar[0].comunidad,'BOULEVAR EVENCIO GAMEZ');assert.equal(comunidadesBoulevar[0].total,2);
+console.log('Verificado: Boulevar Evencio Gamez unificado sin pérdida de registros.');
