@@ -107,3 +107,7 @@ const boulevar=resumirRegistro({j:{comuna:'LA IMPERIAL',comunidad_nombre:'BOULEV
 const comunidadesBoulevar=agruparComunidades(boulevar.comunidades).flatMap(g=>g.comunidades).filter(c=>c.total);
 assert.equal(comunidadesBoulevar.length,1);assert.equal(comunidadesBoulevar[0].comunidad,'BOULEVAR EVENCIO GAMEZ');assert.equal(comunidadesBoulevar[0].total,2);
 console.log('Verificado: Boulevar Evencio Gamez unificado sin pérdida de registros.');
+const chara=resumirRegistro({j:{comuna:'CIUDAD MIRANDA SOCIALISTA',comunidad_nombre:'CHARA 1'}},{j:{a:{comunidad_nombre:'CHARA CIUDAD MIRANDA I'}}},{},corte,{});
+const comunidadesChara=agruparComunidades(chara.comunidades).flatMap(g=>g.comunidades).filter(c=>c.total);
+assert.equal(comunidadesChara.length,1);assert.equal(comunidadesChara[0].comunidad,'CHARA 1');assert.equal(comunidadesChara[0].total,2);
+console.log('Verificado: Chara 1 unificada sin pérdida de registros.');

@@ -56,7 +56,7 @@
     @media print { header a, .controles, #cargas, #diagnostico { display: none !important; } body { background: white; } main { max-width: none; padding: 0; } section { box-shadow: none; border-radius: 0; } .tabla { overflow: visible; } th,td { font-size: 9pt; padding: 5px; } tr { break-inside: avoid; } }
   </style>
   <script src="autofresh.js"></script>
-  <script src="territorio-data.js?v=20261006-boulevar"></script>
+  <script src="territorio-data.js?v=20261006-chara"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -104,9 +104,9 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
     import { getDatabase, ref, get, child, onValue, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
-    import { resumirRegistro, sumarFilas, agruparComunidades, SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261006-boulevar';
-    import { crearInforme } from './1x10-seguimiento-pdf.mjs?v=20261006-boulevar';
-    import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261006-boulevar';
+    import { resumirRegistro, sumarFilas, agruparComunidades, SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261006-chara';
+    import { crearInforme } from './1x10-seguimiento-pdf.mjs?v=20261006-chara';
+    import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261006-chara';
     // La configuración del cliente Firebase es pública; se comparte con las páginas existentes.
     const app = initializeApp({apiKey:'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',authDomain:'alcaldia-admin.firebaseapp.com',databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com',projectId:'alcaldia-admin',storageBucket:'alcaldia-admin.firebasestorage.app',messagingSenderId:'945828226894',appId:'1:945828226894:web:0efeebeb270357e6f5201f'});
     const auth=getAuth(app), database=getDatabase(app), $=id=>document.getElementById(id);
