@@ -1,7 +1,7 @@
 import { dibujarHeaderPDF, dibujarFooterPDF } from './pdf-header.js';
-import { sumarFilas } from './1x10-seguimiento-datos.mjs?v=20261003k';
+import { sumarFilas } from './1x10-seguimiento-datos.mjs?v=20261005com';
 
-export function crearInforme(jsPDF, filas, { fecha, filtros, calidad, generado }) {
+export function crearInforme(jsPDF, filas, { fecha, filtros, calidad, generado, comunidades=[] }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const numero = n => n.toLocaleString('es-VE');
   const columnas = ['base','adicionales','jovenes','adultos','menores','sinEdad','total'];
@@ -38,12 +38,21 @@ export function crearInforme(jsPDF, filas, { fecha, filtros, calidad, generado }
     body:[...filas.map(f => [f.comuna,f.centro,...columnas.map(k => numero(f[k]))]), ['TOTAL','',...columnas.map(k => numero(totales[k]))]],
     columnStyles:{0:{cellWidth:46},1:{cellWidth:70}}
   });
+  if(comunidades.length) {
+    doc.addPage();
+    doc.autoTable({...tabla,startY:58,head:[['Comunidades de cada comuna','Registrados']],
+      body:comunidades.flatMap(g=>[
+        [{content:g.comuna+' · Total registrado: '+numero(g.total),colSpan:2,styles:{fillColor:[10,35,81],textColor:[255,255,255],fontStyle:'bold'} }],
+        ...g.comunidades.map(c=>[c.comunidad,numero(c.total)])
+      ]),columnStyles:{0:{cellWidth:235},1:{cellWidth:34,halign:'right'}}});
+  }
   doc.addPage();
   let posicion = dibujarHeaderPDF(doc, { titulo:'Método y calidad de los registros', subtitulo }) + 6;
   const notas = [
     'Generado el ' + generado + '.', filtros, calidad,
     'Las cantidades adicionales son declaradas, no verificadas por cédula. El total informado combina todos los registros de jefes y afines de las siete variantes del 1x10 y cantidades adicionales. Las repeticiones y los registros sin cédula se incluyen; no equivale a personas únicas.',
     'Las ubicaciones pueden ser heredadas del jefe o del catálogo territorial. No confirman el centro electoral individual.',
+    'El detalle de comunidades cuenta todos los registros del 1x10. Incluye las comunidades del catálogo con cero registros. Las cargas adicionales solo tienen comuna y centro; no se asignan a comunidades. Los registros sin comunidad se muestran aparte dentro de su comuna.',
     'Se agrupan diferencias de mayúsculas, espacios y tildes en comunas y centros. Los nombres que difieren en otras letras se conservan en filas distintas.',
     'Las cargas por rangos de edad corresponden al momento en que fueron declaradas. Cambiar la fecha solo recalcula las edades del 1x10.',
     'Los registros sin fecha de nacimiento válida se incluyen en Sin edad. Los menores de 15 se muestran aparte y están incluidos en el total.'

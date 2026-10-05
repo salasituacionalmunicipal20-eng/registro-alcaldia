@@ -1,0 +1,31 @@
+// Verifica el panel con datos reales en lectura; elimina exclusivamente su cuenta temporal.
+import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import http from 'node:http';import vm from 'node:vm';import assert from 'node:assert/strict';import crypto from 'node:crypto';import {spawnSync} from 'node:child_process';
+import {initializeApp,cert} from 'firebase-admin/app';import {getDatabase} from 'firebase-admin/database';import {getAuth} from 'firebase-admin/auth';import puppeteer from 'puppeteer-core';
+import {resumirRegistro,agruparComunidades,SISTEMAS_1X10} from '../1x10-seguimiento-datos.mjs';
+const carpeta=path.resolve(import.meta.dirname,'..'),sal=fs.mkdtempSync(path.join(os.tmpdir(),'1x10-comunidades-')),uid='prueba-comunidades-'+Date.now();let browser,servidor;
+initializeApp({credential:cert(JSON.parse(fs.readFileSync('C:/Users/carlo/Documents/Alcaldia BDD/alcaldia-admin-firebase-adminsdk-fbsvc-207472a5bd.json','utf8'))),databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com'});const db=getDatabase(),auth=getAuth();
+try {
+ const contexto={window:{}};vm.runInNewContext(fs.readFileSync(carpeta+'/territorio-data.js','utf8'),contexto);const catalogo=contexto.window.TERRITORIO.comunidades;
+ const sistemas=await Promise.all(SISTEMAS_1X10.map(async sufijo=>{const [j,a]=await Promise.all([db.ref('jefes_1x10'+sufijo).once('value'),db.ref('afines_1x10'+sufijo).once('value')]);return {jefes:j.val()||{},afines:a.val()||{}};}));
+ const html=fs.readFileSync(carpeta+'/1x10-seguimiento.html','utf8'),js=[...html.matchAll(/<script[^>]*type="module"[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]).join('\n');fs.writeFileSync(sal+'/sintaxis.mjs',js);const sintaxis=spawnSync(process.execPath,['--check',sal+'/sintaxis.mjs'],{encoding:'utf8',windowsHide:true});assert.equal(sintaxis.status,0,sintaxis.stderr);
+ servidor=http.createServer((req,res)=>{const f=path.resolve(carpeta,'.'+new URL(req.url,'http://localhost').pathname);if(!f.startsWith(carpeta+path.sep)){res.writeHead(403).end();return;}try{res.setHeader('Content-Type',/\.m?js$/.test(f)?'text/javascript; charset=utf-8':f.endsWith('.html')?'text/html; charset=utf-8':f.endsWith('.png')?'image/png':'application/octet-stream');res.end(fs.readFileSync(f));}catch{res.writeHead(404).end();}});await new Promise(ok=>servidor.listen(0,'127.0.0.1',ok));
+ const base=process.argv.includes('--produccion')?'https://salasituacional.alcaldiadecharallave.com':'http://127.0.0.1:'+servidor.address().port;
+ await auth.createUser({uid,email:uid+'@alcaldia.com',password:'Temporal-'+crypto.randomUUID()});await db.ref('operadores/'+uid).set({nombre:'Verificación de totales',rol:'admin',cambio_obligatorio:false});const token=await auth.createCustomToken(uid);
+ browser=await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});const page=await browser.newPage(),errores=[];page.on('pageerror',e=>errores.push(e.message));await page.setViewport({width:1280,height:900});await page.goto(base+'/index.html',{waitUntil:'networkidle2'});await page.evaluate(async token=>{const {getAuth,signInWithCustomToken}=await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');await signInWithCustomToken(getAuth(),token);},token);await page.goto(base+'/1x10-seguimiento.html',{waitUntil:'networkidle2'});await page.waitForFunction(()=>document.getElementById('pdf')?.disabled===false,{timeout:60000});
+ const corte=await page.$eval('#fecha',e=>e.value),resumen=resumirRegistro({}, {},catalogo,corte,{},sistemas),esperado=agruparComunidades(resumen.comunidades);
+ async function leer(){return page.$$eval('.comuna-comunidades',els=>els.map(e=>({comuna:e.querySelector('h3').textContent,total:Number(e.dataset.total),comunidades:[...e.querySelectorAll('tbody tr')].map(r=>({comunidad:r.cells[0].textContent,total:Number(r.dataset.total)}))})));}
+ assert.deepEqual(await leer(),esperado);assert.equal(esperado.reduce((s,g)=>s+g.total,0),resumen.diagnostico.relaciones);await page.$('.comuna-comunidades').then(e=>e.screenshot({path:sal+'/comuna-escritorio.png'}));
+ const grupo=esperado.find(g=>g.total>0);await page.select('#comuna',grupo.comuna);assert.deepEqual(await leer(),[grupo]);const centro=resumen.filas.find(f=>f.comuna===grupo.comuna).centro;await page.select('#centro',centro);assert.deepEqual(await leer(),agruparComunidades(resumen.comunidades,{comuna:grupo.comuna,centro}));await page.select('#centro','');await page.select('#comuna','');
+ await page.setViewport({width:375,height:900});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.$('.comuna-comunidades').then(e=>e.screenshot({path:sal+'/comuna-movil.png'}));
+ const cliente=await page.createCDPSession();await cliente.send('Page.setDownloadBehavior',{behavior:'allow',downloadPath:sal});await page.click('#pdf');let archivo;for(let i=0;i<30;i++){archivo=fs.readdirSync(sal).find(f=>f.endsWith('.pdf'));if(archivo)break;await new Promise(r=>setTimeout(r,300));}assert.ok(archivo,'Se descarga el informe PDF');
+ fs.writeFileSync(sal+'/esperado.json',JSON.stringify(esperado));const verificar=spawnSync('python',['-c',`import fitz,json,sys
+from pathlib import Path
+b=Path(sys.argv[1]);d=fitz.open(b/sys.argv[2]);t=' '.join(p.get_text() for p in d);grupos=json.loads((b/'esperado.json').read_text(encoding='utf8'))
+assert 'Total registrado:' in t
+for g in grupos:
+ for c in g['comunidades']:
+  assert ''.join(c['comunidad'].split()) in ''.join(t.split()),c['comunidad']
+pagina=next(p for p in d if 'Total registrado:' in p.get_text());pagina.get_pixmap(dpi=100).save(b/'pdf-comunidades.png')
+print('PDF completo:',len(d),'paginas')`,sal,archivo],{encoding:'utf8',windowsHide:true});assert.equal(verificar.status,0,verificar.stderr);assert.deepEqual(errores,[]);console.log(verificar.stdout.trim());console.log(JSON.stringify({resultado:'OK',registros:resumen.diagnostico.relaciones,comunas:esperado.length,comunidades:esperado.reduce((s,g)=>s+g.comunidades.length,0),sumas:true,filtros:true,movil:true,archivos:sal}));
+} finally {if(browser)await browser.close();if(servidor)servidor.close();await db.ref('operadores/'+uid).remove();await auth.deleteUser(uid).catch(()=>{});}
+process.exit(0);

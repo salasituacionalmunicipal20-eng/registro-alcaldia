@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { edadEn, resumirRegistro, sumarFilas, SISTEMAS_1X10 } from '../1x10-seguimiento-datos.mjs';
+import { edadEn, resumirRegistro, sumarFilas, agruparComunidades, SISTEMAS_1X10 } from '../1x10-seguimiento-datos.mjs';
 const corte = '2026-09-30';
 assert.equal(edadEn('2011-09-30',corte),15);
 assert.equal(edadEn('2011-10-01',corte),14);
@@ -81,3 +81,15 @@ for (const [a,b,oficial] of [
   assert.equal(agrupado.diagnostico.ubicacionesEnConflicto,0);
 }
 console.log('Verificado: nombres territoriales unificados, catálogo y cargas adicionales sin pérdida de registros.');
+const catalogoComunidades={a:{nombre:'FLOR DEL ARAGUANEY',circuito_comunal:'LA IMPERIAL',centro_electoral:'Centro A'},b:{nombre:'Comunidad vacía',circuito_comunal:'LA IMPERIAL',centro_electoral:'Centro A'},c:{nombre:'Otra comunidad',circuito_comunal:'INDIO CHARAVARE',centro_electoral:'Centro B'}};
+const territorial=resumirRegistro({}, {},catalogoComunidades,corte,cargas,[{jefes:{j:{comunidad_slug:'a'}},afines:{j:{hereda:{},propia:{comuna:'INDIOS CHARAVARES',comunidad_slug:'c'},otraComuna:{comuna:'INDIO CHARAVARE'},variante:{comuna:'IMPERIAL',comunidad_nombre:'FLOR DE ARANGUEY'},slugDesconocido:{comunidad_slug:'no-existe'}},huerfano:{sinDatos:{}}}}]);
+const grupos=agruparComunidades(territorial.comunidades);
+assert.equal(grupos.reduce((s,g)=>s+g.total,0),territorial.diagnostico.relaciones);
+const imperial=grupos.find(g=>g.comuna==='LA IMPERIAL');assert.equal(imperial.total,4);
+assert.equal(imperial.comunidades.find(c=>c.comunidad==='FLOR DEL ARAGUANEY').total,3);
+assert.equal(imperial.comunidades.find(c=>c.comunidad==='Comunidad vacía').total,0);
+assert.equal(imperial.comunidades.find(c=>c.comunidad==='Sin comunidad asignada').total,1);
+assert.equal(grupos.find(g=>g.comuna==='INDIO CHARAVARE').comunidades.find(c=>c.comunidad==='Sin comunidad asignada').total,1);
+for(const g of grupos)assert.equal(g.total,g.comunidades.reduce((s,c)=>s+c.total,0));
+assert.equal(agruparComunidades(territorial.comunidades,{centro:'Centro B'}).reduce((s,g)=>s+g.total,0),territorial.filas.filter(f=>f.centro==='Centro B').reduce((s,f)=>s+f.base,0));
+console.log('Verificado: comunidades completas con cero, equivalencias, herencia territorial, datos faltantes y sumas con filtros.');

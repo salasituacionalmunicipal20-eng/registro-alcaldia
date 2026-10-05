@@ -28,6 +28,10 @@ const comunas = new Map([
 ]);
 const bicentenario = 'CENTRO DE EDUCACION INICIAL MUNICIPAL BICENTENARIO 5 DE JULIO DE 1811';
 const centros = new Map([[bicentenario,bicentenario],['CEIM BICENTENARIO 5 DE JULIO 1811',bicentenario]]);
+const comunidades = new Map([
+  ...['EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES','EZEQUIEL ZAMORA TIERRA DE MUJERES Y HOMBRES LIBRES'].map(n=>[n,'EZEQUIEL ZAMORA TIERRA DE HOMBRES Y MUJERES LIBRES']),
+  ...['FLOR DEL ARAGUANEY','FLOR DEL ARANGUEY','FLOR DE ARAGUANEY','FLOR DE ARANGUEY'].map(n=>[n,'FLOR DEL ARAGUANEY'])
+]);
 export function nombreTerritorial(valor, tipo) {
-  return (tipo === 'comuna' ? comunas : centros).get(clave(valor)) ?? valor;
+  return (tipo === 'comuna' ? comunas : tipo === 'comunidad' ? comunidades : centros).get(clave(valor)) ?? valor;
 }
