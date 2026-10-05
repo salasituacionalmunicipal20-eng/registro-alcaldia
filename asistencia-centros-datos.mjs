@@ -13,30 +13,40 @@ export function identidad(id, p) {
 }
 
 export function consolidarPersonas(sistemas, catalogo={}) {
-  const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map();
+  const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map(), canonCentros=new Map();
   for (const c of Object.values(catalogo)) {
-    if(c.circuito_comunal) canonComunas.set(normalizar(c.circuito_comunal),c.circuito_comunal);
-    if(c.nombre) canonComunidades.set(normalizar(c.nombre),c.nombre);
+    if(c.circuito_comunal) {const n=nombreTerritorial(c.circuito_comunal,'comuna');canonComunas.set(normalizar(n),n);}
+    if(c.nombre) {const n=nombreTerritorial(c.nombre,'comunidad');canonComunidades.set(normalizar(n),n);}
+    if(c.centro_electoral) {const n=nombreTerritorial(c.centro_electoral,'centro');canonCentros.set(normalizar(n),n);}
   }
   let registros=0,sinIdentidad=0;
-  function agregar(id,p,j,esJefe) {
+  function agregar(id,p,j,esJefe,sufijo='') {
     registros++;
     const quien=identidad(id,p);
     if(!quien)sinIdentidad++;
     const propia=catalogo[p.comunidad_slug]||{}, heredada=catalogo[j.comunidad_slug]||{};
     const comuna=texto(p.comuna||p.circuito||propia.circuito_comunal||j.comuna||j.circuito||heredada.circuito_comunal)||'Sin comuna registrada';
-    const comunidad=texto(p.comunidad_nombre||propia.nombre||p.comunidad||j.comunidad_nombre||heredada.nombre||j.comunidad)||'Sin comunidad registrada';
+    const comunaCanon=nombreTerritorial(comuna,'comuna');
+    const comunaJefe=nombreTerritorial(texto(j.comuna||j.circuito||heredada.circuito_comunal),'comuna');
+    const propiaIndicada=p.comunidad_nombre||p.comunidad||p.comunidad_slug;
+    const comunidad=texto(p.comunidad_nombre||p.comunidad||propia.nombre||(!propiaIndicada&&normalizar(comunaCanon)===normalizar(comunaJefe)?j.comunidad_nombre||j.comunidad||heredada.nombre:''))||'Sin comunidad registrada';
     const centro=texto(p.centro_electoral||propia.centro_electoral||j.centro_electoral||heredada.centro_electoral)||'Sin centro registrado';
     const nombre=texto([p.nombres,p.apellidos].filter(Boolean).join(' '))||texto(p.nombre)||'Nombre no registrado';
-    const dato={...(quien||{id:null,cedula:texto(p.cedula),nacionalidad:texto(p.nacionalidad)}),nombre,comuna:nombreTerritorial(canonComunas.get(normalizar(comuna))||comuna,'comuna'),comunidad:canonComunidades.get(normalizar(comunidad))||comunidad,centro:nombreTerritorial(centro,'centro'),esJefe};
+    const comunidadCanon=nombreTerritorial(comunidad,'comunidad'),centroCanon=nombreTerritorial(centro,'centro');
+    const dato={...(quien||{id:null,cedula:texto(p.cedula),nacionalidad:texto(p.nacionalidad)}),nombre,
+      comuna:canonComunas.get(normalizar(comunaCanon))||comunaCanon,
+      comunidad:canonComunidades.get(normalizar(comunidadCanon))||comunidadCanon,
+      centro:canonCentros.get(normalizar(centroCanon))||centroCanon,esJefe,
+      registroId:id,jefeId:texto(j.cedula),nombreJefe:texto([j.nombres,j.apellidos].filter(Boolean).join(' '))||texto(j.nombre),
+      telefono:texto(p.telefono),sufijo};
     registrosLista.push(dato);
     if(!quien)return;
     if(!porPersona.has(quien.id))porPersona.set(quien.id,[]);
     porPersona.get(quien.id).push(dato);
   }
   for(const s of sistemas) {
-    for(const [id,j] of Object.entries(s.jefes||{}))agregar(id,j,j,true);
-    for(const [jefeId,grupo] of Object.entries(s.afines||{}))for(const [id,p] of Object.entries(grupo||{}))agregar(id,p,s.jefes?.[jefeId]||{},false);
+    for(const [id,j] of Object.entries(s.jefes||{}))agregar(id,j,{...j,cedula:j.cedula||id},true,s.sufijo||'');
+    for(const [jefeId,grupo] of Object.entries(s.afines||{}))for(const [id,p] of Object.entries(grupo||{}))agregar(id,p,{...s.jefes?.[jefeId],cedula:s.jefes?.[jefeId]?.cedula||jefeId},false,s.sufijo||'');
   }
   let ubicacionesPorVerificar=0;
   const personas=[...porPersona.values()].map(datos=>{

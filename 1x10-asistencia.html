@@ -66,7 +66,7 @@
     <section id="restringido" class="oculto"><h2>Acceso restringido</h2><p>Solo los administradores pueden consultar y modificar este panel.</p></section>
     <div id="contenido" class="oculto">
       <section>
-        <h2>Comuna y comunidad del jefe de calle</h2>
+        <h2>Comuna y comunidad del jefe de calle del 1x10 general</h2>
         <p class="muted">Selecciona un jefe. Al guardar se actualizan su comuna, comunidad y centro según el catálogo territorial; los demás datos del 1x10 se conservan.</p>
         <div class="fila">
           <div class="campo"><label for="buscarJefe">Buscar jefe</label><input id="buscarJefe" type="search" placeholder="Nombre o cédula"></div>
@@ -90,24 +90,27 @@
           <div class="campo"><label for="buscarPersona">Buscar persona o jefe</label><input id="buscarPersona" type="search" placeholder="Nombre, cédula o teléfono"></div>
         </div>
         <div class="metricas">
-          <div class="metrica"><strong id="total">0</strong><span>Personas del centro</span></div>
+          <div class="metrica"><strong id="total">0</strong><span>Registros del 1x10 en el filtro</span></div>
           <div class="metrica"><strong id="asistieron">0</strong><span>Asistieron</span></div>
           <div class="metrica"><strong id="noAsistieron">0</strong><span>No asistieron</span></div>
           <div class="metrica"><strong id="pendientes">0</strong><span>Pendientes de confirmar</span></div>
         </div>
-        <p class="muted">Los estados son informados por llamada; “pendiente” significa que aún no se confirmó. Una misma cédula conserva el mismo estado si figura en más de un 1x10. Si tiene centros distintos en registros diferentes, aparecerá en ambos para poder corregir la asignación.</p>
+        <p id="resumenPersonas" class="muted"></p>
+        <p class="muted">La lista reúne las siete variantes del 1x10 en vivo. El total conserva cada registro, incluidos los de una persona que figura en varias listas. Los estados de asistencia cuentan personas distintas y se sincronizan con Asistencia por comuna y comunidad. Los nombres territoriales usan las equivalencias confirmadas.</p>
         <p id="mensajeLista" class="aviso oculto" role="status"></p>
         <div class="tabla"><table><thead><tr><th>Persona</th><th>Teléfono</th><th>Jefe de calle</th><th>Comuna y comunidad</th><th>Centro</th><th>Estado</th><th>Registrar</th></tr></thead><tbody id="filas"><tr><td colspan="7">Cargando…</td></tr></tbody></table></div>
         <div class="paginacion"><span id="paginaTexto"></span><button id="anterior" class="secundario" type="button">Anterior</button><button id="siguiente" class="secundario" type="button">Siguiente</button></div>
       </section>
     </div>
   </main>
-  <script src="territorio-data.js"></script>
+  <script src="territorio-data.js?v=20261005-asistencia"></script>
   <script src="autofresh.js"></script>
   <script type="module">
+    import { SISTEMAS_1X10, consolidarPersonas, normalizar } from './asistencia-centros-datos.mjs?v=20261005-asistencia';
+    import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261005tor';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-    import { getDatabase, ref, get, child, onValue, update, set, remove, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+    import { getDatabase, ref, get, child, onValue, update, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
 
     const app = initializeApp({
       apiKey: 'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',
@@ -119,7 +122,11 @@
     const auth = getAuth(app), database = getDatabase(app);
     const $ = id => document.getElementById(id);
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const catalogo = window.TERRITORIO?.comunidades || {};
+    const catalogo = Object.fromEntries(Object.entries(window.TERRITORIO?.comunidades || {}).map(([id,c])=>[id,{...c,
+      circuito_comunal:nombreTerritorial(c.circuito_comunal,'comuna'),nombre:nombreTerritorial(c.nombre,'comunidad'),centro_electoral:nombreTerritorial(c.centro_electoral,'centro')} ]));
+    const fuentes = Object.fromEntries(SISTEMAS_1X10.map(sufijo=>[sufijo,{sufijo,jefes:{},afines:{}}]));
+    const nodosListos = new Set();
+    const origen = sufijo => ({'':'General','_empleados':'Empleados','_cristianos':'Cristianos','_abuelos':'Abuelos','_cristianos_abuelos':'Cristianos y abuelos','_salud':'Salud','_educacion':'Educación'}[sufijo]||sufijo);
     const limite = 75;
     let usuario = null, jefes = {}, afines = {}, estados = {}, personas = [], pagina = 1, detenerEstados = null;
     let jefesListos = false, afinesListos = false, estadosListos = false;
@@ -167,7 +174,7 @@
     $('jefe').addEventListener('change', () => {
       aviso('mensajeUbicacion',''); const j = jefes[$('jefe').value];
       $('parroquia').value = j?.parroquia || ''; cambiarParroquia();
-      $('comuna').value = j?.circuito || ''; cambiarComuna();
+      $('comuna').value = nombreTerritorial(j?.comuna || j?.circuito || '', 'comuna'); cambiarComuna();
       $('comunidad').value = j?.comunidad_slug || ''; mostrarCentroUbicacion();
     });
     $('guardarUbicacion').addEventListener('click', async () => {
@@ -178,7 +185,7 @@
       const boton = $('guardarUbicacion'); boton.disabled = true; aviso('mensajeUbicacion','Guardando…');
       try {
         await update(ref(database, `jefes_1x10/${id}`), {
-          parroquia: com.parroquia, circuito: com.circuito_comunal,
+          parroquia: com.parroquia, comuna: com.circuito_comunal, circuito: com.circuito_comunal,
           comunidad_slug: slug, comunidad_nombre: com.nombre,
           centro_electoral: com.centro_electoral || null, mesas: com.mesas || null
         });
@@ -188,21 +195,9 @@
     });
 
     function reconstruir() {
-      if (!jefesListos || !afinesListos) return;
-      const filas = [];
-      Object.entries(jefes).forEach(([jefeId,j]) => {
-        const nombreJefe = `${j.nombres||''} ${j.apellidos||''}`.trim() || jefeId;
-        const agregar = (id,p,esJefe) => {
-          const propia = !esJefe && p.comunidad_slug ? ubicacionDe(p.comunidad_slug) : null;
-          const centro = (!esJefe && p.centro_electoral) || propia?.centro_electoral || j.centro_electoral || 'SIN CENTRO ASIGNADO';
-          filas.push({ id, nombre:`${p.nombres||''} ${p.apellidos||''}`.trim() || id, telefono:p.telefono||'',
-            jefeId, nombreJefe, esJefe, centro,
-            comuna: propia?.circuito_comunal || j.circuito || '',
-            comunidad: p.comunidad_nombre || propia?.nombre || j.comunidad_nombre || '' });
-        };
-        agregar(jefeId,j,true);
-        Object.entries(afines[jefeId]||{}).forEach(([id,p]) => agregar(id,p,false));
-      });
+      if (nodosListos.size !== SISTEMAS_1X10.length*2) return;
+      jefesListos=afinesListos=true;
+      const filas = consolidarPersonas(Object.values(fuentes),catalogo).registrosLista;
       personas = filas.sort((a,b) => a.centro.localeCompare(b.centro,'es') || a.nombreJefe.localeCompare(b.nombreJefe,'es') || a.nombre.localeCompare(b.nombre,'es'));
       const centroActual = $('centro').value;
       const centros = [...new Set(filas.map(x=>x.centro))].sort((a,b)=>a.localeCompare(b,'es'));
@@ -212,14 +207,15 @@
     }
     function pintar() {
       if (!jefesListos || !afinesListos || !estadosListos) return;
-      const centro=$('centro').value, q=$('buscarPersona').value.trim().toLowerCase(), estado=$('estadoFiltro').value;
+      const centro=$('centro').value, q=normalizar($('buscarPersona').value), estado=$('estadoFiltro').value;
       const base=personas.filter(p=>!centro || p.centro===centro);
-      const unicas=new Map(base.map(p=>[p.id,estados[p.id]?.estado||'pendiente']));
-      $('total').textContent=unicas.size.toLocaleString('es-VE');
+      const filtradas=base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || normalizar(`${p.nombre} ${p.nacionalidad}${p.cedula} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`).includes(q)));
+      const unicas=new Map(filtradas.filter(p=>p.id).map(p=>[p.id,estados[p.id]?.estado||'pendiente']));
+      $('total').textContent=filtradas.length.toLocaleString('es-VE');
+      $('resumenPersonas').textContent=`${filtradas.length.toLocaleString('es-VE')} registros del 1x10 · ${unicas.size.toLocaleString('es-VE')} personas distintas con identidad válida. Asistieron, No asistieron y Pendientes cuentan personas, no registros repetidos.`;
       $('asistieron').textContent=[...unicas.values()].filter(x=>x==='asistio').length.toLocaleString('es-VE');
       $('noAsistieron').textContent=[...unicas.values()].filter(x=>x==='no_asistio').length.toLocaleString('es-VE');
       $('pendientes').textContent=[...unicas.values()].filter(x=>x==='pendiente').length.toLocaleString('es-VE');
-      const filtradas=base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || `${p.nombre} ${p.id} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`.toLowerCase().includes(q)));
       const paginas=Math.max(1,Math.ceil(filtradas.length/limite)); pagina=Math.min(pagina,paginas);
       const bloque=filtradas.slice((pagina-1)*limite,pagina*limite);
       $('filas').innerHTML=bloque.map(p=>{
@@ -227,13 +223,13 @@
         const tel=p.telefono.replace(/\D/g,'');
         const link=tel.length>=10 && tel.length<=15 ? `<a class="boton secundario" href="tel:${tel}">Llamar</a>` : '<span class="muted">Sin teléfono</span>';
         return `<tr class="${e==='pendiente'?'':e}">
-          <td data-label="Persona"><b>${esc(p.nombre)}</b><br><span class="muted">C.I. ${esc(p.id)} · ${p.esJefe?'Jefe':'Afín'}</span></td>
+          <td data-label="Persona"><b>${esc(p.nombre)}</b><br><span class="muted">C.I. ${esc((p.nacionalidad||'')+p.cedula)} · ${p.esJefe?'Jefe':'Afín'} · ${esc(origen(p.sufijo))}</span></td>
           <td data-label="Teléfono">${link}${tel?`<br><span class="muted">${esc(p.telefono)}</span>`:''}</td>
           <td data-label="Jefe de calle">${esc(p.nombreJefe)}<br><span class="muted">C.I. ${esc(p.jefeId)}</span></td>
           <td data-label="Comuna y comunidad">${esc(p.comuna||'—')}<br><span class="muted">${esc(p.comunidad||'—')}</span></td>
           <td data-label="Centro">${esc(p.centro)}</td>
           <td data-label="Estado" class="estado">${e==='asistio'?'Asistió':e==='no_asistio'?'No asistió':'Pendiente'}</td>
-          <td data-label="Registrar"><div class="acciones"><button type="button" class="si" data-id="${esc(p.id)}" data-estado="asistio">Asistió</button><button type="button" class="no" data-id="${esc(p.id)}" data-estado="no_asistio">No asistió</button><button type="button" class="limpiar" data-id="${esc(p.id)}" data-estado="pendiente">Pendiente</button></div></td></tr>`;
+          <td data-label="Registrar">${p.id?`<div class="acciones"><button type="button" class="si" data-id="${esc(p.id)}" data-estado="asistio">Asistió</button><button type="button" class="no" data-id="${esc(p.id)}" data-estado="no_asistio">No asistió</button><button type="button" class="limpiar" data-id="${esc(p.id)}" data-estado="pendiente">Pendiente</button></div>`:'Identidad pendiente de verificar'}</td></tr>`;
       }).join('') || '<tr><td colspan="7">No hay personas para los filtros seleccionados.</td></tr>';
       $('paginaTexto').textContent=`${filtradas.length.toLocaleString('es-VE')} registro(s) · página ${pagina} de ${paginas}`;
       $('anterior').disabled=pagina<=1; $('siguiente').disabled=pagina>=paginas;
@@ -242,7 +238,7 @@
       if (detenerEstados) detenerEstados();
       estados={}; estadosListos=false;
       $('filas').innerHTML='<tr><td colspan="7">Cargando estados de la jornada…</td></tr>';
-      detenerEstados=onValue(ref(database,`asistencia_1x10/${claveDia()}`),snap=>{
+      detenerEstados=onValue(ref(database,`asistencia_centros/${claveDia()}`),snap=>{
         estados=snap.val()||{}; estadosListos=true; pintar();
       },err=>{ estadosListos=false; aviso('mensajeLista',`No se pudieron leer los estados: ${err.message}`,true); });
     }
@@ -253,14 +249,19 @@
     $('filas').addEventListener('click',async event=>{
       const boton=event.target.closest('button[data-estado]'); if(!boton || !usuario) return;
       const id=boton.dataset.id, estado=boton.dataset.estado;
-      if(!/^\d{4,10}$/.test(id) || !['asistio','no_asistio','pendiente'].includes(estado) || !/^\d{4}-\d{2}-\d{2}$/.test(claveDia())) return;
+      if(!/^[VE]_\d{4,10}$/.test(id) || !['asistio','no_asistio','pendiente'].includes(estado) || !/^\d{4}-\d{2}-\d{2}$/.test(claveDia())) return;
       boton.disabled=true; aviso('mensajeLista','Guardando estado…');
+      const fecha=claveDia(), previo=estados[id]||null, uid=usuario.uid;
       try {
-        const ruta=ref(database,`asistencia_1x10/${claveDia()}/${id}`);
-        if(estado==='pendiente') await remove(ruta);
-        else await set(ruta,{estado,actualizado_en:serverTimestamp(),actualizado_por:usuario.uid});
-        aviso('mensajeLista','Estado guardado.');
-      } catch(e) { aviso('mensajeLista',`No se pudo guardar el estado: ${e.message}`,true); boton.disabled=false; }
+        const ruta=ref(database,`asistencia_centros/${fecha}/${id}`);
+        const resultado=await runTransaction(ruta,actual=>{
+          if((actual?.actualizado_en||0)!==(previo?.actualizado_en||0)||(actual?.estado||'pendiente')!==(previo?.estado||'pendiente'))return;
+          return {estado,actualizado_en:serverTimestamp(),actualizado_por:uid};
+        },{applyLocally:false});
+        if(!resultado.committed)throw Error('Otro administrador cambió este registro. Revisa el estado y vuelve a marcarlo.');
+        if(fecha===claveDia())aviso('mensajeLista','Estado guardado y sincronizado.');
+      } catch(e) { if(fecha===claveDia())aviso('mensajeLista',`No se pudo guardar el estado: ${e.message}`,true); }
+      finally {boton.disabled=false;}
     });
 
     onAuthStateChanged(auth,async user=>{
@@ -273,8 +274,12 @@
       $('cargando').classList.add('oculto');
       if(!permitido){$('restringido').classList.remove('oculto');return;}
       usuario=user; $('contenido').classList.remove('oculto');
-      onValue(ref(database,'jefes_1x10'),snap=>{jefes=snap.val()||{};jefesListos=true;reconstruir();},err=>aviso('mensajeLista',`No se cargaron los jefes: ${err.message}`,true));
-      onValue(ref(database,'afines_1x10'),snap=>{afines=snap.val()||{};afinesListos=true;reconstruir();},err=>aviso('mensajeLista',`No se cargaron los afines: ${err.message}`,true));
+      for(const sufijo of SISTEMAS_1X10) for(const tipo of ['jefes','afines']) {
+        const nodo=tipo+'_1x10'+sufijo;
+        onValue(ref(database,nodo),snap=>{fuentes[sufijo][tipo]=snap.val()||{};if(!sufijo&&tipo==='jefes')jefes=fuentes[sufijo].jefes;nodosListos.add(nodo);reconstruir();},err=>{
+          nodosListos.delete(nodo);jefesListos=afinesListos=false;$('total').textContent='—';$('filas').replaceChildren();aviso('mensajeLista',`No se cargó ${nodo}: ${err.message}`,true);
+        });
+      }
       escucharEstados();
     });
   </script>
