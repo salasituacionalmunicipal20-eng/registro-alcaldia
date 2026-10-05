@@ -1,5 +1,5 @@
 import { dibujarHeaderPDF, dibujarFooterPDF } from './pdf-header.js';
-import { sumarFilas } from './1x10-seguimiento-datos.mjs?v=20261005tor';
+import { sumarFilas } from './1x10-seguimiento-datos.mjs?v=20261006-comunidades';
 
 export function crearInforme(jsPDF, filas, { fecha, filtros, calidad, generado, comunidades=[] }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });

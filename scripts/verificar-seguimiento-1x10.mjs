@@ -96,3 +96,10 @@ console.log('Verificado: comunidades completas con cero, equivalencias, herencia
 const torres=resumirRegistro({j:{centro_electoral:'AGRARIO LAS TORRES',comuna:'LA IMPERIAL'}},{j:{a:{centro_electoral:'CENTRO AGRARIO LAS TORRES'},hereda:{}}},{},corte,{extra:{comuna:'LA IMPERIAL',centro:'AGRARIO LAS TORRES',jovenes:2,adultos:0,menores:0,sinEdad:0}});
 assert.equal(torres.filas.length,1);assert.equal(torres.filas[0].centro,'CENTRO AGRARIO LAS TORRES');assert.equal(torres.filas[0].base,3);assert.equal(torres.filas[0].adicionales,2);
 console.log('Verificado: Las Torres agrupado con el nombre confirmado y sin pérdida de registros.');
+for(const [canonico,variantes] of [['EL DIVIDIVI',['EL DIVIDIVE','EL DIVIDIVI']],['COLINA DE BETANIA',['COLINA DE BETANIA I','COLINAS DE BETANIA','COLINA DE BETANIA']],['CAMINO POR HACER',['CAMINO POR HACER','CAMINOS POR HACER']],['CONCIENCIA DEL SOCIALISMO',['CONCIENCIA AL SOCIAISMO','CONCIENCIA AL SOCIALISMO','CONCIENCIA DEL SOCIALISMO']],['NUESTRO FUTURO',['NUESTRO FUTURO','NUETSTRO FUTURO']]]){
+ const jefes=Object.fromEntries(variantes.map((comunidad_nombre,i)=>['j'+i,{comuna:'LA IMPERIAL',comunidad_nombre,centro_electoral:'Centro A'}]));
+ const resultado=resumirRegistro(jefes,{}, {},corte,{});
+ const comunidades=agruparComunidades(resultado.comunidades).flatMap(g=>g.comunidades).filter(c=>c.total);
+ assert.equal(comunidades.length,1);assert.equal(comunidades[0].comunidad,canonico);assert.equal(comunidades[0].total,variantes.length);
+}
+console.log('Verificado: las cinco comunidades confirmadas se unifican sin perder registros.');
