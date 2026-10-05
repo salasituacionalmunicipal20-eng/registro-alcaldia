@@ -93,3 +93,6 @@ assert.equal(grupos.find(g=>g.comuna==='INDIO CHARAVARE').comunidades.find(c=>c.
 for(const g of grupos)assert.equal(g.total,g.comunidades.reduce((s,c)=>s+c.total,0));
 assert.equal(agruparComunidades(territorial.comunidades,{centro:'Centro B'}).reduce((s,g)=>s+g.total,0),territorial.filas.filter(f=>f.centro==='Centro B').reduce((s,f)=>s+f.base,0));
 console.log('Verificado: comunidades completas con cero, equivalencias, herencia territorial, datos faltantes y sumas con filtros.');
+const torres=resumirRegistro({j:{centro_electoral:'AGRARIO LAS TORRES',comuna:'LA IMPERIAL'}},{j:{a:{centro_electoral:'CENTRO AGRARIO LAS TORRES'},hereda:{}}},{},corte,{extra:{comuna:'LA IMPERIAL',centro:'AGRARIO LAS TORRES',jovenes:2,adultos:0,menores:0,sinEdad:0}});
+assert.equal(torres.filas.length,1);assert.equal(torres.filas[0].centro,'CENTRO AGRARIO LAS TORRES');assert.equal(torres.filas[0].base,3);assert.equal(torres.filas[0].adicionales,2);
+console.log('Verificado: Las Torres agrupado con el nombre confirmado y sin pérdida de registros.');
