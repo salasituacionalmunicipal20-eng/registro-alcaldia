@@ -54,11 +54,11 @@ for (const texto of ['Descargar Excel', 'Descargar PDF', 'Fotografías', 'Actual
 for (const id of ['kTotal', 'kHombres', 'kMujeres', 'kPromedio', 'distSexo', 'distGrupos', 'distEdades']) {
     assert.match(resultados, new RegExp(`id=["']${id}["']`), `Falta el indicador demográfico ${id}`);
 }
-assert.match(resultados, /\['N\.º de inscripción','_+?'/, 'El PDF individual debe dejar en blanco el número de inscripción');
+assert.ok(resultados.includes("String(r.numero_inscripcion??"), 'El PDF individual debe mostrar el numero asignado y conservar el espacio cuando falte.');
 assert.match(resultados, /Imprimir 1×1/, 'Cada fila debe permitir imprimir un registro por separado');
 assert.match(resultados, /Imprimir este registro 1×1/, 'La ficha abierta debe permitir imprimir ese único registro');
 assert.match(resultados, /async function imprimirRegistro\(registroOId\)/, 'Debe existir la impresión individual 1×1 con preparación asíncrona');
-assert.match(resultados, /N\.º de inscripción:[\s\S]*<span><\/span>/, 'La impresión individual debe dejar el número de inscripción en blanco');
+assert.ok(resultados.includes("asignar('unoNumero',r.numero_inscripcion??'')"), 'La impresion individual debe mostrar el numero asignado.');
 assert.match(resultados, /window\.print\(\)/, 'La impresión individual debe abrir el diálogo de impresión');
 assert.match(resultados, /imp-logo-alcaldia[\s\S]*logos\/cristobal-rojas\.png/, 'La impresión individual debe incluir el logo de la Alcaldía');
 assert.match(resultados, /imp-logo-yuhismar[\s\S]*logos\/yuhismar\.png/, 'La impresión individual debe incluir el logo de Yuhismar');

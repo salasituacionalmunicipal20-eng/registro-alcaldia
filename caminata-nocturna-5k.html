@@ -104,7 +104,7 @@
         </div>
     </header>
     <main class="wrap">
-        <section class="intro" role="status"><h2>Inscripciones cerradas</h2><p>La inscripción para la Caminata Nocturna 5K ha finalizado. Ya no se reciben nuevas inscripciones.</p></section>
+        <section class="intro" role="status"><h2 id="tituloInscripciones">Verificando disponibilidad…</h2><p id="detalleInscripciones">Se habilitará únicamente un cupo adicional.</p></section>
         <div id="formWrap" hidden style="display:none !important">
             <div class="intro"><b>Formulario de inscripción.</b> Completa tus datos. Las fotografías son opcionales: puedes continuar sin agregarlas o subir hasta tres. Los campos marcados con * son obligatorios.</div>
 
@@ -187,13 +187,23 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getDatabase, ref, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
         const firebaseConfig = { apiKey:"AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU", authDomain:"alcaldia-admin.firebaseapp.com", databaseURL:"https://alcaldia-admin-default-rtdb.firebaseio.com", projectId:"alcaldia-admin", storageBucket:"alcaldia-admin.firebasestorage.app", messagingSenderId:"945828226894", appId:"1:945828226894:web:0efeebeb270357e6f5201f", measurementId:"G-P4QSQR0XGE" };
         const database = getDatabase(initializeApp(firebaseConfig));
         const $ = id => document.getElementById(id);
-        const INSCRIPCIONES_CERRADAS = true;
+        let INSCRIPCIONES_CERRADAS = true;
         $('enviar').disabled = INSCRIPCIONES_CERRADAS;
+        function mostrarDisponibilidad(cerradas) {
+            INSCRIPCIONES_CERRADAS = cerradas;
+            $('enviar').disabled = cerradas;
+            $('otra').style.display = cerradas ? 'none' : '';
+            $('formWrap').hidden = cerradas;
+            $('formWrap').style.display = cerradas ? 'none' : '';
+            $('tituloInscripciones').textContent = cerradas ? 'Inscripciones cerradas' : 'Último cupo disponible';
+            $('detalleInscripciones').textContent = cerradas ? 'Ya no se reciben nuevas inscripciones para la Caminata Nocturna 5K.' : 'Queda un único cupo. Al completar esta inscripción, el formulario se cerrará automáticamente.';
+        }
+        onValue(ref(database,'caminata_5k_cupo_final/consumido'),snap=>mostrarDisponibilidad(snap.val()===true),()=>{mostrarDisponibilidad(true);$('detalleInscripciones').textContent='No se pudo comprobar la disponibilidad. Recarga la página para volver a intentarlo.';});
         const valor = id => ($(id).value || '').trim();
         const elegido = nombre => document.querySelector(`input[name="${nombre}"]:checked`)?.value || '';
         const FOTOS = { foto1:'', foto2:'', foto3:'' };
@@ -276,6 +286,7 @@
             const tieneFotos = Object.values(FOTOS).some(Boolean);
             const registro = { cedula, nombre_apellido:valor('nombre'), telefono:valor('telefono'), fecha_nacimiento:valor('fechaNacimiento'), edad:Number(edad), sexo:valor('sexo'), padece_enfermedad:enfermedad, enfermedad_detalle:enfermedad === 'Sí' ? valor('detalleEnfermedad') : '', toma_medicamento:medicamento, medicamento_detalle:medicamento === 'Sí' ? valor('detalleMedicamento') : '', direccion_habitacion:valor('direccion'), municipio, tiene_fotos:tieneFotos, fecha_registro:Date.now(), registrado_por:'Formulario público' };
             const cambios = {}; cambios[`caminata_nocturna_5k/${cedula}`] = registro;
+            cambios.caminata_5k_cupo_final = {consumido:true,registro:cedula};
             if (tieneFotos) cambios[`caminata_nocturna_5k_fotos/${cedula}`] = { ...FOTOS };
             $('enviar').disabled = true; $('enviar').textContent = 'Enviando inscripción…'; $('msg').style.display = 'none';
             try {
@@ -285,7 +296,7 @@
             } catch (error) {
                 const duplicada = error?.code === 'PERMISSION_DENIED' || String(error?.message || '').toLowerCase().includes('permission');
                 mostrarError(duplicada ? 'Esta cédula ya tiene una inscripción registrada. Si necesitas corregirla, comunícate con la organización.' : 'No se pudo completar el envío. Revisa tu conexión e intenta nuevamente; no se guardó una inscripción parcial.');
-                $('enviar').disabled = false; $('enviar').textContent = 'Enviar inscripción';
+                $('enviar').disabled = INSCRIPCIONES_CERRADAS; $('enviar').textContent = 'Enviar inscripción';
             }
         });
         function prepararFotosImpresion(fotos, nombre, cedula) {
