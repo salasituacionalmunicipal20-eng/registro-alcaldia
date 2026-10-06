@@ -90,7 +90,7 @@ assert.ok(reglaSexo.includes("'Hombre'") && reglaSexo.includes("'Mujer'"), 'Las 
 assert.ok(!reglaSexo.includes("'Otro'") && !reglaSexo.includes("'Masculino'"), 'Las reglas no deben aceptar variantes libres o antiguas');
 
 const columnasExcel = 15;
-assert.match(resultados, /A1:O1/);
+assert.match(resultados, /A1:P1/);
 assert.match(resultados, /A3:O\$\{datos\.length\}/);
 assert.equal(columnasExcel, 15, 'El Excel debe conservar 15 columnas alineadas');
 
