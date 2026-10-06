@@ -170,6 +170,7 @@
     </section>
 
     <script type="module">
+        import {ordenarInscripciones} from './caminata-orden.js?v=20261006';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getDatabase, ref, child, get, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -195,7 +196,7 @@
             $('cargando').classList.add('hidden');
             if(!permitido){$('restringido').classList.remove('hidden');return;}
             $('contenido').classList.remove('hidden');
-            onValue(ref(database,'caminata_nocturna_5k'),snap=>{registros=Object.entries(snap.val()||{}).map(([id,r])=>({id,...r})).sort((a,b)=>(b.fecha_registro||0)-(a.fecha_registro||0)); actualizar();});
+            onValue(ref(database,'caminata_nocturna_5k'),snap=>{registros=ordenarInscripciones(Object.entries(snap.val()||{}).map(([id,r])=>({id,...r}))); actualizar();});
         });
         $('cerrarSesion').addEventListener('click',()=>signOut(auth).then(()=>location.href='index.html'));
         $('qrFormulario').src='https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent('https://tinyurl.com/caminata5kcharallave');
