@@ -91,7 +91,7 @@ assert.ok(!reglaSexo.includes("'Otro'") && !reglaSexo.includes("'Masculino'"), '
 
 const columnasExcel = 15;
 assert.match(resultados, /A1:P1/);
-assert.match(resultados, /A3:O\$\{datos\.length\}/);
+assert.match(resultados, /A3:P\$\{datos\.length\}/);
 assert.equal(columnasExcel, 15, 'El Excel debe conservar 15 columnas alineadas');
 
 console.log('OK: formulario, fotos, reglas, panel, Excel y PDF de Caminata Nocturna 5K verificados.');
