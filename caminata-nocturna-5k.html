@@ -104,7 +104,8 @@
         </div>
     </header>
     <main class="wrap">
-        <div id="formWrap">
+        <section class="intro" role="status"><h2>Inscripciones cerradas</h2><p>La inscripción para la Caminata Nocturna 5K ha finalizado. Ya no se reciben nuevas inscripciones.</p></section>
+        <div id="formWrap" hidden style="display:none !important">
             <div class="intro"><b>Formulario de inscripción.</b> Completa tus datos. Las fotografías son opcionales: puedes continuar sin agregarlas o subir hasta tres. Los campos marcados con * son obligatorios.</div>
 
             <section class="card">
@@ -191,6 +192,8 @@
         const firebaseConfig = { apiKey:"AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU", authDomain:"alcaldia-admin.firebaseapp.com", databaseURL:"https://alcaldia-admin-default-rtdb.firebaseio.com", projectId:"alcaldia-admin", storageBucket:"alcaldia-admin.firebasestorage.app", messagingSenderId:"945828226894", appId:"1:945828226894:web:0efeebeb270357e6f5201f", measurementId:"G-P4QSQR0XGE" };
         const database = getDatabase(initializeApp(firebaseConfig));
         const $ = id => document.getElementById(id);
+        const INSCRIPCIONES_CERRADAS = true;
+        $('enviar').disabled = INSCRIPCIONES_CERRADAS;
         const valor = id => ($(id).value || '').trim();
         const elegido = nombre => document.querySelector(`input[name="${nombre}"]:checked`)?.value || '';
         const FOTOS = { foto1:'', foto2:'', foto3:'' };
@@ -253,6 +256,7 @@
         }));
 
         $('enviar').addEventListener('click', async () => {
+            if (INSCRIPCIONES_CERRADAS) return mostrarError('Las inscripciones para la Caminata Nocturna 5K están cerradas.');
             const cedula = valor('cedula').replace(/\D/g,'');
             const edad = calcularEdad(valor('fechaNacimiento'));
             const enfermedad = elegido('enfermedad'), medicamento = elegido('medicamento');
