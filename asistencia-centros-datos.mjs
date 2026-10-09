@@ -1,5 +1,5 @@
-import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261010-comunidades-charalour';
-import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261010-comunidades-charalour';
+import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261010-centros-arichuna-jabillito';
+import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261010-centros-arichuna-jabillito';
 export { SISTEMAS_1X10 };
 export const ESTADOS = { pendiente:'Pendiente', asistio:'Sí asistió', no_asistio:'No asistió' };
 const texto = v => String(v ?? '').trim().replace(/\s+/g,' ');
