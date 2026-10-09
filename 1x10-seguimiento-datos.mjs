@@ -1,5 +1,5 @@
 // Este módulo produce cantidades; las identidades no salen en el resultado.
-import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261009-desvio-colegio';
+import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261009-miranda-ezequiel';
 export const SIN_COMUNA = 'Sin comuna asignada';
 export const SIN_CENTRO = 'Sin centro asignado';
 export const SIN_COMUNIDAD = 'Sin comunidad asignada';
