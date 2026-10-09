@@ -200,10 +200,10 @@
             $('otra').style.display = cerradas ? 'none' : '';
             $('formWrap').hidden = cerradas;
             $('formWrap').style.display = cerradas ? 'none' : '';
-            $('tituloInscripciones').textContent = cerradas ? 'Inscripciones cerradas' : 'Último cupo disponible';
-            $('detalleInscripciones').textContent = cerradas ? 'Ya no se reciben nuevas inscripciones para la Caminata Nocturna 5K.' : 'Queda un único cupo. Al completar esta inscripción, el formulario se cerrará automáticamente.';
+            $('tituloInscripciones').textContent = cerradas ? 'Inscripciones cerradas' : 'Inscripciones abiertas';
+            $('detalleInscripciones').textContent = cerradas ? 'Ya no se reciben nuevas inscripciones para la Caminata Nocturna 5K.' : 'Completa el formulario para inscribirte en la Caminata Nocturna 5K.';
         }
-        onValue(ref(database,'caminata_5k_cupo_final/consumido'),snap=>mostrarDisponibilidad(snap.val()===true),()=>{mostrarDisponibilidad(true);$('detalleInscripciones').textContent='No se pudo comprobar la disponibilidad. Recarga la página para volver a intentarlo.';});
+        onValue(ref(database,'config/caminata_nocturna_5k/abierta'),snap=>mostrarDisponibilidad(snap.val()!==true),()=>{mostrarDisponibilidad(true);$('detalleInscripciones').textContent='No se pudo comprobar la disponibilidad. Recarga la página para volver a intentarlo.';});
         const valor = id => ($(id).value || '').trim();
         const elegido = nombre => document.querySelector(`input[name="${nombre}"]:checked`)?.value || '';
         const FOTOS = { foto1:'', foto2:'', foto3:'' };
@@ -286,7 +286,6 @@
             const tieneFotos = Object.values(FOTOS).some(Boolean);
             const registro = { cedula, nombre_apellido:valor('nombre'), telefono:valor('telefono'), fecha_nacimiento:valor('fechaNacimiento'), edad:Number(edad), sexo:valor('sexo'), padece_enfermedad:enfermedad, enfermedad_detalle:enfermedad === 'Sí' ? valor('detalleEnfermedad') : '', toma_medicamento:medicamento, medicamento_detalle:medicamento === 'Sí' ? valor('detalleMedicamento') : '', direccion_habitacion:valor('direccion'), municipio, tiene_fotos:tieneFotos, fecha_registro:Date.now(), registrado_por:'Formulario público' };
             const cambios = {}; cambios[`caminata_nocturna_5k/${cedula}`] = registro;
-            cambios.caminata_5k_cupo_final = {consumido:true,registro:cedula};
             if (tieneFotos) cambios[`caminata_nocturna_5k_fotos/${cedula}`] = { ...FOTOS };
             $('enviar').disabled = true; $('enviar').textContent = 'Enviando inscripción…'; $('msg').style.display = 'none';
             try {
