@@ -92,7 +92,6 @@
             .comp-foto-pie { display:none; }
         }
     </style>
-    <script defer src="municipios-data.js"></script>
     <script src="autofresh.js"></script>
 </head>
 <body>
@@ -139,9 +138,9 @@
                 <h2>Ubicación</h2>
                 <label for="direccion">Dirección de habitación *</label>
                 <textarea id="direccion" maxlength="400" autocomplete="street-address" placeholder="Sector, calle, casa y punto de referencia"></textarea>
-                <label for="municipio">Municipio *</label>
-                <select id="municipio"><option value="">Selecciona el municipio</option></select>
-                <div id="boxOtroMunicipio" class="hidden"><label for="otroMunicipio">Escribe el municipio *</label><input id="otroMunicipio" maxlength="120" placeholder="Nombre del municipio" /></div>
+                <label for="municipio">Municipio donde vives *</label>
+                <input id="municipio" maxlength="120" placeholder="Ej.: Cúa, Urdaneta o Cristóbal Rojas" />
+                <p class="hint">Puedes inscribirte desde cualquier municipio. Escribe el municipio donde vives.</p>
             </section>
 
             <section class="card">
@@ -230,12 +229,6 @@
         pintarOpciones('enfermedad', 'boxEnfermedad', 'detalleEnfermedad');
         pintarOpciones('medicamento', 'boxMedicamento', 'detalleMedicamento');
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const lista = window.MUNICIPIOS?.Miranda || [];
-            $('municipio').innerHTML = '<option value="">Selecciona el municipio</option>' + lista.map(m => `<option${m === 'Cristóbal Rojas' ? ' selected' : ''}>${m}</option>`).join('') + '<option value="OTRO">Otro municipio</option>';
-        });
-        $('municipio').addEventListener('change', () => $('boxOtroMunicipio').classList.toggle('hidden', valor('municipio') !== 'OTRO'));
-
         function comprimir(file) {
             return new Promise((resolve, reject) => {
                 if (!file || !file.type.startsWith('image/')) { reject(new Error('Selecciona un archivo de imagen válido.')); return; }
@@ -270,7 +263,7 @@
             const cedula = valor('cedula').replace(/\D/g,'');
             const edad = calcularEdad(valor('fechaNacimiento'));
             const enfermedad = elegido('enfermedad'), medicamento = elegido('medicamento');
-            const municipio = valor('municipio') === 'OTRO' ? valor('otroMunicipio') : valor('municipio');
+            const municipio = valor('municipio');
             if (cedula.length < 5 || cedula.length > 10) return mostrarError('Escribe una cédula válida, solo con números.', 'cedula');
             if (!valor('nombre')) return mostrarError('Escribe el nombre y apellido.', 'nombre');
             if (!valor('telefono')) return mostrarError('Escribe el teléfono.', 'telefono');
@@ -281,7 +274,7 @@
             if (!medicamento) return mostrarError('Indica si toma algún medicamento.');
             if (medicamento === 'Sí' && !valor('detalleMedicamento')) return mostrarError('Indica cuál medicamento toma.', 'detalleMedicamento');
             if (!valor('direccion')) return mostrarError('Escribe la dirección de habitación.', 'direccion');
-            if (!municipio) return mostrarError('Selecciona o escribe el municipio.', valor('municipio') === 'OTRO' ? 'otroMunicipio' : 'municipio');
+            if (municipio.length < 2) return mostrarError('Escribe el municipio donde vives, por ejemplo Cúa.', 'municipio');
 
             const tieneFotos = Object.values(FOTOS).some(Boolean);
             const registro = { cedula, nombre_apellido:valor('nombre'), telefono:valor('telefono'), fecha_nacimiento:valor('fechaNacimiento'), edad:Number(edad), sexo:valor('sexo'), padece_enfermedad:enfermedad, enfermedad_detalle:enfermedad === 'Sí' ? valor('detalleEnfermedad') : '', toma_medicamento:medicamento, medicamento_detalle:medicamento === 'Sí' ? valor('detalleMedicamento') : '', direccion_habitacion:valor('direccion'), municipio, tiene_fotos:tieneFotos, fecha_registro:Date.now(), registrado_por:'Formulario público' };
