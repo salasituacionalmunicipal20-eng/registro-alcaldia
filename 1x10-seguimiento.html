@@ -104,9 +104,9 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
     import { getDatabase, ref, get, child, onValue, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
-    import { resumirRegistro, sumarFilas, agruparComunidades, SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261009-tiuna';
-    import { crearInforme } from './1x10-seguimiento-pdf.mjs?v=20261009-tiuna';
-    import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261009-tiuna';
+    import { resumirRegistro, sumarFilas, agruparComunidades, SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261009-raices';
+    import { crearInforme } from './1x10-seguimiento-pdf.mjs?v=20261009-raices';
+    import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261009-raices';
     // La configuración del cliente Firebase es pública; se comparte con las páginas existentes.
     const app = initializeApp({apiKey:'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',authDomain:'alcaldia-admin.firebaseapp.com',databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com',projectId:'alcaldia-admin',storageBucket:'alcaldia-admin.firebasestorage.app',messagingSenderId:'945828226894',appId:'1:945828226894:web:0efeebeb270357e6f5201f'});
     const auth=getAuth(app), database=getDatabase(app), $=id=>document.getElementById(id);
