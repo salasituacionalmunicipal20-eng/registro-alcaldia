@@ -319,7 +319,7 @@
         }
     </style>
     <script src="autofresh.js"></script>
-    <script src="1x10-impresion.js?v=20261008b"></script>
+    <script src="1x10-impresion.js?v=20261009edad"></script>
 </head>
 <body>
     <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA | ESTADO MIRANDA | ALCALDÍA DE CRISTÓBAL ROJAS</div>
@@ -2185,12 +2185,11 @@
                 const lineas = [];
                 const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '-');
                 const nombre = ((j.nombres || '') + ' ' + (j.apellidos || '')).trim() || '-';
-                const edad = calcularEdad(j.fecha_nacimiento);
-                const nac = fmtFechaNacimiento(j.fecha_nacimiento);
+                const edad = window.edadParaFicha1x10(j);
                 lineas.push(['Cedula', ced, 'Genero', j.genero === 'M' ? 'Masculino' : (j.genero === 'F' ? 'Femenino' : 'No indicado')]);
                 lineas.push(['Nombre', nombre, null, null]);
-                lineas.push(['Telefono', j.telefono || '-', 'Nacimiento',
-                             nac ? (nac + (edad !== null ? ' (' + edad + ' anos)' : '')) : 'No indicado']);
+                lineas.push(['Telefono', j.telefono || '-', 'Edad',
+                             edad !== null ? edad + ' anos' : 'No indicada']);
                 if (etiquetaExtra) lineas.push([etiquetaExtra, j.direccion_secretaria || '-', null, null]);
                 lineas.push(['Parroquia', j.parroquia || '-', 'Comuna', j.circuito || '-']);
                 lineas.push(['Comunidad', j.comunidad_nombre || '-', null, null]);
@@ -2260,7 +2259,7 @@
                 doc.text(_safePdf('CEDULA'), xCed + 2, y + 4.8);
                 doc.text(_safePdf('NOMBRE Y APELLIDO'), xNom + 2, y + 4.8);
                 doc.text(_safePdf('TELEFONO'), xTel + 2, y + 4.8);
-                doc.text(_safePdf('NACIMIENTO'), xNac + 2, y + 4.8);
+                doc.text(_safePdf('EDAD'), xNac + 2, y + 4.8);
                 doc.text(_safePdf('GEN'), xGen + col.gen / 2, y + 4.8, { align: 'center' });
                 doc.text(_safePdf('FIRMA'), xFirma + col.firma / 2, y + 4.8, { align: 'center' });
                 doc.text(_safePdf('HUELLA'), xHuella + col.huella / 2, y + 4.8, { align: 'center' });
@@ -2303,8 +2302,7 @@
                 }
                 const ced = (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || '-');
                 const nom = ((a.nombres || '') + ' ' + (a.apellidos || '')).trim() || '-';
-                const ed = calcularEdad(a.fecha_nacimiento);
-                const nc = fmtFechaNacimiento(a.fecha_nacimiento);
+                const ed = window.edadParaFicha1x10(a);
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(20, 20, 20);
                 // Cabe en UNA linea siempre: si el nombre es largo se encoge la
@@ -2320,7 +2318,7 @@
                 enUnaLinea(_safePdf(ced), xCed + 2, col.ced - 3);
                 enUnaLinea(_safePdf(nom), xNom + 2, col.nom - 3);
                 enUnaLinea(_safePdf(a.telefono || '-'), xTel + 2, col.tel - 3);
-                enUnaLinea(_safePdf(nc ? (nc + '  (' + (ed !== null ? ed : '?') + ')') : '-'),
+                enUnaLinea(_safePdf(ed !== null ? ed + ' anos' : 'No indicada'),
                            xNac + 2, col.nac - 3);
                 doc.text(_safePdf(a.genero === 'M' ? 'M' : (a.genero === 'F' ? 'F' : '-')),
                          xGen + col.gen / 2, y + 5.4, { align: 'center' });
