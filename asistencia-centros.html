@@ -9,7 +9,7 @@
     @media(max-width:600px){header{padding:18px 16px}h1{font-size:24px}main{padding:0 12px 30px;margin-top:14px}section{padding:16px}.campo{min-width:100%;flex-basis:100%}.fila>button,.exportar>button{width:100%}.resumen{gap:15px}.resumen p{flex:1 0 40%}.personas thead{display:none}.personas,.personas tbody,.personas tr,.personas td{display:block;width:100%}.personas tr{padding:12px 0;border-bottom:2px solid var(--linea)}.personas td{padding:5px 0;border:0}.personas td:before{content:attr(data-label);display:block;font-size:12px;color:var(--suave)}.acciones{flex-wrap:nowrap}.acciones button{flex:1;padding:9px 5px}.paginacion{justify-content:space-between}.paginacion button{padding:10px}.centros{min-width:670px}}
     @media print{header a,.controles,.acciones,.exportar,.paginacion,#mensaje,#diagnostico{display:none!important}body{background:white}header{background:white;color:#172c48;padding:0}main{max-width:none;padding:0}section{border:0;padding:0;break-inside:auto}.tabla{overflow:visible}th,td{font-size:10px;padding:5px}.conexion{display:none}}
   </style>
-  <script src="autofresh.js"></script><script src="territorio-data.js?v=20261010-sagrado-octava"></script>
+  <script src="autofresh.js"></script><script src="territorio-data.js?v=20261010-total-centros"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -29,7 +29,7 @@
         <div class="campo"><label for="estado">Asistencia</label><select id="estado"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="asistio">Sí asistió</option><option value="no_asistio">No asistió</option></select></div>
         <button id="limpiar" type="button" class="secundario">Limpiar filtros</button>
       </div><p class="muted">Al abrir se muestran todos los registros de las siete variantes, incluidos los repetidos y los que necesitan corregir su cédula. Puedes cambiar a personas únicas. La asistencia se guarda una vez por persona y fecha; los registros de la misma cédula comparten su estado.</p>
-      <div class="resumen" aria-label="Total completo del 1x10"><p>Total completo de registros<strong id="totalRegistros">—</strong></p><p>Personas únicas con cédula válida<strong id="totalPersonas">—</strong></p></div>
+      <div class="resumen" aria-label="Total completo del 1x10"><p>Total de centros electorales<strong id="totalCentros">—</strong></p><p>Total completo de registros<strong id="totalRegistros">—</strong></p><p>Personas únicas con cédula válida<strong id="totalPersonas">—</strong></p></div>
       <div class="resumen" aria-label="Resumen de la selección"><p><span id="etiquetaTotal">Registros en la lista</span><strong id="total">—</strong></p><p><span id="etiquetaSi">Registros con asistencia</span><strong id="si" class="si">—</strong></p><p><span id="etiquetaNo">Registros sin asistencia</span><strong id="no" class="no">—</strong></p><p>Pendientes<strong id="pendientes">—</strong></p></div></section>
       <p id="mensaje" class="aviso oculto" role="status"></p>
       <section><h2>Listas para cada centro</h2><p id="alcance" class="muted"></p><div class="exportar"><button id="pdf" disabled>Descargar listas PDF</button><button id="excel" disabled class="secundario">Descargar Excel completo</button></div>
@@ -38,6 +38,6 @@
       <section id="diagnostico"><details><summary>Origen de los datos</summary><p id="calidad"></p><p class="muted">Se utilizan la comuna, la comunidad y el centro del 1x10. Cuando faltan, se toma la ubicación registrada del jefe o el catálogo territorial. Los datos incompatibles aparecen como «Ubicación por verificar» o «Centro por verificar». Este panel registra únicamente asistencia; no incluye preferencias ni selección de voto.</p></details></section>
     </div>
   </main>
-  <script type="module" src="asistencia-centros.js?v=20261010-sagrado-octava"></script>
+  <script type="module" src="asistencia-centros.js?v=20261010-total-centros"></script>
 </body>
 </html>

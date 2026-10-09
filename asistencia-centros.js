@@ -1,8 +1,9 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 import {getDatabase,ref,get,child,onValue,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
-import {SISTEMAS_1X10,consolidarPersonas,conAsistencia,filtrarPersonas,contarAsistencia,cedulaVisible,ESTADOS} from './asistencia-centros-datos.mjs?v=20261010-sagrado-octava';
-import {descargarPDF,descargarExcel} from './asistencia-centros-exportar.mjs?v=20261010-sagrado-octava';
+import {SISTEMAS_1X10,consolidarPersonas,conAsistencia,filtrarPersonas,contarAsistencia,cedulaVisible,ESTADOS} from './asistencia-centros-datos.mjs?v=20261010-total-centros';
+import {contarCentrosElectorales} from './1x10-nombres-territoriales.mjs?v=20261010-total-centros';
+import {descargarPDF,descargarExcel} from './asistencia-centros-exportar.mjs?v=20261010-total-centros';
 
 const app=initializeApp({apiKey:'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',authDomain:'alcaldia-admin.firebaseapp.com',databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com',projectId:'alcaldia-admin',storageBucket:'alcaldia-admin.firebasestorage.app',messagingSenderId:'945828226894',appId:'1:945828226894:web:0efeebeb270357e6f5201f'});
 const auth=getAuth(app),database=getDatabase(app),$=id=>document.getElementById(id);
@@ -34,8 +35,9 @@ function listaBase(){return $('vista').value==='personas'?personas:registrosList
 function filtros(){return {comuna:$('comuna').value,comunidad:$('comunidad').value,centro:$('centro').value,buscar:$('buscar').value,estado:$('estado').value};}
 function textoFiltros(){return [$('comuna').value||'Todas las comunas',$('comunidad').value||'Todas las comunidades',$('centro').value||'Todos los centros',$('estado').value?ESTADOS[$('estado').value]:'Todos los estados',$('buscar').value.trim()?'Búsqueda: '+$('buscar').value.trim():''].filter(Boolean).join(' · ');}
 function pintar(){
-  estadoConexion();if(!listo()){for(const id of ['totalRegistros','totalPersonas','total','si','no','pendientes'])$(id).textContent='—';$('personasLista').replaceChildren();$('centrosLista').replaceChildren();return;}
+  estadoConexion();if(!listo()){for(const id of ['totalCentros','totalRegistros','totalPersonas','total','si','no','pendientes'])$(id).textContent='—';$('personasLista').replaceChildren();$('centrosLista').replaceChildren();return;}
   const sonRegistros=$('vista').value==='registros',unidad=sonRegistros?'registros':'personas únicas';
+  $('totalCentros').textContent=numero(contarCentrosElectorales(registrosLista.map(p=>p.centro)));
   $('totalRegistros').textContent=numero(diagnostico.registros);$('totalPersonas').textContent=numero(diagnostico.personas);
   $('etiquetaTotal').textContent=sonRegistros?'Registros en la lista':'Personas únicas en la lista';
   $('etiquetaSi').textContent=sonRegistros?'Registros con asistencia':'Sí asistieron';$('etiquetaNo').textContent=sonRegistros?'Registros sin asistencia':'No asistieron';

@@ -97,3 +97,7 @@ const comunidades = new Map([
 export function nombreTerritorial(valor, tipo) {
   return (tipo === 'comuna' ? comunas : tipo === 'comunidad' ? comunidades : centros).get(clave(valor)) ?? valor;
 }
+export function contarCentrosElectorales(valores) {
+  return new Set(valores.map(v=>clave(nombreTerritorial(v,'centro')))
+    .filter(v=>v&&!/^OTROS?$/.test(v)&&!/^SIN CENTRO(?:\s|$)/.test(v))).size;
+}
