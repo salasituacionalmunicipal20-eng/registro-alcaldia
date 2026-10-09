@@ -1,5 +1,5 @@
-import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261009-vapor';
-import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261009-vapor';
+import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261009-ciudad-dios';
+import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261009-ciudad-dios';
 export { SISTEMAS_1X10 };
 export const ESTADOS = { pendiente:'Pendiente', asistio:'Sí asistió', no_asistio:'No asistió' };
 const texto = v => String(v ?? '').trim().replace(/\s+/g,' ');
