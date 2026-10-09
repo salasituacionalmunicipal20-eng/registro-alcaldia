@@ -1,5 +1,5 @@
 import {dibujarHeaderPDF,dibujarFooterPDF} from './pdf-header.js';
-import {CABECERAS,filasExportacion,contarAsistencia,cedulaVisible,ESTADOS} from './asistencia-centros-datos.mjs?v=20261010-estacion-chaparral';
+import {CABECERAS,filasExportacion,contarAsistencia,cedulaVisible,ESTADOS} from './asistencia-centros-datos.mjs?v=20261010-comunidades-charalour';
 const numero=n=>n.toLocaleString('es-VE');
 export function fechaLarga(fecha){return new Date(fecha+'T12:00:00Z').toLocaleDateString('es-VE',{timeZone:'America/Caracas',weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+fecha.split('-').reverse().join('/');}
 function nombreArchivo(personas,fecha,extension){const centros=[...new Set(personas.map(p=>p.centro))];const nombre=centros.length===1?centros[0]:'Todos_los_centros';return 'Asistencia_'+nombre.normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^A-Za-z0-9_-]+/g,'_').slice(0,65)+'_'+fecha+'.'+extension;}

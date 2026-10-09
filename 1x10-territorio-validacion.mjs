@@ -1,4 +1,4 @@
-import {nombreTerritorial} from './1x10-nombres-territoriales.mjs?v=20261010-estacion-chaparral';
+import {nombreTerritorial} from './1x10-nombres-territoriales.mjs?v=20261010-comunidades-charalour';
 
 const esGenerico = valor => /^otros?$/i.test(String(valor ?? '').trim());
 export const comunaCorregida = valor => nombreTerritorial(valor, 'comuna');
