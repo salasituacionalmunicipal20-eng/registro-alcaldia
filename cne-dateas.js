@@ -7,6 +7,7 @@
  *   (A) AUTOMÁTICO: poner  data-cne  en el <input> de cédula (opcional
  *       data-cne-nac="#idSelectNacionalidad", data-cne-nombre="#idNombre",
  *       data-cne-fecha="#idFecha"). Sirve también para campos agregados dinámicamente.
+ *       data-cne-solo-autocompletar conserva la consulta sin botones ni datos electorales visibles.
  *   (B) EXPLÍCITO (para formularios que YA consultan el CNE): en tu handler llamar
  *       CNEDateas.verBotones(inputCedula, dataCNEoNull, numeroCedula).
  * Endpoint CNE: el mismo de siempre (consultar-cedula). */
@@ -105,7 +106,7 @@
       var num = digits(cedulaEl.value); if (num.length < 4 || num.length > 10) return;
       var nac = opts.nacEl ? opts.nacEl.value : 'V';
       var bg = cedulaEl.style.background, ph = cedulaEl.placeholder;
-      cedulaEl.style.background = '#fef3c7'; cedulaEl.placeholder = 'Consultando CNE…';
+      cedulaEl.style.background = '#fef3c7'; cedulaEl.placeholder = opts.soloAutocompletar ? 'Consultando datos…' : 'Consultando CNE…';
       var d = await consultar(num, nac);
       cedulaEl.placeholder = ph;
       if (d) {
@@ -113,8 +114,8 @@
         if (opts.nombreEl && !opts.nombreEl.value.trim()) { opts.nombreEl.value = [d.primer_nombre, d.segundo_nombre, d.primer_apellido, d.segundo_apellido].filter(Boolean).join(' ').trim(); opts.nombreEl.dispatchEvent(new Event('input', { bubbles: true })); }
         if (opts.fechaEl && !opts.fechaEl.value && fechaValida(d.fecha_nac)) { opts.fechaEl.value = d.fecha_nac; opts.fechaEl.dispatchEvent(new Event('change', { bubbles: true })); }
         if (typeof opts.onData === 'function') { try { opts.onData(d); } catch (e) { } }
-        verBotonCNE(cedulaEl, d);
-      } else { cedulaEl.style.background = bg; verBotonDateas(cedulaEl, num); }
+        if (!opts.soloAutocompletar) verBotonCNE(cedulaEl, d);
+      } else { cedulaEl.style.background = bg; if (!opts.soloAutocompletar) verBotonDateas(cedulaEl, num); }
     };
     cedulaEl.addEventListener('blur', run);
   }
@@ -123,14 +124,15 @@
   function sel(el, attr) { var q = el.getAttribute(attr); if (!q) return null; try { return document.querySelector(q); } catch (e) { return null; } }
   function attachAuto(el) {
     if (el._cneEnganchado) return;
-    enganchar(el, { nacEl: sel(el, 'data-cne-nac'), nombreEl: sel(el, 'data-cne-nombre'), fechaEl: sel(el, 'data-cne-fecha') });
+    enganchar(el, { nacEl: sel(el, 'data-cne-nac'), nombreEl: sel(el, 'data-cne-nombre'), fechaEl: sel(el, 'data-cne-fecha'), soloAutocompletar: el.hasAttribute('data-cne-solo-autocompletar') });
   }
   function escanear(root) {
     var list = (root || document).querySelectorAll ? (root || document).querySelectorAll('input[data-cne]') : [];
     for (var i = 0; i < list.length; i++) attachAuto(list[i]);
   }
   ready(function () {
-    init();
+    // El modo de ayuda al llenado no agrega el modal electoral a la página.
+    if (!document.querySelector('input[data-cne-solo-autocompletar]') || document.querySelector('input[data-cne]:not([data-cne-solo-autocompletar])')) init();
     escanear(document);
     try {
       var mo = new MutationObserver(function (muts) {
