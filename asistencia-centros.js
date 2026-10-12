@@ -1,9 +1,9 @@
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
 import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 import {getDatabase,ref,get,child,onValue,runTransaction,serverTimestamp} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
-import {SISTEMAS_1X10,consolidarPersonas,conAsistencia,filtrarPersonas,contarAsistencia,cedulaVisible,ESTADOS} from './asistencia-centros-datos.mjs?v=20261010-arichuna-restaurado';
-import {contarCentrosElectorales} from './1x10-nombres-territoriales.mjs?v=20261010-arichuna-restaurado';
-import {descargarPDF,descargarExcel} from './asistencia-centros-exportar.mjs?v=20261010-arichuna-restaurado';
+import {SISTEMAS_1X10,consolidarPersonas,conAsistencia,filtrarPersonas,contarAsistencia,cedulaVisible,ESTADOS} from './asistencia-centros-datos.mjs?v=20261012-centros-fotos';
+import {contarCentrosElectorales} from './1x10-nombres-territoriales.mjs?v=20261012-centros-fotos';
+import {descargarPDF,descargarExcel} from './asistencia-centros-exportar.mjs?v=20261012-centros-fotos';
 
 const app=initializeApp({apiKey:'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',authDomain:'alcaldia-admin.firebaseapp.com',databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com',projectId:'alcaldia-admin',storageBucket:'alcaldia-admin.firebasestorage.app',messagingSenderId:'945828226894',appId:'1:945828226894:web:0efeebeb270357e6f5201f'});
 const auth=getAuth(app),database=getDatabase(app),$=id=>document.getElementById(id);
@@ -37,7 +37,7 @@ function textoFiltros(){return [$('comuna').value||'Todas las comunas',$('comuni
 function pintar(){
   estadoConexion();if(!listo()){for(const id of ['totalCentros','totalRegistros','totalPersonas','total','si','no','pendientes'])$(id).textContent='—';$('personasLista').replaceChildren();$('centrosLista').replaceChildren();return;}
   const sonRegistros=$('vista').value==='registros',unidad=sonRegistros?'registros':'personas únicas';
-  $('totalCentros').textContent=numero(contarCentrosElectorales(registrosLista.map(p=>p.centro)));
+  $('totalCentros').textContent=numero(contarCentrosElectorales([...registrosLista.map(p=>p.centro),...Object.values(window.TERRITORIO?.comunidades||{}).map(c=>c.centro_electoral)]));
   $('totalRegistros').textContent=numero(diagnostico.registros);$('totalPersonas').textContent=numero(diagnostico.personas);
   $('etiquetaTotal').textContent=sonRegistros?'Registros en la lista':'Personas únicas en la lista';
   $('etiquetaSi').textContent=sonRegistros?'Registros con asistencia':'Sí asistieron';$('etiquetaNo').textContent=sonRegistros?'Registros sin asistencia':'No asistieron';
