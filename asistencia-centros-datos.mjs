@@ -1,5 +1,5 @@
-import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261012-centros-fotos';
-import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261012-centros-fotos';
+import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261012-mediterraneo-indio';
+import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261012-mediterraneo-indio';
 export { SISTEMAS_1X10 };
 export const ESTADOS = { pendiente:'Pendiente', asistio:'Sí asistió', no_asistio:'No asistió' };
 const texto = v => String(v ?? '').trim().replace(/\s+/g,' ');
