@@ -2,6 +2,8 @@
 
 Página pública: `1x10-asistencia-publica.html`, enlazada desde `1x10-asistencia.html` (tarjeta "Asistencia 1x10 por centro" de `admin.html`).
 
+Enlace corto oficial (TinyURL con alias propio, se puede dictar por teléfono): `https://tinyurl.com/voto1x10cr2026` → redirige (301) a la página pública. Sigue la convención del proyecto con sufijo `cr2026` (CR = Cristóbal Rojas). No usar da.gd: muestra advertencia de phishing a visitantes nuevos.
+
 ## Flujo público (sin login)
 
 1. La persona abre el enlace y escribe su nacionalidad y cédula.
