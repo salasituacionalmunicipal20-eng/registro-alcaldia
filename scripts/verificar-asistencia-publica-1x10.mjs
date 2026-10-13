@@ -22,6 +22,7 @@ assert(publica.includes('directorio_1x10/'), 'La página pública debe buscar en
 assert(publica.includes('asistencia_centros/'), 'La página pública debe escribir en asistencia_centros.');
 assert(publica.includes("actualizado_por: 'publico'"), 'El marcado público debe identificarse como público.');
 assert(!publica.includes('firebase-auth'), 'La página pública no debe depender de autenticación.');
+assert(publica.includes('tinyurl.com/voto1x10cr2026'), 'La página pública debe mostrar el enlace corto.');
 assert(publica.includes('autofresh.js'), 'La página pública debe incluir autofresh.js.');
 assert(publica.includes('16px'), 'Los inputs deben tener letra de 16 px para el teléfono.');
 comprobarSintaxis(publica, '1x10-asistencia-publica.html');
