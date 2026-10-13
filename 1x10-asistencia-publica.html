@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marca tu asistencia a votar · 1x10 | Sala Situacional</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #eef2f7; color: #0f172a; line-height: 1.55; }
+    .top { background: linear-gradient(135deg, #0a2351 0%, #0a6cb0 100%); color: #fff; padding: 22px 18px; text-align: center; }
+    .top h1 { font-size: 20px; font-weight: 800; }
+    .top p { font-size: 13px; opacity: .92; margin-top: 5px; }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 16px; }
+    .intro { background: #fff7ed; border: 1px solid #fed7aa; border-left: 5px solid #ea580c; border-radius: 10px; padding: 13px 15px; font-size: 13px; color: #7c2d12; margin-bottom: 14px; line-height: 1.6; }
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 18px; margin-bottom: 14px; }
+    .card h2 { font-size: 14px; font-weight: 800; color: #0a2351; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .3px; }
+    .card .sub { font-size: 12.5px; color: #64748b; margin-bottom: 12px; }
+    label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin: 12px 0 4px; }
+    input, select { width: 100%; padding: 12px 13px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; min-height: 48px; }
+    input:focus, select:focus { border-color: #0a6cb0; background: #fff; }
+    .btn { width: 100%; background: #0a2351; color: #fff; border: none; border-radius: 10px; padding: 15px; font-size: 16.5px; font-weight: 800; cursor: pointer; margin-top: 14px; min-height: 52px; }
+    .btn:disabled { opacity: .6; cursor: wait; }
+    .msg { padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-top: 12px; display: none; }
+    .msg.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; display: block; }
+    .msg.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
+    .msg.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; display: block; }
+    .oculto { display: none !important; }
+    .datos { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+    .datos .nombre { font-size: 18px; font-weight: 800; color: #0a2351; }
+    .datos dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin-top: 10px; font-size: 13.5px; }
+    .datos dt { color: #64748b; font-weight: 700; }
+    .datos dd { margin: 0; color: #0f172a; }
+    .estado-banda { border-radius: 10px; padding: 13px 15px; font-size: 14.5px; font-weight: 700; margin-bottom: 12px; border: 1px solid; }
+    .estado-banda.pendiente { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+    .estado-banda.asistio { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .estado-banda.no_asistio { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+    .ops { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 520px) { .ops { grid-template-columns: 1fr; } }
+    .op-btn { min-height: 60px; border: none; border-radius: 10px; font-size: 16px; font-weight: 800; cursor: pointer; padding: 12px; }
+    .op-btn.si { background: #16823b; color: #fff; }
+    .op-btn.no { background: #c22734; color: #fff; }
+    .op-btn:disabled { opacity: .55; cursor: wait; }
+    .op-btn.activo { outline: 4px solid #d7ab32; outline-offset: 2px; }
+    .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 16px; }
+  </style>
+  <script src="autofresh.js"></script>
+</head>
+<body>
+  <div class="top">
+    <h1>✔ Marca tu asistencia a votar</h1>
+    <p>Movilización 1x10 · Sala Situacional · Alcaldía de Cristóbal Rojas</p>
+  </div>
+
+  <div class="wrap">
+    <div class="intro">
+      Con tu <b>cédula de identidad</b> puedes registrar hoy si <b>ya asististe a votar</b> o si <b>todavía no</b>.
+      Solo aparecerás si estás inscrita o inscrito en las listas del 1x10. Este registro <b>no guarda preferencias
+      ni contenido del voto</b>, únicamente si asististe a la jornada.
+    </div>
+
+    <div class="card">
+      <h2>🔎 Buscar mi registro</h2>
+      <p class="sub">Jornada del <b id="jornada">…</b></p>
+      <label for="nacionalidad">Nacionalidad</label>
+      <select id="nacionalidad">
+        <option value="V">Venezolana (V)</option>
+        <option value="E">Extranjera (E)</option>
+      </select>
+      <label for="cedula">Cédula de identidad</label>
+      <input id="cedula" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej.: 12345678" enterkeyhint="search">
+      <button id="buscar" class="btn" type="button">Buscar mi registro</button>
+      <p id="mensaje" class="msg" role="status"></p>
+    </div>
+
+    <div id="ficha" class="card oculto">
+      <h2>👤 Persona registrada en el 1x10</h2>
+      <div class="datos">
+        <div class="nombre" id="fichaNombre"></div>
+        <dl>
+          <dt>Cédula</dt><dd id="fichaCedula"></dd>
+          <dt>Comuna</dt><dd id="fichaComuna"></dd>
+          <dt>Comunidad</dt><dd id="fichaComunidad"></dd>
+          <dt>Centro electoral</dt><dd id="fichaCentro"></dd>
+        </dl>
+      </div>
+
+      <h2>✅ Marcar asistencia de hoy</h2>
+      <p class="sub">Elige una opción. Si te equivocas puedes cambiarla: queda registrada la última respuesta.</p>
+      <div id="estadoBanda" class="estado-banda pendiente">Estado actual: sin marcar.</div>
+      <div class="ops">
+        <button id="marcarSi" class="op-btn si" type="button">✔ Sí, ya asistí a votar</button>
+        <button id="marcarNo" class="op-btn no" type="button">✘ Todavía no he asistido</button>
+      </div>
+      <p id="guardarMsg" class="msg" role="status"></p>
+    </div>
+
+    <div id="noEncontrado" class="card oculto">
+      <h2>ℹ️ No encontramos tu cédula</h2>
+      <p class="sub" style="font-size:14px;color:#334155">
+        Tu cédula no aparece en las listas del 1x10 de la Alcaldía. Comunica a tu jefe de calle o al coordinador
+        de tu comunidad para que te registre; cuando te incorporen a la lista, este enlace te mostrará al instante.
+        Si tu cédula es de nacionalidad extranjera, cambia la opción de arriba a <b>E</b> y busca de nuevo.
+      </p>
+    </div>
+  </div>
+
+  <p class="pie">Sala Situacional · Municipio Cristóbal Rojas · Los datos se guardan por persona y jornada y se revisan en los tableros de la Alcaldía en tiempo real.</p>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+    import { getDatabase, ref, child, get, set, onValue, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+
+    const app = initializeApp({
+      apiKey: 'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',
+      authDomain: 'alcaldia-admin.firebaseapp.com',
+      databaseURL: 'https://alcaldia-admin-default-rtdb.firebaseio.com',
+      projectId: 'alcaldia-admin',
+      storageBucket: 'alcaldia-admin.firebasestorage.app',
+      messagingSenderId: '945828226894', appId: '1:945828226894:web:0efeebeb270357e6f5201f'
+    });
+    const database = getDatabase(app);
+    const $ = id => document.getElementById(id);
+    const hoyCaracas = () => {
+      const partes = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Caracas', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+      const valor = tipo => partes.find(x => x.type === tipo).value;
+      return `${valor('year')}-${valor('month')}-${valor('day')}`;
+    };
+    const fechaLarga = fecha => new Date(fecha + 'T12:00:00Z').toLocaleDateString('es-VE', { timeZone: 'America/Caracas', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    $('jornada').textContent = fechaLarga(hoyCaracas());
+
+    let persona = null, escucha = null, guardando = false;
+    const soloDigitos = valor => String(valor ?? '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+
+    function mensaje(id, texto, tipo) {
+      const el = $(id);
+      el.textContent = texto;
+      el.className = 'msg' + (texto ? ' ' + (tipo || 'info') : '');
+    }
+
+    async function buscar() {
+      const cedula = soloDigitos($('cedula').value);
+      const nacionalidad = $('nacionalidad').value;
+      if (!/^\d{4,10}$/.test(cedula)) { mensaje('mensaje', 'Escribe tu cédula completa, sin puntos ni guiones.', 'err'); return; }
+      $('buscar').disabled = true;
+      mensaje('mensaje', 'Buscando tu registro en las listas del 1x10…', 'info');
+      $('ficha').classList.add('oculto');
+      $('noEncontrado').classList.add('oculto');
+      try {
+        const snap = await get(child(ref(database), `directorio_1x10/${nacionalidad}_${cedula}`));
+        if (!snap.exists()) {
+          persona = null;
+          if (escucha) { escucha(); escucha = null; }
+          mensaje('mensaje', '', 'info');
+          $('noEncontrado').classList.remove('oculto');
+          return;
+        }
+        persona = { id: `${nacionalidad}_${cedula}`, ...snap.val() };
+        $('fichaNombre').textContent = persona.nombre;
+        $('fichaCedula').textContent = `${nacionalidad}-${cedula}`;
+        $('fichaComuna').textContent = persona.comuna || 'Sin comuna registrada';
+        $('fichaComunidad').textContent = persona.comunidad || 'Sin comunidad registrada';
+        $('fichaCentro').textContent = persona.centro || 'Sin centro registrado';
+        $('ficha').classList.remove('oculto');
+        mensaje('mensaje', '¡Registro encontrado! Confirma si ya asististe a votar.', 'ok');
+        escucharEstado();
+      } catch (e) {
+        mensaje('mensaje', `No se pudo buscar tu registro: ${e.message}`, 'err');
+      } finally {
+        $('buscar').disabled = false;
+      }
+    }
+
+    function escucharEstado() {
+      if (escucha) escucha();
+      const fecha = hoyCaracas();
+      escucha = onValue(ref(database, `asistencia_centros/${fecha}/${persona.id}`),
+        snap => pintarEstado(snap.val() || null),
+        () => pintarEstado(null, true));
+    }
+
+    function pintarEstado(registro, conError = false) {
+      const banda = $('estadoBanda');
+      const estado = registro?.estado;
+      banda.className = 'estado-banda ' + (estado === 'asistio' ? 'asistio' : estado === 'no_asistio' ? 'no_asistio' : 'pendiente');
+      banda.textContent = conError
+        ? 'Estado actual: no se pudo leer. Intenta de nuevo en unos segundos.'
+        : estado === 'asistio' ? 'Estado actual: SÍ consta que ya asististe a votar. ¡Gracias!'
+        : estado === 'no_asistio' ? 'Estado actual: todavía NO consta que hayas asistido.'
+        : 'Estado actual: sin marcar.';
+      $('marcarSi').classList.toggle('activo', estado === 'asistio');
+      $('marcarNo').classList.toggle('activo', estado === 'no_asistio');
+    }
+    async function marcar(estado) {
+      if (!persona || guardando) return;
+      guardando = true;
+      $('marcarSi').disabled = true; $('marcarNo').disabled = true;
+      mensaje('guardarMsg', 'Guardando tu marcado…', 'info');
+      try {
+        await set(ref(database, `asistencia_centros/${hoyCaracas()}/${persona.id}`), {
+          estado, actualizado_en: serverTimestamp(), actualizado_por: 'publico'
+        });
+        mensaje('guardarMsg', estado === 'asistio'
+          ? '¡Listo! Tu asistencia quedó registrada y ya aparece en los tableros de la Alcaldía.'
+          : 'Listo. Quedó anotado que todavía no has asistido; cuando votes puedes volver y marcarlo.', 'ok');
+      } catch (e) {
+        mensaje('guardarMsg', `No se pudo guardar: ${e.message}`, 'err');
+      } finally {
+        guardando = false;
+        $('marcarSi').disabled = false; $('marcarNo').disabled = false;
+      }
+    }
+
+    $('buscar').addEventListener('click', buscar);
+    $('cedula').addEventListener('keydown', event => { if (event.key === 'Enter') buscar(); });
+    $('marcarSi').addEventListener('click', () => marcar('asistio'));
+    $('marcarNo').addEventListener('click', () => marcar('no_asistio'));
+
+  </script>
+</body>
+</html>

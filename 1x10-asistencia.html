@@ -53,6 +53,31 @@
       td { border: 0; padding: 4px; } td::before { content: attr(data-label) ': '; font-weight: bold; }
       .acciones { margin-top: 6px; } .acciones::before { display: none; }
     }
+    .header-enlaces { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 6px; }
+    .header-enlaces a { background: #fff; color: #0a2351; border-radius: 7px; padding: 10px 14px; min-height: 44px; display: inline-flex; align-items: center; font-weight: bold; text-decoration: none; }
+    .header-enlaces a.secundario { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.65); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 13px; font-weight: bold; }
+    .badge-verde { background: #e5f7e8; color: #16823b; }
+    tr.fila-verde { background: #e5f7e8; }
+    tr.fila-rojo { background: #fde7e8; }
+    tr.fila-amarillo { background: #fff8e6; }
+    .enlace-ver { background: #0a2351; color: #fff; border: 0; border-radius: 7px; padding: 8px 11px; min-height: 40px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    tr[data-comuna] { cursor: pointer; }
+    .modal { position: fixed; inset: 0; background: rgba(10,35,81,.55); display: flex; align-items: center; justify-content: center; padding: 14px; z-index: 40; }
+    .modal-caja { background: #fff; border-radius: 12px; max-width: 920px; width: 100%; max-height: 88vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 40px rgba(0,16,48,.4); }
+    .modal-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 16px; background: #0a2351; color: #fff; }
+    .modal-cabecera h3 { margin: 0; font-size: 16px; line-height: 1.3; }
+    .modal-cabecera button { background: transparent; border: 1px solid rgba(255,255,255,.65); color: #fff; border-radius: 7px; min-height: 42px; min-width: 46px; cursor: pointer; font-size: 16px; }
+    .modal-cuerpo { padding: 14px 16px; overflow: auto; }
+    .modal-filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .modal-filtros button { min-height: 42px; border: 1px solid #a8b8cc; background: #fff; color: #0a2351; border-radius: 7px; padding: 8px 12px; cursor: pointer; font-weight: bold; font-size: 13px; }
+    .modal-filtros button.activo { background: #0a2351; color: #fff; border-color: #0a2351; }
+    @media (max-width: 700px) {
+      .header-enlaces a { width: 100%; justify-content: center; }
+      .modal { padding: 0; } .modal-caja { max-height: 100vh; height: 100%; border-radius: 0; }
+    }
+
   </style>
 </head>
 <body>
@@ -60,6 +85,11 @@
     <a href="admin.html">← Volver al panel</a>
     <h1>Asistencia 1x10 por centro electoral</h1>
     <p>Registro de asistencia comunicado por teléfono. No registra preferencias ni contenido del voto.</p>
+    <div class="header-enlaces">
+      <a href="1x10-asistencia-publica.html" target="_blank" rel="noopener">Abrir el enlace público para marcar asistencia</a>
+      <a class="secundario" href="https://wa.me/?text=Marca%20tu%20asistencia%20a%20votar%20con%20tu%20c%C3%A9dula%20en%3A%20https%3A%2F%2Fsalasituacional.alcaldiadecharallave.com%2F1x10-asistencia-publica.html" target="_blank" rel="noopener">Compartir por WhatsApp</a>
+    </div>
+    <p>El enlace público le permite a cada persona del 1x10 buscar su cédula y marcar si asistió a votar hoy; lo que marque aparece en este panel en tiempo real.</p>
   </header>
   <main>
     <div id="cargando" class="aviso">Verificando acceso y cargando registros…</div>
@@ -82,6 +112,12 @@
         <p id="mensajeUbicacion" class="aviso oculto" role="status"></p>
       </section>
       <section>
+        <h2>Votación por comuna y comunidad</h2>
+        <p class="muted">Personas con cédula válida de las siete variantes del 1x10, contadas una sola vez por persona. En <span style="color:#16823b;font-weight:bold">verde</span> las que ya votaron y en <span style="color:#c22734;font-weight:bold">rojo</span> las que faltan. Pulsa una comunidad para ver su lista completa. Se actualiza solo en vivo: los marcajes del enlace público y los de los tableros aparecen aquí al instante.</p>
+        <p id="territorioResumen" class="muted"></p>
+        <div class="tabla"><table><thead><tr><th>Comuna</th><th>Comunidad</th><th class="num">Votaron</th><th class="num">No votaron</th><th class="num">Pendientes</th><th class="num">Faltan</th><th class="num">Total</th><th>Detalle</th></tr></thead><tbody id="territorioFilas"><tr><td colspan="8">Cargando…</td></tr></tbody></table></div>
+      </section>
+      <section>
         <h2>Personas por centro electoral</h2>
         <div class="fila">
           <div class="campo"><label for="fecha">Fecha de la jornada</label><input id="fecha" type="date"></div>
@@ -101,12 +137,29 @@
         <div class="tabla"><table><thead><tr><th>Persona</th><th>Teléfono</th><th>Jefe de calle</th><th>Comuna y comunidad</th><th>Centro</th><th>Estado</th><th>Registrar</th></tr></thead><tbody id="filas"><tr><td colspan="7">Cargando…</td></tr></tbody></table></div>
         <div class="paginacion"><span id="paginaTexto"></span><button id="anterior" class="secundario" type="button">Anterior</button><button id="siguiente" class="secundario" type="button">Siguiente</button></div>
       </section>
+      <div id="modalPersonas" class="modal oculto" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+        <div class="modal-caja">
+          <div class="modal-cabecera">
+            <h3 id="modalTitulo"></h3>
+            <button id="modalCerrar" type="button" aria-label="Cerrar">✕</button>
+          </div>
+          <div class="modal-cuerpo">
+            <p id="modalResumen" class="muted"></p>
+            <div class="modal-filtros" id="modalFiltros">
+              <button type="button" data-mfiltro="" class="activo">Todas</button>
+              <button type="button" data-mfiltro="asistio">Solo las que votaron</button>
+              <button type="button" data-mfiltro="faltan">Solo las que faltan</button>
+            </div>
+            <div class="tabla"><table><thead><tr><th>Persona</th><th>Centro electoral</th><th>Estado</th></tr></thead><tbody id="modalFilas"><tr><td colspan="3">Cargando…</td></tr></tbody></table></div>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
   <script src="territorio-data.js?v=20261013-valle-alto"></script>
   <script src="autofresh.js"></script>
   <script type="module">
-    import { SISTEMAS_1X10, consolidarPersonas, normalizar } from './asistencia-centros-datos.mjs?v=20261013-valle-alto';
+    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261013-valle-alto';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261013-valle-alto';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
@@ -129,6 +182,7 @@
     const origen = sufijo => ({'':'General','_empleados':'Empleados','_cristianos':'Cristianos','_abuelos':'Abuelos','_cristianos_abuelos':'Cristianos y abuelos','_salud':'Salud','_educacion':'Educación'}[sufijo]||sufijo);
     const limite = 75;
     let usuario = null, jefes = {}, afines = {}, estados = {}, personas = [], pagina = 1, detenerEstados = null;
+    let personasUnicas = [], modalComuna = null, modalComunidad = '', modalFiltro = '';
     let jefesListos = false, afinesListos = false, estadosListos = false;
     const claveDia = () => $('fecha').value;
     const hoyCaracas = () => {
@@ -197,13 +251,15 @@
     function reconstruir() {
       if (nodosListos.size !== SISTEMAS_1X10.length*2) return;
       jefesListos=afinesListos=true;
-      const filas = consolidarPersonas(Object.values(fuentes),catalogo).registrosLista;
+      const r = consolidarPersonas(Object.values(fuentes),catalogo);
+      const filas = r.registrosLista;
+      personasUnicas = r.personas;
       personas = filas.sort((a,b) => a.centro.localeCompare(b.centro,'es') || a.nombreJefe.localeCompare(b.nombreJefe,'es') || a.nombre.localeCompare(b.nombre,'es'));
       const centroActual = $('centro').value;
       const centros = [...new Set(filas.map(x=>x.centro))].sort((a,b)=>a.localeCompare(b,'es'));
       opciones('centro', centros, 'Todos los centros');
       if (centros.includes(centroActual)) $('centro').value = centroActual;
-      llenarJefes(); pintar();
+      llenarJefes(); pintar(); sincronizarDirectorio();
     }
     function pintar() {
       if (!jefesListos || !afinesListos || !estadosListos) return;
@@ -233,7 +289,43 @@
       }).join('') || '<tr><td colspan="7">No hay personas para los filtros seleccionados.</td></tr>';
       $('paginaTexto').textContent=`${filtradas.length.toLocaleString('es-VE')} registro(s) · página ${pagina} de ${paginas}`;
       $('anterior').disabled=pagina<=1; $('siguiente').disabled=pagina>=paginas;
+      pintarTerritorio();
+      if (modalComuna !== null) pintarModal();
     }
+    function contarGrupo(lista) {
+      const c = { asistio: 0, no_asistio: 0, pendiente: 0 };
+      for (const p of lista) c[Object.hasOwn(c, p.estado) ? p.estado : 'pendiente']++;
+      c.total = lista.length; c.faltan = c.no_asistio + c.pendiente;
+      return c;
+    }
+    function pintarTerritorio() {
+      if (!jefesListos || !afinesListos || !estadosListos) return;
+      const base = conAsistencia(personasUnicas.filter(p => p.id), estados);
+      const mapa = new Map();
+      for (const p of base) {
+        const comuna = p.comuna || 'Sin comuna registrada', comunidad = p.comunidad || 'Sin comunidad registrada';
+        const clave = comuna + '\u0001' + comunidad;
+        if (!mapa.has(clave)) mapa.set(clave, { comuna, comunidad, personas: [] });
+        mapa.get(clave).personas.push(p);
+      }
+      const alFinal = g => (g.comuna === 'Sin comuna registrada' || g.comuna === 'Ubicación por verificar') ? 1 : 0;
+      const grupos = [...mapa.values()].sort((a, b) => alFinal(a) - alFinal(b) || a.comuna.localeCompare(b.comuna, 'es') || a.comunidad.localeCompare(b.comunidad, 'es'));
+      const total = contarGrupo(base);
+      $('territorioResumen').textContent = `${total.total.toLocaleString('es-VE')} personas con cédula válida · ${total.asistio.toLocaleString('es-VE')} votaron · ${total.faltan.toLocaleString('es-VE')} faltan (${total.no_asistio.toLocaleString('es-VE')} no votaron y ${total.pendiente.toLocaleString('es-VE')} pendientes de confirmar) en la jornada del ${claveDia().split('-').reverse().join('/')}.`;
+      $('territorioFilas').innerHTML = grupos.map(g => {
+        const c = contarGrupo(g.personas);
+        return `<tr data-comuna="${esc(g.comuna)}" data-comunidad="${esc(g.comunidad)}">
+          <td data-label="Comuna">${esc(g.comuna)}</td>
+          <td data-label="Comunidad">${esc(g.comunidad)}</td>
+          <td data-label="Votaron" class="num"><span class="badge badge-verde">${c.asistio.toLocaleString('es-VE')}</span></td>
+          <td data-label="No votaron" class="num">${c.no_asistio.toLocaleString('es-VE')}</td>
+          <td data-label="Pendientes" class="num">${c.pendiente.toLocaleString('es-VE')}</td>
+          <td data-label="Faltan" class="num"><b>${c.faltan.toLocaleString('es-VE')}</b></td>
+          <td data-label="Total" class="num">${c.total.toLocaleString('es-VE')}</td>
+          <td data-label="Detalle"><button type="button" class="enlace-ver">Ver personas</button></td></tr>`;
+      }).join('') || '<tr><td colspan="8">Aún no hay personas con cédula válida en el 1x10.</td></tr>';
+    }
+
     function escucharEstados() {
       if (detenerEstados) detenerEstados();
       estados={}; estadosListos=false;
@@ -242,6 +334,43 @@
         estados=snap.val()||{}; estadosListos=true; pintar();
       },err=>{ estadosListos=false; aviso('mensajeLista',`No se pudieron leer los estados: ${err.message}`,true); });
     }
+    function pintarModal() {
+      if (modalComuna === null) return;
+      const base = conAsistencia(personasUnicas.filter(p => p.id), estados)
+        .filter(p => (p.comuna || 'Sin comuna registrada') === modalComuna && (p.comunidad || 'Sin comunidad registrada') === modalComunidad)
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es') || String(a.id).localeCompare(String(b.id)));
+      const c = contarGrupo(base);
+      $('modalTitulo').textContent = `${modalComuna} · ${modalComunidad}`;
+      $('modalResumen').textContent = `Jornada del ${claveDia().split('-').reverse().join('/')}: ${c.asistio.toLocaleString('es-VE')} votaron, ${c.faltan.toLocaleString('es-VE')} faltan, ${c.total.toLocaleString('es-VE')} personas en total. La lista se actualiza sola en vivo.`;
+      for (const b of $('modalFiltros').querySelectorAll('button')) b.classList.toggle('activo', b.dataset.mfiltro === modalFiltro);
+      const visibles = base.filter(p => modalFiltro === '' ? true : modalFiltro === 'asistio' ? p.estado === 'asistio' : p.estado !== 'asistio');
+      $('modalFilas').innerHTML = visibles.map(p => `<tr class="${p.estado === 'pendiente' ? 'fila-amarillo' : p.estado === 'asistio' ? 'fila-verde' : 'fila-rojo'}">
+        <td data-label="Persona"><b>${esc(p.nombre)}</b><br><span class="muted">C.I. ${esc(p.nacionalidad)}-${esc(p.cedula)}</span></td>
+        <td data-label="Centro electoral">${esc(p.centro)}</td>
+        <td data-label="Estado" class="estado">${p.estado === 'asistio' ? 'Votó' : p.estado === 'no_asistio' ? 'No votó' : 'Pendiente'}</td></tr>`).join('') || '<tr><td colspan="3">No hay personas con este filtro.</td></tr>';
+    }
+    function abrirModal(comuna, comunidad) {
+      modalComuna = comuna; modalComunidad = comunidad; modalFiltro = '';
+      $('modalPersonas').classList.remove('oculto');
+      pintarModal();
+    }
+    function cerrarModal() {
+      modalComuna = null; modalComunidad = '';
+      $('modalPersonas').classList.add('oculto');
+    }
+    $('territorioFilas').addEventListener('click', event => {
+      const fila = event.target.closest('tr[data-comuna]');
+      if (fila) abrirModal(fila.dataset.comuna, fila.dataset.comunidad);
+    });
+    $('modalCerrar').addEventListener('click', cerrarModal);
+    $('modalPersonas').addEventListener('click', event => { if (event.target === $('modalPersonas')) cerrarModal(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && modalComuna !== null) cerrarModal(); });
+    $('modalFiltros').addEventListener('click', event => {
+      const boton = event.target.closest('button[data-mfiltro]');
+      if (!boton) return;
+      modalFiltro = boton.dataset.mfiltro;
+      pintarModal();
+    });
     $('fecha').addEventListener('change',()=>{pagina=1; aviso('mensajeLista',''); escucharEstados();});
     ['centro','estadoFiltro','buscarPersona'].forEach(id=>$(id).addEventListener(id==='buscarPersona'?'input':'change',()=>{pagina=1;pintar();}));
     $('anterior').addEventListener('click',()=>{pagina--;pintar();});
@@ -263,6 +392,35 @@
       } catch(e) { if(fecha===claveDia())aviso('mensajeLista',`No se pudo guardar el estado: ${e.message}`,true); }
       finally {boton.disabled=false;}
     });
+
+    async function sincronizarDirectorio() {
+      try {
+        const ultimo = Number(localStorage.getItem('directorio1x10_actualizado') || 0);
+        if (Date.now() - ultimo < 15 * 60 * 1000) return;
+        localStorage.setItem('directorio1x10_actualizado', String(Date.now()));
+        const esperado = new Map();
+        for (const p of personasUnicas) {
+          if (!p.id) continue;
+          esperado.set(p.id, { nombre: p.nombre, comuna: p.comuna, comunidad: p.comunidad, centro: p.centro });
+        }
+        const snap = await get(child(ref(database), 'directorio_1x10'));
+        const actual = snap.val() || {};
+        const rutas = [];
+        let sinEspacio = false;
+        for (const [id, dato] of esperado) {
+          const previo = actual[id];
+          if (previo && previo.nombre === dato.nombre && previo.comuna === dato.comuna && previo.comunidad === dato.comunidad && previo.centro === dato.centro) continue;
+          rutas.push(['directorio_1x10/' + id, dato]);
+          if (rutas.length >= 2000) { sinEspacio = true; break; }
+        }
+        if (!sinEspacio) for (const id of Object.keys(actual)) if (!esperado.has(id)) rutas.push(['directorio_1x10/' + id, null]);
+        if (!rutas.length) return;
+        for (let i = 0; i < rutas.length; i += 300) await update(ref(database), Object.fromEntries(rutas.slice(i, i + 300)));
+        console.info(`Directorio 1x10 del enlace público sincronizado: ${rutas.length} cambio(s).`);
+      } catch (e) {
+        console.warn('No se pudo sincronizar el directorio del enlace público:', e.message);
+      }
+    }
 
     onAuthStateChanged(auth,async user=>{
       if(!user){location.href='index.html';return;}
