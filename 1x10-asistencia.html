@@ -139,6 +139,11 @@
         <div class="tabla"><table><thead><tr><th>Persona</th><th>Teléfono</th><th>Jefe de calle</th><th>Comuna y comunidad</th><th>Centro</th><th>Estado</th><th>Registrar</th></tr></thead><tbody id="filas"><tr><td colspan="7">Cargando…</td></tr></tbody></table></div>
         <div class="paginacion"><span id="paginaTexto"></span><button id="anterior" class="secundario" type="button">Anterior</button><button id="siguiente" class="secundario" type="button">Siguiente</button></div>
       </section>
+<section id="seccionPublicos">
+      <h2>Personas registradas por el público</h2>
+        <p class="muted">Personas que registraron su cédula como <b>no encontrada</b> en el enlace público y luego completaron el formulario. El administrador revisa sus datos; no aparecen en la lista de jefes/afines del 1x10 y no pesan en la contabilidad de asistencia.</p>
+        <div class="tabla"><table><thead><tr><th>Nombre</th><th>Cédula</th><th>Comuna</th><th>Comunidad</th><th>Centro</th><th>Acciones</th></tr></thead><tbody id="filasPublicas"><tr><td colspan="6">Cargando…</td></tr></tbody></table></div>
+      </section>
       <div id="modalPersonas" class="modal oculto" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
         <div class="modal-caja">
           <div class="modal-cabecera">
@@ -165,7 +170,7 @@
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261013-valle-alto';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-    import { getDatabase, ref, get, child, onValue, update, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+    import { getDatabase, ref, get, child, onValue, set, update, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
 
     const app = initializeApp({
       apiKey: 'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',
@@ -185,6 +190,7 @@
     const limite = 75;
     let usuario = null, jefes = {}, afines = {}, estados = {}, personas = [], pagina = 1, detenerEstados = null;
     let personasUnicas = [], modalComuna = null, modalComunidad = '', modalFiltro = '';
+    let personasPublicas = new Map();
     let jefesListos = false, afinesListos = false, estadosListos = false;
     const claveDia = () => $('fecha').value;
     const hoyCaracas = () => {
@@ -442,6 +448,48 @@
       }
       escucharEstados();
     });
+
+// Lectura del nodo de autoregistrados (públicos) para el panel de administración.
+onValue(ref(database, 'directorio_1x10_publicos'), snap => {
+  const map = new Map();
+  const datos = snap.val() || {};
+  for (const [id, r] of Object.entries(datos)) {
+    if (r && typeof r === 'object' && r.nombre) map.set(id, r);
+  }
+  personasPublicas = map;
+  pintarPublicas();
+}, () => {});
+
+function pintarPublicas() {
+  const tbody = $('filasPublicas');
+  const lista = [...personasPublicas.values()].sort((a, b) =>
+    String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es')).slice(0, 200);
+  tbody.innerHTML = lista.map(p => {
+    const cortar = v => (v && v.length > 22 ? v.slice(0, 22) + '…' : v);
+    return (`<tr class="oculto" style="display:table-row">
+          <td><b>${esc(p.nombre)}</b></td>
+          <td class="muted">${esc(p.id)}</td>
+          <td class="muted">${esc(cortar(p.comuna))}</td>
+          <td class="muted">${esc(cortar(p.comunidad))}</td>
+          <td class="muted">${esc(cortar(p.centro))}</td>
+          <td><button type="button" class="secundario" data-accion="borrar" data-id="${esc(p.id)}">Eliminar</button></td>
+        </tr>`);
+  }).join('') || '<tr><td colspan="6">Sin registros públicos.</td></tr>';
+  $('seccionPublicos').classList.remove('oculto');
+}
+
+$('filasPublicas').addEventListener('click', evt => {
+  const boton = evt.target.closest('[data-accion="borrar"]');
+  if (!boton) return;
+  const id = boton.dataset.id;
+  if (!window.confirm('Eliminar este registro público? Esta acción no se puede deshacer.')) return;
+  set(ref(database, `directorio_1x10_publicos/${id}`), null)
+    .then(() => {})
+    .catch(e => aviso('mensajeLista', `No se pudo eliminar: ${e.message}`, true));
+});
+
+// Sincronización inmediata de la lista al cargar la página.
+pintarPublicas();
   </script>
 </body>
 </html>

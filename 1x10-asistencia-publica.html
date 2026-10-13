@@ -44,6 +44,12 @@
     .pie { text-align: center; color: #94a3b8; font-size: 12px; padding: 16px; }
     .corto { background: #f0fdf4; border: 1px dashed #16a34a; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #14532d; margin-bottom: 14px; line-height: 1.6; }
     .corto a { color: #0a2351; font-weight: 800; }
+    #registroMsg, #registroGuardadoMsg { margin-top: 10px; font-size: 13.5px; line-height: 1.5; }
+    .registro-campo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .registro-campo .campo { display: flex; flex-direction: column; }
+    .registro-campo .campo span { font-size: 12px; font-weight: 700; color: #334155; }
+    .registro-campo input { min-height: 44px; }
+    @media (max-width: 480px) { .registro-campo { grid-template-columns: 1fr; } }
   </style>
   <script src="autofresh.js"></script>
 </head>
@@ -105,10 +111,40 @@
     <div id="noEncontrado" class="card oculto">
       <h2>ℹ️ No encontramos tu cédula</h2>
       <p class="sub" style="font-size:14px;color:#334155">
-        Tu cédula no aparece en las listas del 1x10 de la Alcaldía. Comunica a tu jefe de calle o al coordinador
-        de tu comunidad para que te registre; cuando te incorporen a la lista, este enlace te mostrará al instante.
-        Si tu cédula es de nacionalidad extranjera, cambia la opción de arriba a <b>E</b> y busca de nuevo.
+        Tu cédula no aparece en las listas del 1x10 de la Alcaldía. <span id="registroAccion">Puedes registrarte ahí mismo
+        para marcar tu asistencia y que tu jefe de calle la revise.</span>
+        <button type="button" id="irAlRegistro" class="btn" style="margin-top:8px">Registrarme en el 1x10</button>
+        <span style="display:block;margin-top:10px;font-size:12px;color:#64748b">
+          Si tu cédula es de nacionalidad extranjera, cambia la opción de arriba a <b>E</b> y busca de nuevo.
+        </span>
       </p>
+
+      <div id="formularioRegistro" class="oculto" style="background:#fff7ed;border:1px solid #fed7aa;border-left:5px solid #ea580c;border-radius:10px;padding:14px 16px;">
+        <h2 style="font-size:13px;margin-bottom:10px">Completa los campos para registrarte</h2>
+        <form id="registroForm" autocomplete="off">
+          <div class="registro-campo">
+            <div class="campo">
+              <span>Nombre completo *</span>
+              <input id="regNombre" type="text" placeholder="Ej.: María Fernanda">
+            </div>
+            <div class="campo">
+              <span>Comuna *</span>
+              <input id="regComuna" type="text" placeholder="Ej.: Valle Alto">
+            </div>
+            <div class="campo" style="grid-column:1/-1">
+              <span>Comunidad *</span>
+              <input id="regComunidad" type="text" placeholder="Ej.: Sector El Volcán">
+            </div>
+            <div class="campo" style="grid-column:1/-1">
+              <span>Centro electoral *</span>
+              <input id="regCentro" type="text" placeholder="Ej.: Liceo Andrés Eloy Blanco">
+            </div>
+          </div>
+          <p id="registroMsg" class="msg" role="status"></p>
+          <button type="submit" id="guardarRegistroBtn" class="btn" style="margin-top:12px">Guardar registro</button>
+          <p id="registroGuardadoMsg" class="msg" role="status"></p>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -217,6 +253,50 @@
         $('marcarSi').disabled = false; $('marcarNo').disabled = false;
       }
     }
+
+    async function guardarRegistro(e) {
+      e.preventDefault();
+      const nombre = $('regNombre').value.trim();
+      const comuna = $('regComuna').value.trim();
+      const comunidad = $('regComunidad').value.trim();
+      const centro = $('regCentro').value.trim();
+      const nacionalidad = $('nacionalidad').value;
+      const cedula = soloDigitos($('cedula').value);
+      if (!/^[VE]$/.test(nacionalidad)) { mensaje('registroMsg', 'Selecciona primero la nacionalidad.', 'err'); $('regNombre').focus(); return; }
+      if (!/^\d{4,10}$/.test(cedula)) { mensaje('registroMsg', 'La cédula debe tener entre 4 y 10 dígitos.', 'err'); $('regNombre').focus(); return; }
+      if (!nombre) { mensaje('registroMsg', 'Ingresa tu nombre completo.', 'err'); $('regNombre').focus(); return; }
+      if (!comuna) { mensaje('registroMsg', 'Ingresa tu comuna.', 'err'); $('regComuna').focus(); return; }
+      if (!comunidad) { mensaje('registroMsg', 'Ingresa tu comunidad.', 'err'); $('regComunidad').focus(); return; }
+      if (!centro) { mensaje('registroMsg', 'Ingresa tu centro electoral.', 'err'); $('regCentro').focus(); return; }
+      $('guardarRegistroBtn').disabled = true;
+      mensaje('registroMsg', 'Guardando tu registro en el 1x10…', 'info');
+      try {
+        const id = `${nacionalidad}_${cedula}`;
+        await set(ref(database, `directorio_1x10_publicos/${id}`), {
+          nombre, comuna, comunidad, centro,
+          registrado_en: serverTimestamp(), registrado_por: 'publico'
+        });
+        mensaje('registroMsg', '', 'ok');
+        $('registroGuardadoMsg').textContent = '¡Listo! Tu registro queda guardado. Ahora puedes marcar si asististe a votar.';
+        $('registroGuardadoMsg').className = 'msg ok';
+        $('formularioRegistro').classList.add('oculto');
+        $('irAlRegistro').classList.add('oculto');
+        persona = { id, nombre, comuna, comunidad, centro };
+        $('ficha').classList.remove('oculto');
+        $('fichaNombre').textContent = persona.nombre;
+        $('fichaCedula').textContent = `${nacionalidad}-${cedula}`;
+        $('fichaComuna').textContent = persona.comuna;
+        $('fichaComunidad').textContent = persona.comunidad;
+        $('fichaCentro').textContent = persona.centro;
+        mensaje('mensaje', '¡Registro encontrado! Confirma si ya asististe a votar.', 'ok');
+        escucharEstado();
+      } catch (err) {
+        mensaje('registroMsg', `No se pudo guardar: ${err.message}`, 'err');
+      } finally {
+        $('guardarRegistroBtn').disabled = false;
+      }
+    }
+    $('registroForm').addEventListener('submit', guardarRegistro);
 
     $('buscar').addEventListener('click', buscar);
     $('cedula').addEventListener('keydown', event => { if (event.key === 'Enter') buscar(); });
