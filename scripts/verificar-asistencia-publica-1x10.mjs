@@ -30,6 +30,7 @@ const panel = fs.readFileSync(new URL('../1x10-asistencia.html', import.meta.url
 assert(panel.includes('1x10-asistencia-publica.html'), 'El panel debe enlazar la página pública.');
 assert(panel.includes('Votación por comuna y comunidad'), 'El panel debe tener la sección por comuna y comunidad.');
 assert(panel.includes('id="modalPersonas"'), 'El panel debe tener la ventana emergente.');
+assert(panel.includes('.modal.oculto'), 'La ventana emergente debe poder ocultarse (.modal.oculto).');
 assert(panel.includes('pintarTerritorio()'), 'El panel debe pintar el resumen territorial.');
 assert(panel.includes('sincronizarDirectorio()'), 'El panel debe sincronizar el directorio público.');
 assert(panel.includes('asistencia_centros/${fecha}/${id}'), 'El panel conserva el marcado por jornada.');
