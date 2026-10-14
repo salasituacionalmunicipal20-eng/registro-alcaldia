@@ -38,6 +38,7 @@ export function consolidarPersonas(sistemas, catalogo={}) {
       comunidad:canonComunidades.get(normalizar(comunidadCanon))||comunidadCanon,
       centro:canonCentros.get(normalizar(centroCanon))||centroCanon,esJefe,
       registroId:id,jefeId:texto(j.cedula),nombreJefe:texto([j.nombres,j.apellidos].filter(Boolean).join(' '))||texto(j.nombre),
+      registroId:id,jefeId:texto(j.cedula),nombreJefe:texto([j.nombres,j.apellidos].filter(Boolean).join(' '))||texto(j.nombre),fecha_nacimiento:texto(p.fecha_nacimiento),
       telefono:texto(p.telefono),sufijo};
     registrosLista.push(dato);
     if(!quien)return;

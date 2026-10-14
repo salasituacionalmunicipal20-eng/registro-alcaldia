@@ -125,6 +125,7 @@
           <div class="campo"><label for="fecha">Fecha de la jornada</label><input id="fecha" type="date"></div>
           <div class="campo" style="flex:2 1 300px"><label for="centro">Centro electoral</label><select id="centro"><option value="">Todos los centros</option></select></div>
           <div class="campo"><label for="estadoFiltro">Estado</label><select id="estadoFiltro"><option value="">Todos</option><option value="pendiente">Pendiente</option><option value="asistio">Asistió</option><option value="no_asistio">No asistió</option></select></div>
+          <div class="campo" style="flex:2 1 300px"><label for="edadFiltro" style="font-size:12px">Grupo de edad:</label><select id="edadFiltro" style="min-height:44px;font-size:16px"><option value="">Todos</option><option value="jovenes">Jóvenes (15-35)</option><option value="adultos">Adultos (36+)</option></select></div>
           <div class="campo"><label for="buscarPersona">Buscar persona o jefe</label><input id="buscarPersona" type="search" placeholder="Nombre, cédula o teléfono"></div>
         </div>
         <div class="metricas">
@@ -166,7 +167,7 @@
   <script src="territorio-data.js?v=20261013-valle-alto"></script>
   <script src="autofresh.js"></script>
   <script type="module">
-    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261013-valle-alto';
+    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia, edadEn, grupoEdad } from './asistencia-centros-datos.mjs?v=20261013-valle-alto';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261013-valle-alto';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
@@ -191,6 +192,7 @@
     let usuario = null, jefes = {}, afines = {}, estados = {}, personas = [], pagina = 1, detenerEstados = null;
     let personasUnicas = [], modalComuna = null, modalComunidad = '', modalFiltro = '';
     let personasPublicas = new Map();
+    let ageFiltro = '';
     let jefesListos = false, afinesListos = false, estadosListos = false;
     const claveDia = () => $('fecha').value;
     const hoyCaracas = () => {
@@ -198,6 +200,20 @@
       const valor = tipo => partes.find(x => x.type === tipo).value;
       return `${valor('year')}-${valor('month')}-${valor('day')}`;
     };
+    function fechaACadena(v) {
+      if (!v) return '';
+      if (v instanceof Date && !isNaN(v.getTime())) {
+        return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
+      }
+      const s = String(v).trim();
+      return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
+    }
+    function grupoEdadPersona(p) {
+      const fn = fechaACadena(p.fecha_nacimiento);
+      if (!fn) return 'sinEdad';
+      const edad = edadEn(fn, hoyCaracas());
+      return grupoEdad(edad);
+    }
     $('fecha').value = hoyCaracas();
 
     function aviso(id, mensaje, error = false) {
@@ -273,7 +289,7 @@
       if (!jefesListos || !afinesListos || !estadosListos) return;
       const centro=$('centro').value, q=normalizar($('buscarPersona').value), estado=$('estadoFiltro').value;
       const base=personas.filter(p=>!centro || p.centro===centro);
-      const filtradas=base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || normalizar(`${p.nombre} ${p.nacionalidad}${p.cedula} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`).includes(q)));
+      const filtradas=base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || normalizar(`${p.nombre} ${p.nacionalidad}${p.cedula} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`).includes(q)) && (!ageFiltro || grupoEdadPersona(p) === ageFiltro));
       const unicas=new Map(filtradas.filter(p=>p.id).map(p=>[p.id,estados[p.id]?.estado||'pendiente']));
       $('total').textContent=filtradas.length.toLocaleString('es-VE');
       $('resumenPersonas').textContent=`${filtradas.length.toLocaleString('es-VE')} registros del 1x10 · ${unicas.size.toLocaleString('es-VE')} personas distintas con identidad válida. Asistieron, No asistieron y Pendientes cuentan personas, no registros repetidos.`;
@@ -308,7 +324,7 @@
     }
     function pintarTerritorio() {
       if (!jefesListos || !afinesListos || !estadosListos) return;
-      const base = conAsistencia(personasUnicas.filter(p => p.id), estados);
+      const base = conAsistencia(personasUnicas.filter(p => p.id && (!ageFiltro || grupoEdadPersona(p) === ageFiltro)), estados);
       const mapa = new Map();
       for (const p of base) {
         const comuna = p.comuna || 'Sin comuna registrada', comunidad = p.comunidad || 'Sin comunidad registrada';
@@ -380,7 +396,7 @@
       pintarModal();
     });
     $('fecha').addEventListener('change',()=>{pagina=1; aviso('mensajeLista',''); escucharEstados();});
-    ['centro','estadoFiltro','buscarPersona'].forEach(id=>$(id).addEventListener(id==='buscarPersona'?'input':'change',()=>{pagina=1;pintar();}));
+    ['centro','estadoFiltro','buscarPersona','edadFiltro'].forEach(id=>$(id).addEventListener(id==='buscarPersona'?'input':'change',()=>{pagina=1;pintar();}));
     $('anterior').addEventListener('click',()=>{pagina--;pintar();});
     $('siguiente').addEventListener('click',()=>{pagina++;pintar();});
     $('filas').addEventListener('click',async event=>{
