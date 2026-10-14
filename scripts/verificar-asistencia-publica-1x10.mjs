@@ -1,4 +1,4 @@
-// Verificación local del enlace público de asistencia 1x10, del panel
+// Verificación local del enlace público de Consulta Popular 18 de Octubre, del panel
 // actualizado y de las reglas del archivo. No toca la base de producción.
 import fs from 'node:fs';
 import os from 'node:os';
