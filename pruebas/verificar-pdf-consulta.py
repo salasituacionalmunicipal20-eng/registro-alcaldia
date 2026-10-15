@@ -25,6 +25,15 @@ for archivo in sorted(carpeta.glob('*.pdf')):
         texto = '\n'.join(p.get_text() for p in documento)
         for numero in range(100001, 100151):
             assert str(numero) in texto, ('Falta un registro', numero)
+        jovenes = [i for i,p in enumerate(documento) if 'Jóvenes (15 a 35 años)' in p.get_text()]
+        adultos = [i for i,p in enumerate(documento) if 'Adultos (36 años en adelante)' in p.get_text()]
+        assert jovenes and adultos and max(jovenes) < min(adultos), 'Las secciones deben salir separadas en el mismo PDF'
+        texto_jovenes = '\n'.join(documento[i].get_text() for i in jovenes)
+        texto_adultos = '\n'.join(documento[i].get_text() for i in adultos)
+        for indice in range(150):
+            cedula = str(100001 + indice)
+            correcto, otro = (texto_adultos, texto_jovenes) if indice % 2 else (texto_jovenes, texto_adultos)
+            assert cedula in correcto and cedula not in otro, 'Una persona aparece en la sección incorrecta'
 assert len(resultados) == 10, 'Faltan salidas por verificar'
 for nombre,etiqueta in [('adultos-carta.pdf','Adultos (36+)'),('jovenes-carta.pdf','Jóvenes (15-35)')]:
     with fitz.open(carpeta / nombre) as documento:
