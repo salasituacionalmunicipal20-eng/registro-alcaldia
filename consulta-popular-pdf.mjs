@@ -24,8 +24,10 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
     const lineas=doc.splitTextToSize(etiqueta?`${etiqueta}: ${valor}`:String(valor),util-2);
     doc.text(lineas,margen,y);y+=lineas.length*4.3+2;
   };
-  const porcentajes=tipo==='lista'?[6,11,16,10,13,16,18,10]:tipo==='territorio'?[25,35,8,8,8,8,8]:[5,12,30,41,12];
-  const columnas=Object.fromEntries(porcentajes.map((p,i)=>[i,{cellWidth:util*p/100}]));
+  const conFirma=tipo!=='territorio';
+  const anchos=tipo==='lista'?[11,24,35,25,27,34,33,21,util-210]:tipo==='territorio'?[25,35,8,8,8,8,8].map(p=>util*p/100):[11,27,55,85,25,util-203];
+  const columnas=Object.fromEntries(anchos.map((ancho,i)=>[i,{cellWidth:ancho}]));
+  const titulos=conFirma?[...encabezados,'Firma']:encabezados;
   const bloques=secciones?.length?secciones:[{filas}];
   for(const [indice,bloque] of bloques.entries()){
     if(indice>0)doc.addPage();
@@ -35,11 +37,15 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
     texto('Jornada',jornada);texto('Filtros',filtros);texto('',resumen);
     if(bloque.titulo)texto('Sección',`${bloque.titulo} · ${bloque.filas.length.toLocaleString('es-VE')} registros`);
     doc.autoTable({startY:y+2,margin:{top:inicio+1,bottom:25,left:margen,right:margen},tableWidth:util,
-    head:[encabezados],body:bloque.filas.length?bloque.filas:[[ {content:'No hay registros con estos filtros.',colSpan:encabezados.length} ]],
+    head:[titulos],body:bloque.filas.length?bloque.filas.map(f=>conFirma?[...f,'']:f):[[ {content:'No hay registros con estos filtros.',colSpan:titulos.length} ]],
     theme:'grid',showHead:'everyPage',rowPageBreak:'avoid',
     styles:{font:'helvetica',fontSize:9,cellPadding:2.2,overflow:'linebreak',valign:'top',lineColor:[183,193,204],lineWidth:0.15,textColor:[23,36,59]},
     headStyles:{fillColor:[10,35,81],textColor:255,fontStyle:'bold',fontSize:8.5},
     alternateRowStyles:{fillColor:[246,248,250]},columnStyles:columnas,
+    bodyStyles:conFirma?{minCellHeight:14}:{},
+    didParseCell:celda=>{
+      if(conFirma&&celda.section==='body'&&celda.column.index===titulos.length-1)celda.cell.styles.fillColor=[255,255,255];
+    },
     willDrawPage:()=>{if(doc.internal.getCurrentPageInfo().pageNumber>primeraPagina)cabecera();}
   });
   }

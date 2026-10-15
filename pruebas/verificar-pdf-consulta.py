@@ -8,11 +8,19 @@ resultados = []
 margen = 15 * 72 / 25.4
 for archivo in sorted(carpeta.glob('*.pdf')):
     documento = fitz.open(archivo)
+    firmas = 0
     for numero, pagina in enumerate(documento, 1):
         assert abs(pagina.rect.width - 792) < .01 and abs(pagina.rect.height - 612) < .01, archivo.name
         texto = pagina.get_text()
         assert 'Consulta Popular 18 de Octubre' in texto, (archivo.name, numero, 'encabezado')
         assert f'Página {numero} de {len(documento)}' in texto, (archivo.name, numero, 'paginación')
+        if not archivo.name.startswith('territorio'):
+            assert 'Firma' in texto, (archivo.name, numero, 'columna de firma')
+            inicio_firma = (218 if archivo.name.startswith('comunidad') else 225) * 72 / 25.4
+            espacios = {tuple(round(v,2) for v in dibujo['rect']) for dibujo in pagina.get_drawings()
+                        if abs(dibujo['rect'].x0-inicio_firma)<.5 and abs(dibujo['rect'].x1-(792-margen))<.5
+                        and dibujo['rect'].height >= 14*72/25.4-.3}
+            firmas += len(espacios)
         for palabra in pagina.get_text('words'):
             assert palabra[0] >= margen - .8 and palabra[2] <= 792 - margen + .8, (archivo.name, numero, 'margen lateral')
             assert palabra[1] >= margen - .8 and palabra[3] <= 612 - margen + .8, (archivo.name, numero, 'margen vertical')
@@ -20,8 +28,9 @@ for archivo in sorted(carpeta.glob('*.pdf')):
             r = dibujo['rect']
             assert r.x0 >= margen - .8 and r.x1 <= 792 - margen + .8, (archivo.name, numero, 'bordes laterales')
             assert r.y0 >= margen - .8 and r.y1 <= 612 - margen + .8, (archivo.name, numero, 'bordes verticales')
-    resultados.append({'archivo': archivo.name, 'paginas': len(documento)})
+    resultados.append({'archivo': archivo.name, 'paginas': len(documento), 'espacios_firma': firmas})
     if archivo.name == 'lista-completa-carta.pdf':
+        assert firmas == 151, 'Cada registro debe tener su espacio de firma de al menos 14 mm de alto'
         texto = '\n'.join(p.get_text() for p in documento)
         for numero in range(100001, 100151):
             assert str(numero) in texto, ('Falta un registro', numero)
@@ -49,6 +58,8 @@ for archivo in sorted(carpeta.glob('*.pdf')):
             for i,p in enumerate(documento):
                 if cedula in p.get_text():
                     assert territorios[i][0] == ('Comuna de prueba' if indice < 100 else 'Comuna Z de prueba'), 'Una persona aparece en el territorio incorrecto'
+    if archivo.name == 'comunidad-carta.pdf':
+        assert firmas == 33, 'Cada persona de la comunidad debe tener su espacio para firmar'
 assert len(resultados) == 10, 'Faltan salidas por verificar'
 for nombre,etiqueta in [('adultos-carta.pdf','Adultos (36+)'),('jovenes-carta.pdf','Jóvenes (15-35)')]:
     with fitz.open(carpeta / nombre) as documento:
