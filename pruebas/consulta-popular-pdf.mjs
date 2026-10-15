@@ -46,6 +46,13 @@ try {
   await page.goto(origen+'/1x10-asistencia.html');
   await page.locator('#imprimirLista').waitFor({state:'visible'});
   await page.waitForFunction(()=>!document.querySelector('#imprimirLista').disabled);
+  async function imprimirLista(grupo){
+    const actual=await page.locator('#edadFiltro').inputValue();
+    await page.click('#imprimirLista');await page.locator('#filtroImpresion').waitFor({state:'visible'});
+    assert.equal(await page.locator('#edadImpresion').inputValue(),actual);
+    if(grupo!==undefined)await page.selectOption('#edadImpresion',grupo);
+    await page.click('#generarImpresion');
+  }
   async function descargar(nombre){
     await page.locator('#vistaPDFConsulta').waitFor({state:'visible'});
     assert(await page.evaluate(()=>{const d=document.getElementById('vistaPDFConsulta');return document.documentElement.scrollWidth<=innerWidth&&d.scrollWidth<=d.clientWidth;}),'El visor debe caber en la pantalla');
@@ -54,22 +61,31 @@ try {
   }
   assert.equal(await page.locator('#filas tr').count(),75);
   await page.click('#siguiente');
-  await page.click('#imprimirLista');
+  await page.click('#imprimirLista');await page.selectOption('#edadImpresion','adultos');
+  await page.locator('#filtroImpresion').screenshot({path:path.join(salida,'filtro-escritorio.png')});
+  await page.setViewportSize({width:375,height:812});
+  assert(await page.evaluate(()=>{const d=document.getElementById('filtroImpresion');return document.documentElement.scrollWidth<=innerWidth&&d.scrollWidth<=d.clientWidth;}));
+  await page.locator('#filtroImpresion').screenshot({path:path.join(salida,'filtro-movil.png')});
+  await page.click('#cancelarImpresion');assert.equal(await page.locator('#edadFiltro').inputValue(),'');assert.equal(await page.locator('#vistaPDFConsulta').count(),0);
+  await page.setViewportSize({width:1280,height:900});
+  await imprimirLista();
   await descargar('lista-completa-carta.pdf');
   assert.equal(await page.locator('#reporteImpresion tbody tr').count(),151);
   assert((await page.locator('#reporteImpresion').innerText()).includes('150 personas distintas'));
   assert.equal(await page.locator('#reporteImpresion img').count(),0);
   assert.equal(await page.locator('#reporteImpresion button').count(),0);
+  await imprimirLista('adultos');assert.equal(await page.locator('#reporteImpresion tbody tr').count(),75);await descargar('adultos-carta.pdf');
+  await imprimirLista('jovenes');assert.equal(await page.locator('#reporteImpresion tbody tr').count(),76);await descargar('jovenes-carta.pdf');
   fs.mkdirSync(path.join(raiz,'output'),{recursive:true});
   await page.selectOption('#centro','Centro A');await page.selectOption('#estadoFiltro','asistio');await page.selectOption('#edadFiltro','jovenes');
-  await page.click('#imprimirLista');
+  await imprimirLista();
   await descargar('lista-filtrada-carta.pdf');
   assert.equal(await page.locator('#reporteImpresion tbody tr').count(),26);
-  await page.fill('#buscarPersona','Persona 000');await page.click('#imprimirLista');
+  await page.fill('#buscarPersona','Persona 000');await imprimirLista();
   await descargar('busqueda-carta.pdf');
   assert.equal(await page.locator('#reporteImpresion tbody tr').count(),2);
   assert((await page.locator('#reporteImpresion').innerText()).includes('1 personas distintas'));
-  await page.fill('#buscarPersona','sin coincidencias');await page.click('#imprimirLista');
+  await page.fill('#buscarPersona','sin coincidencias');await imprimirLista();
   await descargar('sin-resultados-carta.pdf');
   assert((await page.locator('#reporteImpresion').innerText()).includes('No hay registros con estos filtros.'));
   await page.fill('#buscarPersona','');await page.selectOption('#centro','');await page.selectOption('#estadoFiltro','');

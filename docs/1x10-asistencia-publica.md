@@ -50,6 +50,7 @@ En la columna **Teléfono** de la lista administrativa, el botón **WhatsApp** a
 En `1x10-asistencia.html` están disponibles:
 
 - **Imprimir lista filtrada completa**: imprime todos los registros que cumplen la fecha, centro, estado, búsqueda y grupo de edad seleccionados. Incluye las páginas no visibles de la lista, conserva los registros repetidos entre variantes y distingue el total de registros del total de personas distintas.
+  Al pulsarlo aparece una selección previa: **Todos**, **Jóvenes (15 a 35 años)** o **Adultos (36 años en adelante)**. Se propone el grupo de edad actual. **Generar PDF** aplica esa elección conservando centro, estado, fecha y búsqueda; **Cancelar** cierra sin cambiar los filtros ni generar el archivo. El grupo elegido también aparece en el PDF.
 - **Imprimir resumen territorial**: imprime todas las comunas y comunidades del resumen con el filtro de edad vigente y los estados de la jornada.
 - **Imprimir esta comunidad**: desde el detalle, imprime todas sus personas con el filtro Todas / Solo las que votaron / Solo las que faltan y el grupo de edad seleccionado.
 

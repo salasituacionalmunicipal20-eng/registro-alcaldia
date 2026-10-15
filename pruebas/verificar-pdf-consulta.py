@@ -25,5 +25,8 @@ for archivo in sorted(carpeta.glob('*.pdf')):
         texto = '\n'.join(p.get_text() for p in documento)
         for numero in range(100001, 100151):
             assert str(numero) in texto, ('Falta un registro', numero)
-assert len(resultados) == 8, 'Faltan salidas por verificar'
+assert len(resultados) == 10, 'Faltan salidas por verificar'
+for nombre,etiqueta in [('adultos-carta.pdf','Adultos (36+)'),('jovenes-carta.pdf','Jóvenes (15-35)')]:
+    with fitz.open(carpeta / nombre) as documento:
+        assert etiqueta in documento[0].get_text(), ('Falta el grupo de edad en el PDF', nombre)
 print(json.dumps({'carta_horizontal': True, 'margenes_15_mm_todas_las_paginas': True, 'encabezados_y_paginacion': True, 'registros_completos': True, 'pdf': resultados}, ensure_ascii=False))
