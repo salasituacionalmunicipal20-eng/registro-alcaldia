@@ -83,6 +83,12 @@
     }
 
     #reporteImpresion { display: none; }
+    .visor-pdf-consulta { width:1100px; max-width:96vw; height:92vh; max-height:92vh; padding:18px; border:1px solid #a8b8cc; border-radius:10px; color:#17243b; }
+    .visor-pdf-consulta::backdrop { background:rgba(10,35,81,.6); }
+    .visor-pdf-barra { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .visor-pdf-barra h2 { flex:1 1 230px; margin:0; }
+    .visor-pdf-consulta p { font-size:14px; }
+    .visor-pdf-consulta iframe { display:block; width:100%; height:calc(100% - 118px); min-height:250px; border:1px solid #a8b8cc; }
     @page { size: letter landscape; margin: 12mm; }
     @media print {
       :root { background: #fff; }
@@ -96,7 +102,7 @@
       #reporteImpresion tbody { display: table-row-group; }
       #reporteImpresion tr { display: table-row; break-inside: avoid; border: 0; border-radius: 0; padding: 0; }
       #reporteImpresion th, #reporteImpresion td { display: table-cell; border: 1px solid #8c98a5; padding: 5pt; vertical-align: top; overflow-wrap: anywhere; color: #111; background: #fff; }
-      #reporteImpresion th { background: #edf1f5; font-weight: bold; }
+      #reporteImpresion th { background: #edf1f5; font-weight: bold; position:static; }
       #reporteImpresion td::before { content: none; }
     }
   </style>
@@ -188,10 +194,13 @@
     </div>
   </main>
   <section id="reporteImpresion" aria-hidden="true"></section>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script type="module" src="print-header.js"></script>
   <script src="territorio-data.js?v=20261015-milagro-i"></script>
   <script src="autofresh.js"></script>
   <script type="module">
+    import {crearPDFConsulta,mostrarPDFConsulta} from './consulta-popular-pdf.mjs?v=20261015-carta';
     import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261015-milagro-i';
     import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
@@ -470,11 +479,15 @@
       }
       window.inyectarHeaderImpresion?.({titulo:'Consulta Popular 18 de Octubre',subtitulo:titulo});
       reporte.innerHTML = `<h2>${esc(titulo)}</h2><p><b>Jornada:</b> ${esc(jornada)}</p><p><b>Filtros:</b> ${esc(filtros)}</p><p>${esc(resumen)}</p><p>Generado el ${esc(new Date().toLocaleString('es-VE',{dateStyle:'full',timeStyle:'short',timeZone:'America/Caracas'}))} (hora de Venezuela).</p><table>${tipo === 'lista' ? '<colgroup><col style="width:4%"><col style="width:11%"><col style="width:17%"><col style="width:10%"><col style="width:14%"><col style="width:17%"><col style="width:17%"><col style="width:10%"></colgroup>' : ''}<thead><tr>${encabezados.map(t=>`<th>${esc(t)}</th>`).join('')}</tr></thead><tbody>${filas.map(f=>`<tr>${f.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${encabezados.length}">No hay registros con estos filtros.</td></tr>`}</tbody></table>`;
-      return true;
+      return {tipo,titulo,jornada,filtros,resumen,encabezados,filas};
     }
     for (const [id,tipo] of [['imprimirLista','lista'],['imprimirTerritorio','territorio'],['imprimirComunidad','comunidad']]) $(id).addEventListener('click',()=>{
       if (!usuario || !jefesListos || !afinesListos || !estadosListos) { aviso('mensajeLista','Espera a que terminen de cargar los registros y los estados antes de imprimir.',true); return; }
-      tipoImpresion = tipo; window.print();
+      try {
+        const datos=prepararImpresion(tipo);if(!datos)return;
+        const doc=crearPDFConsulta(datos);
+        mostrarPDFConsulta(doc,`Consulta_Popular_${tipo}_${claveDia()}.pdf`);
+      } catch(e) { aviso('mensajeLista',e.message,true); }
     });
     window.addEventListener('beforeprint',()=>prepararImpresion(tipoImpresion || (modalComuna !== null ? 'comunidad' : 'lista')));
     window.addEventListener('afterprint',()=>{tipoImpresion=null;$('reporteImpresion').replaceChildren();});

@@ -53,7 +53,11 @@ En `1x10-asistencia.html` están disponibles:
 - **Imprimir resumen territorial**: imprime todas las comunas y comunidades del resumen con el filtro de edad vigente y los estados de la jornada.
 - **Imprimir esta comunidad**: desde el detalle, imprime todas sus personas con el filtro Todas / Solo las que votaron / Solo las que faltan y el grupo de edad seleccionado.
 
-La salida usa el cintillo institucional, fecha de la jornada y de generación, filtros, encabezados de tabla repetidos y papel carta horizontal. El diálogo del navegador permite elegir impresora o guardar como PDF. No incluye controles para modificar los registros. La impresión espera la carga completa de las siete variantes y los estados de asistencia.
+Los tres botones generan un PDF de **papel carta horizontal (27,94 × 21,59 cm)** con **márgenes de 15 mm**. Se abre una vista previa con **Imprimir PDF** y **Descargar PDF**. Al imprimir se debe seleccionar carta y tamaño real o escala 100 %. El PDF conserva cintillo institucional en todas las páginas, fecha de la jornada, filtros, encabezados de tabla repetidos, filas completas y numeración «Página X de Y». No incluye controles para modificar los registros. La impresión espera la carga completa de las siete variantes y los estados de asistencia.
+
+La generación se realiza en `consulta-popular-pdf.mjs`, usando jsPDF, autoTable y los encabezados institucionales compartidos. Se sustituyó la impresión de la tabla HTML porque su encabezado repetido se desplazaba al borde en las páginas siguientes. Los parámetros nuevos de margen del encabezado y pie son opcionales; los otros módulos conservan sus coordenadas anteriores.
+
+Verificación: `node pruebas/consulta-popular-pdf.mjs` recorre los tres botones y los filtros con datos ficticios; imprime los 151 registros aunque solo haya 75 visibles, y prueba listados extensos y vacíos. `python pruebas/verificar-pdf-consulta.py` revisa las ocho salidas PDF y sus 51 páginas: tamaño carta, texto y bordes dentro de los márgenes, encabezados, numeración y presencia de todos los registros. Los PDF se renderizaron y revisaron visualmente. Se verificó también el formulario navideño para descartar regresiones en su PDF.
 
 Las comunidades `MILAGRO DE DIO I` y `EL MILAGRO DE DIOS I` se unifican como **MILAGRO DE DIOS I**. Se conserva el identificador técnico del catálogo y se mantiene separado **MILAGRO DE DIOS II**. Se verificaron 23 campos corregidos en Firebase sin cambios en los demás datos.
 
