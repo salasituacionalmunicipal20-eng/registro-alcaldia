@@ -41,6 +41,10 @@ El panel `1x10-asistencia.html` muestra debajo de la lista principal una secció
 
 ## Comprobaciones
 
+### Contacto por WhatsApp
+
+En la columna **Teléfono** de la lista administrativa, el botón **WhatsApp** abre el chat de la persona en otra pestaña. Se conserva **Llamar**. Los números venezolanos locales se convierten al formato internacional `58` para construir el enlace; se admiten números internacionales con su código de país. Los valores incompletos o con varios teléfonos mezclados no generan un enlace de WhatsApp. El valor guardado permanece intacto. El administrador escribe y envía el mensaje desde WhatsApp; abrir el chat no realiza un envío automático.
+
 ### Impresión del panel administrativo (15/10/2026)
 
 En `1x10-asistencia.html` están disponibles:

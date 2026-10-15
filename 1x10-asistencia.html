@@ -24,6 +24,9 @@
     button, .boton { border: 0; border-radius: 7px; padding: 10px 14px; color: white; background: #0a2351; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; font-weight: bold; }
     button:disabled { opacity: .55; cursor: wait; }
     .secundario { background: #e8eef6; color: #0a2351; }
+    .contacto { display: flex; flex-wrap: wrap; gap: 6px; }
+    .whatsapp { background: #166534; color: #fff; }
+    .contacto a:focus-visible { outline: 2px solid #0a2351; outline-offset: 3px; }
     .aviso { padding: 12px; border-radius: 8px; background: #eef4ff; margin: 12px 0 0; }
     .error { background: #fff0f0; color: #a51923; }
     .oculto { display: none; }
@@ -206,6 +209,18 @@
     const auth = getAuth(app), database = getDatabase(app);
     const $ = id => document.getElementById(id);
     const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function numeroWhatsApp(valor) {
+      const original = String(valor || '').trim();
+      if (!/^\+?[\d\s().-]+$/.test(original)) return '';
+      let numero = original.replace(/\D/g,'');
+      const internacional = original.startsWith('+') || numero.startsWith('00');
+      if (numero.startsWith('00')) numero = numero.slice(2);
+      if (/^580[24]\d{9}$/.test(numero)) numero = '58' + numero.slice(3);
+      else if (!internacional && /^0[24]\d{9}$/.test(numero)) numero = '58' + numero.slice(1);
+      else if (!internacional && /^[24]\d{9}$/.test(numero)) numero = '58' + numero;
+      else if (!internacional && numero.length < 11) return '';
+      return /^[1-9]\d{7,14}$/.test(numero) ? numero : '';
+    }
     const catalogo = Object.fromEntries(Object.entries(window.TERRITORIO?.comunidades || {}).map(([id,c])=>[id,{...c,
       circuito_comunal:nombreTerritorial(c.circuito_comunal,'comuna'),nombre:nombreTerritorial(c.nombre,'comunidad'),centro_electoral:nombreTerritorial(c.centro_electoral,'centro')} ]));
     const fuentes = Object.fromEntries(SISTEMAS_1X10.map(sufijo=>[sufijo,{sufijo,jefes:{},afines:{}}]));
@@ -330,7 +345,10 @@
       $('filas').innerHTML=bloque.map(p=>{
         const e=estados[p.id]?.estado||'pendiente';
         const tel=p.telefono.replace(/\D/g,'');
-        const link=tel.length>=10 && tel.length<=15 ? `<a class="boton secundario" href="tel:${tel}">Llamar</a>` : '<span class="muted">Sin teléfono</span>';
+        const whatsapp=numeroWhatsApp(p.telefono);
+        const llamar=tel.length>=10 && tel.length<=15 ? `<a class="boton secundario" href="tel:${tel}">Llamar</a>` : '';
+        const mensaje=whatsapp ? `<a class="boton whatsapp" href="https://wa.me/${whatsapp}" target="_blank" rel="noopener noreferrer" aria-label="Abrir WhatsApp de ${esc(p.nombre)}">WhatsApp</a>` : '';
+        const link=llamar || mensaje ? `<div class="contacto">${llamar}${mensaje}</div>` : `<span class="muted">${p.telefono ? 'Revisar teléfono' : 'Sin teléfono'}</span>`;
         return `<tr class="${e==='pendiente'?'':e}">
           <td data-label="Persona"><b>${esc(p.nombre)}</b><br><span class="muted">C.I. ${esc((p.nacionalidad||'')+p.cedula)} · ${p.esJefe?'Jefe':'Afín'} · ${esc(origen(p.sufijo))}</span></td>
           <td data-label="Teléfono">${link}${tel?`<br><span class="muted">${esc(p.telefono)}</span>`:''}</td>
