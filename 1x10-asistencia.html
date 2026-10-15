@@ -94,7 +94,7 @@
     .visor-pdf-barra h2 { flex:1 1 230px; margin:0; }
     .visor-pdf-consulta p { font-size:14px; }
     .visor-pdf-consulta iframe { display:block; width:100%; height:calc(100% - 118px); min-height:250px; border:1px solid #a8b8cc; }
-    @page { size: letter landscape; margin: 12mm; }
+    @page { size: letter portrait; margin: 15mm; }
     @media print {
       :root { background: #fff; }
       body { background: #fff; color: #111; margin: 0; font-family: Arial, sans-serif; }
@@ -212,7 +212,7 @@
   <script src="territorio-data.js?v=20261015-milagro-i"></script>
   <script src="autofresh.js"></script>
   <script type="module">
-    import {crearPDFConsulta,mostrarPDFConsulta,seccionesPorTerritorio} from './consulta-popular-pdf.mjs?v=20261016-firmas-compactas';
+    import {crearPDFConsulta,mostrarPDFConsulta,seccionesPorTerritorio} from './consulta-popular-pdf.mjs?v=20261016-vertical';
     import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261016-sexo';
     import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';

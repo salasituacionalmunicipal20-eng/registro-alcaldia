@@ -10,7 +10,7 @@ for archivo in sorted(carpeta.glob('*.pdf')):
     documento = fitz.open(archivo)
     firmas = 0
     for numero, pagina in enumerate(documento, 1):
-        assert abs(pagina.rect.width - 792) < .01 and abs(pagina.rect.height - 612) < .01, archivo.name
+        assert abs(pagina.rect.width - 612) < .01 and abs(pagina.rect.height - 792) < .01, archivo.name
         texto = pagina.get_text()
         assert 'Consulta Popular 18 de Octubre' in texto, (archivo.name, numero, 'encabezado')
         assert f'Página {numero} de {len(documento)}' in texto, (archivo.name, numero, 'paginación')
@@ -18,18 +18,18 @@ for archivo in sorted(carpeta.glob('*.pdf')):
             assert 'Firma' in texto, (archivo.name, numero, 'columna de firma')
             assert 'Datos del jefe o responsable de la planilla' in texto and 'Firma del jefe o responsable:' in texto, 'Falta la ficha del jefe'
             assert 'Sexo' in texto and 'Edad' in texto and 'Teléfono' in texto, 'Faltan columnas personales'
-            inicio_firma = (264.4-48) * 72 / 25.4
+            inicio_firma = (215.9-15-39) * 72 / 25.4
             espacios = {tuple(round(v,2) for v in dibujo['rect']) for dibujo in pagina.get_drawings()
-                        if abs(dibujo['rect'].x0-inicio_firma)<.5 and abs(dibujo['rect'].x1-(792-margen))<.5
+                        if abs(dibujo['rect'].x0-inicio_firma)<.5 and abs(dibujo['rect'].x1-(612-margen))<.5
                         and dibujo['rect'].height >= 7.5*72/25.4-.3}
             firmas += len(espacios)
         for palabra in pagina.get_text('words'):
-            assert palabra[0] >= margen - .8 and palabra[2] <= 792 - margen + .8, (archivo.name, numero, 'margen lateral')
-            assert palabra[1] >= margen - .8 and palabra[3] <= 612 - margen + .8, (archivo.name, numero, 'margen vertical')
+            assert palabra[0] >= margen - .8 and palabra[2] <= 612 - margen + .8, (archivo.name, numero, 'margen lateral')
+            assert palabra[1] >= margen - .8 and palabra[3] <= 792 - margen + .8, (archivo.name, numero, 'margen vertical')
         for dibujo in pagina.get_drawings():
             r = dibujo['rect']
-            assert r.x0 >= margen - .8 and r.x1 <= 792 - margen + .8, (archivo.name, numero, 'bordes laterales')
-            assert r.y0 >= margen - .8 and r.y1 <= 612 - margen + .8, (archivo.name, numero, 'bordes verticales')
+            assert r.x0 >= margen - .8 and r.x1 <= 612 - margen + .8, (archivo.name, numero, 'bordes laterales')
+            assert r.y0 >= margen - .8 and r.y1 <= 792 - margen + .8, (archivo.name, numero, 'bordes verticales')
     resultados.append({'archivo': archivo.name, 'paginas': len(documento), 'espacios_firma': firmas})
     if archivo.name == 'lista-completa-carta.pdf':
         assert firmas == 151, 'Cada registro debe tener su espacio de firma compacto'
@@ -67,4 +67,4 @@ assert len(resultados) == 10, 'Faltan salidas por verificar'
 for nombre,etiqueta in [('adultos-carta.pdf','Adultos (36+)'),('jovenes-carta.pdf','Jóvenes (15-35)')]:
     with fitz.open(carpeta / nombre) as documento:
         assert etiqueta in documento[0].get_text(), ('Falta el grupo de edad en el PDF', nombre)
-print(json.dumps({'carta_horizontal': True, 'margenes_15_mm_todas_las_paginas': True, 'encabezados_y_paginacion': True, 'registros_completos': True, 'pdf': resultados}, ensure_ascii=False))
+print(json.dumps({'carta_vertical': True, 'margenes_15_mm_todas_las_paginas': True, 'encabezados_y_paginacion': True, 'registros_completos': True, 'pdf': resultados}, ensure_ascii=False))

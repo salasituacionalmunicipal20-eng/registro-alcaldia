@@ -98,7 +98,7 @@ export function dibujarHeaderPDF(doc, { titulo, subtitulo, margenExterior = 0 } 
  * Pie de pagina con leyenda institucional + paginacion. Llamar al final
  * (despues de autoTable) o en cada cambio de pagina via didDrawPage.
  */
-export function dibujarFooterPDF(doc, { margen = 14, distanciaInferior = 7, pagina, total } = {}) {
+export function dibujarFooterPDF(doc, { margen = 14, distanciaInferior = 7, pagina, total, separarPaginacion = false } = {}) {
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     doc.setDrawColor(10, 35, 81);
@@ -109,5 +109,5 @@ export function dibujarFooterPDF(doc, { margen = 14, distanciaInferior = 7, pagi
     doc.setTextColor(120, 120, 120);
     doc.text('Despacho de la Alcaldesa Yuhismar Hernandez - Municipio Cristobal Rojas - Sala Situacional', pageW / 2, pageH - distanciaInferior, { align: 'center' });
     const numero = pagina ?? doc.internal.getNumberOfPages();
-    doc.text(total ? `Página ${numero} de ${total}` : `Pagina ${numero}`, pageW - margen, pageH - distanciaInferior, { align: 'right' });
+    doc.text(total ? `Página ${numero} de ${total}` : `Pagina ${numero}`, pageW - margen, pageH - distanciaInferior + (separarPaginacion ? 4 : 0), { align: 'right' });
 }
