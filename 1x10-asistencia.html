@@ -167,7 +167,8 @@
   <script src="territorio-data.js?v=20261013-valle-alto"></script>
   <script src="autofresh.js"></script>
   <script type="module">
-    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia, edadEn, grupoEdad } from './asistencia-centros-datos.mjs?v=20261013-valle-alto';
+    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261015-edad';
+    import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261013-valle-alto';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261013-valle-alto';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
@@ -192,7 +193,7 @@
     let usuario = null, jefes = {}, afines = {}, estados = {}, personas = [], pagina = 1, detenerEstados = null;
     let personasUnicas = [], modalComuna = null, modalComunidad = '', modalFiltro = '';
     let personasPublicas = new Map();
-    let ageFiltro = '';
+    let filtroEdad = '';
     let jefesListos = false, afinesListos = false, estadosListos = false;
     const claveDia = () => $('fecha').value;
     const hoyCaracas = () => {
@@ -287,9 +288,10 @@
     }
     function pintar() {
       if (!jefesListos || !afinesListos || !estadosListos) return;
+      filtroEdad = $('edadFiltro').value;
       const centro=$('centro').value, q=normalizar($('buscarPersona').value), estado=$('estadoFiltro').value;
       const base=personas.filter(p=>!centro || p.centro===centro);
-      const filtradas=base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || normalizar(`${p.nombre} ${p.nacionalidad}${p.cedula} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`).includes(q)) && (!ageFiltro || grupoEdadPersona(p) === ageFiltro));
+      const filtradas=base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || normalizar(`${p.nombre} ${p.nacionalidad}${p.cedula} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`).includes(q)) && (!filtroEdad || grupoEdadPersona(p) === filtroEdad));
       const unicas=new Map(filtradas.filter(p=>p.id).map(p=>[p.id,estados[p.id]?.estado||'pendiente']));
       $('total').textContent=filtradas.length.toLocaleString('es-VE');
       $('resumenPersonas').textContent=`${filtradas.length.toLocaleString('es-VE')} registros del 1x10 · ${unicas.size.toLocaleString('es-VE')} personas distintas con identidad válida. Asistieron, No asistieron y Pendientes cuentan personas, no registros repetidos.`;
@@ -324,7 +326,7 @@
     }
     function pintarTerritorio() {
       if (!jefesListos || !afinesListos || !estadosListos) return;
-      const base = conAsistencia(personasUnicas.filter(p => p.id && (!ageFiltro || grupoEdadPersona(p) === ageFiltro)), estados);
+      const base = conAsistencia(personasUnicas.filter(p => p.id && (!filtroEdad || grupoEdadPersona(p) === filtroEdad)), estados);
       const mapa = new Map();
       for (const p of base) {
         const comuna = p.comuna || 'Sin comuna registrada', comunidad = p.comunidad || 'Sin comunidad registrada';
