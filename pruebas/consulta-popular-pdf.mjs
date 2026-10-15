@@ -5,6 +5,22 @@ import vm from 'node:vm';
 import {execFileSync} from 'node:child_process';
 import { chromium } from 'file:///C:/Users/carlo/node_modules/playwright/index.mjs';
 import { nombreTerritorial } from '../1x10-nombres-territoriales.mjs';
+import {seccionesPorTerritorio} from '../consulta-popular-grupos.mjs';
+const casos=[
+ {comuna:'Comuna B',comunidad:'Comunidad 1',grupo:'jovenes',nombre:'Z'},
+ {comuna:'Comuna A',comunidad:'Comunidad 2',grupo:'adultos',nombre:'B'},
+ {comuna:'Comuna A',comunidad:'Comunidad 1',grupo:'adultos',nombre:'A'},
+ {comuna:'Comuna A',comunidad:'Comunidad 2',grupo:'jovenes',nombre:'C'},
+ {comuna:'Comuna A',comunidad:'Comunidad 2',grupo:'sinEdad',nombre:'D'},
+ {comuna:'Comuna B',comunidad:'Comunidad 1',grupo:'menores',nombre:'E'},
+ {grupo:'sinEdad',nombre:'F'}];
+const agrupados=seccionesPorTerritorio(casos,casos.map((p,i)=>[i,p.nombre]),p=>p.grupo);
+assert.deepEqual(agrupados.map(s=>[s.comuna,s.comunidad,s.titulo]),[
+ ['Comuna A','Comunidad 1','Adultos (36 años en adelante)'],
+ ['Comuna A','Comunidad 2','Jóvenes (15 a 35 años)'],['Comuna A','Comunidad 2','Adultos (36 años en adelante)'],['Comuna A','Comunidad 2','Edad no registrada'],
+ ['Comuna B','Comunidad 1','Jóvenes (15 a 35 años)'],['Comuna B','Comunidad 1','Menores de 15 años'],
+ ['Sin comuna registrada','Sin comunidad registrada','Edad no registrada']]);
+assert.deepEqual(agrupados.flatMap(s=>s.filas.map(f=>f[0])),[1,2,3,4,5,6,7]);
 for (const nombre of ['MILAGRO DE DIO I','EL MILAGRO DE DIOS I','MILAGRO DE DIOS I']) assert.equal(nombreTerritorial(nombre,'comunidad'),'MILAGRO DE DIOS I');
 assert.equal(nombreTerritorial('MILAGRO DE DIOS II','comunidad'),'MILAGRO DE DIOS II');
 const raiz=path.resolve(import.meta.dirname,'..');
@@ -23,7 +39,7 @@ const origen='https://salasituacional.alcaldiadecharallave.com';
 const jefes={},estados={};
 for(let i=0;i<150;i++) {
   const cedula=String(100001+i);
-  jefes[cedula]={cedula,nombre:`Persona ${String(i).padStart(3,'0')}`+(i===149?' <img src=x onerror=alert(1)>':''),telefono:'0000000000',fecha_nacimiento:i%2?'1980-01-01':'2000-01-01',comuna:'Comuna de prueba',comunidad_nombre:i<100?(i%2?'MILAGRO DE DIO I':'EL MILAGRO DE DIOS I'):'MILAGRO DE DIOS II',centro_electoral:i%2?'Centro B':'Centro A'};
+  jefes[cedula]={cedula,nombre:`Persona ${String(i).padStart(3,'0')}`+(i===149?' <img src=x onerror=alert(1)>':''),telefono:'0000000000',fecha_nacimiento:i%2?'1980-01-01':'2000-01-01',comuna:i<100?'Comuna de prueba':'Comuna Z de prueba',comunidad_nombre:i<100?(i%2?'MILAGRO DE DIO I':'EL MILAGRO DE DIOS I'):'MILAGRO DE DIOS II',centro_electoral:i%2?'Centro B':'Centro A'};
   estados['V_'+cedula]={estado:i%3===0?'asistio':i%3===1?'no_asistio':'pendiente'};
 }
 const datos={jefes_1x10:jefes,afines_1x10_empleados:{100001:{duplicado:{...jefes['100001']}}}};

@@ -1,13 +1,24 @@
 import {dibujarHeaderPDF,dibujarFooterPDF} from './pdf-header.js?v=20261015-carta';
 
+export {seccionesPorTerritorio} from './consulta-popular-grupos.mjs?v=20261016';
+
 // La paginación del PDF reserva márgenes físicos; no depende de la tabla HTML.
 export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezados,filas,secciones}) {
   if(!window.jspdf?.jsPDF)throw Error('No se pudo cargar el generador de PDF. Recarga la página y vuelve a intentar.');
   const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
   if(typeof doc.autoTable!=='function')throw Error('No se pudo cargar la tabla del PDF. Recarga la página y vuelve a intentar.');
   const ancho=doc.internal.pageSize.getWidth(),alto=doc.internal.pageSize.getHeight(),margen=15,util=ancho-2*margen;
-  let subtitulo=titulo,y;
-  const cabecera=()=>dibujarHeaderPDF(doc,{titulo:'Consulta Popular 18 de Octubre',subtitulo,margenExterior:margen})+4;
+  let subtitulo=titulo,y,seccionActual;
+  const cabecera=()=>{
+    let cursor=dibujarHeaderPDF(doc,{titulo:'Consulta Popular 18 de Octubre',subtitulo,margenExterior:margen})+4;
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(23,36,59);
+    for(const [etiqueta,valor] of [['Comuna',seccionActual?.comuna],['Comunidad',seccionActual?.comunidad]]){
+      if(!valor)continue;
+      const lineas=doc.splitTextToSize(`${etiqueta}: ${valor}`,util-2);
+      doc.text(lineas,margen,cursor);cursor+=lineas.length*4.3+1;
+    }
+    return cursor;
+  };
   const texto=(etiqueta,valor)=>{
     doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,41,59);
     const lineas=doc.splitTextToSize(etiqueta?`${etiqueta}: ${valor}`:String(valor),util-2);
@@ -18,6 +29,7 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
   const bloques=secciones?.length?secciones:[{filas}];
   for(const [indice,bloque] of bloques.entries()){
     if(indice>0)doc.addPage();
+    seccionActual=bloque;
     subtitulo=bloque.titulo?`${titulo} · ${bloque.titulo}`:titulo;
     const primeraPagina=doc.internal.getCurrentPageInfo().pageNumber,inicio=cabecera();y=inicio;
     texto('Jornada',jornada);texto('Filtros',filtros);texto('',resumen);

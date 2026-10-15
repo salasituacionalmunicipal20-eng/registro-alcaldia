@@ -27,13 +27,28 @@ for archivo in sorted(carpeta.glob('*.pdf')):
             assert str(numero) in texto, ('Falta un registro', numero)
         jovenes = [i for i,p in enumerate(documento) if 'Jóvenes (15 a 35 años)' in p.get_text()]
         adultos = [i for i,p in enumerate(documento) if 'Adultos (36 años en adelante)' in p.get_text()]
-        assert jovenes and adultos and max(jovenes) < min(adultos), 'Las secciones deben salir separadas en el mismo PDF'
+        territorios = []
+        for p in documento:
+            t = p.get_text()
+            territorio = ('Comuna Z de prueba', 'MILAGRO DE DIOS II') if 'Comuna: Comuna Z de prueba' in t else ('Comuna de prueba', 'MILAGRO DE DIOS I')
+            assert 'Comuna: ' + territorio[0] in t and 'Comunidad: ' + territorio[1] in t, 'Falta el territorio en el encabezado'
+            territorios.append(territorio)
+        assert list(dict.fromkeys(territorios)) == [('Comuna de prueba','MILAGRO DE DIOS I'),('Comuna Z de prueba','MILAGRO DE DIOS II')]
+        for territorio in set(territorios):
+            indices = [i for i,t in enumerate(territorios) if t == territorio]
+            assert indices == list(range(min(indices),max(indices)+1)), 'Una comunidad quedó mezclada'
+            j = [i for i in jovenes if territorios[i] == territorio]
+            a = [i for i in adultos if territorios[i] == territorio]
+            assert j and a and max(j) < min(a), 'Dentro de cada comunidad deben salir jóvenes y después adultos'
         texto_jovenes = '\n'.join(documento[i].get_text() for i in jovenes)
         texto_adultos = '\n'.join(documento[i].get_text() for i in adultos)
         for indice in range(150):
             cedula = str(100001 + indice)
             correcto, otro = (texto_adultos, texto_jovenes) if indice % 2 else (texto_jovenes, texto_adultos)
             assert cedula in correcto and cedula not in otro, 'Una persona aparece en la sección incorrecta'
+            for i,p in enumerate(documento):
+                if cedula in p.get_text():
+                    assert territorios[i][0] == ('Comuna de prueba' if indice < 100 else 'Comuna Z de prueba'), 'Una persona aparece en el territorio incorrecto'
 assert len(resultados) == 10, 'Faltan salidas por verificar'
 for nombre,etiqueta in [('adultos-carta.pdf','Adultos (36+)'),('jovenes-carta.pdf','Jóvenes (15-35)')]:
     with fitz.open(carpeta / nombre) as documento:

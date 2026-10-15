@@ -200,7 +200,7 @@
   </main>
   <dialog id="filtroImpresion" class="filtro-impresion" aria-labelledby="tituloFiltroImpresion">
     <h2 id="tituloFiltroImpresion">¿A quiénes deseas imprimir?</h2>
-    <p>Elige el grupo de edad para la lista completa. Se mantienen los demás filtros seleccionados. Con «Todos», jóvenes y adultos salen separados en un solo PDF, listo para imprimir de una vez.</p>
+    <p>Elige el grupo de edad para la lista completa. Se mantienen los demás filtros. El PDF se organiza por comuna y comunidad; dentro de cada comunidad, «Todos» separa Jóvenes y Adultos para imprimir todo de una vez.</p>
     <label for="edadImpresion">Grupo de edad</label>
     <select id="edadImpresion"><option value="">Todos</option><option value="jovenes">Jóvenes (15 a 35 años)</option><option value="adultos">Adultos (36 años en adelante)</option></select>
     <div class="fila"><button id="cancelarImpresion" type="button" class="secundario">Cancelar</button><button id="generarImpresion" type="button">Generar PDF</button></div>
@@ -212,7 +212,7 @@
   <script src="territorio-data.js?v=20261015-milagro-i"></script>
   <script src="autofresh.js"></script>
   <script type="module">
-    import {crearPDFConsulta,mostrarPDFConsulta} from './consulta-popular-pdf.mjs?v=20261016-secciones';
+    import {crearPDFConsulta,mostrarPDFConsulta,seccionesPorTerritorio} from './consulta-popular-pdf.mjs?v=20261016-territorios';
     import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261015-milagro-i';
     import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
@@ -466,7 +466,7 @@
       const fecha = new Date(`${claveDia()}T12:00:00`);
       const jornada = `${fecha.toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · ${claveDia().split('-').reverse().join('/')}`;
       const filtrosEdad = `Grupo de edad: ${seleccionTexto('edadFiltro')}`;
-      let titulo, filtros, resumen, encabezados, filas, secciones;
+      let titulo, filtros, resumen, encabezados, filas, secciones, personasReporte;
       if (tipo === 'territorio') {
         titulo = 'Resumen por comuna y comunidad'; filtros = filtrosEdad;
         resumen = $('territorioResumen').textContent;
@@ -474,6 +474,7 @@
         filas = [...$('territorioFilas').querySelectorAll('tr[data-comuna]')].map(tr => [...tr.cells].slice(0,7).map(td => td.textContent));
       } else if (tipo === 'comunidad') {
         const lista = filtrarModal(personasComunidad());
+        personasReporte=lista;
         titulo = 'Personas por comunidad';
         filtros = `Comuna: ${modalComuna} · Comunidad: ${modalComunidad} · ${filtrosEdad} · Estado: ${modalFiltro === 'asistio' ? 'Solo las que votaron' : modalFiltro === 'faltan' ? 'Solo las que faltan' : 'Todas'}`;
         resumen = `${lista.length.toLocaleString('es-VE')} personas distintas en el filtro.`;
@@ -481,6 +482,7 @@
         filas = lista.map((p,i) => [i+1,`${p.nacionalidad}-${p.cedula}`,p.nombre,p.centro,estadoImpreso(p)]);
       } else {
         const lista = listaFiltrada();
+        personasReporte=lista;
         const unicas = new Map(lista.filter(p=>p.id).map(p=>[p.id,estadoImpreso(p)]));
         titulo = 'Personas por centro electoral';
         filtros = `Centro: ${seleccionTexto('centro')} · Estado: ${seleccionTexto('estadoFiltro')} · ${filtrosEdad} · Búsqueda: ${$('buscarPersona').value.trim() || 'Sin búsqueda'}`;
@@ -488,11 +490,10 @@
         resumen = `${lista.length.toLocaleString('es-VE')} registros del 1x10 · ${unicas.size.toLocaleString('es-VE')} personas distintas con identidad válida · ${estadosUnicos.filter(e=>e==='Asistió').length.toLocaleString('es-VE')} asistieron · ${estadosUnicos.filter(e=>e==='No asistió').length.toLocaleString('es-VE')} no asistieron · ${estadosUnicos.filter(e=>e==='Pendiente').length.toLocaleString('es-VE')} pendientes. Se incluyen todos los registros filtrados, conservando las repeticiones entre listas.`;
         encabezados = ['N.º','Cédula · tipo · lista','Nombre y apellido','Teléfono','Jefe de calle · cédula','Comuna · comunidad','Centro electoral','Estado'];
         filas = lista.map((p,i) => [i+1,`${p.nacionalidad}${p.cedula} · ${p.esJefe?'Jefe':'Afín'} · ${origen(p.sufijo)}`,p.nombre,p.telefono || 'Sin teléfono',`${p.nombreJefe} · ${p.jefeId}`,`${p.comuna} · ${p.comunidad}`,p.centro,estadoImpreso(p)]);
-        if(!$('edadFiltro').value){
-          secciones=[['jovenes','Jóvenes (15 a 35 años)'],['adultos','Adultos (36 años en adelante)'],['menores','Menores de 15 años'],['sinEdad','Edad no registrada']]
-            .map(([grupo,titulo])=>({titulo,filas:filas.filter((_,i)=>grupoEdadPersona(lista[i])===grupo)}))
-            .filter((seccion,i)=>i<2||seccion.filas.length>0);
-        }
+      }
+      if(personasReporte){
+        secciones=seccionesPorTerritorio(personasReporte,filas,grupoEdadPersona);
+        if(tipo==='lista')titulo='Personas por comuna y comunidad';
       }
       window.inyectarHeaderImpresion?.({titulo:'Consulta Popular 18 de Octubre',subtitulo:titulo});
       reporte.innerHTML = `<h2>${esc(titulo)}</h2><p><b>Jornada:</b> ${esc(jornada)}</p><p><b>Filtros:</b> ${esc(filtros)}</p><p>${esc(resumen)}</p><p>Generado el ${esc(new Date().toLocaleString('es-VE',{dateStyle:'full',timeStyle:'short',timeZone:'America/Caracas'}))} (hora de Venezuela).</p><table>${tipo === 'lista' ? '<colgroup><col style="width:4%"><col style="width:11%"><col style="width:17%"><col style="width:10%"><col style="width:14%"><col style="width:17%"><col style="width:17%"><col style="width:10%"></colgroup>' : ''}<thead><tr>${encabezados.map(t=>`<th>${esc(t)}</th>`).join('')}</tr></thead><tbody>${filas.map(f=>`<tr>${f.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${encabezados.length}">No hay registros con estos filtros.</td></tr>`}</tbody></table>`;
