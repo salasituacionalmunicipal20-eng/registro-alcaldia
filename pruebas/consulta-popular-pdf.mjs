@@ -40,6 +40,7 @@ const jefes={},estados={};
 for(let i=0;i<150;i++) {
   const cedula=String(100001+i);
   jefes[cedula]={cedula,nombre:`Persona ${String(i).padStart(3,'0')}`+(i===149?' <img src=x onerror=alert(1)>':''),telefono:'0000000000',fecha_nacimiento:i%2?'1980-01-01':'2000-01-01',comuna:i<100?'Comuna de prueba':'Comuna Z de prueba',comunidad_nombre:i<100?(i%2?'MILAGRO DE DIO I':'EL MILAGRO DE DIOS I'):'MILAGRO DE DIOS II',centro_electoral:i%2?'Centro B':'Centro A'};
+  if(i<149)jefes[cedula].genero=i%2?'Masculino':'Femenino';
   estados['V_'+cedula]={estado:i%3===0?'asistio':i%3===1?'no_asistio':'pendiente'};
 }
 const datos={jefes_1x10:jefes,afines_1x10_empleados:{100001:{duplicado:{...jefes['100001']}}}};
@@ -129,8 +130,8 @@ try {
   await descargar('territorio-extenso-carta.pdf');
   await page.evaluate(async()=>{
     const {crearPDFConsulta,mostrarPDFConsulta}=await import('/consulta-popular-pdf.mjs');
-    const filas=Array.from({length:110},(_,i)=>[i+1,'V-999'+String(i).padStart(7,'0'),'PERSONA FICTICIA DE NOMBRE Y APELLIDO LARGOS '+i,'UNIDAD EDUCATIVA DE VERIFICACION CON NOMBRE EXTENSO '+i,i%2?'Pendiente':'Asistió']);
-    mostrarPDFConsulta(crearPDFConsulta({tipo:'comunidad',titulo:'Personas por comunidad',jornada:'domingo 18 de octubre de 2026 · 18/10/2026',filtros:'Comuna: Comunidad de prueba · Estado: Todas',resumen:'110 personas ficticias para verificar distribución',encabezados:['N.º','Cédula','Nombre y apellido','Centro electoral','Estado'],filas}),'comunidad-extensa.pdf');
+    const filas=Array.from({length:110},(_,i)=>[i+1,'PERSONA FICTICIA DE NOMBRE Y APELLIDO LARGOS '+i,'V-999'+String(i).padStart(7,'0'),'0000000000',i%2?'Masculino':'Femenino',25]);
+    mostrarPDFConsulta(crearPDFConsulta({tipo:'comunidad',titulo:'Personas por comunidad',jornada:'domingo 18 de octubre de 2026 · 18/10/2026',filtros:'Comuna: Comunidad de prueba · Estado: Todas',resumen:'110 personas ficticias para verificar distribución',encabezados:['N.º','Nombres y apellidos','Cédula','Teléfono','Sexo','Edad'],filas}),'comunidad-extensa.pdf');
   });
   await descargar('comunidad-extensa-carta.pdf');
   console.log(JSON.stringify({impresionCompleta:151,filasVisiblesPorPagina:75,cuatroFiltrosCombinados:2,modalFiltrado:personas,comunidadUnificada:true,sectorIIConservado:true,encabezadoAnteriorConservado:true,errores,ancho,salida}));

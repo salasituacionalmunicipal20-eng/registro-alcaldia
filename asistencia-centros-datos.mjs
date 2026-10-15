@@ -38,7 +38,7 @@ export function consolidarPersonas(sistemas, catalogo={}) {
       comunidad:canonComunidades.get(normalizar(comunidadCanon))||comunidadCanon,
       centro:canonCentros.get(normalizar(centroCanon))||centroCanon,esJefe,
       registroId:id,jefeId:texto(j.cedula),nombreJefe:texto([j.nombres,j.apellidos].filter(Boolean).join(' '))||texto(j.nombre),fecha_nacimiento:texto(p.fecha_nacimiento),
-      telefono:texto(p.telefono),sufijo};
+      telefono:texto(p.telefono),sexo:texto(p.sexo||p.genero),sufijo};
     registrosLista.push(dato);
     if(!quien)return;
     if(!porPersona.has(quien.id))porPersona.set(quien.id,[]);
@@ -60,6 +60,7 @@ export function consolidarPersonas(sistemas, catalogo={}) {
     return {id:elegido.id,cedula:elegido.cedula,nacionalidad:elegido.nacionalidad,
       nombre:datos.find(p=>p.nombre!=='Nombre no registrado')?.nombre||elegido.nombre,
       fecha_nacimiento:elegido.fecha_nacimiento,
+      telefono:elegido.telefono,sexo:elegido.sexo,
       comuna:conflicto?'Ubicación por verificar':elegido.comuna,
       comunidad:conflicto?'Ubicación por verificar':elegido.comunidad,
       centro:conflicto?'Centro por verificar':elegido.centro};

@@ -8,6 +8,7 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
   const doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
   if(typeof doc.autoTable!=='function')throw Error('No se pudo cargar la tabla del PDF. Recarga la página y vuelve a intentar.');
   const ancho=doc.internal.pageSize.getWidth(),alto=doc.internal.pageSize.getHeight(),margen=15,util=ancho-2*margen;
+  const conFirma=tipo!=='territorio';
   let subtitulo=titulo,y,seccionActual;
   const cabecera=()=>{
     let cursor=dibujarHeaderPDF(doc,{titulo:'Consulta Popular 18 de Octubre',subtitulo,margenExterior:margen})+4;
@@ -17,6 +18,13 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
       const lineas=doc.splitTextToSize(`${etiqueta}: ${valor}`,util-2);
       doc.text(lineas,margen,cursor);cursor+=lineas.length*4.3+1;
     }
+    if(conFirma){
+      cursor+=2;doc.setFontSize(8.5);doc.text('Datos del jefe o responsable de la planilla',margen,cursor);cursor+=5.5;doc.setFont('helvetica','normal');
+      doc.setDrawColor(100,116,139);doc.setLineWidth(.2);
+      const campo=(etiqueta,x,inicio,fin)=>{doc.text(etiqueta,margen+x,cursor);doc.line(margen+inicio,cursor+.5,margen+fin,cursor+.5);};
+      campo('Nombres y apellidos:',0,30,116);campo('Cédula:',122,134,171);campo('Teléfono:',177,192,util);
+      cursor+=6.5;campo('Sexo:',0,9,33);campo('Edad:',40,49,67);campo('Firma del jefe o responsable:',76,118,util);cursor+=4.5;
+    }
     return cursor;
   };
   const texto=(etiqueta,valor)=>{
@@ -24,8 +32,7 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
     const lineas=doc.splitTextToSize(etiqueta?`${etiqueta}: ${valor}`:String(valor),util-2);
     doc.text(lineas,margen,y);y+=lineas.length*4.3+2;
   };
-  const conFirma=tipo!=='territorio';
-  const anchos=tipo==='lista'?[11,24,35,25,27,34,33,21,util-210]:tipo==='territorio'?[25,35,8,8,8,8,8].map(p=>util*p/100):[11,27,55,85,25,util-203];
+  const anchos=conFirma?[9,util-153,29,29,24,14,48]:[25,35,8,8,8,8,8].map(p=>util*p/100);
   const columnas=Object.fromEntries(anchos.map((ancho,i)=>[i,{cellWidth:ancho}]));
   const titulos=conFirma?[...encabezados,'Firma']:encabezados;
   const bloques=secciones?.length?secciones:[{filas}];
@@ -39,10 +46,10 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
     doc.autoTable({startY:y+2,margin:{top:inicio+1,bottom:25,left:margen,right:margen},tableWidth:util,
     head:[titulos],body:bloque.filas.length?bloque.filas.map(f=>conFirma?[...f,'']:f):[[ {content:'No hay registros con estos filtros.',colSpan:titulos.length} ]],
     theme:'grid',showHead:'everyPage',rowPageBreak:'avoid',
-    styles:{font:'helvetica',fontSize:9,cellPadding:2.2,overflow:'linebreak',valign:'top',lineColor:[183,193,204],lineWidth:0.15,textColor:[23,36,59]},
+    styles:{font:'helvetica',fontSize:9,cellPadding:conFirma?1.4:2.2,overflow:'linebreak',valign:'top',lineColor:[183,193,204],lineWidth:0.15,textColor:[23,36,59]},
     headStyles:{fillColor:[10,35,81],textColor:255,fontStyle:'bold',fontSize:8.5},
     alternateRowStyles:{fillColor:[246,248,250]},columnStyles:columnas,
-    bodyStyles:conFirma?{minCellHeight:14}:{},
+    bodyStyles:conFirma?{minCellHeight:7.5}:{},
     didParseCell:celda=>{
       if(conFirma&&celda.section==='body'&&celda.column.index===titulos.length-1)celda.cell.styles.fillColor=[255,255,255];
     },

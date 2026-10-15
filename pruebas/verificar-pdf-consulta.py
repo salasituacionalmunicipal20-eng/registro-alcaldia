@@ -16,10 +16,12 @@ for archivo in sorted(carpeta.glob('*.pdf')):
         assert f'Página {numero} de {len(documento)}' in texto, (archivo.name, numero, 'paginación')
         if not archivo.name.startswith('territorio'):
             assert 'Firma' in texto, (archivo.name, numero, 'columna de firma')
-            inicio_firma = (218 if archivo.name.startswith('comunidad') else 225) * 72 / 25.4
+            assert 'Datos del jefe o responsable de la planilla' in texto and 'Firma del jefe o responsable:' in texto, 'Falta la ficha del jefe'
+            assert 'Sexo' in texto and 'Edad' in texto and 'Teléfono' in texto, 'Faltan columnas personales'
+            inicio_firma = (264.4-48) * 72 / 25.4
             espacios = {tuple(round(v,2) for v in dibujo['rect']) for dibujo in pagina.get_drawings()
                         if abs(dibujo['rect'].x0-inicio_firma)<.5 and abs(dibujo['rect'].x1-(792-margen))<.5
-                        and dibujo['rect'].height >= 14*72/25.4-.3}
+                        and dibujo['rect'].height >= 7.5*72/25.4-.3}
             firmas += len(espacios)
         for palabra in pagina.get_text('words'):
             assert palabra[0] >= margen - .8 and palabra[2] <= 792 - margen + .8, (archivo.name, numero, 'margen lateral')
@@ -30,7 +32,8 @@ for archivo in sorted(carpeta.glob('*.pdf')):
             assert r.y0 >= margen - .8 and r.y1 <= 612 - margen + .8, (archivo.name, numero, 'bordes verticales')
     resultados.append({'archivo': archivo.name, 'paginas': len(documento), 'espacios_firma': firmas})
     if archivo.name == 'lista-completa-carta.pdf':
-        assert firmas == 151, 'Cada registro debe tener su espacio de firma de al menos 14 mm de alto'
+        assert firmas == 151, 'Cada registro debe tener su espacio de firma compacto'
+        assert 'Femenino' in '\n'.join(p.get_text() for p in documento) and 'Masculino' in '\n'.join(p.get_text() for p in documento), 'No se conservó el sexo registrado'
         texto = '\n'.join(p.get_text() for p in documento)
         for numero in range(100001, 100151):
             assert str(numero) in texto, ('Falta un registro', numero)

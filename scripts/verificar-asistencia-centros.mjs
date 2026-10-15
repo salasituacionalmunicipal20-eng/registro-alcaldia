@@ -3,6 +3,10 @@ import {consolidarPersonas,conAsistencia,contarAsistencia,filtrarPersonas,filasE
 const a={jefes:{'12345678':{nombres:'ANA',apellidos:'PEREZ',circuito:'COMUNA A',comunidad_nombre:'COMUNIDAD A'}},afines:{'12345678':{'23456789':{nombres:'LUIS'},sinCedula:{nombres:'SIN IDENTIDAD'}}}};
 const b={jefes:{'12345678':{nombres:'ANA',apellidos:'PEREZ',circuito:'COMUNA A',comunidad_nombre:'COMUNIDAD A'}},afines:{'12345678':{'23456789':{nombres:'LUIS'},extranjero:{cedula:'E-23456789',nombres:'ELENA'}}}};
 const c=consolidarPersonas([a,b]);
+const personales=consolidarPersonas([{jefes:{12345678:{nombre:'DATOS FICTICIOS',telefono:'0000000000',genero:'Femenino'}},afines:{12345678:{23456789:{nombre:'OTRO DATO',sexo:'Masculino'}}}}]);
+assert.equal(personales.personas.find(p=>p.cedula==='12345678').sexo,'Femenino');
+assert.equal(personales.personas.find(p=>p.cedula==='12345678').telefono,'0000000000');
+assert.equal(personales.registrosLista.find(p=>p.cedula==='23456789').sexo,'Masculino');
 assert.equal(c.personas.length,3);assert.equal(c.diagnostico.registros,6);assert.equal(c.diagnostico.repetidos,2);assert.equal(c.diagnostico.sinIdentidad,1);
 assert.equal(c.registrosLista.length,6);
 assert.equal(c.registrosLista.filter(p=>p.id===null).length,1);
