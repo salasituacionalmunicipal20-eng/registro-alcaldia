@@ -1,5 +1,5 @@
-import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261013-valle-alto';
-import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261013-valle-alto';
+import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
+import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
 export { SISTEMAS_1X10 };
 export const ESTADOS = { pendiente:'Pendiente', asistio:'Sí asistió', no_asistio:'No asistió' };
 const texto = v => String(v ?? '').trim().replace(/\s+/g,' ');

@@ -79,6 +79,23 @@
       .modal { padding: 0; } .modal-caja { max-height: 100vh; height: 100%; border-radius: 0; }
     }
 
+    #reporteImpresion { display: none; }
+    @page { size: letter landscape; margin: 12mm; }
+    @media print {
+      :root { background: #fff; }
+      body { background: #fff; color: #111; margin: 0; font-family: Arial, sans-serif; }
+      body > :not(#reporteImpresion):not(#print-header-inj) { display: none !important; }
+      #reporteImpresion { display: block !important; padding: 0; margin: 0; border: 0; box-shadow: none; }
+      #reporteImpresion h2 { font-size: 14pt; margin: 0 0 8pt; }
+      #reporteImpresion p { font-size: 9pt; margin: 5pt 0; line-height: 1.4; }
+      #reporteImpresion table { display: table; width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 10pt; font-size: 8pt; }
+      #reporteImpresion thead { display: table-header-group; }
+      #reporteImpresion tbody { display: table-row-group; }
+      #reporteImpresion tr { display: table-row; break-inside: avoid; border: 0; border-radius: 0; padding: 0; }
+      #reporteImpresion th, #reporteImpresion td { display: table-cell; border: 1px solid #8c98a5; padding: 5pt; vertical-align: top; overflow-wrap: anywhere; color: #111; background: #fff; }
+      #reporteImpresion th { background: #edf1f5; font-weight: bold; }
+      #reporteImpresion td::before { content: none; }
+    }
   </style>
 </head>
 <body>
@@ -117,6 +134,7 @@
         <h2>Votación por comuna y comunidad</h2>
         <p class="muted">Personas con cédula válida de las siete variantes del 1x10, contadas una sola vez por persona. En <span style="color:#16823b;font-weight:bold">verde</span> las que ya votaron y en <span style="color:#c22734;font-weight:bold">rojo</span> las que faltan. Pulsa una comunidad para ver su lista completa. Se actualiza solo en vivo: los marcajes del enlace público y los de los tableros aparecen aquí al instante.</p>
         <p id="territorioResumen" class="muted"></p>
+        <button id="imprimirTerritorio" type="button" class="secundario" disabled>Imprimir resumen territorial</button>
         <div class="tabla"><table><thead><tr><th>Comuna</th><th>Comunidad</th><th class="num">Votaron</th><th class="num">No votaron</th><th class="num">Pendientes</th><th class="num">Faltan</th><th class="num">Total</th><th>Detalle</th></tr></thead><tbody id="territorioFilas"><tr><td colspan="8">Cargando…</td></tr></tbody></table></div>
       </section>
       <section>
@@ -135,6 +153,7 @@
           <div class="metrica"><strong id="pendientes">0</strong><span>Pendientes de confirmar</span></div>
         </div>
         <p id="resumenPersonas" class="muted"></p>
+        <button id="imprimirLista" type="button" disabled>Imprimir lista filtrada completa</button>
         <p class="muted">La lista reúne las siete variantes del 1x10 en vivo. El total conserva cada registro, incluidos los de una persona que figura en varias listas. Los estados de asistencia cuentan personas distintas y se sincronizan con Asistencia por comuna y comunidad. Los nombres territoriales usan las equivalencias confirmadas.</p>
         <p id="mensajeLista" class="aviso oculto" role="status"></p>
         <div class="tabla"><table><thead><tr><th>Persona</th><th>Teléfono</th><th>Jefe de calle</th><th>Comuna y comunidad</th><th>Centro</th><th>Estado</th><th>Registrar</th></tr></thead><tbody id="filas"><tr><td colspan="7">Cargando…</td></tr></tbody></table></div>
@@ -158,18 +177,21 @@
               <button type="button" data-mfiltro="asistio">Solo las que votaron</button>
               <button type="button" data-mfiltro="faltan">Solo las que faltan</button>
             </div>
+            <button id="imprimirComunidad" type="button" class="secundario">Imprimir esta comunidad</button>
             <div class="tabla"><table><thead><tr><th>Persona</th><th>Centro electoral</th><th>Estado</th></tr></thead><tbody id="modalFilas"><tr><td colspan="3">Cargando…</td></tr></tbody></table></div>
           </div>
         </div>
       </div>
     </div>
   </main>
-  <script src="territorio-data.js?v=20261013-valle-alto"></script>
+  <section id="reporteImpresion" aria-hidden="true"></section>
+  <script type="module" src="print-header.js"></script>
+  <script src="territorio-data.js?v=20261015-milagro-i"></script>
   <script src="autofresh.js"></script>
   <script type="module">
-    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261015-edad';
-    import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261013-valle-alto';
-    import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261013-valle-alto';
+    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261015-milagro-i';
+    import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
+    import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
     import { getDatabase, ref, get, child, onValue, set, update, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
@@ -286,12 +308,17 @@
       if (centros.includes(centroActual)) $('centro').value = centroActual;
       llenarJefes(); pintar(); sincronizarDirectorio();
     }
+    function listaFiltrada() {
+      const centro=$('centro').value, q=normalizar($('buscarPersona').value), estado=$('estadoFiltro').value;
+      const edad=$('edadFiltro').value;
+      const base=personas.filter(p=>!centro || p.centro===centro);
+      return base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || normalizar(`${p.nombre} ${p.nacionalidad}${p.cedula} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`).includes(q)) && (!edad || grupoEdadPersona(p) === edad));
+    }
     function pintar() {
       if (!jefesListos || !afinesListos || !estadosListos) return;
       filtroEdad = $('edadFiltro').value;
-      const centro=$('centro').value, q=normalizar($('buscarPersona').value), estado=$('estadoFiltro').value;
-      const base=personas.filter(p=>!centro || p.centro===centro);
-      const filtradas=base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || normalizar(`${p.nombre} ${p.nacionalidad}${p.cedula} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`).includes(q)) && (!filtroEdad || grupoEdadPersona(p) === filtroEdad));
+      $('imprimirLista').disabled = $('imprimirTerritorio').disabled = false;
+      const filtradas=listaFiltrada();
       const unicas=new Map(filtradas.filter(p=>p.id).map(p=>[p.id,estados[p.id]?.estado||'pendiente']));
       $('total').textContent=filtradas.length.toLocaleString('es-VE');
       $('resumenPersonas').textContent=`${filtradas.length.toLocaleString('es-VE')} registros del 1x10 · ${unicas.size.toLocaleString('es-VE')} personas distintas con identidad válida. Asistieron, No asistieron y Pendientes cuentan personas, no registros repetidos.`;
@@ -355,21 +382,28 @@
     function escucharEstados() {
       if (detenerEstados) detenerEstados();
       estados={}; estadosListos=false;
+      $('imprimirLista').disabled = $('imprimirTerritorio').disabled = true;
       $('filas').innerHTML='<tr><td colspan="7">Cargando estados de la jornada…</td></tr>';
       detenerEstados=onValue(ref(database,`asistencia_centros/${claveDia()}`),snap=>{
         estados=snap.val()||{}; estadosListos=true; pintar();
       },err=>{ estadosListos=false; aviso('mensajeLista',`No se pudieron leer los estados: ${err.message}`,true); });
     }
-    function pintarModal() {
-      if (modalComuna === null) return;
-      const base = conAsistencia(personasUnicas.filter(p => p.id), estados)
+    function personasComunidad() {
+      return conAsistencia(personasUnicas.filter(p => p.id && (!$('edadFiltro').value || grupoEdadPersona(p) === $('edadFiltro').value)), estados)
         .filter(p => (p.comuna || 'Sin comuna registrada') === modalComuna && (p.comunidad || 'Sin comunidad registrada') === modalComunidad)
         .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es') || String(a.id).localeCompare(String(b.id)));
+    }
+    function filtrarModal(base) {
+      return base.filter(p => modalFiltro === '' ? true : modalFiltro === 'asistio' ? p.estado === 'asistio' : p.estado !== 'asistio');
+    }
+    function pintarModal() {
+      if (modalComuna === null) return;
+      const base = personasComunidad();
       const c = contarGrupo(base);
       $('modalTitulo').textContent = `${modalComuna} · ${modalComunidad}`;
       $('modalResumen').textContent = `Jornada del ${claveDia().split('-').reverse().join('/')}: ${c.asistio.toLocaleString('es-VE')} votaron, ${c.faltan.toLocaleString('es-VE')} faltan, ${c.total.toLocaleString('es-VE')} personas en total. La lista se actualiza sola en vivo.`;
       for (const b of $('modalFiltros').querySelectorAll('button')) b.classList.toggle('activo', b.dataset.mfiltro === modalFiltro);
-      const visibles = base.filter(p => modalFiltro === '' ? true : modalFiltro === 'asistio' ? p.estado === 'asistio' : p.estado !== 'asistio');
+      const visibles = filtrarModal(base);
       $('modalFilas').innerHTML = visibles.map(p => `<tr class="${p.estado === 'pendiente' ? 'fila-amarillo' : p.estado === 'asistio' ? 'fila-verde' : 'fila-rojo'}">
         <td data-label="Persona"><b>${esc(p.nombre)}</b><br><span class="muted">C.I. ${esc(p.nacionalidad)}-${esc(p.cedula)}</span></td>
         <td data-label="Centro electoral">${esc(p.centro)}</td>
@@ -384,6 +418,48 @@
       modalComuna = null; modalComunidad = '';
       $('modalPersonas').classList.add('oculto');
     }
+    const estadoImpreso = p => ({asistio:'Asistió',no_asistio:'No asistió',pendiente:'Pendiente'})[p.estado || estados[p.id]?.estado] || 'Pendiente';
+    const seleccionTexto = id => $(id).selectedOptions[0]?.textContent || 'Todos';
+    let tipoImpresion = null;
+    function prepararImpresion(tipo) {
+      const reporte = $('reporteImpresion');
+      if (!usuario || !jefesListos || !afinesListos || !estadosListos) { reporte.replaceChildren(); return false; }
+      const fecha = new Date(`${claveDia()}T12:00:00`);
+      const jornada = `${fecha.toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · ${claveDia().split('-').reverse().join('/')}`;
+      const filtrosEdad = `Grupo de edad: ${seleccionTexto('edadFiltro')}`;
+      let titulo, filtros, resumen, encabezados, filas;
+      if (tipo === 'territorio') {
+        titulo = 'Resumen por comuna y comunidad'; filtros = filtrosEdad;
+        resumen = $('territorioResumen').textContent;
+        encabezados = ['Comuna','Comunidad','Votaron','No votaron','Pendientes','Faltan','Total'];
+        filas = [...$('territorioFilas').querySelectorAll('tr[data-comuna]')].map(tr => [...tr.cells].slice(0,7).map(td => td.textContent));
+      } else if (tipo === 'comunidad') {
+        const lista = filtrarModal(personasComunidad());
+        titulo = 'Personas por comunidad';
+        filtros = `Comuna: ${modalComuna} · Comunidad: ${modalComunidad} · ${filtrosEdad} · Estado: ${modalFiltro === 'asistio' ? 'Solo las que votaron' : modalFiltro === 'faltan' ? 'Solo las que faltan' : 'Todas'}`;
+        resumen = `${lista.length.toLocaleString('es-VE')} personas distintas en el filtro.`;
+        encabezados = ['N.º','Cédula','Nombre y apellido','Centro electoral','Estado'];
+        filas = lista.map((p,i) => [i+1,`${p.nacionalidad}-${p.cedula}`,p.nombre,p.centro,estadoImpreso(p)]);
+      } else {
+        const lista = listaFiltrada();
+        const unicas = new Map(lista.filter(p=>p.id).map(p=>[p.id,estadoImpreso(p)]));
+        titulo = 'Personas por centro electoral';
+        filtros = `Centro: ${seleccionTexto('centro')} · Estado: ${seleccionTexto('estadoFiltro')} · ${filtrosEdad} · Búsqueda: ${$('buscarPersona').value.trim() || 'Sin búsqueda'}`;
+        const estadosUnicos = [...unicas.values()];
+        resumen = `${lista.length.toLocaleString('es-VE')} registros del 1x10 · ${unicas.size.toLocaleString('es-VE')} personas distintas con identidad válida · ${estadosUnicos.filter(e=>e==='Asistió').length.toLocaleString('es-VE')} asistieron · ${estadosUnicos.filter(e=>e==='No asistió').length.toLocaleString('es-VE')} no asistieron · ${estadosUnicos.filter(e=>e==='Pendiente').length.toLocaleString('es-VE')} pendientes. Se incluyen todos los registros filtrados, conservando las repeticiones entre listas.`;
+        encabezados = ['N.º','Cédula · tipo · lista','Nombre y apellido','Teléfono','Jefe de calle · cédula','Comuna · comunidad','Centro electoral','Estado'];
+        filas = lista.map((p,i) => [i+1,`${p.nacionalidad}${p.cedula} · ${p.esJefe?'Jefe':'Afín'} · ${origen(p.sufijo)}`,p.nombre,p.telefono || 'Sin teléfono',`${p.nombreJefe} · ${p.jefeId}`,`${p.comuna} · ${p.comunidad}`,p.centro,estadoImpreso(p)]);
+      }
+      window.inyectarHeaderImpresion?.({titulo:'Consulta Popular 18 de Octubre',subtitulo:titulo});
+      reporte.innerHTML = `<h2>${esc(titulo)}</h2><p><b>Jornada:</b> ${esc(jornada)}</p><p><b>Filtros:</b> ${esc(filtros)}</p><p>${esc(resumen)}</p><p>Generado el ${esc(new Date().toLocaleString('es-VE',{dateStyle:'full',timeStyle:'short',timeZone:'America/Caracas'}))} (hora de Venezuela).</p><table>${tipo === 'lista' ? '<colgroup><col style="width:4%"><col style="width:11%"><col style="width:17%"><col style="width:10%"><col style="width:14%"><col style="width:17%"><col style="width:17%"><col style="width:10%"></colgroup>' : ''}<thead><tr>${encabezados.map(t=>`<th>${esc(t)}</th>`).join('')}</tr></thead><tbody>${filas.map(f=>`<tr>${f.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${encabezados.length}">No hay registros con estos filtros.</td></tr>`}</tbody></table>`;
+      return true;
+    }
+    for (const [id,tipo] of [['imprimirLista','lista'],['imprimirTerritorio','territorio'],['imprimirComunidad','comunidad']]) $(id).addEventListener('click',()=>{
+      if (!usuario || !jefesListos || !afinesListos || !estadosListos) { aviso('mensajeLista','Espera a que terminen de cargar los registros y los estados antes de imprimir.',true); return; }
+      tipoImpresion = tipo; window.print();
+    });
+    window.addEventListener('beforeprint',()=>prepararImpresion(tipoImpresion || (modalComuna !== null ? 'comunidad' : 'lista')));
+    window.addEventListener('afterprint',()=>{tipoImpresion=null;$('reporteImpresion').replaceChildren();});
     $('territorioFilas').addEventListener('click', event => {
       const fila = event.target.closest('tr[data-comuna]');
       if (fila) abrirModal(fila.dataset.comuna, fila.dataset.comunidad);

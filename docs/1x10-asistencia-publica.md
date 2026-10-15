@@ -41,5 +41,17 @@ El panel `1x10-asistencia.html` muestra debajo de la lista principal una secció
 
 ## Comprobaciones
 
+### Impresión del panel administrativo (15/10/2026)
+
+En `1x10-asistencia.html` están disponibles:
+
+- **Imprimir lista filtrada completa**: imprime todos los registros que cumplen la fecha, centro, estado, búsqueda y grupo de edad seleccionados. Incluye las páginas no visibles de la lista, conserva los registros repetidos entre variantes y distingue el total de registros del total de personas distintas.
+- **Imprimir resumen territorial**: imprime todas las comunas y comunidades del resumen con el filtro de edad vigente y los estados de la jornada.
+- **Imprimir esta comunidad**: desde el detalle, imprime todas sus personas con el filtro Todas / Solo las que votaron / Solo las que faltan y el grupo de edad seleccionado.
+
+La salida usa el cintillo institucional, fecha de la jornada y de generación, filtros, encabezados de tabla repetidos y papel carta horizontal. El diálogo del navegador permite elegir impresora o guardar como PDF. No incluye controles para modificar los registros. La impresión espera la carga completa de las siete variantes y los estados de asistencia.
+
+Las comunidades `MILAGRO DE DIO I` y `EL MILAGRO DE DIOS I` se unifican como **MILAGRO DE DIOS I**. Se conserva el identificador técnico del catálogo y se mantiene separado **MILAGRO DE DIOS II**. Se verificaron 23 campos corregidos en Firebase sin cambios en los demás datos.
+
 - Local: `node scripts/verificar-asistencia-publica-1x10.mjs` (sintaxis, marcadores de la página, reglas del archivo).
 - Producción: `tmp/verificar-publico-voto-1x10.mjs` (flujo completo del enlace público con una persona de prueba que se elimina al terminar).
