@@ -14,9 +14,18 @@ export function seccionesPorTerritorio(personas,filas,clasificarEdad) {
   const secciones=[];let numero=0;
   for(const territorio of ordenados)for(const [grupo,titulo] of edades){
     const integrantes=territorio.grupos.get(grupo);if(!integrantes.length)continue;
-    integrantes.sort((a,b)=>comparar(a.persona.nombre||'',b.persona.nombre||''));
-    secciones.push({titulo,comuna:territorio.comuna,comunidad:territorio.comunidad,
-      filas:integrantes.map(({fila})=>[++numero,...fila.slice(1)])});
+    const porJefe=new Map();
+    for(const integrante of integrantes){
+      const jefe=integrante.persona.jefe||{cedula:integrante.persona.jefeId||'',nombre:integrante.persona.nombreJefe||''};
+      const clave=JSON.stringify(jefe);
+      if(!porJefe.has(clave))porJefe.set(clave,{jefe,integrantes:[]});
+      porJefe.get(clave).integrantes.push(integrante);
+    }
+    for(const responsable of [...porJefe.values()].sort((a,b)=>comparar(a.jefe.nombre||'',b.jefe.nombre||'')||comparar(a.jefe.cedula||'',b.jefe.cedula||''))){
+      responsable.integrantes.sort((a,b)=>comparar(a.persona.nombre||'',b.persona.nombre||''));
+      secciones.push({titulo,comuna:territorio.comuna,comunidad:territorio.comunidad,jefe:responsable.jefe,
+        filas:responsable.integrantes.map(({fila})=>[++numero,...fila.slice(1)])});
+    }
   }
   return secciones;
 }

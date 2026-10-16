@@ -1,6 +1,6 @@
 import {dibujarHeaderPDF,dibujarFooterPDF} from './pdf-header.js?v=20261016-vertical';
 
-export {seccionesPorTerritorio} from './consulta-popular-grupos.mjs?v=20261016';
+export {seccionesPorTerritorio} from './consulta-popular-grupos.mjs?v=20261016-jefes';
 
 // La paginación del PDF reserva márgenes físicos; no depende de la tabla HTML.
 export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezados,filas,secciones}) {
@@ -19,12 +19,14 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
       doc.text(lineas,margen,cursor);cursor+=lineas.length*4.3+1;
     }
     if(conFirma){
-      cursor+=2;doc.setFontSize(8.5);doc.text('Datos del jefe o responsable de la planilla',margen,cursor);cursor+=5.5;doc.setFont('helvetica','normal');
+      const jefe=seccionActual?.jefe||{};
+      cursor+=2;doc.setFontSize(8.5);doc.text('Datos del jefe registrado',margen,cursor);cursor+=5;doc.setFont('helvetica','normal');
+      const dato=valor=>valor===null||valor===undefined||valor===''?'No registrado':String(valor);
+      for(const linea of [`Nombres y apellidos: ${dato(jefe.nombre)}`,`Cédula: ${dato(jefe.cedula)} · Teléfono: ${dato(jefe.telefono)}`,`Sexo: ${dato(jefe.sexo)} · Edad: ${jefe.edad===null||jefe.edad===undefined?'No registrada':jefe.edad+' años'}`]){
+        const lineas=doc.splitTextToSize(linea,util-2);doc.text(lineas,margen,cursor);cursor+=lineas.length*3.8+1.5;
+      }
       doc.setDrawColor(100,116,139);doc.setLineWidth(.2);
-      const campo=(etiqueta,x,inicio,fin)=>{doc.text(etiqueta,margen+x,cursor);doc.line(margen+inicio,cursor+.5,margen+fin,cursor+.5);};
-      campo('Nombres y apellidos:',0,30,util);
-      cursor+=6.5;campo('Cédula:',0,12,55);campo('Teléfono:',62,77,123);campo('Sexo:',130,139,153);campo('Edad:',159,168,util);
-      cursor+=6.5;campo('Firma del jefe o responsable:',0,42,util);cursor+=4.5;
+      doc.text('Firma del jefe o responsable:',margen,cursor);doc.line(margen+42,cursor+.5,margen+util,cursor+.5);cursor+=4.5;
     }
     return cursor;
   };

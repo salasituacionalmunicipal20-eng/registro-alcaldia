@@ -7,6 +7,12 @@ const personales=consolidarPersonas([{jefes:{12345678:{nombre:'DATOS FICTICIOS',
 assert.equal(personales.personas.find(p=>p.cedula==='12345678').sexo,'Femenino');
 assert.equal(personales.personas.find(p=>p.cedula==='12345678').telefono,'0000000000');
 assert.equal(personales.registrosLista.find(p=>p.cedula==='23456789').sexo,'Masculino');
+assert.equal(personales.registrosLista.find(p=>p.cedula==='23456789').jefe.nombre,'DATOS FICTICIOS');
+assert.equal(personales.registrosLista.find(p=>p.cedula==='23456789').jefe.telefono,'0000000000');
+const compartidos=consolidarPersonas([{jefes:{12345678:{nombre:'JEFE REGISTRADO',telefono:'0000000000'}}},{afines:{12345678:{23456789:{nombre:'PERSONA FICTICIA'}}}}]);
+assert.equal(compartidos.registrosLista.find(p=>p.cedula==='23456789').jefe.nombre,'JEFE REGISTRADO');
+const ambiguos=consolidarPersonas([{jefes:{12345678:{nombre:'DATOS A'}}},{jefes:{12345678:{nombre:'DATOS B'}}},{afines:{12345678:{23456789:{nombre:'PERSONA FICTICIA'}}}}]);
+assert.equal(ambiguos.registrosLista.find(p=>p.cedula==='23456789').jefe.nombre,'');
 assert.equal(c.personas.length,3);assert.equal(c.diagnostico.registros,6);assert.equal(c.diagnostico.repetidos,2);assert.equal(c.diagnostico.sinIdentidad,1);
 assert.equal(c.registrosLista.length,6);
 assert.equal(c.registrosLista.filter(p=>p.id===null).length,1);

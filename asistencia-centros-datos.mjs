@@ -14,6 +14,13 @@ export function identidad(id, p) {
 
 export function consolidarPersonas(sistemas, catalogo={}) {
   const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map(), canonCentros=new Map();
+  const fichaJefe=(j={},id='')=>({cedula:texto(j.cedula||id),nombre:texto([j.nombres,j.apellidos].filter(Boolean).join(' '))||texto(j.nombre),telefono:texto(j.telefono),sexo:texto(j.sexo||j.genero),fecha_nacimiento:texto(j.fecha_nacimiento),edad:/^\d{1,3}$/.test(texto(j.edad))&&Number(j.edad)<=120?Number(j.edad):null});
+  const indiceJefes=new Map();
+  for(const s of sistemas)for(const [id,j] of Object.entries(s.jefes||{})){
+    const clave=identidad(id,j)?.id;if(!clave)continue;
+    if(!indiceJefes.has(clave))indiceJefes.set(clave,new Map());
+    const ficha=fichaJefe(j,id);indiceJefes.get(clave).set(JSON.stringify(ficha),ficha);
+  }
   for (const c of Object.values(catalogo)) {
     if(c.circuito_comunal) {const n=nombreTerritorial(c.circuito_comunal,'comuna');canonComunas.set(normalizar(n),n);}
     if(c.nombre) {const n=nombreTerritorial(c.nombre,'comunidad');canonComunidades.set(normalizar(n),n);}
@@ -22,6 +29,11 @@ export function consolidarPersonas(sistemas, catalogo={}) {
   let registros=0,sinIdentidad=0;
   function agregar(id,p,j,esJefe,sufijo='') {
     registros++;
+    let jefe=fichaJefe(j);
+    if(!jefe.nombre&&!jefe.telefono&&!jefe.sexo&&!jefe.fecha_nacimiento&&jefe.edad===null){
+      const candidatos=indiceJefes.get(identidad(j.cedula||'',j)?.id);
+      if(candidatos?.size===1)jefe={...candidatos.values().next().value};
+    }
     const quien=identidad(id,p);
     if(!quien)sinIdentidad++;
     const propia=catalogo[p.comunidad_slug]||{}, heredada=catalogo[j.comunidad_slug]||{};
@@ -38,7 +50,7 @@ export function consolidarPersonas(sistemas, catalogo={}) {
       comunidad:canonComunidades.get(normalizar(comunidadCanon))||comunidadCanon,
       centro:canonCentros.get(normalizar(centroCanon))||centroCanon,esJefe,
       registroId:id,jefeId:texto(j.cedula),nombreJefe:texto([j.nombres,j.apellidos].filter(Boolean).join(' '))||texto(j.nombre),fecha_nacimiento:texto(p.fecha_nacimiento),
-      telefono:texto(p.telefono),sexo:texto(p.sexo||p.genero),sufijo};
+      telefono:texto(p.telefono),sexo:texto(p.sexo||p.genero),jefe,sufijo};
     registrosLista.push(dato);
     if(!quien)return;
     if(!porPersona.has(quien.id))porPersona.set(quien.id,[]);
@@ -60,7 +72,7 @@ export function consolidarPersonas(sistemas, catalogo={}) {
     return {id:elegido.id,cedula:elegido.cedula,nacionalidad:elegido.nacionalidad,
       nombre:datos.find(p=>p.nombre!=='Nombre no registrado')?.nombre||elegido.nombre,
       fecha_nacimiento:elegido.fecha_nacimiento,
-      telefono:elegido.telefono,sexo:elegido.sexo,
+      telefono:elegido.telefono,sexo:elegido.sexo,jefe:elegido.jefe,jefeId:elegido.jefeId,
       comuna:conflicto?'Ubicación por verificar':elegido.comuna,
       comunidad:conflicto?'Ubicación por verificar':elegido.comunidad,
       centro:conflicto?'Centro por verificar':elegido.centro};

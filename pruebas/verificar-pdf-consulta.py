@@ -6,6 +6,9 @@ import fitz
 carpeta = Path(__file__).resolve().parents[1] / 'output/consulta-popular-pdf'
 resultados = []
 margen = 15 * 72 / 25.4
+def texto_lista(pagina):
+    cabecera = next(w for w in pagina.get_text('words') if w[4]=='N.º')
+    return pagina.get_textbox(fitz.Rect(0,cabecera[3]+.5,pagina.rect.width,pagina.rect.height-30*72/25.4))
 for archivo in sorted(carpeta.glob('*.pdf')):
     documento = fitz.open(archivo)
     firmas = 0
@@ -16,7 +19,7 @@ for archivo in sorted(carpeta.glob('*.pdf')):
         assert f'Página {numero} de {len(documento)}' in texto, (archivo.name, numero, 'paginación')
         if not archivo.name.startswith('territorio'):
             assert 'Firma' in texto, (archivo.name, numero, 'columna de firma')
-            assert 'Datos del jefe o responsable de la planilla' in texto and 'Firma del jefe o responsable:' in texto, 'Falta la ficha del jefe'
+            assert 'Datos del jefe registrado' in texto and 'Firma del jefe o responsable:' in texto, 'Falta la ficha del jefe'
             assert 'Sexo' in texto and 'Edad' in texto and 'Teléfono' in texto, 'Faltan columnas personales'
             inicio_firma = (215.9-15-39) * 72 / 25.4
             espacios = {tuple(round(v,2) for v in dibujo['rect']) for dibujo in pagina.get_drawings()
@@ -32,9 +35,11 @@ for archivo in sorted(carpeta.glob('*.pdf')):
             assert r.y0 >= margen - .8 and r.y1 <= 792 - margen + .8, (archivo.name, numero, 'bordes verticales')
     resultados.append({'archivo': archivo.name, 'paginas': len(documento), 'espacios_firma': firmas})
     if archivo.name == 'lista-completa-carta.pdf':
+        textos_pagina = [p.get_text() for p in documento]
+        cuerpos = [texto_lista(p) for p in documento]
         assert firmas == 151, 'Cada registro debe tener su espacio de firma compacto'
         assert 'Femenino' in '\n'.join(p.get_text() for p in documento) and 'Masculino' in '\n'.join(p.get_text() for p in documento), 'No se conservó el sexo registrado'
-        texto = '\n'.join(p.get_text() for p in documento)
+        texto = '\n'.join(cuerpos)
         for numero in range(100001, 100151):
             assert str(numero) in texto, ('Falta un registro', numero)
         jovenes = [i for i,p in enumerate(documento) if 'Jóvenes (15 a 35 años)' in p.get_text()]
@@ -52,15 +57,23 @@ for archivo in sorted(carpeta.glob('*.pdf')):
             j = [i for i in jovenes if territorios[i] == territorio]
             a = [i for i in adultos if territorios[i] == territorio]
             assert j and a and max(j) < min(a), 'Dentro de cada comunidad deben salir jóvenes y después adultos'
-        texto_jovenes = '\n'.join(documento[i].get_text() for i in jovenes)
-        texto_adultos = '\n'.join(documento[i].get_text() for i in adultos)
+        texto_jovenes = '\n'.join(cuerpos[i] for i in jovenes)
+        texto_adultos = '\n'.join(cuerpos[i] for i in adultos)
         for indice in range(150):
             cedula = str(100001 + indice)
             correcto, otro = (texto_adultos, texto_jovenes) if indice % 2 else (texto_jovenes, texto_adultos)
             assert cedula in correcto and cedula not in otro, 'Una persona aparece en la sección incorrecta'
-            for i,p in enumerate(documento):
-                if cedula in p.get_text():
+            for i,cuerpo in enumerate(cuerpos):
+                if cedula in cuerpo:
                     assert territorios[i][0] == ('Comuna de prueba' if indice < 100 else 'Comuna Z de prueba'), 'Una persona aparece en el territorio incorrecto'
+                    jefe = '100001' if indice < 50 else '100051' if indice < 100 else '100101'
+                    nombre = 'Persona '+str(int(jefe)-100001).zfill(3)
+                    assert 'Nombres y apellidos: '+nombre in textos_pagina[i] and 'Cédula: '+jefe in textos_pagina[i], 'La planilla tiene los datos de otro jefe'
+                    telefono = '0000000010' if jefe=='100101' else '0000000000'
+                    sexo = 'Masculino' if jefe=='100051' else 'Femenino'
+                    edad = 25 if jefe=='100001' else 26
+                    assert 'Teléfono: '+telefono in textos_pagina[i] and 'Sexo: '+sexo in textos_pagina[i], 'Faltan los datos registrados del jefe'
+                    assert 'Edad: '+str(edad)+' años' in textos_pagina[i], 'Edad del jefe incorrecta'
     if archivo.name == 'comunidad-carta.pdf':
         assert firmas == 33, 'Cada persona de la comunidad debe tener su espacio para firmar'
 assert len(resultados) == 10, 'Faltan salidas por verificar'

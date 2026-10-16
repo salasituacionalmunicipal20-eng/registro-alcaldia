@@ -212,8 +212,8 @@
   <script src="territorio-data.js?v=20261015-milagro-i"></script>
   <script src="autofresh.js"></script>
   <script type="module">
-    import {crearPDFConsulta,mostrarPDFConsulta,seccionesPorTerritorio} from './consulta-popular-pdf.mjs?v=20261016-vertical';
-    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261016-sexo';
+    import {crearPDFConsulta,mostrarPDFConsulta,seccionesPorTerritorio} from './consulta-popular-pdf.mjs?v=20261016-jefes';
+    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261016-jefes';
     import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
@@ -495,6 +495,7 @@
         encabezados=['N.º','Nombres y apellidos','Cédula','Teléfono','Sexo','Edad'];
         filas=personasReporte.map((p,i)=>[i+1,p.nombre,`${p.nacionalidad}-${p.cedula}`,p.telefono||'No registrado',p.sexo||'No registrado',edadEn(fechaACadena(p.fecha_nacimiento),hoyCaracas())??'—']);
         secciones=seccionesPorTerritorio(personasReporte,filas,grupoEdadPersona);
+        for(const seccion of secciones)seccion.jefe={...seccion.jefe,edad:edadEn(fechaACadena(seccion.jefe?.fecha_nacimiento),hoyCaracas())??seccion.jefe?.edad??null};
         if(tipo==='lista')titulo='Personas por comuna y comunidad';
       }
       window.inyectarHeaderImpresion?.({titulo:'Consulta Popular 18 de Octubre',subtitulo:titulo});

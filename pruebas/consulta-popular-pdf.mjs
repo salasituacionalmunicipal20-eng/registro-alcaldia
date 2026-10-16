@@ -21,6 +21,10 @@ assert.deepEqual(agrupados.map(s=>[s.comuna,s.comunidad,s.titulo]),[
  ['Comuna B','Comunidad 1','Jóvenes (15 a 35 años)'],['Comuna B','Comunidad 1','Menores de 15 años'],
  ['Sin comuna registrada','Sin comunidad registrada','Edad no registrada']]);
 assert.deepEqual(agrupados.flatMap(s=>s.filas.map(f=>f[0])),[1,2,3,4,5,6,7]);
+const responsables=[{cedula:'900001',nombre:'Jefe A'},{cedula:'900002',nombre:'Jefe B'}];
+const personasResponsables=[0,1,0].map((j,i)=>({nombre:'Persona '+i,comuna:'COMUNA',comunidad:'COMUNIDAD',jefe:responsables[j]}));
+const planillasResponsables=seccionesPorTerritorio(personasResponsables,personasResponsables.map((p,i)=>[i,p.nombre]),()=> 'adultos');
+assert.deepEqual(planillasResponsables.map(s=>[s.jefe.cedula,s.filas.map(f=>f[1])]),[['900001',['Persona 0','Persona 2']],['900002',['Persona 1']]]);
 for (const nombre of ['MILAGRO DE DIO I','EL MILAGRO DE DIOS I','MILAGRO DE DIOS I']) assert.equal(nombreTerritorial(nombre,'comunidad'),'MILAGRO DE DIOS I');
 assert.equal(nombreTerritorial('MILAGRO DE DIOS II','comunidad'),'MILAGRO DE DIOS II');
 const raiz=path.resolve(import.meta.dirname,'..');
@@ -43,7 +47,16 @@ for(let i=0;i<150;i++) {
   if(i<149)jefes[cedula].genero=i%2?'Masculino':'Femenino';
   estados['V_'+cedula]={estado:i%3===0?'asistio':i%3===1?'no_asistio':'pendiente'};
 }
-const datos={jefes_1x10:jefes,afines_1x10_empleados:{100001:{duplicado:{...jefes['100001']}}}};
+jefes['100001'].fecha_nacimiento='2000-12-31';
+jefes['100051'].genero='Masculino';
+jefes['100101'].telefono='0000000010';
+const lideres=Object.fromEntries(['100001','100051','100101'].map(id=>[id,jefes[id]])),afines={};
+for(const [id,p] of Object.entries(jefes)){
+  if(lideres[id])continue;
+  const jefe=Number(id)<100051?'100001':Number(id)<100101?'100051':'100101';
+  (afines[jefe]??={})[id]=p;
+}
+const datos={jefes_1x10:lideres,afines_1x10:afines,afines_1x10_empleados:{100001:{duplicado:{...jefes['100001']}}}};
 const browser=await chromium.launch({channel:'chrome',headless:true});
 try {
   const page=await browser.newPage({viewport:{width:1280,height:900}});
@@ -98,9 +111,9 @@ try {
   await imprimirLista();
   await descargar('lista-filtrada-carta.pdf');
   assert.equal(await page.locator('#reporteImpresion tbody tr').count(),26);
-  await page.fill('#buscarPersona','Persona 000');await imprimirLista();
+  await page.fill('#buscarPersona','Persona 006');await imprimirLista();
   await descargar('busqueda-carta.pdf');
-  assert.equal(await page.locator('#reporteImpresion tbody tr').count(),2);
+  assert.equal(await page.locator('#reporteImpresion tbody tr').count(),1);
   assert((await page.locator('#reporteImpresion').innerText()).includes('1 personas distintas'));
   await page.fill('#buscarPersona','sin coincidencias');await imprimirLista();
   await descargar('sin-resultados-carta.pdf');
@@ -134,5 +147,5 @@ try {
     mostrarPDFConsulta(crearPDFConsulta({tipo:'comunidad',titulo:'Personas por comunidad',jornada:'domingo 18 de octubre de 2026 · 18/10/2026',filtros:'Comuna: Comunidad de prueba · Estado: Todas',resumen:'110 personas ficticias para verificar distribución',encabezados:['N.º','Nombres y apellidos','Cédula','Teléfono','Sexo','Edad'],filas}),'comunidad-extensa.pdf');
   });
   await descargar('comunidad-extensa-carta.pdf');
-  console.log(JSON.stringify({impresionCompleta:151,filasVisiblesPorPagina:75,cuatroFiltrosCombinados:2,modalFiltrado:personas,comunidadUnificada:true,sectorIIConservado:true,encabezadoAnteriorConservado:true,errores,ancho,salida}));
+  console.log(JSON.stringify({impresionCompleta:151,filasVisiblesPorPagina:75,cuatroFiltrosCombinados:1,modalFiltrado:personas,jefesCorrectos:true,comunidadUnificada:true,sectorIIConservado:true,encabezadoAnteriorConservado:true,errores,ancho,salida}));
 } finally {await browser.close();}
