@@ -139,6 +139,6 @@
     });
     onAuthStateChanged(auth,async user=>{for(const stop of detener)stop();detener=[];listos.clear();errorLectura=false;$('contenido').classList.add('oculto');if(!user){location.href='index.html';return;}let permitido=user.email==='carlos.admin@alcaldia.com';if(!permitido){try{const s=await get(child(ref(database),`operadores/${user.uid}/rol`));permitido=s.val()==='admin';}catch(e){permitido=false;}}$('cargando').classList.add('oculto');if(!permitido){$('restringido').classList.remove('oculto');return;}usuario=user;$('contenido').classList.remove('oculto');detener.push(onValue(ref(database,'.info/connected'),s=>{conectado=s.val()===true;estado();}));for(const [nodo,poner] of [...nodos,[NODO,v=>cargas=v]])detener.push(onValue(ref(database,nodo),s=>{poner(s.val()||{});listos.add(nodo);reconstruir();},err=>{errorLectura=true;estado();$('mensaje').textContent='No se pudieron cargar los registros: '+err.message;$('mensaje').classList.remove('oculto');}));});
   </script>
-<script type="module" src="1x10-vinculos.mjs?v=20261016-integracion"></script>
+<script type="module" src="1x10-vinculos.mjs?v=20261016-global"></script>
 </body>
 </html>

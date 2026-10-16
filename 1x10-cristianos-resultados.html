@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Resultados Movilización 1x10 Cristianos - Panel Admin</title>
+    <title>Resultados de Movilización 1x10 · Todos los sectores</title>
     <!-- jsPDF para exportar reportes de movilización imprimibles -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- SheetJS para exportar a Excel .xlsx organizado en múltiples hojas -->
@@ -355,7 +355,7 @@
             <div class="gob-header">
                 <!-- Logos removidos temporalmente. La Alcaldesa indicara cuales usar. -->
                 <div class="titulos">
-                    <h1>RESULTADOS MOVILIZACIÓN 1x10 — CRISTIANOS</h1>
+                    <h1>RESULTADOS MOVILIZACIÓN 1x10 · TODOS LOS SECTORES</h1>
                     <p>Sistema de Patrullas Territoriales · Municipio Cristóbal Rojas</p>
                 </div>
             </div>
@@ -456,10 +456,12 @@
             <!-- Filtros -->
             <div class="seccion">
                 <h2>Filtros</h2>
+                <p class="aviso" id="alcanceResultados1x10">Vista global: todas las listas del 1x10. Los filtros permiten consultar un sector sin duplicar ni mover inscripciones.</p>
                 <div class="filtros">
+                    <div class="campo"><label for="filtroSector1x10">Sector del registro</label><select id="filtroSector1x10"><option value="todos">Todos los sectores</option></select></div>
                     <div class="campo">
                         <label>Buscar</label>
-                        <input id="filtroBusqueda" type="search" placeholder="Cédula, nombre o apellido del jefe" autocomplete="off" />
+                        <input id="filtroBusqueda" type="search" placeholder="Cédula, nombre del jefe o de un afín" autocomplete="off" />
                     </div>
                     <div class="campo">
                         <label>Parroquia</label>
@@ -545,6 +547,7 @@
     </div>
 
     <script type="module">
+        import {combinarResultados1x10,rutasRegistro1x10,nombreSector1x10,SISTEMAS_1X10,SECTORES_1X10,coincideBusqueda1x10} from './1x10-resultados-fuentes.mjs?v=20261016-global';
         import {normalizarFicha1x10,resumirVariante1x10} from './1x10-integracion-datos.mjs?v=20261016-integracion';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import {
@@ -571,6 +574,7 @@
 
         // ── Estado global
         const fuentesCargadas1x10=new Set(),fuentesErrores1x10=new Set();
+        const fuentesGlobales1x10=SISTEMAS_1X10.map(sufijo=>({sufijo,jefes:{},afines:{}}));
         let jefesMap = {};      // { cedulaJefe: {...payload jefe} }
         let afinesMap = {};     // { cedulaJefe: { cedulaAfin: {...payload} } }
         let unsubJefes = null;
@@ -799,67 +803,29 @@
         // ──────────────────────────────────────────────────────────
         // LISTENERS REACTIVOS sobre /jefes_1x10 y /afines_1x10
         // ──────────────────────────────────────────────────────────
-        function iniciarListeners() {
-            fuentesCargadas1x10.clear();fuentesErrores1x10.clear();refrescarUI();
-            unsubJefes = onValue(ref(database, 'jefes_1x10_cristianos'), (snap) => {
-                jefesMap = {};
-                if (snap.exists()) {
-                    snap.forEach(child => {
-                        jefesMap[child.key] = normalizarFicha1x10(child.val() || {},window.TERRITORIO?.comunidades||{});
-                    });
-                }
-                fuentesCargadas1x10.add('jefes');fuentesErrores1x10.delete('jefes');
-                refrescarUI();
-            }, (err) => {
-                fuentesErrores1x10.add('jefes');refrescarUI();
-                console.error('Error leyendo /jefes_1x10_cristianos:', err);
-                $('tbodyJefes').innerHTML = `<tr><td colspan="12" class="cargando" style="color:#E30613;">No se pudo cargar la lista de jefes (${escapeHtml(err.message || err.code || 'desconocido')}).</td></tr>`;
-            });
-
-            unsubAfines = onValue(ref(database, 'afines_1x10_cristianos'), (snap) => {
-                afinesMap = {};
-                if (snap.exists()) {
-                    snap.forEach(child => {
-                        const grupo = {};
-                        child.forEach(afinSnap => {
-                            grupo[afinSnap.key] = normalizarFicha1x10(afinSnap.val() || {},window.TERRITORIO?.comunidades||{});
-                        });
-                        afinesMap[child.key] = grupo;
-                    });
-                }
-                fuentesCargadas1x10.add('afines');fuentesErrores1x10.delete('afines');
-                refrescarUI();
-            }, (err) => {
-                fuentesErrores1x10.add('afines');refrescarUI();
-                // No silenciar: si esto falla, los KPIs van a mostrar 0 afines
-                // y daria la impresion erronea de que no hay registros. Marcar
-                // los KPIs afectados como "?" y avisar visiblemente al admin.
-                console.error('Error leyendo /afines_1x10_cristianos:', err);
-                const kpiAfines = $('kpiAfines'); if (kpiAfines) kpiAfines.textContent = '?';
-                const kpiCobertura = $('kpiCobertura'); if (kpiCobertura) kpiCobertura.textContent = '?';
-                const kpiJC2 = $('kpiJefesCompletos'); if (kpiJC2) kpiJC2.textContent = '?';
-                // Los KPIs de rango etario tambien suman jefes + afines, asi que
-                // si /afines falla, los conteos quedarian incompletos: marcar "?"
-                // para no dar la impresion erronea de un dato parcial confiable.
-                const kEdad15 = $('kpiEdad15a17'); if (kEdad15) kEdad15.textContent = '?';
-                const kEdad18 = $('kpiEdad18a35'); if (kEdad18) kEdad18.textContent = '?';
-                const kEdad36 = $('kpiEdad36mas'); if (kEdad36) kEdad36.textContent = '?';
-                alert('No se pudo cargar la lista de afines (' + (err.message || err.code || 'error desconocido') + '). Los conteos pueden estar incompletos. Recarga la pagina o revisa los permisos.');
-            });
+        function actualizarFuentesGlobales1x10(){
+            const r=combinarResultados1x10(fuentesGlobales1x10,window.TERRITORIO?.comunidades||{},$('filtroSector1x10').value);
+            jefesMap=r.jefes;afinesMap=r.afines;paginaActual=1;refrescarUI();
         }
-
-        function detenerListeners() {
-            try { if (typeof unsubJefes === 'function') unsubJefes(); } catch(e) {}
-            try { if (typeof unsubAfines === 'function') unsubAfines(); } catch(e) {}
-            unsubJefes = null;
-            unsubAfines = null;
+        for(const [valor,nombre] of Object.entries(SECTORES_1X10))$('filtroSector1x10').append(new Option(nombre,valor));
+        $('filtroSector1x10').addEventListener('change',actualizarFuentesGlobales1x10);
+        let detenerFuentesGlobales1x10=[];
+        function iniciarListeners(){
+            detenerListeners();fuentesCargadas1x10.clear();fuentesErrores1x10.clear();refrescarUI();
+            for(const fuente of fuentesGlobales1x10)for(const tipo of ['jefes','afines']){
+                const nodo=tipo+'_1x10'+fuente.sufijo;
+                detenerFuentesGlobales1x10.push(onValue(ref(database,nodo),snap=>{
+                    fuente[tipo]=snap.val()||{};fuentesCargadas1x10.add(nodo);fuentesErrores1x10.delete(nodo);actualizarFuentesGlobales1x10();
+                },err=>{fuentesCargadas1x10.delete(nodo);fuentesErrores1x10.add(nodo);refrescarUI();console.error('Error cargando una lista del 1x10:',err.code||err.message);}));
+            }
         }
+        function detenerListeners(){for(const detener of detenerFuentesGlobales1x10)detener();detenerFuentesGlobales1x10=[];}
 
         // ──────────────────────────────────────────────────────────
         // RENDER COMPLETO (KPIs + filtros en cascada + tabla)
         // ──────────────────────────────────────────────────────────
         function refrescarUI() {
-            const listo=fuentesCargadas1x10.size===2&&!fuentesErrores1x10.size;
+            const listo=fuentesCargadas1x10.size===14&&!fuentesErrores1x10.size;
             for(const b of document.querySelectorAll('#btnPdfCentro,#btnPdfComuna,#btnCsv,#btnExportarExcel,#btnPdfAsistencia,#btnPdfAsistenciaCentro,#btnPdfFichas,#btnPdfResumen'))b.disabled=!listo;
             if(!listo){
                 for(const e of document.querySelectorAll('[id^="kpi"]'))e.textContent='—';
@@ -925,10 +891,11 @@
         function actualizarKPIs() {
             const jefes = getJefesArray();
             const totalJefes = jefes.length;
+            $('alcanceResultados1x10').textContent='Vista: '+($('filtroSector1x10').value==='todos'?'Todos los sectores':nombreSector1x10($('filtroSector1x10').value))+' · Cada inscripción conserva su lista de origen. Los totales corresponden al sector seleccionado; los demás filtros afectan la tabla y sus exportaciones.';
             const resumenSector=resumirVariante1x10(jefesMap,afinesMap,window.TERRITORIO?.comunidades||{});
             const totalAfines = resumenSector.afines;
             let integridad=$('integridadVariante1x10');if(!integridad){integridad=document.createElement('p');integridad.id='integridadVariante1x10';$('tablaJefes').parentElement.before(integridad);}
-            integridad.textContent=`Totales de este sector: ${resumenSector.diagnostico.registros.toLocaleString('es-VE')} registros · ${resumenSector.diagnostico.personas.toLocaleString('es-VE')} personas únicas · ${resumenSector.huerfanos} afines sin ficha de jefe, incluidos en el total. Los indicadores generales no cambian al filtrar la tabla.`;
+            integridad.textContent=`Totales de la vista seleccionada: ${resumenSector.diagnostico.registros.toLocaleString('es-VE')} registros · ${resumenSector.diagnostico.personas.toLocaleString('es-VE')} personas únicas · ${resumenSector.huerfanos} afines sin ficha de jefe, incluidos en el total. Los indicadores generales no cambian al filtrar la tabla.`;
             const completos = jefes.filter(j => j._afinesCount >= 10).length;
             // Promedio afines/jefe (1 decimal). Si no hay jefes, mostrar 0.0
             const promedio = totalJefes ? (totalAfines / totalJefes) : 0;
@@ -1013,7 +980,7 @@
                 if (cen && j.centro_electoral !== cen) return false;
                 if (q) {
                     const blob = `${j.cedula || ''} ${j.nombres || ''} ${j.apellidos || ''}`.toLowerCase();
-                    if (!blob.includes(q)) return false;
+                    if (!coincideBusqueda1x10(j,q) && !(j._afines||[]).some(a=>coincideBusqueda1x10(a,q))) return false;
                 }
                 return true;
             });
@@ -1027,6 +994,7 @@
                 renderTabla();
             });
             $(id).addEventListener('change', () => {
+                if(id==='filtroBusqueda')return; // La búsqueda ya se actualizó con input; no reemplazar el botón al salir del campo.
                 paginaActual = 1;
                 actualizarFiltrosCascada();
                 renderTabla();
@@ -1039,6 +1007,7 @@
         $('filtroEdadMin').addEventListener('input', _refrescarPorEdad);
         $('filtroEdadMax').addEventListener('input', _refrescarPorEdad);
         $('btnLimpiarFiltros').addEventListener('click', () => {
+            $('filtroSector1x10').value='todos';actualizarFuentesGlobales1x10();
             $('filtroBusqueda').value = '';
             $('filtroParroquia').value = '';
             $('filtroCircuito').value = '';
@@ -1090,7 +1059,7 @@
                 return `
                     <tr>
                         <td><b>${escapeHtml(ced)}</b></td>
-                        <td>${escapeHtml(nombre)}</td>
+                        <td>${escapeHtml(nombre)}<br><small>Sector: ${escapeHtml(nombreSector1x10(j._sector1x10))}</small></td>
                         <td>${escapeHtml(j.telefono || '-')}</td>
                         <td>${celdaFnJefe}</td>
                         <td style="text-align:center;font-weight:700;">${escapeHtml(fmtGenero(j.genero))}</td>
@@ -1101,9 +1070,9 @@
                         <td><span class="badge-afines ${cls}">${n} af${n === 1 ? 'ín' : 'ines'}</span></td>
                         <td>${escapeHtml(fmtFechaCorta(j.fecha_registro))}</td>
                         <td>
-                            <button class="btn-fila ver" data-action="ver" data-ced="${escapeHtml(j.cedula || '')}">Ver Afines</button>
-                            <button class="btn-fila" data-action="ficha" data-ced="${escapeHtml(j.cedula || '')}" style="background:#0f766e;color:#fff;">🖨️ Imprimir 1×1</button>
-                            <button class="btn-fila del" data-action="del" data-ced="${escapeHtml(j.cedula || '')}">Eliminar</button>
+                            <button class="btn-fila ver" data-action="ver" data-ced="${escapeHtml(j._clave1x10)}">Ver Afines</button>
+                            <button class="btn-fila" data-action="ficha" data-ced="${escapeHtml(j._clave1x10)}" style="background:#0f766e;color:#fff;">🖨️ Imprimir 1×1</button>
+                            <button class="btn-fila del" data-action="del" data-ced="${escapeHtml(j._clave1x10)}">Eliminar</button>
                         </td>
                     </tr>
                 `;
@@ -1163,7 +1132,7 @@
             // Aplicar el filtro de edad SOLO a la lista de afines (el jefe sigue siempre visible).
             const afines = afinesTodos.filter(a => pasaFiltroEdad(a.fecha_nacimiento));
 
-            const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + cedulaJefe;
+            const ced = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula||j._idJefe1x10);
             const nombre = `${j.nombres || ''} ${j.apellidos || ''}`.trim() || '-';
             // Texto del titulo: si hay filtro de edad activo, desglosar
             // cuantos estan realmente en rango vs sin fecha (que pasan por la
@@ -1196,7 +1165,7 @@
                         <td style="text-align:center;font-weight:700;">${escapeHtml(fmtGenero(a.genero))}</td>
                         <td>${fechaTxt}</td>
                         <td>${escapeHtml(fmtFechaCorta(a.fecha_registro))}</td>
-                        <td><button class="btn-fila del" data-afin="${escapeHtml(a.cedula || '')}">Eliminar</button></td>
+                        <td><button class="btn-fila del" data-afin="${escapeHtml(a._claveAfin1x10)}">Eliminar</button></td>
                     </tr>
                 `;
                   }).join('')
@@ -1206,6 +1175,7 @@
                 <button class="cerrar" id="btnCerrarModal">✕ Cerrar</button>
                 <h2>${tituloAfines}</h2>
                 <div class="meta">
+                    <b>Sector:</b> ${escapeHtml(nombreSector1x10(j._sector1x10))}<br>
                     <b>Cédula del jefe:</b> ${escapeHtml(ced)}<br>
                     <b>Teléfono:</b> ${escapeHtml(j.telefono || '-')}<br>
                     <b>Parroquia:</b> ${escapeHtml(j.parroquia || '-')} · <b>Circuito:</b> ${escapeHtml(j.circuito || '-')}<br>
@@ -1255,7 +1225,7 @@
             const nombre = `${j.nombres || ''} ${j.apellidos || ''}`.trim() || cedulaJefe;
             const nAfines = Object.keys(afinesMap[cedulaJefe] || {}).length;
             const ok = confirm(
-                `¿Eliminar al jefe ${nombre} (C.I. ${cedulaJefe}) y sus ${nAfines} afín${nAfines === 1 ? '' : 'es'}?\n\n` +
+                `¿Eliminar al jefe ${nombre} (C.I. ${j.cedula||j._idJefe1x10}, sector ${nombreSector1x10(j._sector1x10)}) y sus ${nAfines} afín${nAfines === 1 ? '' : 'es'}?\n\n` +
                 `Esta acción NO se puede deshacer.`
             );
             if (!ok) return;
@@ -1265,8 +1235,8 @@
                 // aplica. Sin esto, podiamos dejar afines huerfanos en /afines_1x10
                 // que sigan inflando el KPI tras borrar el jefe.
                 await update(ref(database), {
-                    [`jefes_1x10_cristianos/${cedulaJefe}`]: null,
-                    [`afines_1x10_cristianos/${cedulaJefe}`]: null
+                    [rutasRegistro1x10(j).jefe]: null,
+                    [rutasRegistro1x10(j).afines]: null
                 });
                 // los listeners onValue refrescan la UI solos
             } catch (e) {
@@ -1290,7 +1260,7 @@
             if (afinesMap[cedulaJefe]) delete afinesMap[cedulaJefe][cedulaAfin];
             abrirModalAfines(cedulaJefe);
             try {
-                await remove(ref(database, `afines_1x10_cristianos/${cedulaJefe}/${cedulaAfin}`));
+                await remove(ref(database, rutasRegistro1x10(jefesMap[cedulaJefe],cedulaAfin).afin));
                 // El listener onValue terminara de sincronizar; el modal ya esta correcto.
             } catch (e) {
                 console.error('Error eliminando afín:', e);
@@ -1641,7 +1611,7 @@
                 'genero',
                 'fecha_nacimiento', 'edad',
                 'parroquia', 'circuito', 'comunidad', 'centro_electoral', 'mesas',
-                'cedula_jefe', 'orden', 'fecha_registro_iso'
+                'cedula_jefe', 'orden', 'fecha_registro_iso', 'sector'
             ];
             const rows = [header.join(',')];
 
@@ -1666,7 +1636,7 @@
                     j.mesas || '',
                     j.cedula || '',  // cedula_jefe = la propia
                     '0',
-                    fechaJefe
+                    fechaJefe, nombreSector1x10(j._sector1x10)
                 ].map(csvEscape).join(','));
 
                 // Filas de cada afín — heredan ubicacion del jefe
@@ -1691,7 +1661,7 @@
                         j.mesas || '',
                         j.cedula || '',
                         String(a.orden || ''),
-                        fechaAfin
+                        fechaAfin, nombreSector1x10(j._sector1x10)
                     ].map(csvEscape).join(','));
                 });
             });
@@ -1914,7 +1884,7 @@
                 'Cedula', 'Nombres', 'Apellidos', 'Telefono', 'Nacionalidad', 'Genero',
                 'Fecha Nac', 'Edad',
                 'Parroquia', 'Circuito Comunal', 'Comunidad', 'Centro Electoral',
-                'Mesas', '# Afines', 'Fecha Registro'
+                'Mesas', '# Afines', 'Fecha Registro', 'Sector'
             ];
             const filasJefes = filtrados
                 .slice()
@@ -1938,7 +1908,7 @@
                         j.centro_electoral || '',
                         j.mesas || '',
                         _afinesEnRango(j),
-                        j.fecha_registro ? fmtFecha(j.fecha_registro) : ''
+                        j.fecha_registro ? fmtFecha(j.fecha_registro) : '', nombreSector1x10(j._sector1x10)
                     ];
                 });
             const matrizJefes = [
@@ -1950,22 +1920,22 @@
                 { wch: 14 }, { wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 6 }, { wch: 7 },
                 { wch: 12 }, { wch: 6 },
                 { wch: 22 }, { wch: 20 }, { wch: 26 }, { wch: 32 },
-                { wch: 14 }, { wch: 9 }, { wch: 18 }
+                { wch: 14 }, { wch: 9 }, { wch: 18 }, { wch: 24 }
             ];
             // Ahora son 15 columnas (A..O) tras agregar Fecha Nac + Edad — actualizar autofilter.
-            wsJefes['!autofilter'] = { ref: `A1:O${filasJefes.length + 1}` };
+            wsJefes['!autofilter'] = { ref: `A1:P${filasJefes.length + 1}` };
             XLSX.utils.book_append_sheet(wb, wsJefes, 'Jefes 1x10');
 
             // ── HOJA 3: Afines ───────────────────────────────────────
             const headerAfines = [
                 'Cedula Jefe', 'Nombre Jefe', 'Comunidad Jefe', 'Centro Jefe',
                 'Orden', 'Cedula Afin', 'Nombres Afin', 'Apellidos Afin',
-                'Telefono', 'Genero', 'Fecha Nac', 'Edad', 'Nacionalidad', 'Fecha Registro'
+                'Telefono', 'Genero', 'Fecha Nac', 'Edad', 'Nacionalidad', 'Fecha Registro', 'Sector'
             ];
             const filasAfines = [];
             filtrados.forEach(j => {
                 const cedJefe = (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || '');
-                const nomJefe = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim();
+                const nomJefe = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim()+' · '+nombreSector1x10(j._sector1x10);
                 // Filtro de edad SOLO aplica a los afines (el jefe va en otra hoja).
                 (j._afines || []).filter(a => pasaFiltroEdad(a.fecha_nacimiento)).forEach(a => {
                     const edad = calcularEdad(a.fecha_nacimiento);
@@ -1983,7 +1953,7 @@
                         a.fecha_nacimiento || '',
                         edad !== null ? edad : '',
                         a.nacionalidad || '',
-                        a.fecha_registro ? fmtFecha(a.fecha_registro) : ''
+                        a.fecha_registro ? fmtFecha(a.fecha_registro) : '', nombreSector1x10(j._sector1x10)
                     ]);
                 });
             });
@@ -1995,10 +1965,10 @@
             wsAfines['!cols'] = [
                 { wch: 14 }, { wch: 30 }, { wch: 26 }, { wch: 32 },
                 { wch: 7 }, { wch: 14 }, { wch: 22 }, { wch: 22 },
-                { wch: 14 }, { wch: 7 }, { wch: 12 }, { wch: 6 }, { wch: 6 }, { wch: 18 }
+                { wch: 14 }, { wch: 7 }, { wch: 12 }, { wch: 6 }, { wch: 6 }, { wch: 18 }, { wch: 24 }
             ];
             // Ahora son 14 columnas (A..N) en vez de 13 (A..M) — actualizar autofilter.
-            wsAfines['!autofilter'] = { ref: `A1:N${filasAfines.length + 1}` };
+            wsAfines['!autofilter'] = { ref: `A1:O${filasAfines.length + 1}` };
             XLSX.utils.book_append_sheet(wb, wsAfines, 'Afines');
 
             // ── HOJA 4: Movilizacion por Centro ──────────────────────
@@ -2104,6 +2074,7 @@
             const val = (id) => { const e = $(id); return e ? (e.value || '').trim() : ''; };
             const partes = [];
             const pon = (id, texto) => { const v = val(id); if (v) partes.push(texto + ' ' + v); };
+            pon('filtroSector1x10', 'sector');
             pon('filtroBusqueda', 'busqueda');
             pon('filtroParroquia', 'parroquia');
             pon('filtroCircuito', 'comuna');
@@ -2187,6 +2158,7 @@
                 lineas.push(['Telefono', j.telefono || '-', 'Edad',
                              edad !== null ? edad + ' anos' : 'No indicada']);
                 if (etiquetaExtra) lineas.push([etiquetaExtra, j.direccion_secretaria || '-', null, null]);
+                lineas.push(['Sector',nombreSector1x10(j._sector1x10),null,null]);
                 lineas.push(['Parroquia', j.parroquia || '-', 'Comuna', j.circuito || '-']);
                 lineas.push(['Comunidad', j.comunidad_nombre || '-', null, null]);
                 lineas.push(['Centro electoral', j.centro_electoral || '-', 'Mesas', j.mesas || '-']);
@@ -2385,7 +2357,7 @@
         }
 
         function fichaDeUnJefe(cedula) {
-            const j = getJefesArray().find(x => String(x.cedula) === String(cedula));
+            const j = getJefesArray().find(x => String(x._clave1x10) === String(cedula));
             if (!j) { alert('No se encontró ese jefe 1x10.'); return; }
             const slug = String(j.cedula || 'jefe').replace(/[^0-9A-Za-z]/g, '');
             generarPdfFichas([j], ARCHIVO_1x10 + '_ficha_' + slug + '.pdf', 'imprimir');
@@ -3176,6 +3148,6 @@
             }
         }
 </script>
-<script type="module" src="1x10-vinculos.mjs?v=20261016-integracion"></script>
+<script type="module" src="1x10-vinculos.mjs?v=20261016-global"></script>
 </body>
 </html>
