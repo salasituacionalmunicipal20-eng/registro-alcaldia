@@ -213,8 +213,8 @@
   <script src="autofresh.js"></script>
   <script type="module">
     import {crearPDFConsulta,mostrarPDFConsulta,seccionesPorTerritorio} from './consulta-popular-pdf.mjs?v=20261016-completo';
-    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261016-completo';
-    import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
+    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261016-integracion';
+    import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261016-integracion';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
@@ -342,7 +342,7 @@
       const centros = [...new Set(filas.map(x=>x.centro))].sort((a,b)=>a.localeCompare(b,'es'));
       opciones('centro', centros, 'Todos los centros');
       if (centros.includes(centroActual)) $('centro').value = centroActual;
-      llenarJefes(); pintar(); sincronizarDirectorio();
+      llenarJefes(); pintar();
     }
     function listaFiltrada() {
       const centro=$('centro').value, q=normalizar($('buscarPersona').value), estado=$('estadoFiltro').value;
@@ -351,7 +351,10 @@
       return base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || normalizar(`${p.nombre} ${p.nacionalidad}${p.cedula} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`).includes(q)) && (!edad || grupoEdadPersona(p) === edad));
     }
     function pintar() {
-      if (!jefesListos || !afinesListos || !estadosListos) return;
+      if (!jefesListos || !afinesListos || !estadosListos) {
+        for(const id of ['total','asistieron','noAsistieron','pendientes'])$(id).textContent='—';
+        $('imprimirLista').disabled=$('imprimirTerritorio').disabled=true;return;
+      }
       filtroEdad = $('edadFiltro').value;
       $('imprimirLista').disabled = $('imprimirTerritorio').disabled = false;
       const filtradas=listaFiltrada();
@@ -425,7 +428,7 @@
       $('filas').innerHTML='<tr><td colspan="7">Cargando estados de la jornada…</td></tr>';
       detenerEstados=onValue(ref(database,`asistencia_centros/${claveDia()}`),snap=>{
         estados=snap.val()||{}; estadosListos=true; pintar();
-      },err=>{ estadosListos=false; aviso('mensajeLista',`No se pudieron leer los estados: ${err.message}`,true); });
+      },err=>{ estadosListos=false;pintar(); aviso('mensajeLista',`No se pudieron leer los estados: ${err.message}`,true); });
     }
     function personasComunidad() {
       return conAsistencia(personasUnicas.filter(p => p.id && (!$('edadFiltro').value || grupoEdadPersona(p) === $('edadFiltro').value)), estados)
@@ -558,35 +561,7 @@
       finally {boton.disabled=false;}
     });
 
-    async function sincronizarDirectorio() {
-      try {
-        const ultimo = Number(localStorage.getItem('directorio1x10_actualizado') || 0);
-        if (Date.now() - ultimo < 15 * 60 * 1000) return;
-        localStorage.setItem('directorio1x10_actualizado', String(Date.now()));
-        const esperado = new Map();
-        for (const p of personasUnicas) {
-          if (!p.id) continue;
-          esperado.set(p.id, { nombre: p.nombre, comuna: p.comuna, comunidad: p.comunidad, centro: p.centro });
-        }
-        const snap = await get(child(ref(database), 'directorio_1x10'));
-        const actual = snap.val() || {};
-        const rutas = [];
-        let sinEspacio = false;
-        for (const [id, dato] of esperado) {
-          const previo = actual[id];
-          if (previo && previo.nombre === dato.nombre && previo.comuna === dato.comuna && previo.comunidad === dato.comunidad && previo.centro === dato.centro) continue;
-          rutas.push(['directorio_1x10/' + id, dato]);
-          if (rutas.length >= 2000) { sinEspacio = true; break; }
-        }
-        if (!sinEspacio) for (const id of Object.keys(actual)) if (!esperado.has(id)) rutas.push(['directorio_1x10/' + id, null]);
-        if (!rutas.length) return;
-        for (let i = 0; i < rutas.length; i += 300) await update(ref(database), Object.fromEntries(rutas.slice(i, i + 300)));
-        console.info(`Directorio 1x10 del enlace público sincronizado: ${rutas.length} cambio(s).`);
-      } catch (e) {
-        console.warn('No se pudo sincronizar el directorio del enlace público:', e.message);
-      }
-    }
-
+    // El directorio se comprueba desde 1x10-vinculos.mjs en todos los paneles.
     onAuthStateChanged(auth,async user=>{
       if(!user){location.href='index.html';return;}
       let permitido=user.email==='carlos.admin@alcaldia.com';
@@ -600,7 +575,7 @@
       for(const sufijo of SISTEMAS_1X10) for(const tipo of ['jefes','afines']) {
         const nodo=tipo+'_1x10'+sufijo;
         onValue(ref(database,nodo),snap=>{fuentes[sufijo][tipo]=snap.val()||{};if(!sufijo&&tipo==='jefes')jefes=fuentes[sufijo].jefes;nodosListos.add(nodo);reconstruir();},err=>{
-          nodosListos.delete(nodo);jefesListos=afinesListos=false;$('total').textContent='—';$('filas').replaceChildren();aviso('mensajeLista',`No se cargó ${nodo}: ${err.message}`,true);
+          nodosListos.delete(nodo);jefesListos=afinesListos=false;pintar();$('total').textContent='—';$('filas').replaceChildren();aviso('mensajeLista',`No se cargó ${nodo}: ${err.message}`,true);
         });
       }
       escucharEstados();
@@ -648,5 +623,6 @@ $('filasPublicas').addEventListener('click', evt => {
 // Sincronización inmediata de la lista al cargar la página.
 pintarPublicas();
   </script>
+<script type="module" src="1x10-vinculos.mjs?v=20261016-integracion"></script>
 </body>
 </html>

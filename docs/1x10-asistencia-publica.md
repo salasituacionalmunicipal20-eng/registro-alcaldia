@@ -31,7 +31,7 @@ El panel `1x10-asistencia.html` muestra debajo de la lista principal una secció
 `directorio_1x10` se genera con `consolidarPersonas` (las mismas siete variantes y equivalencias que los tableros):
 
 - Poblado y corregido con `node scripts/sincronizar-directorio-1x10.mjs` (usa la clave de administrador y verifica lo escrito leyendo de vuelta).
-- El panel `1x10-asistencia.html` lo refresca solo con las diferencias, como máximo una vez cada 15 minutos por navegador y sin bloquear la interfaz.
+- Los trece paneles administrativos comprueban el directorio mediante `1x10-vinculos.mjs`, al completar las siete variantes y al recibir cambios. Actualizan solamente fichas diferentes mediante transacciones, releen el resultado y avisan de errores. No borran fichas automáticamente. La sincronización requiere un panel administrativo abierto y conectado. Véase `docs/1x10-integracion-conteos.md`.
 
 ## Reglas de Firebase publicadas
 

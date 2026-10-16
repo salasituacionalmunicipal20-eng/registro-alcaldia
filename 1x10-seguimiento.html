@@ -105,8 +105,8 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
     import { getDatabase, ref, get, child, onValue, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
-    import { resumirRegistro, sumarFilas, agruparComunidades, SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
-    import { crearInforme } from './1x10-seguimiento-pdf.mjs?v=20261015-milagro-i';
+    import { resumirRegistro, sumarFilas, agruparComunidades, SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261016-integracion';
+    import { crearInforme } from './1x10-seguimiento-pdf.mjs?v=20261016-integracion';
     import { nombreTerritorial, contarCentrosElectorales } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
     // La configuración del cliente Firebase es pública; se comparte con las páginas existentes.
     const app = initializeApp({apiKey:'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',authDomain:'alcaldia-admin.firebaseapp.com',databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com',projectId:'alcaldia-admin',storageBucket:'alcaldia-admin.firebasestorage.app',messagingSenderId:'945828226894',appId:'1:945828226894:web:0efeebeb270357e6f5201f'});
@@ -139,5 +139,6 @@
     });
     onAuthStateChanged(auth,async user=>{for(const stop of detener)stop();detener=[];listos.clear();errorLectura=false;$('contenido').classList.add('oculto');if(!user){location.href='index.html';return;}let permitido=user.email==='carlos.admin@alcaldia.com';if(!permitido){try{const s=await get(child(ref(database),`operadores/${user.uid}/rol`));permitido=s.val()==='admin';}catch(e){permitido=false;}}$('cargando').classList.add('oculto');if(!permitido){$('restringido').classList.remove('oculto');return;}usuario=user;$('contenido').classList.remove('oculto');detener.push(onValue(ref(database,'.info/connected'),s=>{conectado=s.val()===true;estado();}));for(const [nodo,poner] of [...nodos,[NODO,v=>cargas=v]])detener.push(onValue(ref(database,nodo),s=>{poner(s.val()||{});listos.add(nodo);reconstruir();},err=>{errorLectura=true;estado();$('mensaje').textContent='No se pudieron cargar los registros: '+err.message;$('mensaje').classList.remove('oculto');}));});
   </script>
+<script type="module" src="1x10-vinculos.mjs?v=20261016-integracion"></script>
 </body>
 </html>

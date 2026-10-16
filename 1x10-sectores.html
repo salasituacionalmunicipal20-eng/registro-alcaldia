@@ -119,6 +119,7 @@ footer{color:var(--tinta-3);font-size:12.5px;padding:18px 0 40px;text-align:cent
   header.barra a.btn, header.barra button.btn{flex:1 1 auto;justify-content:center}
 }
 </style>
+<script src="territorio-data.js?v=20261015-milagro-i"></script>
 </head>
 <body>
 
@@ -221,11 +222,11 @@ footer{color:var(--tinta-3);font-size:12.5px;padding:18px 0 40px;text-align:cent
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="logos-base64.js"></script>
-<script src="pdf-header.js"></script>
 <script src="autofresh.js"></script>
 
 <script type="module">
+import {dibujarHeaderPDF,dibujarFooterPDF} from './pdf-header.js?v=20261016-vertical';
+import {consolidarPersonas} from './asistencia-centros-datos.mjs?v=20261016-integracion';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
@@ -376,81 +377,43 @@ function estadoDe(cargados) {
    no trae en la base ni sector ni parroquia ni comuna: aquí se le pegan
    las del jefe con el que se cargó. */
 function rearmar() {
-  filas = [];
-  filasPersonas = [];
-  SECTORES.forEach(s => {
-    const d = datos[s.id];
-    if (!d || d.jefes === null) return;          // ese sector todavía no llegó
-    const af = d.afines || {};
-    Object.entries(d.jefes).forEach(([id, j]) => {
-      const susAfines = af[id] || {};
-      const cargados = Object.keys(susAfines).length;
-      const estado = estadoDe(cargados);
-      const nombreJefe = `${(j.nombres || '').trim()} ${(j.apellidos || '').trim()}`.trim() || '(sin nombre)';
-      const comun = {
-        sectorId: s.id, sector: s.nombre,
-        parroquia: j.parroquia || '', comuna: j.circuito || '',
-        comunidad: j.comunidad_nombre || '', centro: j.centro_electoral || '',
-        estado
-      };
-
-      /* El id de Firebase de un jefe ES su cedula, y una misma persona
-         puede ser jefe de patrulla en mas de un sector a la vez (11
-         casos hoy: alguien inscrito en el 1x10 general Y en el de
-         Empleados, por ejemplo). El sector va delante del id para que
-         esos dos registros nunca se confundan como si fueran uno. */
-      const idFila = s.id + '/' + id;
-
-      filas.push({
-        id: idFila, ...comun,
-        nombre: nombreJefe,
-        cedula: (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
-        telefono: j.telefono || '',
-        afines: cargados
-      });
-
-      filasPersonas.push({
-        ...comun, id: idFila,
-        tipo: 'Jefe', tipoOrden: 0,
-        nombre: nombreJefe,
-        cedula: (j.nacionalidad ? j.nacionalidad + '-' : '') + (j.cedula || ''),
-        telefono: j.telefono || '',
-        genero: fmtGenero(j.genero),
-        edad: calcularEdad(j.fecha_nacimiento),
-        perteneceA: '\u2014'
-      });
-
-      Object.entries(susAfines)
-        .sort((a, b) => (a[1].orden || 0) - (b[1].orden || 0))
-        .forEach(([aid, a]) => {
-          filasPersonas.push({
-            ...comun, id: idFila + '/' + aid,
-            tipo: 'Af\u00edn', tipoOrden: 1,
-            nombre: `${(a.nombres || '').trim()} ${(a.apellidos || '').trim()}`.trim() || '(sin nombre)',
-            cedula: (a.nacionalidad ? a.nacionalidad + '-' : '') + (a.cedula || ''),
-            telefono: a.telefono || '',
-            genero: fmtGenero(a.genero),
-            edad: calcularEdad(a.fecha_nacimiento),
-            perteneceA: nombreJefe
-          });
-        });
-    });
-  });
-  pintarTotales();
-  pintarSectores();
-  refrescarOpciones();
-  pintarTabla();
+  const listo=SECTORES.every(s=>datos[s.id]?.jefes!=null&&datos[s.id]?.afines!=null&&!datos[s.id]?.error);
+  $('btnExcel').disabled=$('btnPdf').disabled=!listo;
+  if(!listo){
+    $('totales').innerHTML=tarjeta('—','Esperando la carga completa de los siete sectores');
+    $('sectores').textContent=SECTORES.some(s=>datos[s.id]?.error)?'No se pudieron cargar todas las fuentes. Recarga para reintentar.':'Cargando jefes y afines…';
+    return;
+  }
+  filas=[];filasPersonas=[];
+  for(const sector of SECTORES){
+    const d=datos[sector.id],r=consolidarPersonas([{...d,sufijo:sector.suf}],window.TERRITORIO?.comunidades||{});
+    for(const [id,j] of Object.entries(d.jefes)){
+      const p=r.registrosLista.find(p=>p.esJefe&&p.registroId===id);
+      const afines=Object.keys(d.afines[id]||{}).length;
+      filas.push({id:sector.id+'/'+id,sectorId:sector.id,sector:sector.nombre,parroquia:j.parroquia||'',comuna:p.comuna,comunidad:p.comunidad,centro:p.centro,estado:estadoDe(afines),nombre:p.nombre,cedula:p.nacionalidad+'-'+p.cedula,telefono:p.telefono,afines});
+    }
+    for(const [id,grupo] of Object.entries(d.afines))if(!Object.hasOwn(d.jefes,id)){
+      filas.push({id:sector.id+'/'+id,sectorId:sector.id,sector:sector.nombre,parroquia:'',comuna:'Sin comuna registrada',comunidad:'Sin comunidad registrada',centro:'Sin centro registrado',estado:estadoDe(Object.keys(grupo||{}).length),nombre:'Ficha de jefe no registrada',cedula:id,telefono:'',afines:Object.keys(grupo||{}).length,sinFicha:true});
+    }
+    for(const p of r.registrosLista){
+      const jefe=String(p.jefeId),id=sector.id+'/'+jefe;
+      const original=p.esJefe?d.jefes[p.registroId]:d.afines[jefe]?.[p.registroId];
+      const cargados=Object.keys(d.afines[jefe]||{}).length;
+      filasPersonas.push({sectorId:sector.id,sector:sector.nombre,parroquia:original?.parroquia||d.jefes[jefe]?.parroquia||'',comuna:p.comuna,comunidad:p.comunidad,centro:p.centro,estado:estadoDe(cargados),id:p.esJefe?id:id+'/'+p.registroId,tipo:p.esJefe?'Jefe':'Afín',tipoOrden:p.esJefe?0:1,nombre:p.nombre,cedula:p.nacionalidad+'-'+p.cedula,telefono:p.telefono,genero:fmtGenero(p.sexo),edad:calcularEdad(p.fecha_nacimiento),perteneceA:p.esJefe?'—':p.nombreJefe||'Ficha de jefe no registrada'});
+    }
+  }
+  pintarTotales();pintarSectores();refrescarOpciones();pintarTabla();
 }
 
 /* ──────────────────────────────────────────────────────────
    LAS CIFRAS DE ARRIBA
    ────────────────────────────────────────────────────────── */
 function resumenDe(lista) {
-  const jefes = lista.length;
+  const jefes = lista.filter(f=>!f.sinFicha).length;
   const afines = lista.reduce((t, f) => t + f.afines, 0);
-  const completos = lista.filter(f => f.afines >= META).length;
-  const medias = lista.filter(f => f.afines > 0 && f.afines < META).length;
-  const ceros = lista.filter(f => f.afines === 0).length;
+  const completos = lista.filter(f => !f.sinFicha && f.afines >= META).length;
+  const medias = lista.filter(f => !f.sinFicha && f.afines > 0 && f.afines < META).length;
+  const ceros = lista.filter(f => !f.sinFicha && f.afines === 0).length;
   return {
     jefes, afines, completos, medias, ceros,
     total: jefes + afines,
@@ -465,7 +428,7 @@ function resumenDe(lista) {
 function pintarTotales() {
   const r = resumenDe(filas);
   $('totales').innerHTML =
-    tarjeta(num(r.total), 'personas en el 1x10', 'destaca') +
+    tarjeta(num(r.total), 'registros en el 1x10', 'destaca') +
     tarjeta(num(r.jefes), 'jefes de patrulla') +
     tarjeta(num(r.afines), 'gente cargada') +
     tarjeta(num(r.completos), 'jefes con sus 10 completos') +
@@ -479,7 +442,7 @@ function pintarSectores() {
     const lista = filas.filter(f => f.sectorId === s.id);
     const r = resumenDe(lista);
     const d = datos[s.id] || {};
-    const cargando = d.jefes === null;
+    const cargando = d.jefes === null || d.afines === null;
     return `<div class="sec${r.jefes ? '' : ' vacio'}">
       <div class="sec-cab">
         <div class="sec-nom">${esc(s.nombre)}<em>${esc(s.detalle)}</em></div>
@@ -763,7 +726,7 @@ function bajarExcel() {
     ? `${lista.filter(f => f.tipo === 'Jefe').length} jefes · ` +
       `${lista.filter(f => f.tipo === 'Af\u00edn').length} af\u00ednes · ${lista.length} filas`
     : (() => { const r = resumenDe(lista);
-        return `${lista.length} jefes · ${r.afines} personas cargadas · ${r.completos} completos`; })();
+        return `${resumenDe(lista).jefes} jefes · ${r.afines} personas cargadas · ${r.completos} completos`; })();
   const aoa = [
     ['1x10 POR SECTORES - ALCALDIA DE CRISTOBAL ROJAS' +
       (vista === 'personas' ? ' (CON LOS AFINES)' : '')],
@@ -815,7 +778,7 @@ function bajarPdf() {
 
   doc.setFontSize(10);
   doc.setTextColor(60, 60, 60);
-  doc.text(`${lista.length} jefes de patrulla · ${r.afines} personas cargadas · ` +
+  doc.text(`${resumenDe(lista).jefes} jefes de patrulla · ${r.afines} personas cargadas · ` +
            `${r.completos} completos · ${r.avance}% de la meta`, 14, y);
   y += 6;
 
@@ -865,5 +828,6 @@ function bajarPdf() {
   doc.save(`1x10_por_sectores_${new Date().toISOString().slice(0,10)}.pdf`);
 }
 </script>
+<script type="module" src="1x10-vinculos.mjs?v=20261016-integracion"></script>
 </body>
 </html>

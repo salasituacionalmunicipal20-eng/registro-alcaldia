@@ -1,3 +1,4 @@
+import {identidad} from './1x10-identidad.mjs?v=20261016-integracion';
 // Este módulo produce cantidades; las identidades no salen en el resultado.
 import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
 export const SIN_COMUNA = 'Sin comuna asignada';
@@ -45,10 +46,7 @@ export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}
   let relaciones = 0, sinIdentidad = 0, huerfanos = 0;
   function agregar(id, p, j, esJefe) {
     relaciones++;
-    const identificador = texto(p.cedula || (/^\d+$/.test(id) ? id : ''));
-    const cedula = identificador.replace(/^[VEve][\s-]*/, '').replace(/[\s.-]/g, '');
-    const nacionalidad = texto(p.nacionalidad || (/^E/i.test(identificador) ? 'E' : 'V')).toUpperCase();
-    const clave = `${nacionalidad}:${cedula.replace(/^0+(?=\d)/, '')}`;
+    const quien=identidad(id,p),clave=quien?.id;
     const propia = catalogo[p.comunidad_slug] || {};
     const delJefe = catalogo[j.comunidad_slug] || {};
     const comuna = canonico(p.comuna || p.circuito || propia.circuito_comunal || j.comuna || j.circuito || delJefe.circuito_comunal, comunasCanonicas, SIN_COMUNA);
@@ -58,7 +56,7 @@ export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}
     const comunidad = canonico(p.comunidad_nombre || p.comunidad || propia.nombre || (!propiaIndicada && comuna===comunaJefe ? j.comunidad_nombre || j.comunidad || delJefe.nombre : ''),comunidadesCanonicas,SIN_COMUNIDAD);
     const dato = { comuna, centro, comunidad, fecha: texto(p.fecha_nacimiento), esJefe };
     registros.push(dato);
-    if (!/^\d{4,10}$/.test(cedula)) { sinIdentidad++; return; }
+    if (!quien) { sinIdentidad++; return; }
     if (!personas.has(clave)) personas.set(clave, []);
     personas.get(clave).push(dato);
   }
@@ -91,10 +89,9 @@ export function resumirRegistro(jefes, afines, catalogo, corte, adicionales = {}
     // La ubicación propia del jefe tiene prioridad sobre ubicaciones heredadas.
     const propios = datos.filter(p => p.esJefe);
     const ubicaciones = propios.length ? propios : datos;
-    const comunas = [...new Set(ubicaciones.map(p => p.comuna).filter(c => c !== SIN_COMUNA))];
-    const centros = [...new Set(ubicaciones.map(p => p.centro).filter(c => c !== SIN_CENTRO))];
-    const conflicto = comunas.length > 1 || centros.length > 1;
-    if (conflicto) ubicacionesEnConflicto++;
+    const lugares=[...new Map(ubicaciones.map(p=>[JSON.stringify([p.comuna,p.comunidad,p.centro]),p])).values()];
+    const completos=lugares.filter(p=>p.comuna!==SIN_COMUNA&&p.comunidad!==SIN_COMUNIDAD);
+    if((completos.length?completos:lugares).length>1)ubicacionesEnConflicto++;
     const fechas = [...new Set(datos.map(p => p.fecha).filter(f => edadEn(f, corte) !== null))];
     if (fechas.length > 1) fechasEnConflicto++;
   }

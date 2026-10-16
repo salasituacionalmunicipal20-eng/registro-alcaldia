@@ -54,6 +54,7 @@
         .hint { font-size: 12px; color: #64748b; margin-top: 4px; }
     </style>
     <script src="autofresh.js"></script>
+<script src="territorio-data.js?v=20261015-milagro-i"></script>
 </head>
 <body>
     <div class="topbar">
@@ -161,7 +162,8 @@
 
         const $ = (id) => document.getElementById(id);
         const escapeHtml = (s) => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-        const soloDigitos = (s) => (s || '').replace(/\D/g, '');
+        const soloDigitos = (s) => String(s ?? '').replace(/\D/g, '');
+        const cedulaComparable=s=>soloDigitos(s).replace(/^0+(?=\d)/,'');
         const primerNombre = (n) => (n || '').trim().split(/\s+/)[0] || 'compañero(a)';
 
         function normalizarTel(raw) {
@@ -174,6 +176,7 @@
         }
 
         let EMPLEADOS = [];               // de Supabase
+        let fuenteExternaLista=false;const erroresLectura1x10=new Set();
         const cedsPorPath = {};           // path -> [cedulas digitos]
         let CEDS_1X10 = new Set();        // union de todas las cedulas en 1x10
         let pagina = 1;
@@ -200,38 +203,46 @@
 
         async function cargarEmpleados() {
             try {
-                const resp = await fetch(`${SB_URL}/rest/v1/empleados?select=cedula,nombres,apellidos,departamento,cargo,telefono,activo&order=nombres.asc&limit=5000`,
-                    { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } });
-                const data = await resp.json();
+                const data=[];
+                for(let offset=0;;offset+=500){
+                    const resp=await fetch(`${SB_URL}/rest/v1/empleados?select=cedula,nombres,apellidos,departamento,cargo,telefono,activo&order=id.asc&limit=500&offset=${offset}`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${SB_KEY}`}});
+                    if(!resp.ok)throw Error('No se pudo leer la lista de empleados');
+                    const lote=await resp.json();if(!Array.isArray(lote))throw Error('Respuesta de empleados inválida');
+                    data.push(...lote);if(lote.length<500)break;
+                }
                 EMPLEADOS = (Array.isArray(data) ? data : []).filter(e => e.activo !== false).map(e => ({
-                    ...e, _ced: soloDigitos(e.cedula),
+                    ...e, _ced: cedulaComparable(e.cedula),
                     _nombre: `${(e.nombres||'').trim()} ${(e.apellidos||'').trim()}`.trim() || '(sin nombre)'
                 }));
                 // llenar filtro de direcciones
                 const dirs = [...new Set(EMPLEADOS.map(e => e.departamento).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
                 const sel = $('fDir');
                 dirs.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
-                render();
+                fuenteExternaLista=true;render();
             } catch (e) {
+                erroresLectura1x10.add('empleados');render();
                 $('tbody').innerHTML = `<tr><td colspan="6" class="estado-box error">No se pudieron cargar los empleados (${escapeHtml(e.message||'')}).</td></tr>`;
             }
         }
 
         function escuchar1x10() {
+            render();
             for (const [jefesPath, afinesPath] of SISTEMAS_1X10) {
                 onValue(ref(database, jefesPath), (snap) => {
                     const v = snap.val() || {};
-                    cedsPorPath[jefesPath] = Object.keys(v).map(soloDigitos).filter(Boolean);
+                    erroresLectura1x10.delete(jefesPath);
+                    cedsPorPath[jefesPath] = Object.entries(v).map(([id,p])=>cedulaComparable(p?.cedula||id)).filter(Boolean);
                     recomputar();
-                }, () => { cedsPorPath[jefesPath] = []; recomputar(); });
+                }, () => { erroresLectura1x10.add(jefesPath); render(); });
 
                 onValue(ref(database, afinesPath), (snap) => {
                     const v = snap.val() || {};
                     const arr = [];
-                    Object.values(v).forEach(grupo => Object.keys(grupo || {}).forEach(cedAfin => arr.push(soloDigitos(cedAfin))));
+                    erroresLectura1x10.delete(afinesPath);
+                    Object.values(v).forEach(grupo => Object.entries(grupo || {}).forEach(([id,p]) => arr.push(cedulaComparable(p?.cedula||id))));
                     cedsPorPath[afinesPath] = arr.filter(Boolean);
                     recomputar();
-                }, () => { cedsPorPath[afinesPath] = []; recomputar(); });
+                }, () => { erroresLectura1x10.add(afinesPath); render(); });
             }
         }
 
@@ -246,11 +257,18 @@
         }
 
         function render() {
+            const listo=fuenteExternaLista&&Object.keys(cedsPorPath).length===SISTEMAS_1X10.length*2&&!erroresLectura1x10.size;
+            for(const b of document.querySelectorAll('#btnExportarEmpleados,#btnExportarExcel,#btnPdfSin,#btnPdfCon'))b.disabled=!listo;
+            if(!listo){
+                for(const id of ['stTotal','stFaltan','stHechos'])$(id).textContent='—';
+                $('tbody').innerHTML='<tr><td colspan="6">'+(erroresLectura1x10.size?'No se pudieron cargar todas las fuentes. Recarga para reintentar.':'Cargando el registro completo y las siete variantes del 1x10…')+'</td></tr>';return;
+            }
             const falt = faltantes();
             // KPIs
             $('stTotal').textContent = EMPLEADOS.length;
             $('stFaltan').textContent = falt.length;
-            $('stHechos').textContent = EMPLEADOS.length - falt.length;
+            $('stHechos').textContent = EMPLEADOS.filter(e=>e._ced&&CEDS_1X10.has(e._ced)).length;
+            let aviso=$('empleadosSinIdentidad');if(!aviso){aviso=document.createElement('p');aviso.id='empleadosSinIdentidad';$('tbody').closest('table').before(aviso);}const sinIdentidad=EMPLEADOS.filter(e=>!e._ced).length;aviso.textContent=sinIdentidad?sinIdentidad+' empleados sin cédula: pendientes de verificar, no se cuentan como registrados.':'';
 
             // filtros
             const q = ($('fBuscar').value || '').trim().toLowerCase();
@@ -531,5 +549,6 @@
             }
         }
 </script>
+<script type="module" src="1x10-vinculos.mjs?v=20261016-integracion"></script>
 </body>
 </html>

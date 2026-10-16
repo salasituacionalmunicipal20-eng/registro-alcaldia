@@ -320,6 +320,7 @@
     </style>
     <script src="autofresh.js"></script>
     <script src="1x10-impresion.js?v=20261009edad"></script>
+<script src="territorio-data.js?v=20261015-milagro-i"></script>
 </head>
 <body>
     <div class="cintillo-gob">REPÚBLICA BOLIVARIANA DE VENEZUELA | ESTADO MIRANDA | ALCALDÍA DE CRISTÓBAL ROJAS</div>
@@ -372,7 +373,7 @@
                     <div class="kpi-sub">Suma de afines de todos los jefes</div>
                 </div>
                 <div class="kpi morado">
-                    <div class="kpi-titulo">Total Personas</div>
+                    <div class="kpi-titulo">Total registros</div>
                     <div class="kpi-valor" id="kpiTotal">—</div>
                     <div class="kpi-sub">Jefes + Afines</div>
                 </div>
@@ -545,6 +546,7 @@
     </div>
 
     <script type="module">
+        import {normalizarFicha1x10,resumirVariante1x10} from './1x10-integracion-datos.mjs?v=20261016-integracion';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import {
             getAuth, onAuthStateChanged, signOut
@@ -569,6 +571,7 @@
         const database = getDatabase(app);
 
         // ── Estado global
+        const fuentesCargadas1x10=new Set(),fuentesErrores1x10=new Set();
         let jefesMap = {};      // { cedulaJefe: {...payload jefe} }
         let afinesMap = {};     // { cedulaJefe: { cedulaAfin: {...payload} } }
         let unsubJefes = null;
@@ -795,15 +798,18 @@
         // LISTENERS REACTIVOS sobre /jefes_1x10_empleados y /afines_1x10_empleados
         // ──────────────────────────────────────────────────────────
         function iniciarListeners() {
+            fuentesCargadas1x10.clear();fuentesErrores1x10.clear();refrescarUI();
             unsubJefes = onValue(ref(database, 'jefes_1x10_empleados'), (snap) => {
                 jefesMap = {};
                 if (snap.exists()) {
                     snap.forEach(child => {
-                        jefesMap[child.key] = child.val() || {};
+                        jefesMap[child.key] = normalizarFicha1x10(child.val() || {},window.TERRITORIO?.comunidades||{});
                     });
                 }
+                fuentesCargadas1x10.add('jefes');fuentesErrores1x10.delete('jefes');
                 refrescarUI();
             }, (err) => {
+                fuentesErrores1x10.add('jefes');refrescarUI();
                 console.error('Error leyendo /jefes_1x10_empleados:', err);
                 $('tbodyJefes').innerHTML = `<tr><td colspan="13" class="cargando" style="color:#E30613;">No se pudo cargar la lista de jefes (${escapeHtml(err.message || err.code || 'desconocido')}).</td></tr>`;
             });
@@ -814,13 +820,15 @@
                     snap.forEach(child => {
                         const grupo = {};
                         child.forEach(afinSnap => {
-                            grupo[afinSnap.key] = afinSnap.val() || {};
+                            grupo[afinSnap.key] = normalizarFicha1x10(afinSnap.val() || {},window.TERRITORIO?.comunidades||{});
                         });
                         afinesMap[child.key] = grupo;
                     });
                 }
+                fuentesCargadas1x10.add('afines');fuentesErrores1x10.delete('afines');
                 refrescarUI();
             }, (err) => {
+                fuentesErrores1x10.add('afines');refrescarUI();
                 // No silenciar: si esto falla, los KPIs van a mostrar 0 afines
                 // y daria la impresion erronea de que no hay registros. Marcar
                 // los KPIs afectados como "?" y avisar visiblemente al admin.
@@ -849,6 +857,13 @@
         // RENDER COMPLETO (KPIs + filtros en cascada + tabla)
         // ──────────────────────────────────────────────────────────
         function refrescarUI() {
+            const listo=fuentesCargadas1x10.size===2&&!fuentesErrores1x10.size;
+            for(const b of document.querySelectorAll('#btnPdfCentro,#btnPdfComuna,#btnCsv,#btnExportarExcel,#btnPdfAsistencia,#btnPdfAsistenciaCentro,#btnPdfFichas,#btnPdfResumen'))b.disabled=!listo;
+            if(!listo){
+                for(const e of document.querySelectorAll('[id^="kpi"]'))e.textContent='—';
+                $('tbodyJefes').innerHTML='<tr><td colspan="12">'+(fuentesErrores1x10.size?'No se pudieron cargar todos los registros. Recarga para reintentar.':'Cargando jefes y afines completos…')+'</td></tr>';
+                return;
+            }
             actualizarKPIs();
             actualizarFiltrosCascada();
             actualizarBannerFiltroEdad();
@@ -894,11 +909,11 @@
             return Object.entries(jefesMap).map(([cedula, j]) => {
                 const afinesObj = afinesMap[cedula] || {};
                 const afinesList = Object.entries(afinesObj).map(([cedAfin, a]) => ({
-                    cedula: cedAfin, ...a
+                    cedula: cedAfin, ...normalizarFicha1x10(a,window.TERRITORIO?.comunidades||{})
                 })).sort((a, b) => (a.orden || 99) - (b.orden || 99));
                 return {
                     cedula,
-                    ...j,
+                    ...normalizarFicha1x10(j,window.TERRITORIO?.comunidades||{}),
                     _afines: afinesList,
                     _afinesCount: afinesList.length
                 };
@@ -908,14 +923,17 @@
         function actualizarKPIs() {
             const jefes = getJefesArray();
             const totalJefes = jefes.length;
-            const totalAfines = jefes.reduce((acc, j) => acc + j._afinesCount, 0);
+            const resumenSector=resumirVariante1x10(jefesMap,afinesMap,window.TERRITORIO?.comunidades||{});
+            const totalAfines = resumenSector.afines;
+            let integridad=$('integridadVariante1x10');if(!integridad){integridad=document.createElement('p');integridad.id='integridadVariante1x10';$('tablaJefes').parentElement.before(integridad);}
+            integridad.textContent=`Totales de este sector: ${resumenSector.diagnostico.registros.toLocaleString('es-VE')} registros · ${resumenSector.diagnostico.personas.toLocaleString('es-VE')} personas únicas · ${resumenSector.huerfanos} afines sin ficha de jefe, incluidos en el total. Los indicadores generales no cambian al filtrar la tabla.`;
             const completos = jefes.filter(j => j._afinesCount >= 10).length;
             // Promedio afines/jefe (1 decimal). Si no hay jefes, mostrar 0.0
             const promedio = totalJefes ? (totalAfines / totalJefes) : 0;
             const promedioTxt = promedio.toLocaleString('es-VE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-            const comunidadesSet = new Set(jefes.map(j => j.comunidad_slug || j.comunidad_nombre).filter(Boolean));
-            const centrosSet = new Set(jefes.map(j => j.centro_electoral).filter(Boolean));
+            const comunidadesSet = new Set(resumenSector.registrosLista.filter(p=>p.comunidad!=='Sin comunidad registrada').map(p=>JSON.stringify([p.comuna,p.comunidad])));
+            const centrosSet = new Set(resumenSector.registrosLista.map(p=>p.centro).filter(c=>c!=='Sin centro registrado'));
 
             // Conteo de genero (M / F) sumando jefes + sus afines. Los registros
             // viejos pueden no tener `genero` — se ignoran en ambos conteos.
@@ -923,22 +941,13 @@
             // Conteo por rango etario (jefes + afines con fecha valida). Los
             // registros sin fecha_nacimiento NO se cuentan en ningun rango.
             let c15a17 = 0, c18a35 = 0, c36mas = 0;
-            jefes.forEach(j => {
-                if (j.genero === 'M') hombres++;
-                else if (j.genero === 'F') mujeres++;
-                const r = rangoEdad(j.fecha_nacimiento);
-                if (r === "15a17") c15a17++;
-                else if (r === "18a35") c18a35++;
-                else if (r === "36mas") c36mas++;
-                (j._afines || []).forEach(a => {
-                    if (a.genero === 'M') hombres++;
-                    else if (a.genero === 'F') mujeres++;
-                    const rr = rangoEdad(a.fecha_nacimiento);
-                    if (rr === "15a17") c15a17++;
-                    else if (rr === "18a35") c18a35++;
-                    else if (rr === "36mas") c36mas++;
-                });
-            });
+            for(const p of resumenSector.registrosLista){
+                const sexo=String(p.sexo||'').trim().toUpperCase();
+                if(['M','MASCULINO'].includes(sexo))hombres++;
+                else if(['F','FEMENINO'].includes(sexo))mujeres++;
+                const r=rangoEdad(p.fecha_nacimiento);
+                if(r==='15a17')c15a17++;else if(r==='18a35')c18a35++;else if(r==='36mas')c36mas++;
+            }
 
             $('kpiJefes').textContent = totalJefes.toLocaleString('es-VE');
             $('kpiAfines').textContent = totalAfines.toLocaleString('es-VE');
@@ -3204,5 +3213,6 @@
             }
         }
 </script>
+<script type="module" src="1x10-vinculos.mjs?v=20261016-integracion"></script>
 </body>
 </html>

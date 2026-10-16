@@ -1,16 +1,12 @@
-import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
+import {identidad} from './1x10-identidad.mjs?v=20261016-integracion';
+import { SISTEMAS_1X10 } from './1x10-seguimiento-datos.mjs?v=20261016-integracion';
 import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
 export { SISTEMAS_1X10 };
 export const ESTADOS = { pendiente:'Pendiente', asistio:'Sí asistió', no_asistio:'No asistió' };
 const texto = v => String(v ?? '').trim().replace(/\s+/g,' ');
 export const normalizar = v => texto(v).normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleUpperCase('es');
 
-export function identidad(id, p) {
-  const original=texto(p.cedula || (/^[VE]?[-\s]?\d+$/i.test(id) ? id : ''));
-  const cedula=original.replace(/^[VE][-\s]*/i,'').replace(/[.\s-]/g,'').replace(/^0+(?=\d)/,'');
-  const nacionalidad=texto(p.nacionalidad || (/^E/i.test(original)?'E':'V')).toUpperCase();
-  return /^\d{4,10}$/.test(cedula) && /^[VE]$/.test(nacionalidad) ? {id:nacionalidad+'_'+cedula,cedula,nacionalidad} : null;
-}
+export {identidad} from './1x10-identidad.mjs?v=20261016-integracion';
 
 export function consolidarPersonas(sistemas, catalogo={}) {
   const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map(), canonCentros=new Map();

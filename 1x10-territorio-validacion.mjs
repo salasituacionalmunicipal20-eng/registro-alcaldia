@@ -7,7 +7,7 @@ export const comunaCorregida = valor => nombreTerritorial(valor, 'comuna');
 export function prepararCatalogo1x10(catalogo) {
     const comunidades = Object.fromEntries(Object.entries(catalogo.comunidades || {})
         .filter(([, c]) => c.activo && !esGenerico(c.nombre) && !esGenerico(c.circuito_comunal))
-        .map(([slug, c]) => [slug, {...c, circuito_comunal:comunaCorregida(c.circuito_comunal),
+        .map(([slug, c]) => [slug, {...c, nombre:nombreTerritorial(c.nombre, 'comunidad'), circuito_comunal:comunaCorregida(c.circuito_comunal),
             centro_electoral:nombreTerritorial(c.centro_electoral, 'centro')} ]));
     return {...catalogo, comunidades};
 }
