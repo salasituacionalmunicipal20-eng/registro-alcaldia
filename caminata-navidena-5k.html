@@ -143,10 +143,10 @@
     <main class="wrap">
         <section class="intro" role="status"><h2 id="tituloInscripciones">Verificando disponibilidad…</h2><p id="detalleInscripciones">Estamos comprobando si las inscripciones están abiertas.</p></section>
         <div id="formWrap" hidden style="display:none !important">
-            <div class="intro"><b>Formulario de inscripción · sábado 5 de diciembre de 2026 · 05/12/2026.</b> Completa primero los datos del líder y agrega abajo a sus familiares. Cada persona tendrá su propia modalidad, talla, condición de discapacidad y planilla. Las fotografías son opcionales: puedes continuar sin agregarlas o subir hasta tres. Los campos marcados con * son obligatorios.</div>
+            <div class="intro"><b>Formulario de inscripción · sábado 5 de diciembre de 2026 · 05/12/2026.</b> Puedes inscribirte solo o con tu grupo familiar. Completa tus datos y, si vas acompañado, agrega abajo a tus familiares; quedarás como líder del grupo. Cada persona tendrá su propia modalidad, talla, condición de discapacidad y planilla. Las fotografías son opcionales: puedes continuar sin agregarlas o subir hasta tres. Los campos marcados con * son obligatorios.</div>
 
             <section class="card">
-                <h2>Líder o responsable del grupo familiar</h2>
+                <h2>Participante o líder del grupo familiar</h2>
                 <div class="sub">Al escribir la cédula, el nombre puede completarse automáticamente. Revisa los datos antes de continuar.</div>
                 <label for="cedula">Cédula *</label>
                 <input id="cedula" data-cne data-cne-solo-autocompletar data-cne-nombre="#nombre" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="Ejemplo: 12345678" />
@@ -197,9 +197,9 @@
                     <div class="fbox foto-oculta" id="cajaFoto3"><label class="fbtn"><span class="fplus">+</span><span class="fbtn-text">Agregar otra foto</span><span class="fdetalle">Foto 3 de 3 · opcional</span><input type="file" id="foto3" accept="image/*" capture="environment" /></label><img id="prev3" alt="Vista previa de la foto 3" /><button class="fquitar" type="button" data-foto="foto3" data-prev="prev3">Quitar foto</button></div>
                 </div>
             </section>
-            <section class="card"><h2>Grupo familiar</h2><p class="sub">El líder está registrado arriba. Agrega aquí a cada familiar con su propia cédula y datos. Puedes continuar solo con el líder si no hay familiares.</p><div id="familiares"></div><button id="agregarFamiliar" type="button">Agregar familiar</button></section>
+            <section class="card"><h2>Grupo familiar (opcional)</h2><p class="sub">Si te inscribes solo, no agregues familiares y pulsa Registrar. Si vas con tu familia, agrega aquí a cada integrante con su propia cédula y datos; tú quedarás como líder del grupo.</p><div id="familiares"></div><button id="agregarFamiliar" type="button">Agregar familiar</button></section>
             <section class="card"><h2>Antes de participar</h2><div class="requisitos" data-notas-evento></div>
-                <button id="enviar" class="btn" type="button">Registrar grupo familiar</button>
+                <button id="enviar" class="btn" type="button">Registrar</button>
                 <div id="msg" class="msg" role="alert"></div>
             </section>
         </div>
@@ -358,7 +358,7 @@
                 const duplicada = error?.code === 'PERMISSION_DENIED' || String(error?.message || '').toLowerCase().includes('permission');
                 mostrarError(duplicada ? 'No se pudo registrar el grupo. Una de las cédulas puede estar inscrita o las inscripciones pueden haber cerrado. Revisa los datos y comunícate con la organización; no se guardó una inscripción parcial.' : 'No se pudo completar el envío. Revisa tu conexión e intenta nuevamente; no se guardó una inscripción parcial.');
                 $('formWrap').querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=false);
-                $('enviar').disabled = INSCRIPCIONES_CERRADAS; $('enviar').textContent = 'Registrar grupo familiar';
+                $('enviar').disabled = INSCRIPCIONES_CERRADAS; $('enviar').textContent = 'Registrar';
             }
         });
         function prepararFotosImpresion(fotos, nombre, cedula) {
