@@ -25,6 +25,9 @@ const responsables=[{cedula:'900001',nombre:'Jefe A'},{cedula:'900002',nombre:'J
 const personasResponsables=[0,1,0].map((j,i)=>({nombre:'Persona '+i,comuna:'COMUNA',comunidad:'COMUNIDAD',jefe:responsables[j]}));
 const planillasResponsables=seccionesPorTerritorio(personasResponsables,personasResponsables.map((p,i)=>[i,p.nombre]),()=> 'adultos');
 assert.deepEqual(planillasResponsables.map(s=>[s.jefe.cedula,s.filas.map(f=>f[1])]),[['900001',['Persona 0','Persona 2']],['900002',['Persona 1']]]);
+const mixtos=[0,1,0,1].map((j,i)=>({nombre:'Persona '+i,comuna:'COMUNA',comunidad:'COMUNIDAD',jefe:responsables[j],grupo:i<2?'jovenes':'adultos'}));
+assert.deepEqual(seccionesPorTerritorio(mixtos,mixtos.map((p,i)=>[i,p.nombre]),p=>p.grupo).map(s=>[s.jefe.cedula,s.titulo]),[
+ ['900001','Jóvenes (15 a 35 años)'],['900001','Adultos (36 años en adelante)'],['900002','Jóvenes (15 a 35 años)'],['900002','Adultos (36 años en adelante)']]);
 for (const nombre of ['MILAGRO DE DIO I','EL MILAGRO DE DIOS I','MILAGRO DE DIOS I']) assert.equal(nombreTerritorial(nombre,'comunidad'),'MILAGRO DE DIOS I');
 assert.equal(nombreTerritorial('MILAGRO DE DIOS II','comunidad'),'MILAGRO DE DIOS II');
 const raiz=path.resolve(import.meta.dirname,'..');
@@ -143,8 +146,8 @@ try {
   await descargar('territorio-extenso-carta.pdf');
   await page.evaluate(async()=>{
     const {crearPDFConsulta,mostrarPDFConsulta}=await import('/consulta-popular-pdf.mjs');
-    const filas=Array.from({length:110},(_,i)=>[i+1,'PERSONA FICTICIA DE NOMBRE Y APELLIDO LARGOS '+i,'V-999'+String(i).padStart(7,'0'),'0000000000',i%2?'Masculino':'Femenino',25]);
-    mostrarPDFConsulta(crearPDFConsulta({tipo:'comunidad',titulo:'Personas por comunidad',jornada:'domingo 18 de octubre de 2026 · 18/10/2026',filtros:'Comuna: Comunidad de prueba · Estado: Todas',resumen:'110 personas ficticias para verificar distribución',encabezados:['N.º','Nombres y apellidos','Cédula','Teléfono','Sexo','Edad'],filas}),'comunidad-extensa.pdf');
+    const filas=Array.from({length:110},(_,i)=>[i+1,'PERSONA FICTICIA DE NOMBRE Y APELLIDO LARGOS '+i,'V-999'+String(i).padStart(7,'0')+'\nTipo: Afín\nLista: General','0000000000',(i%2?'Masculino':'Femenino')+'\n25 años','CENTRO ELECTORAL DE PRUEBA '+i]);
+    mostrarPDFConsulta(crearPDFConsulta({tipo:'comunidad',titulo:'Personas por comunidad',jornada:'domingo 18 de octubre de 2026 · 18/10/2026',filtros:'Comuna: Comunidad de prueba · Estado: Todas',resumen:'110 personas ficticias para verificar distribución',encabezados:['N.º','Nombres y apellidos','Cédula / Tipo / Lista','Teléfono','Sexo / Edad','Centro electoral'],filas}),'comunidad-extensa.pdf');
   });
   await descargar('comunidad-extensa-carta.pdf');
   console.log(JSON.stringify({impresionCompleta:151,filasVisiblesPorPagina:75,cuatroFiltrosCombinados:1,modalFiltrado:personas,jefesCorrectos:true,comunidadUnificada:true,sectorIIConservado:true,encabezadoAnteriorConservado:true,errores,ancho,salida}));

@@ -1,6 +1,7 @@
 """Compruebo el tamaño carta y los límites físicos de todos los PDF ficticios."""
 from pathlib import Path
 import json
+import re
 import fitz
 
 carpeta = Path(__file__).resolve().parents[1] / 'output/consulta-popular-pdf'
@@ -21,10 +22,12 @@ for archivo in sorted(carpeta.glob('*.pdf')):
             assert 'Firma' in texto, (archivo.name, numero, 'columna de firma')
             assert 'Datos del jefe registrado' in texto and 'Firma del jefe o responsable:' in texto, 'Falta la ficha del jefe'
             assert 'Sexo' in texto and 'Edad' in texto and 'Teléfono' in texto, 'Faltan columnas personales'
-            inicio_firma = (215.9-15-39) * 72 / 25.4
+            assert 'Centro electoral' in texto, 'Falta el centro electoral'
+            inicio_firma = (215.9-15-32) * 72 / 25.4
+            limite_cabecera = next(w[3] for w in pagina.get_text('words') if w[4]=='N.º')
             espacios = {tuple(round(v,2) for v in dibujo['rect']) for dibujo in pagina.get_drawings()
                         if abs(dibujo['rect'].x0-inicio_firma)<.5 and abs(dibujo['rect'].x1-(612-margen))<.5
-                        and dibujo['rect'].height >= 7.5*72/25.4-.3}
+                        and dibujo['rect'].height >= 7.5*72/25.4-.3 and dibujo['rect'].y0 > limite_cabecera}
             firmas += len(espacios)
         for palabra in pagina.get_text('words'):
             assert palabra[0] >= margen - .8 and palabra[2] <= 612 - margen + .8, (archivo.name, numero, 'margen lateral')
@@ -40,6 +43,16 @@ for archivo in sorted(carpeta.glob('*.pdf')):
         assert firmas == 151, 'Cada registro debe tener su espacio de firma compacto'
         assert 'Femenino' in '\n'.join(p.get_text() for p in documento) and 'Masculino' in '\n'.join(p.get_text() for p in documento), 'No se conservó el sexo registrado'
         texto = '\n'.join(cuerpos)
+        texto_plano = re.sub(r'\s+',' ',texto)
+        assert 'Tipo: Jefe' in texto_plano and 'Tipo: Afín' in texto_plano and 'Lista: General' in texto_plano and 'Lista: Empleados' in texto_plano, 'Faltan tipo o lista de origen'
+        for cuerpo in cuerpos:
+            registros = list(re.finditer(r'V-(\d+)',cuerpo))
+            for posicion,registro in enumerate(registros):
+                fin = registros[posicion+1].start() if posicion+1 < len(registros) else len(cuerpo)
+                datos = re.sub(r'\s+',' ',cuerpo[registro.start():fin])
+                indice_persona = int(registro.group(1))-100001
+                assert ('Centro B' if indice_persona % 2 else 'Centro A') in datos, 'Centro electoral incorrecto u omitido en una fila'
+                assert 'Tipo:' in datos and 'Lista:' in datos, 'Se omitió el tipo o la lista de una persona'
         for numero in range(100001, 100151):
             assert str(numero) in texto, ('Falta un registro', numero)
         jovenes = [i for i,p in enumerate(documento) if 'Jóvenes (15 a 35 años)' in p.get_text()]
@@ -51,12 +64,16 @@ for archivo in sorted(carpeta.glob('*.pdf')):
             assert 'Comuna: ' + territorio[0] in t and 'Comunidad: ' + territorio[1] in t, 'Falta el territorio en el encabezado'
             territorios.append(territorio)
         assert list(dict.fromkeys(territorios)) == [('Comuna de prueba','MILAGRO DE DIOS I'),('Comuna Z de prueba','MILAGRO DE DIOS II')]
+        responsables = [re.search(r'Cédula: (\d+)',t).group(1) for t in textos_pagina]
         for territorio in set(territorios):
             indices = [i for i,t in enumerate(territorios) if t == territorio]
             assert indices == list(range(min(indices),max(indices)+1)), 'Una comunidad quedó mezclada'
-            j = [i for i in jovenes if territorios[i] == territorio]
-            a = [i for i in adultos if territorios[i] == territorio]
-            assert j and a and max(j) < min(a), 'Dentro de cada comunidad deben salir jóvenes y después adultos'
+            for jefe in set(responsables[i] for i in indices):
+                paginas_jefe = [i for i in indices if responsables[i] == jefe]
+                assert paginas_jefe == list(range(min(paginas_jefe),max(paginas_jefe)+1)), 'Un jefe quedó intercalado con otro'
+                j = [i for i in jovenes if i in paginas_jefe]
+                a = [i for i in adultos if i in paginas_jefe]
+                assert j and a and max(j) < min(a), 'Dentro de cada jefe deben salir jóvenes y después adultos'
         texto_jovenes = '\n'.join(cuerpos[i] for i in jovenes)
         texto_adultos = '\n'.join(cuerpos[i] for i in adultos)
         for indice in range(150):
@@ -74,6 +91,7 @@ for archivo in sorted(carpeta.glob('*.pdf')):
                     edad = 25 if jefe=='100001' else 26
                     assert 'Teléfono: '+telefono in textos_pagina[i] and 'Sexo: '+sexo in textos_pagina[i], 'Faltan los datos registrados del jefe'
                     assert 'Edad: '+str(edad)+' años' in textos_pagina[i], 'Edad del jefe incorrecta'
+                    assert ('Centro B' if indice % 2 else 'Centro A') in cuerpo, 'Falta el centro electoral de una persona'
     if archivo.name == 'comunidad-carta.pdf':
         assert firmas == 33, 'Cada persona de la comunidad debe tener su espacio para firmar'
 assert len(resultados) == 10, 'Faltan salidas por verificar'

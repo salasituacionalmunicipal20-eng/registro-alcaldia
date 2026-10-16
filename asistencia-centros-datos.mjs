@@ -14,7 +14,7 @@ export function identidad(id, p) {
 
 export function consolidarPersonas(sistemas, catalogo={}) {
   const porPersona=new Map(), registrosLista=[], canonComunas=new Map(), canonComunidades=new Map(), canonCentros=new Map();
-  const fichaJefe=(j={},id='')=>({cedula:texto(j.cedula||id),nombre:texto([j.nombres,j.apellidos].filter(Boolean).join(' '))||texto(j.nombre),telefono:texto(j.telefono),sexo:texto(j.sexo||j.genero),fecha_nacimiento:texto(j.fecha_nacimiento),edad:/^\d{1,3}$/.test(texto(j.edad))&&Number(j.edad)<=120?Number(j.edad):null});
+  const fichaJefe=(j={},id='')=>({cedula:texto(j.cedula||id),nombre:texto([j.nombres,j.apellidos].filter(Boolean).join(' '))||texto(j.nombre),telefono:texto(j.telefono),sexo:texto(j.sexo||j.genero),fecha_nacimiento:texto(j.fecha_nacimiento),edad:/^\d{1,3}$/.test(texto(j.edad))&&Number(j.edad)<=120?Number(j.edad):null,centro:nombreTerritorial(texto(j.centro_electoral||catalogo[j.comunidad_slug]?.centro_electoral),'centro')});
   const indiceJefes=new Map();
   for(const s of sistemas)for(const [id,j] of Object.entries(s.jefes||{})){
     const clave=identidad(id,j)?.id;if(!clave)continue;
@@ -72,7 +72,7 @@ export function consolidarPersonas(sistemas, catalogo={}) {
     return {id:elegido.id,cedula:elegido.cedula,nacionalidad:elegido.nacionalidad,
       nombre:datos.find(p=>p.nombre!=='Nombre no registrado')?.nombre||elegido.nombre,
       fecha_nacimiento:elegido.fecha_nacimiento,
-      telefono:elegido.telefono,sexo:elegido.sexo,jefe:elegido.jefe,jefeId:elegido.jefeId,
+      telefono:elegido.telefono,sexo:elegido.sexo,jefe:elegido.jefe,jefeId:elegido.jefeId,esJefe:elegido.esJefe,sufijo:elegido.sufijo,
       comuna:conflicto?'Ubicación por verificar':elegido.comuna,
       comunidad:conflicto?'Ubicación por verificar':elegido.comunidad,
       centro:conflicto?'Centro por verificar':elegido.centro};

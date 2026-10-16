@@ -200,7 +200,7 @@
   </main>
   <dialog id="filtroImpresion" class="filtro-impresion" aria-labelledby="tituloFiltroImpresion">
     <h2 id="tituloFiltroImpresion">¿A quiénes deseas imprimir?</h2>
-    <p>Elige el grupo de edad para la lista completa. Se mantienen los demás filtros. El PDF se organiza por comuna y comunidad; dentro de cada comunidad, «Todos» separa Jóvenes y Adultos para imprimir todo de una vez.</p>
+    <p>Elige el grupo de edad para la lista completa. Se mantienen los demás filtros. El PDF se organiza por comuna, comunidad y jefe; «Todos» incluye Jóvenes y Adultos dentro de cada jefe, en un solo archivo.</p>
     <label for="edadImpresion">Grupo de edad</label>
     <select id="edadImpresion"><option value="">Todos</option><option value="jovenes">Jóvenes (15 a 35 años)</option><option value="adultos">Adultos (36 años en adelante)</option></select>
     <div class="fila"><button id="cancelarImpresion" type="button" class="secundario">Cancelar</button><button id="generarImpresion" type="button">Generar PDF</button></div>
@@ -212,8 +212,8 @@
   <script src="territorio-data.js?v=20261015-milagro-i"></script>
   <script src="autofresh.js"></script>
   <script type="module">
-    import {crearPDFConsulta,mostrarPDFConsulta,seccionesPorTerritorio} from './consulta-popular-pdf.mjs?v=20261016-jefes';
-    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261016-jefes';
+    import {crearPDFConsulta,mostrarPDFConsulta,seccionesPorTerritorio} from './consulta-popular-pdf.mjs?v=20261016-completo';
+    import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261016-completo';
     import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261015-milagro-i';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
@@ -492,8 +492,8 @@
         filas = lista.map((p,i) => [i+1,`${p.nacionalidad}${p.cedula} · ${p.esJefe?'Jefe':'Afín'} · ${origen(p.sufijo)}`,p.nombre,p.telefono || 'Sin teléfono',`${p.nombreJefe} · ${p.jefeId}`,`${p.comuna} · ${p.comunidad}`,p.centro,estadoImpreso(p)]);
       }
       if(personasReporte){
-        encabezados=['N.º','Nombres y apellidos','Cédula','Teléfono','Sexo','Edad'];
-        filas=personasReporte.map((p,i)=>[i+1,p.nombre,`${p.nacionalidad}-${p.cedula}`,p.telefono||'No registrado',p.sexo||'No registrado',edadEn(fechaACadena(p.fecha_nacimiento),hoyCaracas())??'—']);
+        encabezados=['N.º','Nombres y apellidos','Cédula / Tipo / Lista','Teléfono','Sexo / Edad','Centro electoral'];
+        filas=personasReporte.map((p,i)=>{const edad=edadEn(fechaACadena(p.fecha_nacimiento),hoyCaracas());return [i+1,p.nombre,`${p.nacionalidad}-${p.cedula}\nTipo: ${p.esJefe?'Jefe':'Afín'}\nLista: ${origen(p.sufijo||'')}`,p.telefono||'No registrado',`${p.sexo||'No registrado'}\n${edad===null?'Edad: —':edad+' años'}`,p.centro||'No registrado'];});
         secciones=seccionesPorTerritorio(personasReporte,filas,grupoEdadPersona);
         for(const seccion of secciones)seccion.jefe={...seccion.jefe,edad:edadEn(fechaACadena(seccion.jefe?.fecha_nacimiento),hoyCaracas())??seccion.jefe?.edad??null};
         if(tipo==='lista')titulo='Personas por comuna y comunidad';

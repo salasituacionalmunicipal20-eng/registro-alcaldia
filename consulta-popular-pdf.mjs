@@ -1,6 +1,6 @@
 import {dibujarHeaderPDF,dibujarFooterPDF} from './pdf-header.js?v=20261016-vertical';
 
-export {seccionesPorTerritorio} from './consulta-popular-grupos.mjs?v=20261016-jefes';
+export {seccionesPorTerritorio} from './consulta-popular-grupos.mjs?v=20261016-completo';
 
 // La paginación del PDF reserva márgenes físicos; no depende de la tabla HTML.
 export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezados,filas,secciones}) {
@@ -22,7 +22,7 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
       const jefe=seccionActual?.jefe||{};
       cursor+=2;doc.setFontSize(8.5);doc.text('Datos del jefe registrado',margen,cursor);cursor+=5;doc.setFont('helvetica','normal');
       const dato=valor=>valor===null||valor===undefined||valor===''?'No registrado':String(valor);
-      for(const linea of [`Nombres y apellidos: ${dato(jefe.nombre)}`,`Cédula: ${dato(jefe.cedula)} · Teléfono: ${dato(jefe.telefono)}`,`Sexo: ${dato(jefe.sexo)} · Edad: ${jefe.edad===null||jefe.edad===undefined?'No registrada':jefe.edad+' años'}`]){
+      for(const linea of [`Nombres y apellidos: ${dato(jefe.nombre)}`,`Cédula: ${dato(jefe.cedula)} · Teléfono: ${dato(jefe.telefono)}`,`Sexo: ${dato(jefe.sexo)} · Edad: ${jefe.edad===null||jefe.edad===undefined?'No registrada':jefe.edad+' años'}`,`Centro electoral del jefe: ${dato(jefe.centro)}`]){
         const lineas=doc.splitTextToSize(linea,util-2);doc.text(lineas,margen,cursor);cursor+=lineas.length*3.8+1.5;
       }
       doc.setDrawColor(100,116,139);doc.setLineWidth(.2);
@@ -35,7 +35,7 @@ export function crearPDFConsulta({tipo,titulo,jornada,filtros,resumen,encabezado
     const lineas=doc.splitTextToSize(etiqueta?`${etiqueta}: ${valor}`:String(valor),util-2);
     doc.text(lineas,margen,y);y+=lineas.length*4.3+2;
   };
-  const anchos=conFirma?[11,util-130,25,25,19,11,39]:[40,55,18,18,20,17,util-168];
+  const anchos=conFirma?[10,util-142,24,25,19,32,32]:[40,55,18,18,20,17,util-168];
   const columnas=Object.fromEntries(anchos.map((ancho,i)=>[i,{cellWidth:ancho}]));
   const titulos=conFirma?[...encabezados,'Firma']:encabezados;
   const bloques=secciones?.length?secciones:[{filas}];
