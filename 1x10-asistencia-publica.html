@@ -125,19 +125,19 @@
           <div class="registro-campo">
             <div class="campo">
               <span>Nombre completo *</span>
-              <input id="regNombre" type="text" placeholder="Ej.: María Fernanda">
+              <input id="regNombre" type="text" maxlength="160" placeholder="Ej.: María Fernanda">
             </div>
             <div class="campo">
               <span>Comuna *</span>
-              <input id="regComuna" type="text" placeholder="Ej.: Valle Alto">
+              <input id="regComuna" type="text" maxlength="160" placeholder="Ej.: Valle Alto">
             </div>
             <div class="campo" style="grid-column:1/-1">
               <span>Comunidad *</span>
-              <input id="regComunidad" type="text" placeholder="Ej.: Sector El Volcán">
+              <input id="regComunidad" type="text" maxlength="160" placeholder="Ej.: Sector El Volcán">
             </div>
             <div class="campo" style="grid-column:1/-1">
               <span>Centro electoral *</span>
-              <input id="regCentro" type="text" placeholder="Ej.: Liceo Andrés Eloy Blanco">
+              <input id="regCentro" type="text" maxlength="160" placeholder="Ej.: Liceo Andrés Eloy Blanco">
             </div>
           </div>
           <p id="registroMsg" class="msg" role="status"></p>
@@ -189,7 +189,8 @@
       $('ficha').classList.add('oculto');
       $('noEncontrado').classList.add('oculto');
       try {
-        const snap = await get(child(ref(database), `directorio_1x10/${nacionalidad}_${cedula}`));
+        let snap = await get(child(ref(database), `directorio_1x10/${nacionalidad}_${cedula}`));
+        if(!snap.exists())snap=await get(child(ref(database), `directorio_1x10_publicos/${nacionalidad}_${cedula}`));
         if (!snap.exists()) {
           persona = null;
           if (escucha) { escucha(); escucha = null; }

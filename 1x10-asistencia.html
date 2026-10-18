@@ -35,6 +35,11 @@
     .metrica strong { display: block; font-size: 24px; }
     .metrica span { font-size: 13px; }
     .tabla { overflow-x: auto; margin-top: 14px; }
+    #resumenPrensa .metricas { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    #resumenPrensa table { min-width:0; width:100%; table-layout:fixed; }
+    #resumenPrensa th, #resumenPrensa td { overflow-wrap:anywhere; white-space:normal; position:static; }
+    #resumenPrensa .num { width:105px; }
+    @media(max-width:700px){#resumenPrensa .num{width:auto;}#resumenPrensa th,#resumenPrensa td{padding:8px 5px;font-size:13px;}}
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { padding: 10px; border-bottom: 1px solid #e1e7ef; text-align: left; vertical-align: middle; }
     th { background: #f0f4fa; position: sticky; top: 0; }
@@ -128,6 +133,17 @@
     <div id="cargando" class="aviso">Verificando acceso y cargando registros…</div>
     <section id="restringido" class="oculto"><h2>Acceso restringido</h2><p>Solo los administradores pueden consultar y modificar este panel.</p></section>
     <div id="contenido" class="oculto">
+      <section id="resumenPrensa" aria-labelledby="tituloPrensa">
+        <h2 id="tituloPrensa">Asistencia en vivo · resumen para prensa</h2>
+        <p class="muted">Personas distintas de las siete variantes del 1x10 y las incorporaciones del enlace público, marcadas como Asistió/Votó en la jornada seleccionada. Incluye todo el registro, independientemente de los filtros de la lista inferior.</p>
+        <p id="prensaActualizacion" role="status">Esperando los registros y la jornada…</p>
+        <div class="metricas"><div class="metrica"><strong id="prensaAsistieron">—</strong><span>Personas marcadas como Asistió/Votó</span></div><div class="metrica"><strong id="prensaTotal">—</strong><span>Personas distintas registradas</span></div></div>
+        <button id="copiarPrensa" type="button" disabled>Copiar resumen para prensa</button>
+        <p id="prensaMensaje" role="status" class="muted"></p>
+        <h3>Sumatoria por comuna</h3><div class="tabla"><table><thead><tr><th>Comuna</th><th class="num">Asistieron/Votaron</th><th class="num">Personas registradas</th></tr></thead><tbody id="prensaComunas"></tbody></table></div>
+        <h3>Sumatoria por comuna y comunidad</h3><div class="tabla"><table><thead><tr><th>Comuna</th><th>Comunidad</th><th class="num">Asistieron/Votaron</th><th class="num">Personas registradas</th></tr></thead><tbody id="prensaComunidades"></tbody></table></div>
+        <h3>Sumatoria por centro electoral</h3><div class="tabla"><table><thead><tr><th>Centro electoral</th><th class="num">Asistieron/Votaron</th><th class="num">Personas registradas</th></tr></thead><tbody id="prensaCentros"></tbody></table></div>
+      </section>
       <section>
         <h2>Comuna y comunidad del jefe de calle del 1x10 general</h2>
         <p class="muted">Selecciona un jefe. Al guardar se actualizan su comuna, comunidad y centro según el catálogo territorial; los demás datos del 1x10 se conservan.</p>
@@ -216,6 +232,7 @@
     import { SISTEMAS_1X10, consolidarPersonas, normalizar, conAsistencia, contarAsistencia } from './asistencia-centros-datos.mjs?v=20261016-integracion';
     import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261016-integracion';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
+    import {resumirAsistenciaPrensa,textoAsistenciaPrensa} from './1x10-asistencia-resumen.mjs?v=20261018-vivo';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
     import { getDatabase, ref, get, child, onValue, set, update, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
@@ -251,7 +268,27 @@
     let usuario = null, jefes = {}, afines = {}, estados = {}, personas = [], pagina = 1, detenerEstados = null;
     let personasUnicas = [], modalComuna = null, modalComunidad = '', modalFiltro = '';
     let personasPublicas = new Map();
+    let publicosListos=false;
     let filtroEdad = '';
+    let ultimoDatoPrensa=null, resumenPrensa=null;
+    function pintarPrensa(){
+      const listo=jefesListos&&afinesListos&&estadosListos&&publicosListos;
+      $('copiarPrensa').disabled=!listo;
+      if(!listo){resumenPrensa=null;$('prensaAsistieron').textContent=$('prensaTotal').textContent='—';$('prensaActualizacion').textContent='Esperando los registros y estados de la jornada seleccionada…';for(const id of ['prensaComunas','prensaComunidades','prensaCentros'])$(id).replaceChildren();return;}
+      resumenPrensa=resumirAsistenciaPrensa(personasUnicas,estados);
+      const r=resumenPrensa,n=v=>v.toLocaleString('es-VE');
+      $('prensaAsistieron').textContent=n(r.total.asistio);$('prensaTotal').textContent=n(r.total.total);
+      const hora=(ultimoDatoPrensa||new Date()).toLocaleString('es-VE',{dateStyle:'short',timeStyle:'medium',timeZone:'America/Caracas'});
+      $('prensaActualizacion').textContent=`Jornada ${claveDia().split('-').reverse().join('/')} · Última recepción de datos: ${hora} (Venezuela).`;
+      $('prensaMensaje').textContent=r.marcajesSinRegistro?`${n(r.marcajesSinRegistro)} marcajes sin persona vinculada al registro actual; no se incluyen en la suma.`:'';
+      for(const [tipo,id,campos]of [['comunas','prensaComunas',['comuna']],['comunidades','prensaComunidades',['comuna','comunidad']],['centros','prensaCentros',['centro']]]){
+        $(id).innerHTML=r[tipo].map(g=>`<tr>${campos.map(c=>`<td data-label="${c==='centro'?'Centro electoral':c==='comuna'?'Comuna':'Comunidad'}">${esc(g[c])}</td>`).join('')}<td class="num" data-label="Asistieron/Votaron"><b>${n(g.asistio)}</b></td><td class="num" data-label="Personas registradas">${n(g.total)}</td></tr>`).join('')||`<tr><td colspan="${campos.length+2}">No hay registros en este grupo.</td></tr>`;
+      }
+    }
+    $('copiarPrensa').addEventListener('click',async()=>{
+      if(!resumenPrensa)return;
+      try{await navigator.clipboard.writeText(textoAsistenciaPrensa(resumenPrensa,claveDia().split('-').reverse().join('/'),(ultimoDatoPrensa||new Date()).toLocaleString('es-VE',{timeZone:'America/Caracas'})));$('prensaMensaje').textContent='Resumen agregado copiado. Puedes pegarlo en el mensaje para prensa.';}catch(e){$('prensaMensaje').textContent='No se pudo copiar el resumen. Revisa el permiso del portapapeles.';}
+    });
     let jefesListos = false, afinesListos = false, estadosListos = false;
     const claveDia = () => $('fecha').value;
     const hoyCaracas = () => {
@@ -332,11 +369,19 @@
     });
 
     function reconstruir() {
-      if (nodosListos.size !== SISTEMAS_1X10.length*2) return;
+      ultimoDatoPrensa=new Date();
+      if (nodosListos.size !== SISTEMAS_1X10.length*2 || !publicosListos) return;
       jefesListos=afinesListos=true;
       const r = consolidarPersonas(Object.values(fuentes),catalogo);
       const filas = r.registrosLista;
       personasUnicas = r.personas;
+      const conocidos=new Set(personasUnicas.map(p=>p.id));
+      for(const [id,p] of personasPublicas){
+        if(conocidos.has(id)||!/^([VE])_([0-9]{4,10})$/.test(id))continue;
+        const [nacionalidad,cedula]=id.split('_');
+        const nuevo={id,nacionalidad,cedula,nombre:p.nombre,telefono:'',nombreJefe:'Incorporación pública',jefeId:'',esJefe:false,sufijo:'publico',comuna:nombreTerritorial(p.comuna||'','comuna'),comunidad:nombreTerritorial(p.comunidad||'','comunidad'),centro:nombreTerritorial(p.centro||'','centro')||'Sin centro registrado'};
+        personasUnicas.push(nuevo);filas.push(nuevo);conocidos.add(id);
+      }
       personas = filas.sort((a,b) => a.centro.localeCompare(b.centro,'es') || a.nombreJefe.localeCompare(b.nombreJefe,'es') || a.nombre.localeCompare(b.nombre,'es'));
       const centroActual = $('centro').value;
       const centros = [...new Set(filas.map(x=>x.centro))].sort((a,b)=>a.localeCompare(b,'es'));
@@ -351,6 +396,7 @@
       return base.filter(p=>(!estado || (estados[p.id]?.estado||'pendiente')===estado) && (!q || normalizar(`${p.nombre} ${p.nacionalidad}${p.cedula} ${p.telefono} ${p.nombreJefe} ${p.jefeId}`).includes(q)) && (!edad || grupoEdadPersona(p) === edad));
     }
     function pintar() {
+      pintarPrensa();
       if (!jefesListos || !afinesListos || !estadosListos) {
         for(const id of ['total','asistieron','noAsistieron','pendientes'])$(id).textContent='—';
         $('imprimirLista').disabled=$('imprimirTerritorio').disabled=true;return;
@@ -424,10 +470,11 @@
     function escucharEstados() {
       if (detenerEstados) detenerEstados();
       estados={}; estadosListos=false;
+      pintarPrensa();
       $('imprimirLista').disabled = $('imprimirTerritorio').disabled = true;
       $('filas').innerHTML='<tr><td colspan="7">Cargando estados de la jornada…</td></tr>';
       detenerEstados=onValue(ref(database,`asistencia_centros/${claveDia()}`),snap=>{
-        estados=snap.val()||{}; estadosListos=true; pintar();
+        estados=snap.val()||{}; estadosListos=true; ultimoDatoPrensa=new Date(); pintar();
       },err=>{ estadosListos=false;pintar(); aviso('mensajeLista',`No se pudieron leer los estados: ${err.message}`,true); });
     }
     function personasComunidad() {
@@ -572,6 +619,7 @@
       $('cargando').classList.add('oculto');
       if(!permitido){$('restringido').classList.remove('oculto');return;}
       usuario=user; $('contenido').classList.remove('oculto');
+      cargarPublicos();
       for(const sufijo of SISTEMAS_1X10) for(const tipo of ['jefes','afines']) {
         const nodo=tipo+'_1x10'+sufijo;
         onValue(ref(database,nodo),snap=>{fuentes[sufijo][tipo]=snap.val()||{};if(!sufijo&&tipo==='jefes')jefes=fuentes[sufijo].jefes;nodosListos.add(nodo);reconstruir();},err=>{
@@ -582,17 +630,20 @@
     });
 
 // Lectura del nodo de autoregistrados (públicos) para el panel de administración.
-onValue(ref(database, 'directorio_1x10_publicos'), snap => {
+function cargarPublicos(){onValue(ref(database, 'directorio_1x10_publicos'), snap => {
   const map = new Map();
   const datos = snap.val() || {};
   for (const [id, r] of Object.entries(datos)) {
-    if (r && typeof r === 'object' && r.nombre) map.set(id, r);
+    if (r && typeof r === 'object' && r.nombre) map.set(id, {...r,id});
   }
   personasPublicas = map;
+  publicosListos=true;
   pintarPublicas();
-}, () => {});
+  reconstruir();
+}, err => {publicosListos=false;jefesListos=afinesListos=false;pintar();aviso('mensajeLista','No se pudieron cargar las incorporaciones públicas: '+err.message,true);});}
 
 function pintarPublicas() {
+  if(!usuario)return;
   const tbody = $('filasPublicas');
   const lista = [...personasPublicas.values()].sort((a, b) =>
     String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es')).slice(0, 200);

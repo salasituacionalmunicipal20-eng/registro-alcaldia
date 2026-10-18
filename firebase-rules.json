@@ -3055,6 +3055,35 @@
           }
         }
       }
+    },
+    "directorio_1x10_publicos": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$persona": {
+        ".read": true,
+        ".write": "(!data.exists() && newData.exists() && !root.child('directorio_1x10').child($persona).exists()) || (auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
+        ".validate": "$persona.matches(/^[VE]_[0-9]{4,10}$/) && newData.hasChildren(['nombre','comuna','comunidad','centro','registrado_en','registrado_por'])",
+        "nombre": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 160"
+        },
+        "comuna": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 160"
+        },
+        "comunidad": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 160"
+        },
+        "centro": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 160"
+        },
+        "registrado_en": {
+          ".validate": "newData.isNumber() && (data.exists() || (newData.val() <= now && newData.val() >= now - 60000))"
+        },
+        "registrado_por": {
+          ".validate": "newData.isString() && (newData.val() === 'publico' || (auth != null && newData.val() === auth.uid))"
+        },
+        "$otro": {
+          ".validate": false
+        }
+      }
     }
   }
 }

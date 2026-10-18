@@ -37,7 +37,7 @@ assert(panel.includes('Votación por comuna y comunidad'), 'El panel debe tener 
 assert(panel.includes('id="modalPersonas"'), 'El panel debe tener la ventana emergente.');
 assert(panel.includes('.modal.oculto'), 'La ventana emergente debe poder ocultarse (.modal.oculto).');
 assert(panel.includes('pintarTerritorio()'), 'El panel debe pintar el resumen territorial.');
-assert(panel.includes('sincronizarDirectorio()'), 'El panel debe sincronizar el directorio público.');
+assert(panel.includes('1x10-vinculos.mjs'), 'El panel debe cargar la integración compartida del directorio público.');
 assert(panel.includes('asistencia_centros/${fecha}/${id}'), 'El panel conserva el marcado por jornada.');
 comprobarSintaxis(panel, '1x10-asistencia.html');
 
