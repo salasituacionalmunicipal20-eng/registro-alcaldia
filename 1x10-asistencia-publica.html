@@ -18,6 +18,9 @@
     label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin: 12px 0 4px; }
     input, select { width: 100%; padding: 12px 13px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-family: inherit; color: #0f172a; background: #f8fafc; outline: none; min-height: 48px; }
     input:focus, select:focus { border-color: #0a6cb0; background: #fff; }
+    button:focus-visible { outline: 3px solid #0a6cb0; outline-offset: 3px; }
+    #noEncontrado, #ficha, #formularioRegistro { scroll-margin-top: 16px; }
+    .datos dd, .datos .nombre { overflow-wrap: anywhere; min-width: 0; }
     .btn { width: 100%; background: #0a2351; color: #fff; border: none; border-radius: 10px; padding: 15px; font-size: 16.5px; font-weight: 800; cursor: pointer; margin-top: 14px; min-height: 52px; }
     .btn:disabled { opacity: .6; cursor: wait; }
     .msg { padding: 12px 14px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-top: 12px; display: none; }
@@ -62,7 +65,7 @@
   <div class="wrap">
     <div class="intro">
       Con tu <b>cédula de identidad</b> puedes registrar hoy si <b>ya asististe a votar</b> o si <b>todavía no</b>.
-      Solo aparecerás si estás inscrita o inscrito en las listas del 1x10. Este registro <b>no guarda preferencias
+      Busca tu registro y, si tu cédula no aparece, podrás registrarte aquí. Este registro <b>no guarda preferencias
       ni contenido del voto</b>, únicamente si asististe a la jornada.
     </div>
 
@@ -113,10 +116,10 @@
       <p class="sub" style="font-size:14px;color:#334155">
         Tu cédula no aparece en las listas del 1x10 de la Alcaldía. <span id="registroAccion">Puedes registrarte ahí mismo
         para marcar tu asistencia y que tu jefe de calle la revise.</span>
-        <button type="button" id="irAlRegistro" class="btn" style="margin-top:8px">Registrarme en el 1x10</button>
-        <span style="display:block;margin-top:10px;font-size:12px;color:#64748b">
+      </p>
+      <button type="button" id="irAlRegistro" class="btn" style="margin-top:8px" aria-controls="formularioRegistro" aria-expanded="false">Registrarme en el 1x10</button>
+      <p style="margin:10px 0 12px;font-size:12px;color:#64748b">
           Si tu cédula es de nacionalidad extranjera, cambia la opción de arriba a <b>E</b> y busca de nuevo.
-        </span>
       </p>
 
       <div id="formularioRegistro" class="oculto" style="background:#fff7ed;border:1px solid #fed7aa;border-left:5px solid #ea580c;border-radius:10px;padding:14px 16px;">
@@ -124,19 +127,19 @@
         <form id="registroForm" autocomplete="off">
           <div class="registro-campo">
             <div class="campo">
-              <span>Nombre completo *</span>
+              <label for="regNombre">Nombre completo *</label>
               <input id="regNombre" type="text" maxlength="160" placeholder="Ej.: María Fernanda">
             </div>
             <div class="campo">
-              <span>Comuna *</span>
+              <label for="regComuna">Comuna *</label>
               <input id="regComuna" type="text" maxlength="160" placeholder="Ej.: Valle Alto">
             </div>
             <div class="campo" style="grid-column:1/-1">
-              <span>Comunidad *</span>
+              <label for="regComunidad">Comunidad *</label>
               <input id="regComunidad" type="text" maxlength="160" placeholder="Ej.: Sector El Volcán">
             </div>
             <div class="campo" style="grid-column:1/-1">
-              <span>Centro electoral *</span>
+              <label for="regCentro">Centro electoral *</label>
               <input id="regCentro" type="text" maxlength="160" placeholder="Ej.: Liceo Andrés Eloy Blanco">
             </div>
           </div>
@@ -180,22 +183,42 @@
       el.className = 'msg' + (texto ? ' ' + (tipo || 'info') : '');
     }
 
+    function mostrarResultado(id, foco) {
+      $(id).classList.remove('oculto');
+      if (foco) $(foco).focus({ preventScroll: true });
+      $(id).scrollIntoView({ block: 'start', behavior: 'instant' });
+    }
+
+    function limpiarResultado() {
+      persona = null;
+      if (escucha) { escucha(); escucha = null; }
+      $('ficha').classList.add('oculto');
+      $('noEncontrado').classList.add('oculto');
+      $('formularioRegistro').classList.add('oculto');
+      $('irAlRegistro').classList.remove('oculto');
+      $('irAlRegistro').setAttribute('aria-expanded', 'false');
+      $('registroForm').reset();
+      for (const id of ['registroMsg', 'registroGuardadoMsg', 'guardarMsg']) mensaje(id, '', 'info');
+    }
+
     async function buscar() {
+      if ($('buscar').disabled) return;
       const cedula = soloDigitos($('cedula').value);
       const nacionalidad = $('nacionalidad').value;
       if (!/^\d{4,10}$/.test(cedula)) { mensaje('mensaje', 'Escribe tu cédula completa, sin puntos ni guiones.', 'err'); return; }
       $('buscar').disabled = true;
+      $('cedula').blur();
+      limpiarResultado();
       mensaje('mensaje', 'Buscando tu registro en las listas del 1x10…', 'info');
-      $('ficha').classList.add('oculto');
-      $('noEncontrado').classList.add('oculto');
       try {
         let snap = await get(child(ref(database), `directorio_1x10/${nacionalidad}_${cedula}`));
         if(!snap.exists())snap=await get(child(ref(database), `directorio_1x10_publicos/${nacionalidad}_${cedula}`));
+        if (cedula !== soloDigitos($('cedula').value) || nacionalidad !== $('nacionalidad').value) return;
         if (!snap.exists()) {
           persona = null;
           if (escucha) { escucha(); escucha = null; }
           mensaje('mensaje', '', 'info');
-          $('noEncontrado').classList.remove('oculto');
+          mostrarResultado('noEncontrado', 'irAlRegistro');
           return;
         }
         persona = { id: `${nacionalidad}_${cedula}`, ...snap.val() };
@@ -204,7 +227,7 @@
         $('fichaComuna').textContent = persona.comuna || 'Sin comuna registrada';
         $('fichaComunidad').textContent = persona.comunidad || 'Sin comunidad registrada';
         $('fichaCentro').textContent = persona.centro || 'Sin centro registrado';
-        $('ficha').classList.remove('oculto');
+        mostrarResultado('ficha', 'marcarSi');
         mensaje('mensaje', '¡Registro encontrado! Confirma si ya asististe a votar.', 'ok');
         escucharEstado();
       } catch (e) {
@@ -268,7 +291,9 @@
       if (!comuna) { mensaje('registroMsg', 'Ingresa tu comuna.', 'err'); $('regComuna').focus(); return; }
       if (!comunidad) { mensaje('registroMsg', 'Ingresa tu comunidad.', 'err'); $('regComunidad').focus(); return; }
       if (!centro) { mensaje('registroMsg', 'Ingresa tu centro electoral.', 'err'); $('regCentro').focus(); return; }
+      if ($('guardarRegistroBtn').disabled) return;
       $('guardarRegistroBtn').disabled = true;
+      $('cedula').disabled = true; $('nacionalidad').disabled = true; $('buscar').disabled = true;
       mensaje('registroMsg', 'Guardando tu registro en el 1x10…', 'info');
       try {
         const id = `${nacionalidad}_${cedula}`;
@@ -281,30 +306,38 @@
         $('registroGuardadoMsg').className = 'msg ok';
         $('formularioRegistro').classList.add('oculto');
         $('irAlRegistro').classList.add('oculto');
+        $('noEncontrado').classList.add('oculto');
         persona = { id, nombre, comuna, comunidad, centro };
-        $('ficha').classList.remove('oculto');
+        mostrarResultado('ficha', 'marcarSi');
         $('fichaNombre').textContent = persona.nombre;
         $('fichaCedula').textContent = `${nacionalidad}-${cedula}`;
         $('fichaComuna').textContent = persona.comuna;
         $('fichaComunidad').textContent = persona.comunidad;
         $('fichaCentro').textContent = persona.centro;
-        mensaje('mensaje', '¡Registro encontrado! Confirma si ya asististe a votar.', 'ok');
+        mensaje('mensaje', '¡Registro guardado! Confirma si ya asististe a votar.', 'ok');
+        mensaje('guardarMsg', 'Tu registro quedó guardado. Ahora puedes marcar tu asistencia.', 'ok');
         escucharEstado();
       } catch (err) {
         mensaje('registroMsg', `No se pudo guardar: ${err.message}`, 'err');
       } finally {
         $('guardarRegistroBtn').disabled = false;
+        $('cedula').disabled = false; $('nacionalidad').disabled = false; $('buscar').disabled = false;
       }
     }
     $('registroForm').addEventListener('submit', guardarRegistro);
 
     $('buscar').addEventListener('click', buscar);
     $('cedula').addEventListener('keydown', event => { if (event.key === 'Enter') buscar(); });
+    for (const id of ['cedula', 'nacionalidad']) $(id).addEventListener(id === 'cedula' ? 'input' : 'change', () => {
+      limpiarResultado();
+      mensaje('mensaje', '', 'info');
+    });
     $('marcarSi').addEventListener('click', () => marcar('asistio'));
     $('marcarNo').addEventListener('click', () => marcar('no_asistio'));
 
     $('irAlRegistro').addEventListener('click', () => {
-      $('formularioRegistro').classList.remove('oculto');
+      $('irAlRegistro').setAttribute('aria-expanded', 'true');
+      mostrarResultado('formularioRegistro', 'regNombre');
     });
 
 
