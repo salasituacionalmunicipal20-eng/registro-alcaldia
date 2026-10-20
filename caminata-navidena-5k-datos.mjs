@@ -6,12 +6,13 @@ export const EVENTO = Object.freeze({
   enlace: 'https://salasituacional.alcaldiadecharallave.com/caminata-navidena-5k.html'
 });
 export const NOTAS = [
-  'Para realizar el chequeo antes de la competencia, debes llevar la planilla impresa y tu cédula laminada. Sin estos documentos no podrás completar el registro.',
+  'Para realizar el chequeo antes de la competencia, debes llevar la planilla impresa y tu cédula laminada. Sin estos documentos no podrás completar el registro. Para los menores inscritos sin cédula, lleva su planilla y la cédula del responsable para la verificación de sus datos.',
   'Para participar en la carrera debes registrarte previamente y únicamente a través del enlace de inscripción. Si no te registras, solo podrás sumarte a la caminata al llegar al punto de chequeo y verificación.'
 ];
 export const TALLAS = ['Infantil 2','Infantil 4','Infantil 6','Infantil 8','Infantil 10','Infantil 12','Infantil 14','Infantil 16','XS','S','M','L','XL','XXL','XXXL','Otra'];
 export const PARENTESCOS = ['Madre','Padre','Hija','Hijo','Cónyuge o pareja','Hermana','Hermano','Abuela','Abuelo','Nieta','Nieto','Otro'];
 export const ETIQUETAS_EVENTO = ['Fecha del evento','Participación','Talla de camisa','Persona con discapacidad','Rol familiar','Parentesco','Cédula del líder'];
+export function documentoParticipante(r) { return r.sin_cedula ? 'Menor sin cédula' : r.cedula || '—'; }
 export function filasEvento(r) {
   return ETIQUETAS_EVENTO.map((nombre,i)=>[nombre,[EVENTO.fechaVisible,r.modalidad,r.talla_camisa,r.persona_con_discapacidad,r.es_lider?'Líder o responsable':'Familiar',r.parentesco,r.lider_cedula][i] ?? '—']);
 }

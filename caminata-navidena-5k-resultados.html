@@ -183,7 +183,7 @@
     </section>
 
     <script type="module">
-        import {ordenarGrupos as ordenarInscripciones,EVENTO,TALLAS,ETIQUETAS_EVENTO,filasEvento,rellenarCamposEvento,rellenarNotas,NOTAS} from './caminata-navidena-5k-datos.mjs?v=20261015';
+        import {ordenarGrupos as ordenarInscripciones,documentoParticipante,EVENTO,TALLAS,ETIQUETAS_EVENTO,filasEvento,rellenarCamposEvento,rellenarNotas,NOTAS} from './caminata-navidena-5k-datos.mjs?v=20261020-menores';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getDatabase, ref, child, get, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -218,7 +218,7 @@
 
         function actualizar(){
             const q=normalizar($('buscar').value), mun=$('fMunicipio').value, sexo=$('fSexo').value, enf=$('fEnfermedad').value, fotos=$('fFotos').value;
-            filtrados=registros.filter(r=>(!q||normalizar([r.nombre_apellido,r.cedula,r.telefono,r.direccion_habitacion,r.municipio,r.lider_cedula,r.parentesco].join(' ')).includes(q))&&(!mun||r.municipio===mun)&&(!sexo||sexoCanonico(r.sexo)===sexo)&&(!enf||r.padece_enfermedad===enf)&&(!fotos||(fotos==='si'?r.tiene_fotos:!r.tiene_fotos))&&(!$('fModalidad').value||r.modalidad===$('fModalidad').value)&&(!$('fTalla').value||r.talla_camisa===$('fTalla').value)&&(!$('fDiscapacidad').value||r.persona_con_discapacidad===$('fDiscapacidad').value)&&(!$('fRol').value||Boolean(r.es_lider)===($('fRol').value==='lider')));
+            filtrados=registros.filter(r=>(!q||normalizar([r.nombre_apellido,documentoParticipante(r),r.telefono,r.direccion_habitacion,r.municipio,r.lider_cedula,r.parentesco].join(' ')).includes(q))&&(!mun||r.municipio===mun)&&(!sexo||sexoCanonico(r.sexo)===sexo)&&(!enf||r.padece_enfermedad===enf)&&(!fotos||(fotos==='si'?r.tiene_fotos:!r.tiene_fotos))&&(!$('fModalidad').value||r.modalidad===$('fModalidad').value)&&(!$('fTalla').value||r.talla_camisa===$('fTalla').value)&&(!$('fDiscapacidad').value||r.persona_con_discapacidad===$('fDiscapacidad').value)&&(!$('fRol').value||Boolean(r.es_lider)===($('fRol').value==='lider')));
             const municipios=[...new Set(registros.map(r=>r.municipio).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
             const seleccionado=$('fMunicipio').value; $('fMunicipio').innerHTML='<option value="">Todos los municipios</option>'+municipios.map(m=>`<option${m===seleccionado?' selected':''}>${texto(m)}</option>`).join('');
             const talla=$('fTalla').value;$('fTalla').replaceChildren(new Option('Todas las tallas',''),...[...new Set(registros.map(r=>r.talla_camisa).filter(Boolean))].sort().map(t=>new Option(t,t)));$('fTalla').value=talla;
@@ -232,7 +232,7 @@
             const porEdad=new Map();edades.forEach(e=>porEdad.set(e,(porEdad.get(e)||0)+1));$('distEdades').innerHTML=porEdad.size?[...porEdad.entries()].sort((a,b)=>a[0]-b[0]).map(([edad,cantidad])=>`<div class="edad-chip"><b>${cantidad}</b> persona${cantidad===1?'':'s'} de ${edad} año${edad===1?'':'s'}</div>`).join(''):'<span style="color:#64748b;font-size:13px">Aún no hay edades registradas.</span>';
             const paginas=Math.max(1,Math.ceil(filtrados.length/POR_PAGINA)); if(pagina>paginas)pagina=paginas;
             const inicio=(pagina-1)*POR_PAGINA, lista=filtrados.slice(inicio,inicio+POR_PAGINA);
-            $('tbody').innerHTML=lista.map((r,i)=>`<tr><td>${texto(r.numero_inscripcion??'Sin asignar')}</td><td><b>${texto(r.nombre_apellido)}</b></td><td>${texto(r.cedula)}</td><td>${texto(r.edad)}</td><td>${texto(sexoCanonico(r.sexo))}</td><td>${texto(r.telefono)}</td><td>${texto(r.municipio)}</td><td>${texto(r.modalidad)}</td><td>${texto(r.talla_camisa)}</td><td>${texto(r.persona_con_discapacidad)}</td><td>${texto(r.es_lider?"Líder familiar":r.parentesco)}</td><td>${texto(r.lider_cedula)}</td><td class="${r.padece_enfermedad==='Sí'?'si':''}">${texto(r.padece_enfermedad)}</td><td class="${r.toma_medicamento==='Sí'?'si':''}">${texto(r.toma_medicamento)}</td><td class="${r.tiene_fotos?'foto':''}">${r.tiene_fotos?'Sí':'No'}</td><td>${fechaHora(r.fecha_registro)}</td><td><div class="acciones-fila"><button class="btn-blue ver" data-id="${texto(r.id)}">Ver ficha</button><button class="btn-red imprimir-uno" data-id="${texto(r.id)}">🖨 Imprimir 1×1</button></div></td></tr>`).join('');
+            $('tbody').innerHTML=lista.map((r,i)=>`<tr><td>${texto(r.numero_inscripcion??'Sin asignar')}</td><td><b>${texto(r.nombre_apellido)}</b></td><td>${texto(documentoParticipante(r))}</td><td>${texto(r.edad)}</td><td>${texto(sexoCanonico(r.sexo))}</td><td>${texto(r.telefono)}</td><td>${texto(r.municipio)}</td><td>${texto(r.modalidad)}</td><td>${texto(r.talla_camisa)}</td><td>${texto(r.persona_con_discapacidad)}</td><td>${texto(r.es_lider?"Líder familiar":r.parentesco)}</td><td>${texto(r.lider_cedula)}</td><td class="${r.padece_enfermedad==='Sí'?'si':''}">${texto(r.padece_enfermedad)}</td><td class="${r.toma_medicamento==='Sí'?'si':''}">${texto(r.toma_medicamento)}</td><td class="${r.tiene_fotos?'foto':''}">${r.tiene_fotos?'Sí':'No'}</td><td>${fechaHora(r.fecha_registro)}</td><td><div class="acciones-fila"><button class="btn-blue ver" data-id="${texto(r.id)}">Ver ficha</button><button class="btn-red imprimir-uno" data-id="${texto(r.id)}">🖨 Imprimir 1×1</button></div></td></tr>`).join('');
             $('sinDatos').classList.toggle('hidden',lista.length>0); $('paginaInfo').textContent=`Página ${pagina} de ${paginas} · ${filtrados.length} resultado(s)`; $('anterior').disabled=pagina===1; $('siguiente').disabled=pagina===paginas; $('tituloTabla').textContent=`Detalle de inscripciones (${filtrados.length})`;
             document.querySelectorAll('.ver').forEach(b=>b.addEventListener('click',()=>abrirFicha(b.dataset.id)));
             document.querySelectorAll('.imprimir-uno').forEach(b=>b.addEventListener('click',()=>imprimirRegistro(b.dataset.id)));
@@ -248,8 +248,8 @@
             let fotos={};
             try{fotos=actual.tiene_fotos?await fotosDe(id):{};}catch(e){$('modalBody').innerHTML='<p style="color:#b91c1c"><b>No se pudieron cargar las fotografías.</b><br />Cierra la ficha e intenta nuevamente.</p>';return;}
             actual={...actual,_fotos:fotos};
-            const campos=[['N.º de inscripción',actual.numero_inscripcion??'Sin asignar'],['Nombre y apellido',actual.nombre_apellido],['Cédula',actual.cedula],['Teléfono',actual.telefono],['Fecha de nacimiento',fechaCorta(actual.fecha_nacimiento)],['Edad',actual.edad+' años'],['Sexo',sexoCanonico(actual.sexo)],['Municipio',actual.municipio],['Dirección de habitación',actual.direccion_habitacion,'completo'],['Padece alguna enfermedad',actual.padece_enfermedad],['Enfermedad o condición',actual.enfermedad_detalle||'No aplica'],['Toma algún medicamento',actual.toma_medicamento],['Medicamento',actual.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(actual.fecha_registro),'completo'],...filasEvento(actual)];
-            const galeria=Object.values(fotos).filter(Boolean).map((src,i)=>`<a href="${src}" download="caminata_${texto(actual.cedula)}_foto_${i+1}.jpg" title="Abrir o descargar foto"><img src="${src}" alt="Foto ${i+1} de ${texto(actual.nombre_apellido)}" /></a>`).join('');
+            const campos=[['N.º de inscripción',actual.numero_inscripcion??'Sin asignar'],['Nombre y apellido',actual.nombre_apellido],['Cédula',documentoParticipante(actual)],['Teléfono',actual.telefono],['Fecha de nacimiento',fechaCorta(actual.fecha_nacimiento)],['Edad',actual.edad+' años'],['Sexo',sexoCanonico(actual.sexo)],['Municipio',actual.municipio],['Dirección de habitación',actual.direccion_habitacion,'completo'],['Padece alguna enfermedad',actual.padece_enfermedad],['Enfermedad o condición',actual.enfermedad_detalle||'No aplica'],['Toma algún medicamento',actual.toma_medicamento],['Medicamento',actual.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(actual.fecha_registro),'completo'],...filasEvento(actual)];
+            const galeria=Object.values(fotos).filter(Boolean).map((src,i)=>`<a href="${src}" download="caminata_${texto(actual.cedula||actual.id)}_foto_${i+1}.jpg" title="Abrir o descargar foto"><img src="${src}" alt="Foto ${i+1} de ${texto(actual.nombre_apellido)}" /></a>`).join('');
             $('modalBody').innerHTML=`<div class="detalle">${campos.map(c=>`<div class="dato ${c[2]||''}"><b>${c[0]}</b>${texto(c[1])}</div>`).join('')}</div><h3 style="margin-top:16px;color:#8f1d2c">Fotografías (${Object.values(fotos).filter(Boolean).length})</h3>${galeria?`<div class="galeria">${galeria}</div>`:'<p style="color:#64748b;margin-top:8px">Esta inscripción no tiene fotografías.</p>'}<div class="modal-actions"><button id="imprimirFicha" class="btn-blue">🖨 Imprimir este registro 1×1</button><button id="pdfFicha" class="btn-red">Descargar ficha PDF</button><button id="eliminar" class="btn-dark">Eliminar inscripción</button></div>`;
             $('imprimirFicha').addEventListener('click',()=>imprimirRegistro(actual)); $('pdfFicha').addEventListener('click',()=>generarFichaPDF(actual)); $('eliminar').addEventListener('click',eliminarActual);
         }
@@ -267,18 +267,18 @@
                 const fotos=r.tiene_fotos?(r._fotos||await fotosDe(r.id)):{};
                 const asignar=(id,valor)=>{$(id).textContent=valor??'—';};
                 rellenarCamposEvento('unoCamposEvento',r,'imp-dato');
-                asignar('unoNumero',r.numero_inscripcion??'');asignar('unoNombre',r.nombre_apellido);asignar('unoCedula',r.cedula);asignar('unoTelefono',r.telefono);
+                asignar('unoNumero',r.numero_inscripcion??'');asignar('unoNombre',r.nombre_apellido);asignar('unoCedula',documentoParticipante(r));asignar('unoTelefono',r.telefono);
                 asignar('unoNacimiento',fechaCorta(r.fecha_nacimiento));asignar('unoEdad',r.edad+' años');asignar('unoSexo',sexoCanonico(r.sexo));asignar('unoMunicipio',r.municipio);
                 asignar('unoDireccion',r.direccion_habitacion);asignar('unoEnfermedad',r.padece_enfermedad);asignar('unoEnfermedadDetalle',r.enfermedad_detalle||'No aplica');
                 asignar('unoMedicamento',r.toma_medicamento);asignar('unoMedicamentoDetalle',r.medicamento_detalle||'No aplica');asignar('unoFotos',r.tiene_fotos?'Sí':'No');asignar('unoRegistro',fechaLarga(r.fecha_registro));
-                await prepararFotosImpresion(fotos,r.nombre_apellido,r.cedula);window.print();
+                await prepararFotosImpresion(fotos,r.nombre_apellido,documentoParticipante(r));window.print();
             }catch(e){alert('No se pudo preparar la impresión con las fotografías. Intenta nuevamente.\n'+(e.message||e.code||''));}
             finally{if(boton){boton.disabled=false;boton.textContent=textoBoton;}}
         }
         function cerrarModal(){$('modal').classList.add('hidden');actual=null;}$('cerrarModal').addEventListener('click',cerrarModal);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))cerrarModal();});
         async function eliminarActual(){if(!actual||!confirm(`¿Eliminar definitivamente la inscripción de ${actual.nombre_apellido}?`))return;try{await Promise.all([remove(ref(database,`caminata_navidena_5k_2026/${actual.id}`)),remove(ref(database,`caminata_navidena_5k_2026_fotos/${actual.id}`))]);cerrarModal();}catch(e){alert('No se pudo eliminar la inscripción: '+(e.message||e.code));}}
 
-        const filaExcel=r=>[r.numero_inscripcion??'',r.nombre_apellido,r.cedula,r.telefono,r.fecha_nacimiento,r.edad,sexoCanonico(r.sexo),r.padece_enfermedad,r.enfermedad_detalle||'',r.toma_medicamento,r.medicamento_detalle||'',r.direccion_habitacion,r.municipio,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro),r.registrado_por||'',...filasEvento(r).map(([,v])=>v)];
+        const filaExcel=r=>[r.numero_inscripcion??'',r.nombre_apellido,documentoParticipante(r),r.telefono,r.fecha_nacimiento,r.edad,sexoCanonico(r.sexo),r.padece_enfermedad,r.enfermedad_detalle||'',r.toma_medicamento,r.medicamento_detalle||'',r.direccion_habitacion,r.municipio,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro),r.registrado_por||'',...filasEvento(r).map(([,v])=>v)];
         $('excel').addEventListener('click',()=>{
             if(!filtrados.length)return alert('No hay datos para exportar.');
             const encabezados=['N.º DE INSCRIPCIÓN','NOMBRE Y APELLIDO','CÉDULA','TELÉFONO','FECHA DE NACIMIENTO','EDAD','SEXO','PADECE ENFERMEDAD','ENFERMEDAD O CONDICIÓN','TOMA MEDICAMENTO','MEDICAMENTO','DIRECCIÓN DE HABITACIÓN','MUNICIPIO','TIENE FOTOS','FECHA DE INSCRIPCIÓN','REGISTRADO POR',...ETIQUETAS_EVENTO.map(v=>v.toUpperCase())];
@@ -296,7 +296,7 @@
             if(!filtrados.length)return alert('No hay datos para exportar.');const doc=prepararPDF('landscape');
             const y=dibujarHeaderPDF(doc,{titulo:EVENTO.nombre,subtitulo:EVENTO.fechaVisible+' · '+filtrados.length+' personas filtradas'});
             const cuerpo=filtrados.map(r=>[
-              'N.º: '+(r.numero_inscripcion??'Sin asignar')+'\n'+r.nombre_apellido+'\nC.I. '+r.cedula+'\nNacimiento: '+fechaCorta(r.fecha_nacimiento)+' · '+r.edad+' años · '+sexoCanonico(r.sexo),
+              'N.º: '+(r.numero_inscripcion??'Sin asignar')+'\n'+r.nombre_apellido+'\nC.I. '+documentoParticipante(r)+'\nNacimiento: '+fechaCorta(r.fecha_nacimiento)+' · '+r.edad+' años · '+sexoCanonico(r.sexo),
               'Teléfono: '+r.telefono+'\nMunicipio: '+r.municipio+'\nDirección de contacto: '+r.direccion_habitacion,
               filasEvento(r).map(([k,v])=>k+': '+v).join('\n'),
               'Enfermedad: '+r.padece_enfermedad+'\n'+(r.enfermedad_detalle||'No aplica')+'\nMedicamento: '+r.toma_medicamento+'\n'+(r.medicamento_detalle||'No aplica'),
@@ -310,7 +310,7 @@
             if(boton){boton.disabled=true;boton.textContent='Preparando PDF…';}
             try{
                 const doc=prepararPDF('portrait'),yInicio=dibujarHeaderPDF(doc,{titulo:'Caminata y Carrera Navideña 5K',subtitulo:r.nombre_apellido});
-                const filas=[['N.º de inscripción',String(r.numero_inscripcion??'_____________________________')],['Nombre y apellido',r.nombre_apellido],['Cédula',r.cedula],['Teléfono',r.telefono],['Fecha de nacimiento',`${fechaCorta(r.fecha_nacimiento)} (${r.edad} años)`],['Sexo',sexoCanonico(r.sexo)],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(r.fecha_registro)],...filasEvento(r)];
+                const filas=[['N.º de inscripción',String(r.numero_inscripcion??'_____________________________')],['Nombre y apellido',r.nombre_apellido],['Cédula',documentoParticipante(r)],['Teléfono',r.telefono],['Fecha de nacimiento',`${fechaCorta(r.fecha_nacimiento)} (${r.edad} años)`],['Sexo',sexoCanonico(r.sexo)],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(r.fecha_registro)],...filasEvento(r)];
                 doc.autoTable({startY:yInicio+2,body:filas,theme:'grid',styles:{fontSize:8,cellPadding:1.5,overflow:'linebreak'},columnStyles:{0:{cellWidth:52,fontStyle:'bold',fillColor:[255,247,237]},1:{cellWidth:137}},margin:{left:11,right:11,bottom:16}});
 
                 const fotos=Object.values(r._fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,1);let yFirma=doc.lastAutoTable.finalY+5;
@@ -325,7 +325,7 @@
                     doc.roundedRect(11,yFirma,91.5,38,2,2);doc.roundedRect(108.5,yFirma,91.5,38,2,2);doc.setDrawColor(40);doc.line(20,yFirma+29,93.5,yFirma+29);doc.line(117.5,yFirma+29,191,yFirma+29);doc.setFontSize(8.5);doc.setTextColor(35);doc.text('Firma del participante',56.75,yFirma+34,{align:'center'});doc.text('Recibido por',154.25,yFirma+34,{align:'center'});
                 }
                 const notas=doc.splitTextToSize(NOTAS.join('\n\n'),189);doc.setFontSize(8);doc.text(notas,11,yFirma+46);dibujarFooterPDF(doc);
-                doc.save(`inscripcion_caminata_${r.cedula}.pdf`);
+                doc.save(`inscripcion_caminata_${r.cedula||r.id}.pdf`);
             }catch(e){alert('No se pudo generar el PDF con las fotografías. Intenta nuevamente.\n'+(e.message||e.code||''));}
             finally{if(boton){boton.disabled=false;boton.textContent=textoBoton;}}
         }

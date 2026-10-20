@@ -197,7 +197,7 @@
                     <div class="fbox foto-oculta" id="cajaFoto3"><label class="fbtn"><span class="fplus">+</span><span class="fbtn-text">Agregar otra foto</span><span class="fdetalle">Foto 3 de 3 · opcional</span><input type="file" id="foto3" accept="image/*" capture="environment" /></label><img id="prev3" alt="Vista previa de la foto 3" /><button class="fquitar" type="button" data-foto="foto3" data-prev="prev3">Quitar foto</button></div>
                 </div>
             </section>
-            <section class="card"><h2>Grupo familiar (opcional)</h2><p class="sub">Si te inscribes solo, no agregues familiares y pulsa Registrar. Si vas con tu familia, agrega aquí a cada integrante con su propia cédula y datos; tú quedarás como líder del grupo.</p><div id="familiares"></div><button id="agregarFamiliar" type="button">Agregar familiar</button></section>
+            <section class="card"><h2>Grupo familiar (opcional)</h2><p class="sub">Si te inscribes solo, no agregues familiares y pulsa Registrar. Si vas con tu familia, agrega aquí a cada integrante con sus datos. Si un menor aún no tiene cédula, marca la opción correspondiente; tú quedarás como líder del grupo.</p><div id="familiares"></div><button id="agregarFamiliar" type="button">Agregar familiar</button></section>
             <section class="card"><h2>Antes de participar</h2><div class="requisitos" data-notas-evento></div>
                 <button id="enviar" class="btn" type="button">Registrar</button>
                 <div id="msg" class="msg" role="alert"></div>
@@ -236,8 +236,8 @@
 
     <div id="planillasGrupo"></div>
     <script type="module">
-        import {EVENTO,TALLAS,rellenarCamposEvento,rellenarNotas} from './caminata-navidena-5k-datos.mjs?v=20261015';
-        import {iniciarFamiliares} from './caminata-navidena-5k-familia.mjs?v=20261020-sin-cne';
+        import {EVENTO,TALLAS,rellenarCamposEvento,rellenarNotas,documentoParticipante} from './caminata-navidena-5k-datos.mjs?v=20261020-menores';
+        import {iniciarFamiliares} from './caminata-navidena-5k-familia.mjs?v=20261020-menores';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
@@ -265,7 +265,7 @@
         rellenarNotas();
         const familiares=iniciarFamiliares(calcularEdad,comprimir);
 
-        function mostrarError(texto, foco) { $('msg').textContent = texto; $('msg').className = 'msg err'; if (foco) $(foco).focus(); }
+        function mostrarError(texto, foco) { $('msg').textContent = texto; $('msg').className = 'msg err'; $('msg').style.display='block'; if (foco) $(foco).focus(); else $('msg').scrollIntoView({block:'center'}); }
         function calcularEdad(fecha) {
             if (!fecha) return '';
             const nac = new Date(fecha + 'T12:00:00'), hoy = new Date();
@@ -324,16 +324,16 @@
             const enfermedad = elegido('enfermedad'), medicamento = elegido('medicamento');
             const municipio = valor('municipio');
             if (cedula.length < 5 || cedula.length > 10) return mostrarError('Escribe una cédula válida, solo con números.', 'cedula');
-            if (!valor('nombre')) return mostrarError('Escribe el nombre y apellido.', 'nombre');
-            if (!valor('telefono')) return mostrarError('Escribe el teléfono.', 'telefono');
+            if (valor('nombre').length<3 || valor('nombre').length>200) return mostrarError('Escribe el nombre y apellido completos (entre 3 y 200 caracteres).', 'nombre');
+            if (valor('telefono').length<6 || valor('telefono').length>30) return mostrarError('Escribe un teléfono de contacto válido (entre 6 y 30 caracteres).', 'telefono');
             if (!valor('fechaNacimiento') || edad === '') return mostrarError('Selecciona una fecha de nacimiento válida.', 'fechaNacimiento');
             if (!valor('sexo')) return mostrarError('Selecciona el sexo.', 'sexo');
             if (!enfermedad) return mostrarError('Indica si padece alguna enfermedad.');
             if (enfermedad === 'Sí' && !valor('detalleEnfermedad')) return mostrarError('Indica cuál enfermedad o condición padece.', 'detalleEnfermedad');
             if (!medicamento) return mostrarError('Indica si toma algún medicamento.');
             if (medicamento === 'Sí' && !valor('detalleMedicamento')) return mostrarError('Indica cuál medicamento toma.', 'detalleMedicamento');
-            if (!valor('direccion')) return mostrarError('Escribe la dirección de habitación.', 'direccion');
-            if (municipio.length < 2) return mostrarError('Escribe el municipio donde vives, por ejemplo Cúa.', 'municipio');
+            if (valor('direccion').length<5 || valor('direccion').length>400) return mostrarError('Escribe la dirección de habitación completa (entre 5 y 400 caracteres).', 'direccion');
+            if (municipio.length < 2 || municipio.length>120) return mostrarError('Escribe el municipio donde vives, por ejemplo Cúa (hasta 120 caracteres).', 'municipio');
 
             if(!valor('modalidad'))return mostrarError('Selecciona caminata o carrera.','modalidad');
             if(!valor('talla'))return mostrarError('Selecciona la talla de camisa.','talla');
@@ -344,9 +344,12 @@
             Object.assign(registro,{fecha_evento:EVENTO.fecha,modalidad:valor('modalidad'),talla_camisa:valor('talla')==='Otra'?'Otra: '+valor('otraTalla'):valor('talla'),persona_con_discapacidad:valor('discapacidad'),es_lider:true,lider_cedula:cedula,parentesco:'Líder familiar',orden_familiar:0});
             let grupo;
             try{grupo=[{registro,fotos:{...FOTOS}},...familiares.recoger(registro)];}catch(e){return mostrarError(e.message,e.campo);}
-            if(new Set(grupo.map(p=>p.registro.cedula)).size!==grupo.length)return mostrarError('Cada persona del grupo debe tener una cédula diferente. Revisa los datos.');
+            const cedulas=grupo.map(p=>p.registro.cedula).filter(Boolean);
+            if(new Set(cedulas).size!==cedulas.length)return mostrarError('Cada persona con cédula debe tener un número diferente. Revisa los datos.');
+            const menores=grupo.filter(p=>p.registro.sin_cedula).map(p=>p.registro.nombre_apellido.trim().normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/\s+/g,' ').toUpperCase()+'|'+p.registro.fecha_nacimiento);
+            if(new Set(menores).size!==menores.length)return mostrarError('Hay un menor sin cédula repetido con el mismo nombre y fecha de nacimiento. Revisa el grupo.');
             const cambios={};
-            for(const p of grupo){cambios[EVENTO.nodo+'/'+p.registro.cedula]=p.registro;if(p.registro.tiene_fotos)cambios[EVENTO.nodo+'_fotos/'+p.registro.cedula]=Object.fromEntries(Object.entries(p.fotos).filter(([,foto])=>foto));}
+            for(const p of grupo){const clave=p.clave||p.registro.cedula;cambios[EVENTO.nodo+'/'+clave]=p.registro;if(p.registro.tiene_fotos)cambios[EVENTO.nodo+'_fotos/'+clave]=Object.fromEntries(Object.entries(p.fotos).filter(([,foto])=>foto));}
             if(new Blob([JSON.stringify(cambios)]).size>12*1024*1024)return mostrarError('Las fotografías del grupo son demasiado pesadas. Reduce su tamaño o quita algunas y vuelve a intentar.');
             $('formWrap').querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=true);
             $('enviar').disabled = true; $('enviar').textContent = 'Enviando inscripción…'; $('msg').style.display = 'none';
@@ -376,13 +379,13 @@
                 for(const participante of ultimoGrupo){
                 ultimoRegistro=participante.registro;
                 rellenarCamposEvento('impCamposEvento',ultimoRegistro,'comp-dato');
-                asignar('impNombre', ultimoRegistro.nombre_apellido); asignar('impCedula', ultimoRegistro.cedula); asignar('impTelefono', ultimoRegistro.telefono);
+                asignar('impNombre', ultimoRegistro.nombre_apellido); asignar('impCedula', documentoParticipante(ultimoRegistro)); asignar('impTelefono', ultimoRegistro.telefono);
                 asignar('impNacimiento', new Date(ultimoRegistro.fecha_nacimiento + 'T12:00:00').toLocaleDateString('es-VE')); asignar('impEdad', ultimoRegistro.edad + ' años'); asignar('impSexo', ultimoRegistro.sexo);
                 asignar('impMunicipio', ultimoRegistro.municipio); asignar('impDireccion', ultimoRegistro.direccion_habitacion);
                 asignar('impEnfermedad', ultimoRegistro.padece_enfermedad); asignar('impEnfermedadDetalle', ultimoRegistro.enfermedad_detalle || 'No aplica');
                 asignar('impMedicamento', ultimoRegistro.toma_medicamento); asignar('impMedicamentoDetalle', ultimoRegistro.medicamento_detalle || 'No aplica');
                 asignar('impRegistro', new Date(ultimoRegistro.fecha_registro).toLocaleString('es-VE', { dateStyle:'long', timeStyle:'short' }));
-                await prepararFotosImpresion(participante.fotos,ultimoRegistro.nombre_apellido,ultimoRegistro.cedula);
+                await prepararFotosImpresion(participante.fotos,ultimoRegistro.nombre_apellido,documentoParticipante(ultimoRegistro));
                 const hoja=$('comprobanteImpresion').cloneNode(true);hoja.removeAttribute('id');hoja.classList.add('hoja-grupo');hoja.removeAttribute('aria-hidden');for(const e of hoja.querySelectorAll('[id]'))e.removeAttribute('id');$('planillasGrupo').append(hoja);
                 }
                 await Promise.all([...$('planillasGrupo').querySelectorAll('img')].map(img=>img.decode()));window.print();
