@@ -149,7 +149,7 @@
                 <h2>Participante o líder del grupo familiar</h2>
                 <div class="sub">Al escribir la cédula, el nombre puede completarse automáticamente. Revisa los datos antes de continuar.</div>
                 <label for="cedula">Cédula *</label>
-                <input id="cedula" data-cne data-cne-solo-autocompletar data-cne-nombre="#nombre" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="Ejemplo: 12345678" />
+                <input id="cedula" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="Ejemplo: 12345678" />
                 <label for="nombre">Nombre y apellido *</label>
                 <input id="nombre" autocomplete="name" maxlength="200" placeholder="Nombre completo" />
                 <div class="row2">
@@ -237,7 +237,7 @@
     <div id="planillasGrupo"></div>
     <script type="module">
         import {EVENTO,TALLAS,rellenarCamposEvento,rellenarNotas} from './caminata-navidena-5k-datos.mjs?v=20261015';
-        import {iniciarFamiliares} from './caminata-navidena-5k-familia.mjs?v=20261015';
+        import {iniciarFamiliares} from './caminata-navidena-5k-familia.mjs?v=20261020-sin-cne';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
@@ -391,6 +391,5 @@
         });
         $('otra').addEventListener('click', () => location.reload());
     </script>
-    <script src="cne-dateas.js?v=20261011"></script>
 </body>
 </html>

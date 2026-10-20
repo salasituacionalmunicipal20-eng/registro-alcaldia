@@ -9,7 +9,7 @@ export function iniciarFamiliares(calcularEdad,comprimir) {
     const selector=(clave,etiqueta,opciones)=>`<div><label for="${id}-${clave}">${etiqueta}</label><select id="${id}-${clave}" data-campo="${clave}"><option value="">Selecciona</option>${opciones.map(opcion).join('')}</select></div>`;
     caja.innerHTML=`<summary>Familiar ${secuencia}</summary><div class="familiar-contenido">
       ${selector('parentesco','Parentesco con el líder *',PARENTESCOS)}
-      <div class="row2">${campo('cedula','Cédula del familiar *','text',`inputmode="numeric" maxlength="10" data-cne data-cne-solo-autocompletar data-cne-nombre="#${id}-nombre"`)}${campo('nombre','Nombre y apellido *','text','maxlength="200"')}</div>
+      <div class="row2">${campo('cedula','Cédula del familiar *','text','inputmode="numeric" maxlength="10"')}${campo('nombre','Nombre y apellido *','text','maxlength="200"')}</div>
       <div class="row2">${campo('nacimiento','Fecha de nacimiento *','date',`max="${new Date().toISOString().slice(0,10)}"`)}${selector('sexo','Sexo *',['Hombre','Mujer'])}</div>
       <div class="row2">${selector('modalidad','Participación *',['Caminata','Carrera'])}${selector('talla','Talla de camisa *',TALLAS)}</div>
       <div data-otra-talla hidden>${campo('otraTalla','Indica la talla *','text','maxlength="30"')}</div>
