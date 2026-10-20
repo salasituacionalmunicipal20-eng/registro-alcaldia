@@ -16,6 +16,14 @@ try {
  await contexto.addInitScript(()=>{window.print=()=>{window.__impresiones=(window.__impresiones||0)+1;};});
  await contexto.route('**/*',async route=>{
   const u=new URL(route.request().url());
+  if(u.hostname==='admin.alcaldiadecharallave.com'&&u.pathname==='/api/caminata-navidad/numeracion'){
+   const headers={'Access-Control-Allow-Origin':'https://salasituacional.alcaldiadecharallave.com','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
+   if(route.request().method()==='OPTIONS')return route.fulfill({headers,body:''});
+   const solicitud=JSON.parse(route.request().postData()),registros=base[EVENTO.nodo]||{},contadores={Caminata:0,Carrera:0};
+   for(const r of Object.values(registros))contadores[r.modalidad]=Math.max(contadores[r.modalidad],r.numero_inscripcion||0);
+   const participantes=solicitud.ids.map(id=>{const r=registros[id];assert.equal(r.comprobante_token,solicitud.comprobante);r.numero_inscripcion??=++contadores[r.modalidad];return {id,modalidad:r.modalidad,numero_inscripcion:r.numero_inscripcion};});
+   return route.fulfill({headers,contentType:'application/json',body:JSON.stringify({ok:true,participantes})});
+  }
   if(u.hostname==='www.gstatic.com'){
    const n=u.pathname.split('/').pop();
    const fuente=n==='firebase-app.js'?'export const initializeApp=()=>({});':n==='firebase-auth.js'?`export const getAuth=()=>({});export const onAuthStateChanged=(a,cb)=>setTimeout(()=>cb({uid:'prueba-navidad',email:'prueba@ejemplo.local'}),0);export const signOut=async()=>{};`:`export const getDatabase=()=>({});export const ref=(d,p='')=>p;export const child=(p,c)=>c;const leer=async p=>{const r=await fetch('/__datos?path='+encodeURIComponent(p));const v=await r.json();return {val:()=>v,exists:()=>v!==null}};export const get=leer;export const onValue=(p,cb)=>{leer(p).then(cb);return ()=>{}};export const update=async(p,v)=>{const r=await fetch('/__datos',{method:'POST',body:JSON.stringify(v)});if(!r.ok)throw Error('No se pudo registrar');};export const remove=()=>{throw Error('Borrado no permitido en esta prueba')};`;
@@ -52,7 +60,7 @@ try {
  const familia=page.locator('[data-familiar]').first();
  async function llenarFamiliar(caja,campos){for(const [k,v]of Object.entries(campos)){const e=caja.locator(`[data-campo="${k}"]`);if(await e.evaluate(e=>e.tagName)==='SELECT')await e.selectOption(v);else await e.fill(v);}}
  await llenarFamiliar(familia,{parentesco:'Hija',cedula:'9999999991',nombre:'PRUEBA HIJA NAVIDAD',nacimiento:'2012-01-01',sexo:'Mujer',modalidad:'Caminata',talla:'Infantil 14',discapacidad:'Sí',enfermedad:'No',medicamento:'No'});
- await page.click('#enviar');assert.equal(escrituras.length,0);assert((await page.locator('#msg').innerText()).includes('cédula diferente'));
+ await page.click('#enviar');assert.equal(escrituras.length,0);assert((await page.locator('#msg').innerText()).includes('número diferente'));
  await familia.locator('[data-campo="cedula"]').fill('9999999992');
  await familia.locator('[data-campo="foto"]').setInputFiles({name:'familiar.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});await page.waitForFunction(()=>document.querySelector('.estado-foto').textContent.includes('preparada'));
  await page.click('#agregarFamiliar');
