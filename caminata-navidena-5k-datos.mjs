@@ -13,6 +13,7 @@ export const TALLAS = ['Infantil 2','Infantil 4','Infantil 6','Infantil 8','Infa
 export const PARENTESCOS = ['Madre','Padre','Hija','Hijo','Cónyuge o pareja','Hermana','Hermano','Abuela','Abuelo','Nieta','Nieto','Otro'];
 export const ETIQUETAS_EVENTO = ['Fecha del evento','Participación','Talla de camisa','Persona con discapacidad','Rol familiar','Parentesco','Cédula del líder'];
 export function documentoParticipante(r) { return r.sin_cedula ? 'Menor sin cédula' : r.cedula || '—'; }
+export function numeroParticipante(r) { return Number.isSafeInteger(r.numero_inscripcion)&&r.numero_inscripcion>0 ? `${r.modalidad} ${r.numero_inscripcion}` : 'Pendiente de asignación'; }
 export function filasEvento(r) {
   return ETIQUETAS_EVENTO.map((nombre,i)=>[nombre,[EVENTO.fechaVisible,r.modalidad,r.talla_camisa,r.persona_con_discapacidad,r.es_lider?'Líder o responsable':'Familiar',r.parentesco,r.lider_cedula][i] ?? '—']);
 }

@@ -207,13 +207,14 @@
         <section id="ok" class="ok">
             <div class="check">✅</div><h2>¡Inscripción registrada!</h2>
             <p id="resumenGrupo">Tu inscripción fue recibida correctamente.</p><p>Imprime las planillas de todas las personas del grupo antes del chequeo.</p><div class="requisitos" data-notas-evento></div>
+            <p id="estadoNumeros" role="status" aria-live="polite"></p><ul id="numerosGrupo" style="text-align:left;margin:12px 24px;overflow-wrap:anywhere"></ul><button id="reintentarNumeros" type="button" hidden>Reintentar numeración</button>
             <div class="ok-acciones"><button id="imprimir" type="button">🖨️ Imprimir planillas del grupo</button><button id="otra" type="button">Registrar otro grupo</button></div>
         </section>
     </main>
     <footer class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</footer>
 
     <section id="comprobanteImpresion" class="comprobante" aria-hidden="true">
-        <div class="comp-superior"><div class="numero-inscripcion">N.º de inscripción: <span></span></div><div class="comp-logos"><img class="logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>
+        <div class="comp-superior"><div class="numero-inscripcion">N.º de inscripción: <span id="impNumero"></span></div><div class="comp-logos"><img class="logo-alcaldia" src="logos/cristobal-rojas.png" alt="Alcaldía del Municipio Cristóbal Rojas" /><img class="logo-yuhismar" src="logos/yuhismar.png" alt="Yuhismar Hernández, Alcaldesa" /></div></div>
         <div class="comp-head"><h1>Caminata y Carrera Navideña 5K</h1><div>sábado 5 de diciembre de 2026 · 05/12/2026</div><b>Ficha interna de inscripción</b></div>
         <div class="comp-grid">
             <div class="comp-dato ancho"><b>Nombre y apellido</b><span id="impNombre"></span></div>
@@ -236,7 +237,8 @@
 
     <div id="planillasGrupo"></div>
     <script type="module">
-        import {EVENTO,TALLAS,rellenarCamposEvento,rellenarNotas,documentoParticipante} from './caminata-navidena-5k-datos.mjs?v=20261020-menores';
+        import {EVENTO,TALLAS,rellenarCamposEvento,rellenarNotas,documentoParticipante,numeroParticipante} from './caminata-navidena-5k-datos.mjs?v=20261020-numeros';
+        import {confirmarNumeracion} from './caminata-navidena-5k-numeracion.mjs?v=20261020-numeros';
         import {iniciarFamiliares} from './caminata-navidena-5k-familia.mjs?v=20261020-menores';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getDatabase, ref, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -260,6 +262,17 @@
         const elegido = nombre => document.querySelector(`input[name="${nombre}"]:checked`)?.value || '';
         const FOTOS = { foto1:'', foto2:'', foto3:'' };
         let ultimoRegistro=null,ultimoGrupo=[],procesandoFotos=0;
+        const comprobanteToken=crypto.randomUUID();let numerando=false;
+        async function cargarNumeros(){
+            if(numerando||!ultimoGrupo.length)return;numerando=true;$('imprimir').disabled=true;$('reintentarNumeros').hidden=true;$('estadoNumeros').textContent='Confirmando los números de Caminata y Carrera…';
+            try{
+                await confirmarNumeracion(ultimoGrupo,comprobanteToken);$('numerosGrupo').replaceChildren();
+                for(const p of ultimoGrupo){const fila=document.createElement('li');fila.textContent=`${p.registro.nombre_apellido}: ${numeroParticipante(p.registro)}`;$('numerosGrupo').append(fila);}
+                $('estadoNumeros').textContent='Cada participante tiene su número según la modalidad elegida.';$('imprimir').disabled=false;
+            }catch(e){$('estadoNumeros').textContent='Tu inscripción ya está guardada. La numeración está pendiente; pulsa Reintentar numeración. No vuelvas a registrar al grupo.';$('reintentarNumeros').hidden=false;}
+            finally{numerando=false;}
+        }
+        $('reintentarNumeros').addEventListener('click',cargarNumeros);
         for(const talla of TALLAS){const op=document.createElement('option');op.textContent=talla;$('talla').append(op);}
         $('talla').addEventListener('change',()=>{$('boxOtraTalla').hidden=valor('talla')!=='Otra';});
         rellenarNotas();
@@ -349,7 +362,7 @@
             const menores=grupo.filter(p=>p.registro.sin_cedula).map(p=>p.registro.nombre_apellido.trim().normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/\s+/g,' ').toUpperCase()+'|'+p.registro.fecha_nacimiento);
             if(new Set(menores).size!==menores.length)return mostrarError('Hay un menor sin cédula repetido con el mismo nombre y fecha de nacimiento. Revisa el grupo.');
             const cambios={};
-            for(const p of grupo){const clave=p.clave||p.registro.cedula;cambios[EVENTO.nodo+'/'+clave]=p.registro;if(p.registro.tiene_fotos)cambios[EVENTO.nodo+'_fotos/'+clave]=Object.fromEntries(Object.entries(p.fotos).filter(([,foto])=>foto));}
+            for(const p of grupo){p.registro.comprobante_token=comprobanteToken;const clave=p.clave||p.registro.cedula;cambios[EVENTO.nodo+'/'+clave]=p.registro;if(p.registro.tiene_fotos)cambios[EVENTO.nodo+'_fotos/'+clave]=Object.fromEntries(Object.entries(p.fotos).filter(([,foto])=>foto));}
             if(new Blob([JSON.stringify(cambios)]).size>12*1024*1024)return mostrarError('Las fotografías del grupo son demasiado pesadas. Reduce su tamaño o quita algunas y vuelve a intentar.');
             $('formWrap').querySelectorAll('input,select,textarea,button').forEach(e=>e.disabled=true);
             $('enviar').disabled = true; $('enviar').textContent = 'Enviando inscripción…'; $('msg').style.display = 'none';
@@ -357,6 +370,7 @@
                 await update(ref(database), cambios);
                 ultimoRegistro=registro;ultimoGrupo=grupo;$('resumenGrupo').textContent=`Se registraron ${grupo.length} persona(s): primero el líder y después sus familiares.`;
                 $('formWrap').style.display = 'none'; $('ok').style.display = 'block'; window.scrollTo({top:0,behavior:'smooth'});
+                await cargarNumeros();
             } catch (error) {
                 const duplicada = error?.code === 'PERMISSION_DENIED' || String(error?.message || '').toLowerCase().includes('permission');
                 mostrarError(duplicada ? 'No se pudo registrar el grupo. Una de las cédulas puede estar inscrita o las inscripciones pueden haber cerrado. Revisa los datos y comunícate con la organización; no se guardó una inscripción parcial.' : 'No se pudo completar el envío. Revisa tu conexión e intenta nuevamente; no se guardó una inscripción parcial.');
@@ -378,6 +392,7 @@
                 $('planillasGrupo').replaceChildren();
                 for(const participante of ultimoGrupo){
                 ultimoRegistro=participante.registro;
+                asignar('impNumero',numeroParticipante(ultimoRegistro));
                 rellenarCamposEvento('impCamposEvento',ultimoRegistro,'comp-dato');
                 asignar('impNombre', ultimoRegistro.nombre_apellido); asignar('impCedula', documentoParticipante(ultimoRegistro)); asignar('impTelefono', ultimoRegistro.telefono);
                 asignar('impNacimiento', new Date(ultimoRegistro.fecha_nacimiento + 'T12:00:00').toLocaleDateString('es-VE')); asignar('impEdad', ultimoRegistro.edad + ' años'); asignar('impSexo', ultimoRegistro.sexo);

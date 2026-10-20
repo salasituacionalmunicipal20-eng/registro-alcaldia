@@ -2851,13 +2851,14 @@
           ".validate": "newData.isString() && newData.val().length > 1 && newData.val().length <= 120"
         },
         "numero_inscripcion": {
-          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 999999 && newData.val() % 1 === 0"
+          ".validate": "(auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')) && (newData.isNumber() && newData.val() >= 1 && newData.val() <= 999999 && newData.val() % 1 === 0)"
         },
         ".validate": "newData.hasChildren([\"cedula\",\"nombre_apellido\",\"telefono\",\"fecha_nacimiento\",\"edad\",\"sexo\",\"padece_enfermedad\",\"toma_medicamento\",\"direccion_habitacion\",\"municipio\",\"tiene_fotos\",\"fecha_registro\",\"fecha_evento\",\"modalidad\",\"talla_camisa\",\"persona_con_discapacidad\",\"es_lider\",\"lider_cedula\",\"parentesco\",\"orden_familiar\"]) && ((newData.child('sin_cedula').val() !== true && $cedula.matches(/^[0-9]{5,10}$/) && $cedula === newData.child('cedula').val()) || (newData.child('sin_cedula').val() === true && newData.child('cedula').val() === '' && newData.child('edad').val() < 18 && newData.child('es_lider').val() === false && $cedula.matches(/^menor_[0-9]{5,10}_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/) && $cedula.beginsWith('menor_' + newData.child('lider_cedula').val() + '_'))) && (newData.child('padece_enfermedad').val() === 'No' || newData.child('enfermedad_detalle').val().length > 0) && (newData.child('toma_medicamento').val() === 'No' || newData.child('medicamento_detalle').val().length > 0) && ((newData.child('es_lider').val() === true && newData.child('lider_cedula').val() === $cedula && newData.child('parentesco').val() === 'Líder familiar' && newData.child('orden_familiar').val() === 0) || (newData.child('es_lider').val() === false && newData.child('lider_cedula').val() !== $cedula && newData.parent().child(newData.child('lider_cedula').val()).child('es_lider').val() === true && newData.parent().child(newData.child('lider_cedula').val()).child('lider_cedula').val() === newData.child('lider_cedula').val() && newData.child('parentesco').val() !== 'Líder familiar' && newData.child('orden_familiar').val() > 0))",
         "tiene_fotos": {
           ".validate": "newData.isBoolean()"
         },
         "sin_cedula": {".validate":"newData.isBoolean() && (newData.val() === false || (newData.parent().child('edad').val() < 18 && newData.parent().child('es_lider').val() === false))"},
+      "comprobante_token": {".validate":"newData.isString() && newData.val().matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)"},
       "$other": {
           ".validate": false
         },
@@ -2921,6 +2922,7 @@
         }
       }
     },
+    "caminata_navidena_5k_2026_numeracion": {".read":false,".write":false},
     "caminata_navidena_5k_2026_fotos": {
       ".read": "(auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
       "$cedula": {
