@@ -46,4 +46,3 @@ El formulario y el panel usan `caminata-navidena-5k-pdf.mjs` para generar la mis
 Las planillas son carta vertical (215,9 × 279,4 mm), con márgenes de 15 mm, encabezado institucional, número por modalidad, datos completos, fotografía, firmas y requisitos. Si los datos son extensos, continúan en otra hoja con encabezado y paginación. El informe general usa carta horizontal y los mismos márgenes. Para imprimir se selecciona Carta y tamaño real (100 %).
 
 Validación: `node pruebas/caminata-navidena-5k.mjs` prueba el registro ficticio de un grupo y los botones de ambas modalidades, sin guardar datos reales. `python pruebas/caminata-pdf-carta.py` comprueba tamaño, márgenes, encabezados, firmas, requisitos y paginación de los PDF, incluidos textos extensos. Las imágenes renderizadas quedan en `output/navidad-5k-pruebas/` para revisión visual.
-
