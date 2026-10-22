@@ -39,3 +39,11 @@ Para cambios de numeración, publicar primero las reglas y el asignador `src/cam
 `node pruebas/caminata-navidena-5k.mjs` verifica el flujo del formulario y del panel con datos ficticios y Firebase simulado: líder y familiares, duplicados, fotografías, impresión del grupo, filtros, Excel y PDF, escritorio y móvil de 375 px. Los artefactos se generan en `output/navidad-5k-pruebas/` y no contienen participantes reales.
 
 Además se comprobaron las reglas efectivas en producción mediante registros ficticios: envío atómico con fotografías, bloqueo de duplicados, privacidad de lectura, bloqueo de modificación/borrado públicos y rechazo de familiar sin líder. Todos los registros de prueba se eliminaron y se releyeron las rutas para confirmar su ausencia. Se revisaron visualmente los PDF: tres planillas para tres personas, una ficha individual y el informe completo; Excel contiene 23 columnas y encabezados congelados hasta la tercera fila.
+# Impresión en carta — 22/10/2026
+
+El formulario y el panel usan `caminata-navidena-5k-pdf.mjs` para generar la misma planilla de caminata o carrera. Después del registro se abre la vista previa del PDF del grupo; cada persona empieza en una hoja nueva. En el panel, cada inscripción ofrece «Imprimir PDF» y «Descargar PDF», también para registros anteriores y familiares sin cédula. La descarga individual carga las fotografías guardadas.
+
+Las planillas son carta vertical (215,9 × 279,4 mm), con márgenes de 15 mm, encabezado institucional, número por modalidad, datos completos, fotografía, firmas y requisitos. Si los datos son extensos, continúan en otra hoja con encabezado y paginación. El informe general usa carta horizontal y los mismos márgenes. Para imprimir se selecciona Carta y tamaño real (100 %).
+
+Validación: `node pruebas/caminata-navidena-5k.mjs` prueba el registro ficticio de un grupo y los botones de ambas modalidades, sin guardar datos reales. `python pruebas/caminata-pdf-carta.py` comprueba tamaño, márgenes, encabezados, firmas, requisitos y paginación de los PDF, incluidos textos extensos. Las imágenes renderizadas quedan en `output/navidad-5k-pruebas/` para revisión visual.
+

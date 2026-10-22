@@ -68,8 +68,9 @@ try {
  await page.locator('#familiares').screenshot({path:path.join(salida,'grupo-familiar.png')});
  await page.click('#enviar');await page.locator('#ok').waitFor({state:'visible'});
  assert.equal(escrituras.length,1);const grupo=Object.values(base[EVENTO.nodo]);assert.equal(grupo.length,3);assert.deepEqual(grupo.map(r=>r.es_lider),[true,false,false]);assert(grupo.every(r=>r.lider_cedula==='9999999991'));assert.equal(grupo[1].persona_con_discapacidad,'Sí');assert.equal(grupo[2].talla_camisa,'Otra: 4XL');assert.equal(Object.keys(base[EVENTO.nodo+'_fotos']).length,2);assert(escrituras[0]&&!Object.keys(escrituras[0]).some(k=>k.startsWith('caminata_nocturna')));
- await page.click('#imprimir');await page.waitForFunction(()=>window.__impresiones===1);assert.equal(await page.locator('.hoja-grupo').count(),3);assert.equal(await page.locator('.hoja-grupo [id]').count(),0);assert.equal(await page.locator('.hoja-grupo [data-notas-evento] p').count(),6);
- await page.pdf({path:path.join(salida,'planillas-grupo-ficticio.pdf'),preferCSSPageSize:true,printBackground:true});
+ await page.click('#imprimir');await page.locator('#vistaPlanillasPDF').waitFor({state:'visible'});
+ const planillasEvento=page.waitForEvent('download');await page.locator('#vistaPlanillasPDF [data-descargar]').click();await(await planillasEvento).saveAs(path.join(salida,'planillas-grupo-ficticio.pdf'));
+ await page.locator('#vistaPlanillasPDF [data-cerrar]').click();
  const panel=await contexto.newPage();panel.on('pageerror',e=>errores.push(e.message));await panel.goto(EVENTO.enlace.replace('.html','-resultados.html'));await panel.waitForFunction(()=>document.querySelectorAll('#tbody tr').length===3);
  assert((await panel.locator('#tbody tr').first().innerText()).includes('PRUEBA LIDER NAVIDAD'));
  await panel.selectOption('#fModalidad','Carrera');assert.equal(await panel.locator('#tbody tr').count(),2);await panel.selectOption('#fModalidad','');await panel.selectOption('#fDiscapacidad','Sí');assert.equal(await panel.locator('#tbody tr').count(),1);await panel.click('#limpiar');
@@ -77,7 +78,23 @@ try {
  const pdfEvento=panel.waitForEvent('download');await panel.click('#pdf');await(await pdfEvento).saveAs(path.join(salida,'informe-ficticio.pdf'));
  await panel.locator('.ver').first().click();await panel.waitForFunction(()=>document.getElementById('pdfFicha'));
  const fichaEvento=panel.waitForEvent('download');await panel.click('#pdfFicha');await(await fichaEvento).saveAs(path.join(salida,'ficha-lider-ficticio.pdf'));
- await panel.click('#cerrarModal');await panel.setViewportSize({width:375,height:812});assert(await panel.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await panel.screenshot({path:path.join(salida,'panel-movil.png')});assert.deepEqual(errores,[]);
+ await panel.click('#cerrarModal');
+ assert.equal(await panel.locator('.pdf-uno').count(),3);
+ for(const modalidad of ['Caminata','Carrera']){
+   await panel.selectOption('#fModalidad',modalidad);
+   await panel.locator('.imprimir-uno').first().click();await panel.locator('#vistaPlanillasPDF').waitFor({state:'visible'});
+   const evento=panel.waitForEvent('download');await panel.locator('#vistaPlanillasPDF [data-descargar]').click();await(await evento).saveAs(path.join(salida,`panel-${modalidad}.pdf`));
+   await panel.locator('#vistaPlanillasPDF [data-cerrar]').click();
+ }
+ await panel.click('#limpiar');
+ const extensoEvento=panel.waitForEvent('download');
+ await panel.evaluate(async()=>{
+   const {crearPlanillasPDF}=await import('./caminata-navidena-5k-pdf.mjs?v=20261022-carta');
+   const r={nombre_apellido:'NOMBRE DE PRUEBA '.repeat(12),numero_inscripcion:9999,modalidad:'Carrera',sin_cedula:true,edad:12,sexo:'Mujer',municipio:'MUNICIPIO '.repeat(12),direccion_habitacion:'DIRECCION EXTENSA '.repeat(23),enfermedad_detalle:'CONDICION '.repeat(60),medicamento_detalle:'MEDICAMENTO '.repeat(80),parentesco:'Hija',lider_cedula:'9999999991',fecha_nacimiento:'2014-01-01',fecha_registro:Date.now()};
+   crearPlanillasPDF([{registro:r}]).save('datos-extensos.pdf');
+ });
+ await(await extensoEvento).saveAs(path.join(salida,'datos-extensos.pdf'));
+await panel.setViewportSize({width:375,height:812});assert(await panel.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await panel.screenshot({path:path.join(salida,'panel-movil.png')});assert.deepEqual(errores,[]);
  fs.writeFileSync(path.join(salida,'grupo-ficticio.json'),JSON.stringify(base,null,2));
  console.log(JSON.stringify({personas:3,lideres:1,familiares:2,envioAtomico:true,duplicadosBloqueados:true,filtros:true,planillas:3,excel:true,pdf:true,errores,salida}));
 } finally {await browser.close();}

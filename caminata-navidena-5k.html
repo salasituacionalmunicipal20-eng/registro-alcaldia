@@ -208,7 +208,7 @@
             <div class="check">✅</div><h2>¡Inscripción registrada!</h2>
             <p id="resumenGrupo">Tu inscripción fue recibida correctamente.</p><p>Imprime las planillas de todas las personas del grupo antes del chequeo.</p><div class="requisitos" data-notas-evento></div>
             <p id="estadoNumeros" role="status" aria-live="polite"></p><ul id="numerosGrupo" style="text-align:left;margin:12px 24px;overflow-wrap:anywhere"></ul><button id="reintentarNumeros" type="button" hidden>Reintentar numeración</button>
-            <div class="ok-acciones"><button id="imprimir" type="button">🖨️ Imprimir planillas del grupo</button><button id="otra" type="button">Registrar otro grupo</button></div>
+            <div class="ok-acciones"><button id="imprimir" type="button">🖨️ Ver e imprimir PDF del grupo</button><button id="otra" type="button">Registrar otro grupo</button></div>
         </section>
     </main>
     <footer class="pie">Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</footer>
@@ -236,7 +236,10 @@
     </section>
 
     <div id="planillasGrupo"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script type="module">
+        import {crearPlanillasPDF,mostrarPlanillasPDF} from "./caminata-navidena-5k-pdf.mjs?v=20261022-carta";
         import {EVENTO,TALLAS,rellenarCamposEvento,rellenarNotas,documentoParticipante,numeroParticipante} from './caminata-navidena-5k-datos.mjs?v=20261020-numeros';
         import {confirmarNumeracion} from './caminata-navidena-5k-numeracion.mjs?v=20261020-numeros';
         import {iniciarFamiliares} from './caminata-navidena-5k-familia.mjs?v=20261020-menores';
@@ -387,23 +390,8 @@
         $('imprimir').addEventListener('click', async () => {
             if (!ultimoGrupo.length) return;
             const boton=$('imprimir'),textoOriginal=boton.textContent;boton.disabled=true;boton.textContent='Preparando impresión…';
-            const asignar = (id, valor) => { $(id).textContent = valor || '—'; };
             try {
-                $('planillasGrupo').replaceChildren();
-                for(const participante of ultimoGrupo){
-                ultimoRegistro=participante.registro;
-                asignar('impNumero',numeroParticipante(ultimoRegistro));
-                rellenarCamposEvento('impCamposEvento',ultimoRegistro,'comp-dato');
-                asignar('impNombre', ultimoRegistro.nombre_apellido); asignar('impCedula', documentoParticipante(ultimoRegistro)); asignar('impTelefono', ultimoRegistro.telefono);
-                asignar('impNacimiento', new Date(ultimoRegistro.fecha_nacimiento + 'T12:00:00').toLocaleDateString('es-VE')); asignar('impEdad', ultimoRegistro.edad + ' años'); asignar('impSexo', ultimoRegistro.sexo);
-                asignar('impMunicipio', ultimoRegistro.municipio); asignar('impDireccion', ultimoRegistro.direccion_habitacion);
-                asignar('impEnfermedad', ultimoRegistro.padece_enfermedad); asignar('impEnfermedadDetalle', ultimoRegistro.enfermedad_detalle || 'No aplica');
-                asignar('impMedicamento', ultimoRegistro.toma_medicamento); asignar('impMedicamentoDetalle', ultimoRegistro.medicamento_detalle || 'No aplica');
-                asignar('impRegistro', new Date(ultimoRegistro.fecha_registro).toLocaleString('es-VE', { dateStyle:'long', timeStyle:'short' }));
-                await prepararFotosImpresion(participante.fotos,ultimoRegistro.nombre_apellido,documentoParticipante(ultimoRegistro));
-                const hoja=$('comprobanteImpresion').cloneNode(true);hoja.removeAttribute('id');hoja.classList.add('hoja-grupo');hoja.removeAttribute('aria-hidden');for(const e of hoja.querySelectorAll('[id]'))e.removeAttribute('id');$('planillasGrupo').append(hoja);
-                }
-                await Promise.all([...$('planillasGrupo').querySelectorAll('img')].map(img=>img.decode()));window.print();
+                mostrarPlanillasPDF(crearPlanillasPDF(ultimoGrupo));
             } catch(error) { alert(error.message||'No se pudieron preparar las fotografías para imprimir.'); }
             finally { boton.disabled=false;boton.textContent=textoOriginal; }
         });
