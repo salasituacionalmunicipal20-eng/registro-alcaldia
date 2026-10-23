@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="caminata-navidena-5k-crud.css?v=20261023-crud" />
     <script src="autofresh.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -155,7 +156,7 @@
                 </div>
             </section>
             <section class="panel">
-                <h2 id="tituloTabla">Detalle de inscripciones</h2>
+                <h2 id="tituloTabla">Detalle de inscripciones</h2><div class="acciones"><button id="nuevaInscripcion" class="btn-green">Nueva inscripción</button><button id="completarNumeros" class="btn-blue">Completar números pendientes</button></div><p id="estadoCrud" role="status" aria-live="polite"></p>
                 <div class="table-wrap"><table><thead><tr><th>N.º de inscripción</th><th>Nombre y apellido</th><th>Cédula</th><th>Edad</th><th>Sexo</th><th>Teléfono</th><th>Municipio</th><th>Participación</th><th>Talla</th><th>Discapacidad</th><th>Rol / parentesco</th><th>Cédula del líder</th><th>Enfermedad</th><th>Medicamento</th><th>Fotos</th><th>Registrado</th><th>Acciones</th></tr></thead><tbody id="tbody"></tbody></table></div>
                 <div id="sinDatos" class="vacio hidden">No hay inscripciones que coincidan con los filtros.</div>
                 <div class="pag"><button id="anterior" class="btn-dark">Anterior</button><span id="paginaInfo"></span><button id="siguiente" class="btn-dark">Siguiente</button></div>
@@ -186,11 +187,12 @@
     </section>
 
     <script type="module">
+        import {iniciarCrudNavidad} from './caminata-navidena-5k-crud.mjs?v=20261023-crud';
         import {crearPlanillasPDF,mostrarPlanillasPDF,crearPlanillasPorLotes} from "./caminata-navidena-5k-pdf.mjs?v=20261023-numero-grande";
         import {ordenarGrupos as ordenarInscripciones,documentoParticipante,numeroParticipante,EVENTO,TALLAS,ETIQUETAS_EVENTO,filasEvento,rellenarCamposEvento,rellenarNotas,NOTAS} from './caminata-navidena-5k-datos.mjs?v=20261020-numeros';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, child, get, onValue, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { getDatabase, ref, child, get, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
         import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
 
         const firebaseConfig={apiKey:"AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",authDomain:"alcaldia-admin.firebaseapp.com",databaseURL:"https://alcaldia-admin-default-rtdb.firebaseio.com",projectId:"alcaldia-admin",storageBucket:"alcaldia-admin.firebasestorage.app",messagingSenderId:"945828226894",appId:"1:945828226894:web:0efeebeb270357e6f5201f",measurementId:"G-P4QSQR0XGE"};
@@ -236,7 +238,7 @@
             const porEdad=new Map();edades.forEach(e=>porEdad.set(e,(porEdad.get(e)||0)+1));$('distEdades').innerHTML=porEdad.size?[...porEdad.entries()].sort((a,b)=>a[0]-b[0]).map(([edad,cantidad])=>`<div class="edad-chip"><b>${cantidad}</b> persona${cantidad===1?'':'s'} de ${edad} año${edad===1?'':'s'}</div>`).join(''):'<span style="color:#64748b;font-size:13px">Aún no hay edades registradas.</span>';
             const paginas=Math.max(1,Math.ceil(filtrados.length/POR_PAGINA)); if(pagina>paginas)pagina=paginas;
             const inicio=(pagina-1)*POR_PAGINA, lista=filtrados.slice(inicio,inicio+POR_PAGINA);
-            $('tbody').innerHTML=lista.map((r,i)=>`<tr><td>${texto(numeroParticipante(r))}</td><td><b>${texto(r.nombre_apellido)}</b></td><td>${texto(documentoParticipante(r))}</td><td>${texto(r.edad)}</td><td>${texto(sexoCanonico(r.sexo))}</td><td>${texto(r.telefono)}</td><td>${texto(r.municipio)}</td><td>${texto(r.modalidad)}</td><td>${texto(r.talla_camisa)}</td><td>${texto(r.persona_con_discapacidad)}</td><td>${texto(r.es_lider?"Líder familiar":r.parentesco)}</td><td>${texto(r.lider_cedula)}</td><td class="${r.padece_enfermedad==='Sí'?'si':''}">${texto(r.padece_enfermedad)}</td><td class="${r.toma_medicamento==='Sí'?'si':''}">${texto(r.toma_medicamento)}</td><td class="${r.tiene_fotos?'foto':''}">${r.tiene_fotos?'Sí':'No'}</td><td>${fechaHora(r.fecha_registro)}</td><td><div class="acciones-fila"><button class="btn-blue ver" data-id="${texto(r.id)}">Ver ficha</button><button class="btn-red imprimir-uno" data-id="${texto(r.id)}">🖨 Imprimir PDF</button><button class="btn-green pdf-uno" data-id="${texto(r.id)}">Descargar PDF</button></div></td></tr>`).join('');
+            $('tbody').innerHTML=lista.map((r,i)=>`<tr><td>${texto(numeroParticipante(r))}</td><td><b>${texto(r.nombre_apellido)}</b></td><td>${texto(documentoParticipante(r))}</td><td>${texto(r.edad)}</td><td>${texto(sexoCanonico(r.sexo))}</td><td>${texto(r.telefono)}</td><td>${texto(r.municipio)}</td><td>${texto(r.modalidad)}</td><td>${texto(r.talla_camisa)}</td><td>${texto(r.persona_con_discapacidad)}</td><td>${texto(r.es_lider?"Líder familiar":r.parentesco)}</td><td>${texto(r.lider_cedula)}</td><td class="${r.padece_enfermedad==='Sí'?'si':''}">${texto(r.padece_enfermedad)}</td><td class="${r.toma_medicamento==='Sí'?'si':''}">${texto(r.toma_medicamento)}</td><td class="${r.tiene_fotos?'foto':''}">${r.tiene_fotos?'Sí':'No'}</td><td>${fechaHora(r.fecha_registro)}</td><td><div class="acciones-fila"><button class="btn-blue ver" data-id="${texto(r.id)}">Ver ficha</button><button class="btn-green editar-inscripcion" data-id="${texto(r.id)}">Editar</button><button class="btn-red imprimir-uno" data-id="${texto(r.id)}">🖨 Imprimir PDF</button><button class="btn-green pdf-uno" data-id="${texto(r.id)}">Descargar PDF</button></div></td></tr>`).join('');
             $('sinDatos').classList.toggle('hidden',lista.length>0); $('paginaInfo').textContent=`Página ${pagina} de ${paginas} · ${filtrados.length} resultado(s)`; $('anterior').disabled=pagina===1; $('siguiente').disabled=pagina===paginas; $('tituloTabla').textContent=`Detalle de inscripciones (${filtrados.length})`;
             document.querySelectorAll('.ver').forEach(b=>b.addEventListener('click',()=>abrirFicha(b.dataset.id)));
             document.querySelectorAll('.pdf-uno').forEach(b=>b.addEventListener('click',()=>generarFichaPDF(registros.find(r=>r.id===b.dataset.id))));
@@ -255,8 +257,8 @@
             actual={...actual,_fotos:fotos};
             const campos=[['N.º de inscripción',numeroParticipante(actual)],['Nombre y apellido',actual.nombre_apellido],['Cédula',documentoParticipante(actual)],['Teléfono',actual.telefono],['Fecha de nacimiento',fechaCorta(actual.fecha_nacimiento)],['Edad',actual.edad+' años'],['Sexo',sexoCanonico(actual.sexo)],['Municipio',actual.municipio],['Dirección de habitación',actual.direccion_habitacion,'completo'],['Padece alguna enfermedad',actual.padece_enfermedad],['Enfermedad o condición',actual.enfermedad_detalle||'No aplica'],['Toma algún medicamento',actual.toma_medicamento],['Medicamento',actual.medicamento_detalle||'No aplica'],['Fecha de inscripción',fechaLarga(actual.fecha_registro),'completo'],...filasEvento(actual)];
             const galeria=Object.values(fotos).filter(Boolean).map((src,i)=>`<a href="${src}" download="caminata_${texto(actual.cedula||actual.id)}_foto_${i+1}.jpg" title="Abrir o descargar foto"><img src="${src}" alt="Foto ${i+1} de ${texto(actual.nombre_apellido)}" /></a>`).join('');
-            $('modalBody').innerHTML=`<div class="detalle">${campos.map(c=>`<div class="dato ${c[2]||''}"><b>${c[0]}</b>${texto(c[1])}</div>`).join('')}</div><h3 style="margin-top:16px;color:#8f1d2c">Fotografías (${Object.values(fotos).filter(Boolean).length})</h3>${galeria?`<div class="galeria">${galeria}</div>`:'<p style="color:#64748b;margin-top:8px">Esta inscripción no tiene fotografías.</p>'}<div class="modal-actions"><button id="imprimirFicha" class="btn-blue">🖨 Ver e imprimir PDF</button><button id="pdfFicha" class="btn-red">Descargar ficha PDF</button><button id="eliminar" class="btn-dark">Eliminar inscripción</button></div>`;
-            $('imprimirFicha').addEventListener('click',()=>imprimirRegistro(actual)); $('pdfFicha').addEventListener('click',()=>generarFichaPDF(actual)); $('eliminar').addEventListener('click',eliminarActual);
+            $('modalBody').innerHTML=`<div class="detalle">${campos.map(c=>`<div class="dato ${c[2]||''}"><b>${c[0]}</b>${texto(c[1])}</div>`).join('')}</div><h3 style="margin-top:16px;color:#8f1d2c">Fotografías (${Object.values(fotos).filter(Boolean).length})</h3>${galeria?`<div class="galeria">${galeria}</div>`:'<p style="color:#64748b;margin-top:8px">Esta inscripción no tiene fotografías.</p>'}<div class="modal-actions"><button class="btn-green editar-inscripcion" data-id="${texto(actual.id)}">Editar inscripción</button>${actual.es_lider?`<button id="eliminarGrupo" class="btn-dark">Eliminar grupo familiar</button>`:""}<button id="imprimirFicha" class="btn-blue">🖨 Ver e imprimir PDF</button><button id="pdfFicha" class="btn-red">Descargar ficha PDF</button><button id="eliminar" class="btn-dark">Eliminar inscripción</button></div>`;
+            $('imprimirFicha').addEventListener('click',()=>imprimirRegistro(actual)); $('pdfFicha').addEventListener('click',()=>generarFichaPDF(actual)); $('eliminar').addEventListener('click',eliminarActual); if($('eliminarGrupo'))$('eliminarGrupo').addEventListener('click',()=>crud.eliminar(actual.id,true));
         }
         function prepararFotosImpresion(fotos,nombre,cedula){
             const lista=Object.values(fotos||{}).filter(src=>typeof src==='string'&&src.startsWith('data:image/')).slice(0,1),pagina=$('unoPaginaFotos'),grid=$('unoFotoGrid');
@@ -269,7 +271,7 @@
             if(r)await generarFichaPDF(r,true);
         }
         function cerrarModal(){$('modal').classList.add('hidden');actual=null;}$('cerrarModal').addEventListener('click',cerrarModal);$('modal').addEventListener('click',e=>{if(e.target===$('modal'))cerrarModal();});
-        async function eliminarActual(){if(!actual||!confirm(`¿Eliminar definitivamente la inscripción de ${actual.nombre_apellido}?`))return;try{await Promise.all([remove(ref(database,`caminata_navidena_5k_2026/${actual.id}`)),remove(ref(database,`caminata_navidena_5k_2026_fotos/${actual.id}`))]);cerrarModal();}catch(e){alert('No se pudo eliminar la inscripción: '+(e.message||e.code));}}
+        async function eliminarActual(){if(actual)await crud.eliminar(actual.id);}
 
         const filaExcel=r=>[numeroParticipante(r),r.nombre_apellido,documentoParticipante(r),r.telefono,r.fecha_nacimiento,r.edad,sexoCanonico(r.sexo),r.padece_enfermedad,r.enfermedad_detalle||'',r.toma_medicamento,r.medicamento_detalle||'',r.direccion_habitacion,r.municipio,r.tiene_fotos?'Sí':'No',fechaHora(r.fecha_registro),r.registrado_por||'',...filasEvento(r).map(([,v])=>v)];
         $('excel').addEventListener('click',()=>{
@@ -326,6 +328,7 @@
             finally{if(boton){boton.disabled=false;boton.textContent=textoBoton;}}
         }
 
+        const crud=iniciarCrudNavidad({auth,database,ref,get,update,obtenerRegistros:()=>Object.fromEntries(registros.map(({id,...r})=>[id,r])),abrirFicha,cerrarFicha:cerrarModal});
     </script>
 </body>
 </html>

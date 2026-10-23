@@ -1,0 +1,16 @@
+.editor-navidad { width:min(900px,96vw);max-height:94vh;margin:auto;padding:0;border:0;border-radius:14px;color:#172033; }
+.editor-navidad::backdrop { background:#0f172acc; }
+.editor-navidad [hidden] { display:none !important; }
+.editor-cabecera { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;background:#8f1d2c;color:#fff; }
+.editor-cabecera h2 { font-size:19px; }.editor-cabecera button { min-width:44px;min-height:44px; }
+.editor-cuerpo { padding:18px; }.editor-cuerpo p { margin:10px 0;color:#475569; }
+.editor-campos { display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0; }
+.editor-campos label { display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:700; }
+.editor-campos input,.editor-campos select { width:100%;min-width:0;min-height:46px;font-size:16px;padding:10px;border:1px solid #94a3b8;border-radius:8px; }
+.editor-campos .editor-check { flex-direction:row;align-items:center; }.editor-check input { width:24px; }
+.editor-fotos { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px; }.editor-fotos img { width:100%;max-height:160px;object-fit:contain; }.editor-fotos input { width:100%;font-size:16px;min-height:44px; }
+.editor-fotos label { display:block; }.editor-fotos button { margin-top:8px; }
+.editor-acciones { display:flex;gap:10px;flex-wrap:wrap;margin-top:16px; }.editor-navidad button { min-height:44px; }
+.editor-acciones [data-guardar],.editor-acciones [data-reintentar] { background:#075985;color:#fff; }
+[data-estado-editor] { white-space:pre-line;font-weight:600; }
+@media(max-width:560px){.editor-campos,.editor-fotos{grid-template-columns:1fr}.editor-cuerpo{padding:14px}}
