@@ -39,7 +39,12 @@ export function crearPlanillasPDF(participantes, doc=null, finalizar=true) {
             const dibujo=celdaUnicode(texto,ancho-53-2.2);
             return [k,{content:'',styles:{minCellHeight:dibujo.alto+2.2},dibujo}];
         });
-        doc.autoTable({startY:inicio,body:cuerpo,theme:'grid',styles:{fontSize:7.5,cellPadding:1.1,overflow:'linebreak'},columnStyles:{0:{cellWidth:53,fontStyle:'bold',fillColor:[244,248,243]},1:{cellWidth:ancho-53}},margin:{left:margen,right:margen,top:inicio,bottom:27},willDrawPage:datos=>{if(datos.pageNumber>1)cabecera();},didDrawCell:datos=>{
+        doc.autoTable({startY:inicio,body:cuerpo,theme:'grid',styles:{fontSize:7.5,cellPadding:1.1,overflow:'linebreak'},columnStyles:{0:{cellWidth:53,fontStyle:'bold',fillColor:[244,248,243]},1:{cellWidth:ancho-53}},margin:{left:margen,right:margen,top:inicio,bottom:27},didParseCell:datos=>{
+            // La misma primera fila destacada identifica ambas modalidades.
+            if(datos.section==='body'&&datos.row.index===0){
+                Object.assign(datos.cell.styles,{minCellHeight:14,cellPadding:2,valign:'middle',fillColor:[244,248,243],fontStyle:'bold',fontSize:datos.column.index===1?24:9});
+            }
+        },willDrawPage:datos=>{if(datos.pageNumber>1)cabecera();},didDrawCell:datos=>{
             const dibujo=datos.cell.raw?.dibujo;
             if(dibujo)doc.addImage(dibujo.imagen,'PNG',datos.cell.x+1.1,datos.cell.y+1.1,dibujo.ancho,dibujo.alto);
         }});

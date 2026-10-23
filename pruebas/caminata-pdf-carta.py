@@ -20,8 +20,16 @@ for nombre in archivos:
         texto = ''.join(p.get_text() for p in documento)
         assert 'Firma del participante' in texto and 'Recibido por' in texto
         assert 'punto de chequeo y verificación.' in texto
+        destacados = [s for b in documento[0].get_text('dict')['blocks'] if 'lines' in b for l in b['lines'] for s in l['spans'] if s['size'] >= 23.9]
+        assert any('Caminata' in s['text'] or 'Carrera' in s['text'] for s in destacados), (nombre, 'número grande')
+    if nombre in ('panel-Caminata.pdf', 'panel-Carrera.pdf'):
+        assert len(documento) == 1, (nombre, 'la ficha normal debe conservar una hoja')
     if nombre in ('planillas-grupo-ficticio.pdf', 'todas-las-planillas.pdf'):
         assert len(documento) == 3
         assert all('N.º de inscripción' in p.get_text() for p in documento)
         assert all('PRUEBA ' in p.get_text() for p in documento)
     print(f'{nombre}: {len(documento)} página(s), carta y márgenes de 15 mm verificados')
+
+caminata = fitz.open(salida / 'panel-Caminata.pdf')
+carrera = fitz.open(salida / 'panel-Carrera.pdf')
+assert caminata[0].search_for('N.º de inscripción')[0] == carrera[0].search_for('N.º de inscripción')[0], 'Las modalidades deben usar la misma posición y tamaño del recuadro'

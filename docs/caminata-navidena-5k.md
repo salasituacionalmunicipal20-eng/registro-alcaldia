@@ -1,5 +1,9 @@
 # Caminata y Carrera Navideña 5K
 
+## Formato común y número destacado — 23/10/2026
+
+Las planillas de caminata y carrera comparten la misma distribución. La primera fila muestra la modalidad y el número de inscripción en negrita de 24 puntos, dentro de un recuadro de 14 mm de alto, con idénticas medidas en ambas modalidades. Se conserva carta vertical, márgenes de 15 mm, datos completos, fotografía, firmas, requisitos y paginación. Aplica al formulario, la descarga individual del panel y la descarga conjunta. Las pruebas comprueban también el tamaño del número, la posición común del recuadro y que las fichas normales de ambas modalidades conserven una sola hoja.
+
 ## Descarga conjunta — 23/10/2026
 
 El panel administrativo ofrece «Descargar todas las planillas». Genera un único PDF de todas las inscripciones de caminata y carrera, independientemente de los filtros y de la página de la tabla. Conserva la agrupación y el orden del panel, incluye una planilla por participante y mantiene los datos completos, las firmas, los requisitos y la foto personal cuando existe. Prepara las fotografías en grupos acotados, reduce su resolución al tamaño necesario para impresión, muestra el avance y permite cancelar. Un error detiene la descarga para no entregar un archivo parcial.
