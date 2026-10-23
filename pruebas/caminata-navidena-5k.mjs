@@ -51,7 +51,7 @@ try {
  await page.screenshot({path:path.join(salida,'formulario-escritorio.png')});
  await page.setViewportSize({width:375,height:812});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:path.join(salida,'formulario-movil.png')});await page.setViewportSize({width:1280,height:900});
  const rellenar=async(id,valor)=>{await page.locator('#'+id).fill(valor);};
- for(const [id,v]of Object.entries({cedula:'9999999991',nombre:'PRUEBA LIDER NAVIDAD',telefono:'0000000000',fechaNacimiento:'1980-12-05',direccion:'DIRECCION FICTICIA PARA VERIFICACION',municipio:'MUNICIPIO DE PRUEBA'}))await rellenar(id,v);
+ for(const [id,v]of Object.entries({cedula:'9999999991',nombre:'PRUEBA LIDER NAVIDAD',telefono:'0000000000',fechaNacimiento:'1980-12-05',direccion:'DIRECCION FICTICIA PARA VERIFICACION 🍎 BLOQUE DE PRUEBA',municipio:'MUNICIPIO DE PRUEBA'}))await rellenar(id,v);
  for(const [id,v]of Object.entries({sexo:'Hombre',modalidad:'Carrera',talla:'M',discapacidad:'No'}))await page.selectOption('#'+id,v);
  await page.check('input[name="enfermedad"][value="No"]');await page.check('input[name="medicamento"][value="No"]');
  const png=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=80;c.height=100;const x=c.getContext('2d');x.fillStyle='#145c3d';x.fillRect(0,0,80,100);return c.toDataURL('image/png').split(',')[1];});

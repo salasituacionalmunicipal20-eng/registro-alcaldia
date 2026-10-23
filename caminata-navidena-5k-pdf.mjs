@@ -1,6 +1,26 @@
 import {dibujarHeaderPDF, dibujarFooterPDF} from './pdf-header.js';
 import {EVENTO, NOTAS, filasEvento, documentoParticipante, numeroParticipante} from './caminata-navidena-5k-datos.mjs?v=20261020-numeros';
 
+// La fuente PDF estándar no representa emojis. Dibujo estas celdas con la
+// fuente del navegador para conservar sus caracteres sin alterar lo registrado.
+function celdaUnicode(texto,ancho){
+    const escala=8,paso=7.5*25.4/72*1.2,canvas=document.createElement('canvas');
+    canvas.width=Math.ceil(ancho*escala);canvas.height=1;
+    let ctx=canvas.getContext('2d');const fuente=`${7.5*25.4/72*escala}px Arial, sans-serif`;ctx.font=fuente;
+    const lineas=[];let linea='';
+    for(const bloque of texto.split(/(\s+)/u)){
+        if(ctx.measureText(linea+bloque).width>canvas.width&&linea){lineas.push(linea.trimEnd());linea='';}
+        for(const caracter of bloque){
+            if(ctx.measureText(linea+caracter).width>canvas.width&&linea){lineas.push(linea);linea='';}
+            linea+=caracter;
+        }
+    }
+    if(linea||!lineas.length)lineas.push(linea);
+    const alto=lineas.length*paso;canvas.height=Math.ceil(alto*escala);ctx=canvas.getContext('2d');ctx.font=fuente;ctx.fillStyle='#111';ctx.textBaseline='top';
+    lineas.forEach((l,i)=>ctx.fillText(l,0,i*paso*escala));
+    return {imagen:canvas.toDataURL('image/png'),ancho,alto};
+}
+
 // Todas las medidas se calculan sobre carta, con 15 mm libres para la impresora.
 export function crearPlanillasPDF(participantes, doc=null, finalizar=true) {
     const continuar=Boolean(doc);
@@ -13,7 +33,16 @@ export function crearPlanillasPDF(participantes, doc=null, finalizar=true) {
         const cabecera=()=>dibujarHeaderPDF(doc,{titulo:EVENTO.nombre,subtitulo:numeroParticipante(r),margenExterior:margen})+2;
         const inicio=cabecera();
         const filas=[['N.º de inscripción',numeroParticipante(r)],['Nombre y apellido',r.nombre_apellido],['Cédula',documentoParticipante(r)],['Teléfono',r.telefono],['Fecha de nacimiento',fecha(r.fecha_nacimiento)],['Edad / Sexo',`${r.edad ?? '—'} años · ${r.sexo||'—'}`],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fecha(r.fecha_registro)],...filasEvento(r)];
-        doc.autoTable({startY:inicio,body:filas.map(([k,v])=>[k,String(v??'—')]),theme:'grid',styles:{fontSize:7.5,cellPadding:1.1,overflow:'linebreak'},columnStyles:{0:{cellWidth:53,fontStyle:'bold',fillColor:[244,248,243]},1:{cellWidth:ancho-53}},margin:{left:margen,right:margen,top:inicio,bottom:27},willDrawPage:datos=>{if(datos.pageNumber>1)cabecera();}});
+        const cuerpo=filas.map(([k,v])=>{
+            const texto=String(v??'—');
+            if(!/[^\x00-\xff]/u.test(texto))return [k,texto];
+            const dibujo=celdaUnicode(texto,ancho-53-2.2);
+            return [k,{content:'',styles:{minCellHeight:dibujo.alto+2.2},dibujo}];
+        });
+        doc.autoTable({startY:inicio,body:cuerpo,theme:'grid',styles:{fontSize:7.5,cellPadding:1.1,overflow:'linebreak'},columnStyles:{0:{cellWidth:53,fontStyle:'bold',fillColor:[244,248,243]},1:{cellWidth:ancho-53}},margin:{left:margen,right:margen,top:inicio,bottom:27},willDrawPage:datos=>{if(datos.pageNumber>1)cabecera();},didDrawCell:datos=>{
+            const dibujo=datos.cell.raw?.dibujo;
+            if(dibujo)doc.addImage(dibujo.imagen,'PNG',datos.cell.x+1.1,datos.cell.y+1.1,dibujo.ancho,dibujo.alto);
+        }});
         let y=doc.lastAutoTable.finalY+4;
         doc.setFont('helvetica','normal');doc.setFontSize(7.5);
         const notas=doc.splitTextToSize(NOTAS.join('\n\n'),ancho);
