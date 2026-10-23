@@ -2,13 +2,14 @@ import {dibujarHeaderPDF, dibujarFooterPDF} from './pdf-header.js';
 import {EVENTO, NOTAS, filasEvento, documentoParticipante, numeroParticipante} from './caminata-navidena-5k-datos.mjs?v=20261020-numeros';
 
 // Todas las medidas se calculan sobre carta, con 15 mm libres para la impresora.
-export function crearPlanillasPDF(participantes) {
-    const doc = new window.jspdf.jsPDF({orientation:'portrait', unit:'mm', format:'letter'});
+export function crearPlanillasPDF(participantes, doc=null, finalizar=true) {
+    const continuar=Boolean(doc);
+    doc ||= new window.jspdf.jsPDF({orientation:'portrait', unit:'mm', format:'letter', compress:true});
     const margen=15, ancho=doc.internal.pageSize.getWidth()-2*margen;
     const limite=doc.internal.pageSize.getHeight()-25;
     const fecha=v=>v?new Date(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)?v+'T12:00:00':v).toLocaleDateString('es-VE',{dateStyle:'long'})+' · '+new Date(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)?v+'T12:00:00':v).toLocaleDateString('es-VE'):'—';
     for (const [indice, {registro:r, fotos={}}] of participantes.entries()) {
-        if(indice) doc.addPage();
+        if(indice||continuar) doc.addPage();
         const cabecera=()=>dibujarHeaderPDF(doc,{titulo:EVENTO.nombre,subtitulo:numeroParticipante(r),margenExterior:margen})+2;
         const inicio=cabecera();
         const filas=[['N.º de inscripción',numeroParticipante(r)],['Nombre y apellido',r.nombre_apellido],['Cédula',documentoParticipante(r)],['Teléfono',r.telefono],['Fecha de nacimiento',fecha(r.fecha_nacimiento)],['Edad / Sexo',`${r.edad ?? '—'} años · ${r.sexo||'—'}`],['Municipio',r.municipio],['Dirección de habitación',r.direccion_habitacion],['Padece alguna enfermedad',r.padece_enfermedad],['Enfermedad o condición',r.enfermedad_detalle||'No aplica'],['Toma algún medicamento',r.toma_medicamento],['Medicamento',r.medicamento_detalle||'No aplica'],['Fecha de inscripción',fecha(r.fecha_registro)],...filasEvento(r)];
@@ -36,8 +37,44 @@ export function crearPlanillasPDF(participantes) {
         const paso=7.5*1.15*25.4/72;
         for(const linea of notas){if(y+paso>limite)nuevaPagina();doc.text(linea,margen,y);y+=paso;}
     }
+    if(finalizar)finalizarPlanillasPDF(doc);
+    return doc;
+}
+
+function finalizarPlanillasPDF(doc){
     const total=doc.internal.getNumberOfPages();
-    for(let pagina=1;pagina<=total;pagina++){doc.setPage(pagina);dibujarFooterPDF(doc,{margen,distanciaInferior:21,pagina,total,separarPaginacion:true});}
+    for(let pagina=1;pagina<=total;pagina++){doc.setPage(pagina);dibujarFooterPDF(doc,{margen:15,distanciaInferior:21,pagina,total,separarPaginacion:true});}
+}
+
+export async function crearPlanillasPorLotes(registros,cargarFotos,progreso=()=>{},signal){
+    if(!registros.length)throw new Error('No hay inscripciones para descargar.');
+    let doc=null;
+    async function preparar(registro){
+        signal?.throwIfAborted();
+        // Solo la primera foto se imprime. La reduzco a su tamaño de salida para
+        // que cientos de planillas no acumulen las fotografías originales.
+        const fotos=registro.tiene_fotos?await cargarFotos(registro.id):{};
+        const src=Object.values(fotos).find(f=>typeof f==='string'&&f.startsWith('data:image/'));
+        let reducida={};
+        if(src){
+            const img=new Image();img.src=src;await img.decode();
+            const escala=Math.min(300/img.naturalWidth,400/img.naturalHeight,1),canvas=document.createElement('canvas');
+            canvas.width=Math.max(1,Math.round(img.naturalWidth*escala));canvas.height=Math.max(1,Math.round(img.naturalHeight*escala));
+            const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+            reducida={foto:canvas.toDataURL('image/jpeg',.8)};
+        }
+        return {registro,fotos:reducida};
+    }
+    for(let inicio=0;inicio<registros.length;inicio+=8){
+        const lote=await Promise.all(registros.slice(inicio,inicio+8).map(preparar));
+        for(const [indice,participante] of lote.entries()){
+            signal?.throwIfAborted();
+            doc=crearPlanillasPDF([participante],doc,false);
+            progreso(inicio+indice+1,registros.length);
+            await new Promise(resolve=>setTimeout(resolve,0));
+        }
+    }
+    finalizarPlanillasPDF(doc);
     return doc;
 }
 

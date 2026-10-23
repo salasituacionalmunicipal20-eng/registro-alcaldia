@@ -147,6 +147,9 @@
                     <button id="limpiar" class="btn-dark">Limpiar filtros</button>
                     <button id="excel" class="btn-green">⬇ Descargar Excel</button>
                     <button id="pdf" class="btn-red">⬇ Descargar PDF</button>
+                    <button id="planillasTodas" class="btn-blue">Descargar todas las planillas</button>
+                    <button id="cancelarPlanillas" class="btn-dark hidden">Cancelar descarga</button>
+                    <span id="estadoPlanillas" role="status" aria-live="polite"></span>
                     <a id="abrirFormulario" class="linkbtn btn-blue" href="caminata-navidena-5k.html" target="_blank">Abrir formulario público</a>
                     <span class="en-vivo">Actualización en tiempo real</span>
                 </div>
@@ -183,7 +186,7 @@
     </section>
 
     <script type="module">
-        import {crearPlanillasPDF,mostrarPlanillasPDF} from "./caminata-navidena-5k-pdf.mjs?v=20261022-carta";
+        import {crearPlanillasPDF,mostrarPlanillasPDF,crearPlanillasPorLotes} from "./caminata-navidena-5k-pdf.mjs?v=20261023-descarga";
         import {ordenarGrupos as ordenarInscripciones,documentoParticipante,numeroParticipante,EVENTO,TALLAS,ETIQUETAS_EVENTO,filasEvento,rellenarCamposEvento,rellenarNotas,NOTAS} from './caminata-navidena-5k-datos.mjs?v=20261020-numeros';
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
@@ -282,6 +285,21 @@
             try{const cfb=XLSX.CFB.read(new Uint8Array(XLSX.write(wb,{bookType:'xlsx',type:'array'})),{type:'array'});const ruta='Root Entry/xl/worksheets/sheet1.xml';const i=cfb.FullPaths.indexOf(ruta);if(i>=0){let xml=new TextDecoder().decode(cfb.FileIndex[i].content);xml=xml.replace('<sheetViews><sheetView workbookViewId="0"/></sheetViews>','<sheetViews><sheetView workbookViewId="0"><pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A4" sqref="A4"/></sheetView></sheetViews>');cfb.FileIndex[i].content=new TextEncoder().encode(xml);}const salida=XLSX.CFB.write(cfb,{type:'array',fileType:'zip'});const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([salida],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download=nombre;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}catch(e){XLSX.writeFile(wb,nombre);}}
 
         function prepararPDF(orientacion='landscape'){const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:orientacion,unit:'mm',format:'letter'});if(!doc.autoTable&&jsPDF.API.autoTable)doc.autoTable=(o)=>jsPDF.API.autoTable.call(doc,o);return doc;}
+        let descargaPlanillas=null;
+        $('cancelarPlanillas').addEventListener('click',()=>descargaPlanillas?.abort());
+        $('planillasTodas').addEventListener('click',async()=>{
+            const boton=$('planillasTodas'),estado=$('estadoPlanillas');
+            const lista=[...registros];
+            if(!lista.length){estado.textContent='No hay inscripciones para descargar.';return;}
+            descargaPlanillas=new AbortController();$('cancelarPlanillas').classList.remove('hidden');
+            boton.disabled=true;estado.textContent=`Preparando las ${lista.length} planillas de todo el evento. Mantén esta página abierta…`;
+            try{
+                const doc=await crearPlanillasPorLotes(lista,fotosDe,(hechas,total)=>{estado.textContent=`Preparando planillas: ${hechas} de ${total}. Mantén esta página abierta.`;},descargaPlanillas.signal);
+                doc.save('todas_las_planillas_navidad_5k_2026.pdf');
+                estado.textContent=`Descargadas las ${lista.length} planillas de caminata y carrera. Incluye todo el evento, aunque tengas filtros activos.`;
+            }catch(e){estado.textContent=e.name==='AbortError'?'Descarga cancelada. Puedes iniciarla nuevamente.':'No se pudo completar la descarga. No se generó un archivo parcial. Reintenta. '+(e.message||'');}
+            finally{boton.disabled=false;descargaPlanillas=null;$('cancelarPlanillas').classList.add('hidden');}
+        });
         $('pdf').addEventListener('click',()=>{
             if(!filtrados.length)return alert('No hay datos para exportar.');const doc=prepararPDF('landscape');
             const cabecera=()=>dibujarHeaderPDF(doc,{titulo:EVENTO.nombre,subtitulo:EVENTO.fechaVisible+' · '+filtrados.length+' personas filtradas',margenExterior:15}),y=cabecera();

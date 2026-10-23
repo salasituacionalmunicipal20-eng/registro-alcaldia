@@ -2,7 +2,7 @@ from pathlib import Path
 import fitz
 
 salida = Path(__file__).resolve().parents[1] / 'output/navidad-5k-pruebas'
-archivos = ['planillas-grupo-ficticio.pdf', 'panel-Caminata.pdf', 'panel-Carrera.pdf', 'datos-extensos.pdf', 'informe-ficticio.pdf']
+archivos = ['planillas-grupo-ficticio.pdf', 'panel-Caminata.pdf', 'panel-Carrera.pdf', 'datos-extensos.pdf', 'informe-ficticio.pdf', 'todas-las-planillas.pdf']
 for nombre in archivos:
     documento = fitz.open(salida / nombre)
     for numero, pagina in enumerate(documento, 1):
@@ -20,6 +20,8 @@ for nombre in archivos:
         texto = ''.join(p.get_text() for p in documento)
         assert 'Firma del participante' in texto and 'Recibido por' in texto
         assert 'punto de chequeo y verificación.' in texto
-    if nombre == 'planillas-grupo-ficticio.pdf':
+    if nombre in ('planillas-grupo-ficticio.pdf', 'todas-las-planillas.pdf'):
         assert len(documento) == 3
+        assert all('N.º de inscripción' in p.get_text() for p in documento)
+        assert all('PRUEBA ' in p.get_text() for p in documento)
     print(f'{nombre}: {len(documento)} página(s), carta y márgenes de 15 mm verificados')

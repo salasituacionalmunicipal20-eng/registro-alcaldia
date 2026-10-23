@@ -74,6 +74,13 @@ try {
  const panel=await contexto.newPage();panel.on('pageerror',e=>errores.push(e.message));await panel.goto(EVENTO.enlace.replace('.html','-resultados.html'));await panel.waitForFunction(()=>document.querySelectorAll('#tbody tr').length===3);
  assert((await panel.locator('#tbody tr').first().innerText()).includes('PRUEBA LIDER NAVIDAD'));
  await panel.selectOption('#fModalidad','Carrera');assert.equal(await panel.locator('#tbody tr').count(),2);await panel.selectOption('#fModalidad','');await panel.selectOption('#fDiscapacidad','Sí');assert.equal(await panel.locator('#tbody tr').count(),1);await panel.click('#limpiar');
+ // La descarga conjunta usa todo el evento, incluso con filtros activos.
+ await panel.selectOption('#fModalidad','Carrera');
+ const todasEvento=panel.waitForEvent('download');await panel.click('#planillasTodas');
+ await(await todasEvento).saveAs(path.join(salida,'todas-las-planillas.pdf'));
+ assert((await panel.locator('#estadoPlanillas').innerText()).includes('3 planillas'));
+ assert.equal(await panel.locator('#tbody tr').count(),2);
+ await panel.click('#limpiar');
  const excelEvento=panel.waitForEvent('download');await panel.click('#excel');const excel=await excelEvento;await excel.saveAs(path.join(salida,'grupo-ficticio.xlsx'));
  const pdfEvento=panel.waitForEvent('download');await panel.click('#pdf');await(await pdfEvento).saveAs(path.join(salida,'informe-ficticio.pdf'));
  await panel.locator('.ver').first().click();await panel.waitForFunction(()=>document.getElementById('pdfFicha'));

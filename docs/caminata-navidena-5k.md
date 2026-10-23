@@ -1,5 +1,11 @@
 # Caminata y Carrera Navideña 5K
 
+## Descarga conjunta — 23/10/2026
+
+El panel administrativo ofrece «Descargar todas las planillas». Genera un único PDF de todas las inscripciones de caminata y carrera, independientemente de los filtros y de la página de la tabla. Conserva la agrupación y el orden del panel, incluye una planilla por participante y mantiene los datos completos, las firmas, los requisitos y la foto personal cuando existe. Prepara las fotografías en grupos acotados, reduce su resolución al tamaño necesario para impresión, muestra el avance y permite cancelar. Un error detiene la descarga para no entregar un archivo parcial.
+
+La solicitud de recuperación desde el enlace público está pendiente de definir con Carlos si se entrega el grupo familiar o todo el evento y cómo se verificarán las fichas completas, que contienen datos de salud y de menores.
+
 Evento independiente para el sábado 5 de diciembre de 2026 · 05/12/2026. Se conserva el formulario y la base del evento anterior.
 
 Formulario público: https://salasituacional.alcaldiadecharallave.com/caminata-navidena-5k.html
