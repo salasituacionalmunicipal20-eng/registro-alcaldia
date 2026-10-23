@@ -1,4 +1,4 @@
-import {NODO,PARENTESCOS,calcularEdad,planificarGuardado,planificarEliminacion} from './caminata-navidena-5k-crud-datos.mjs?v=20261023-crud';
+import {NODO,PARENTESCOS,calcularEdad,planificarGuardado,planificarEliminacion} from './caminata-navidena-5k-crud-datos.mjs?v=20261023-crud2';
 const API='https://admin.alcaldiadecharallave.com/api/caminata-navidad/admin-numeracion';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const igual=(a,b)=>JSON.stringify(ordenar(a))===JSON.stringify(ordenar(b));

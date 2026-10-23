@@ -21,4 +21,6 @@ p=planificarEliminacion(registros,'11111',true);assert.equal(p.ids.length,2);ass
 p=planificarEliminacion(registros,hija);assert.deepEqual(p.ids,[hija]);assert.equal(p.actualizaciones[N+'_fotos/'+hija],null);
 p=guardar(null,{...lider,cedula:'55555'});assert.equal(p.id,'55555');assert.equal(p.actualizaciones[N+'/55555'].lider_cedula,'55555');assert.deepEqual(p.numerar,['55555']);
 assert.deepEqual(registros,copia,'La planificación no debe modificar la fuente');
+const sinNumero={...lider};delete sinNumero.numero_inscripcion;
+assert.deepEqual(planificarGuardado({registros:{'11111':sinNumero},idAnterior:'11111',registro:{...sinNumero,nombre_apellido:'Nombre corregido'},uuid}).numerar,['11111']);
 console.log('CRUD: alta, edición completa, cambio de modalidad, duplicados, cambio de cédula, menores, traslado familiar, fotos, borrado individual/grupal y conservación de datos comprobados.');

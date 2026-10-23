@@ -56,7 +56,7 @@ export function planificarGuardado({registros,idAnterior=null,registro,fotos={},
  const actualizaciones={},numerar=[],traslados=[];
  function poner(viejo,clave,r,imagenes){
   if(clave!==viejo&&registros[clave])throw Error('El cambio coincide con otra inscripción existente.');
-  if(!original||clave!==viejo||r.modalidad!==registros[viejo]?.modalidad){delete r.numero_inscripcion;numerar.push(clave);}
+  if(!original||clave!==viejo||r.modalidad!==registros[viejo]?.modalidad||!Number.isInteger(r.numero_inscripcion)||r.numero_inscripcion<1){delete r.numero_inscripcion;numerar.push(clave);}
   validarRegistro(r);
   if(viejo&&clave!==viejo){actualizaciones[NODO+'/'+viejo]=null;actualizaciones[NODO+'_fotos/'+viejo]=null;traslados.push({antes:viejo,despues:clave});}
   actualizaciones[NODO+'/'+clave]=r;
