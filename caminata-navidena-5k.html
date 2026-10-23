@@ -142,6 +142,19 @@
     </header>
     <main class="wrap">
         <section class="intro" role="status"><h2 id="tituloInscripciones">Verificando disponibilidad…</h2><p id="detalleInscripciones">Estamos comprobando si las inscripciones están abiertas.</p></section>
+        <section class="card" aria-labelledby="tituloRecuperar">
+            <h2 id="tituloRecuperar">¿Ya estás inscrito?</h2>
+            <p class="sub">Busca y descarga tus planillas de la caminata o carrera del 5 de diciembre. Con los datos del líder puedes recuperar las de todo el grupo familiar, incluidos los menores sin cédula.</p>
+            <form id="consultaPlanillas">
+                <label for="consultaCedula">Cédula del participante o líder familiar</label>
+                <input id="consultaCedula" inputmode="numeric" autocomplete="off" maxlength="10" required pattern="[0-9]{5,10}" placeholder="Solo números" />
+                <label for="consultaTelefono">Teléfono que registraste en la inscripción</label>
+                <input id="consultaTelefono" type="tel" autocomplete="off" maxlength="30" required placeholder="Ejemplo: 0412 1234567" />
+                <button id="buscarPlanillas" type="submit" class="btn" style="margin-top:14px;min-height:46px;width:100%">Buscar inscripción</button>
+            </form>
+            <p id="estadoConsultaPlanillas" role="status" aria-live="polite" style="margin-top:12px"></p>
+            <button id="descargarPlanillasConsultadas" type="button" class="btn" hidden style="margin-top:12px;min-height:46px;width:100%">Descargar mis planillas PDF</button>
+        </section>
         <div id="formWrap" hidden style="display:none !important">
             <div class="intro"><b>Formulario de inscripción · sábado 5 de diciembre de 2026 · 05/12/2026.</b> Puedes inscribirte solo o con tu grupo familiar. Completa tus datos y, si vas acompañado, agrega abajo a tus familiares; quedarás como líder del grupo. Cada persona tendrá su propia modalidad, talla, condición de discapacidad y planilla. Las fotografías son opcionales: puedes continuar sin agregarlas o subir hasta tres. Los campos marcados con * son obligatorios.</div>
 
@@ -240,6 +253,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script type="module">
         import {crearPlanillasPDF,mostrarPlanillasPDF} from "./caminata-navidena-5k-pdf.mjs?v=20261023-numero-grande";
+        import {iniciarConsultaPlanillas} from './caminata-navidena-5k-consulta.mjs?v=20261023-consulta';
         import {EVENTO,TALLAS,rellenarCamposEvento,rellenarNotas,documentoParticipante,numeroParticipante} from './caminata-navidena-5k-datos.mjs?v=20261020-numeros';
         import {confirmarNumeracion} from './caminata-navidena-5k-numeracion.mjs?v=20261020-numeros';
         import {iniciarFamiliares} from './caminata-navidena-5k-familia.mjs?v=20261020-menores';
@@ -249,6 +263,7 @@
         const firebaseConfig = { apiKey:"AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU", authDomain:"alcaldia-admin.firebaseapp.com", databaseURL:"https://alcaldia-admin-default-rtdb.firebaseio.com", projectId:"alcaldia-admin", storageBucket:"alcaldia-admin.firebasestorage.app", messagingSenderId:"945828226894", appId:"1:945828226894:web:0efeebeb270357e6f5201f", measurementId:"G-P4QSQR0XGE" };
         const database = getDatabase(initializeApp(firebaseConfig));
         const $ = id => document.getElementById(id);
+        iniciarConsultaPlanillas();
         let INSCRIPCIONES_CERRADAS = true;
         $('enviar').disabled = INSCRIPCIONES_CERRADAS;
         function mostrarDisponibilidad(cerradas) {

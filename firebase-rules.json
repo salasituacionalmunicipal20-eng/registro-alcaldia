@@ -2857,9 +2857,13 @@
         "tiene_fotos": {
           ".validate": "newData.isBoolean()"
         },
-        "sin_cedula": {".validate":"newData.isBoolean() && (newData.val() === false || (newData.parent().child('edad').val() < 18 && newData.parent().child('es_lider').val() === false))"},
-      "comprobante_token": {".validate":"newData.isString() && newData.val().matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)"},
-      "$other": {
+        "sin_cedula": {
+          ".validate": "newData.isBoolean() && (newData.val() === false || (newData.parent().child('edad').val() < 18 && newData.parent().child('es_lider').val() === false))"
+        },
+        "comprobante_token": {
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)"
+        },
+        "$other": {
           ".validate": false
         },
         "padece_enfermedad": {
@@ -2920,9 +2924,15 @@
         "orden_familiar": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0"
         }
-      }
+      },
+      ".indexOn": [
+        "lider_cedula"
+      ]
     },
-    "caminata_navidena_5k_2026_numeracion": {".read":false,".write":false},
+    "caminata_navidena_5k_2026_numeracion": {
+      ".read": false,
+      ".write": false
+    },
     "caminata_navidena_5k_2026_fotos": {
       ".read": "(auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin'))",
       "$cedula": {
