@@ -16,7 +16,7 @@ try{
   if(!f.startsWith(raiz+path.sep)||!fs.existsSync(f)||fs.statSync(f).isDirectory())return route.fulfill({status:404,body:''});
   return route.fulfill({contentType:/\.(mjs|js)$/.test(f)?'application/javascript':f.endsWith('.css')?'text/css':f.endsWith('.html')?'text/html':f.endsWith('.png')?'image/png':'image/jpeg',body:fs.readFileSync(f)});
  });
- await ctx.route('https://www.gstatic.com/firebasejs/9.23.0/**',async route=>{
+ await ctx.route('https://www.gstatic.com/firebasejs/10.14.1/**',async route=>{
   const f=new URL(route.request().url()).pathname.split('/').pop();let body;
   if(f==='firebase-app.js')body='export const initializeApp=()=>({});';
   else if(f==='firebase-auth.js')body='export const getAuth=()=>window.__auth;export const onAuthStateChanged=(a,fn)=>setTimeout(()=>fn(a.currentUser),0);export const signOut=async()=>{};';

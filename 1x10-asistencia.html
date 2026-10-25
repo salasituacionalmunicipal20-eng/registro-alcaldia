@@ -222,7 +222,7 @@
     <div class="fila"><button id="cancelarImpresion" type="button" class="secundario">Cancelar</button><button id="generarImpresion" type="button">Generar PDF</button></div>
   </dialog>
   <section id="reporteImpresion" aria-hidden="true"></section>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <script type="module" src="print-header.js"></script>
   <script src="territorio-data.js?v=20261015-milagro-i"></script>
@@ -233,9 +233,9 @@
     import { edadEn, grupoEdad } from './1x10-seguimiento-datos.mjs?v=20261016-integracion';
     import { nombreTerritorial } from './1x10-nombres-territoriales.mjs?v=20261015-milagro-i';
     import {resumirAsistenciaPrensa,textoAsistenciaPrensa} from './1x10-asistencia-resumen.mjs?v=20261018-vivo';
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-    import { getDatabase, ref, get, child, onValue, set, update, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+    import { getDatabase, ref, get, child, onValue, set, update, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
     const app = initializeApp({
       apiKey: 'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',

@@ -34,8 +34,8 @@
   </form><section id="exito" class="card success" aria-live="polite"><span class="heart" aria-hidden="true">💙</span><h2>Solicitud enviada</h2><p>La Sala Situacional recibió la información para su seguimiento.</p><p id="codigo" class="small"></p><button class="btn" type="button" onclick="location.reload()">Registrar otra persona</button></section></main>
   <footer>Alcaldía del Municipio Cristóbal Rojas · Sala Situacional</footer>
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-    import { getDatabase, ref, push, set, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+    import { getDatabase, ref, push, set, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
     const app=initializeApp({apiKey:'AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU',authDomain:'alcaldia-admin.firebaseapp.com',databaseURL:'https://alcaldia-admin-default-rtdb.firebaseio.com',projectId:'alcaldia-admin',storageBucket:'alcaldia-admin.firebasestorage.app',messagingSenderId:'945828226894',appId:'1:945828226894:web:0efeebeb270357e6f5201f',measurementId:'G-P4QSQR0XGE'});
     const db=getDatabase(app), $=id=>document.getElementById(id), val=id=>$(id).value.trim(), checked=name=>[...document.querySelectorAll(`input[name="${name}"]:checked`)].map(x=>x.value), radio=name=>document.querySelector(`input[name="${name}"]:checked`)?.value||'';
     const territory=()=>Object.values(window.TERRITORIO?.comunidades||{}).filter(x=>x.activo);

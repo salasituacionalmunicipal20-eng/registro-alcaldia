@@ -1,6 +1,6 @@
-import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-import { getDatabase, ref, get, set, update, push, onValue, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { getDatabase, ref, get, set, update, push, onValue, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 const config = {
             apiKey: "AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",
             authDomain: "alcaldia-admin.firebaseapp.com",

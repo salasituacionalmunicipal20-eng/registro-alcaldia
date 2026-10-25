@@ -1,0 +1,24 @@
+{
+  "name": "alcaldia-admin",
+  "version": "1.0.0",
+  "description": "Panel administrativo (vanilla HTML + Firebase Realtime Database) para el censo territorial y gestión de la Alcaldía. Cada página es un archivo HTML estático con `<script type=\"module\">` inline. **No requiere build** — se sirve directo desde GitHub Pages.",
+  "main": "autofresh.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/salasituacionalmunicipal20-eng/registro-alcaldia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/salasituacionalmunicipal20-eng/registro-alcaldia/issues"
+  },
+  "homepage": "https://github.com/salasituacionalmunicipal20-eng/registro-alcaldia#readme",
+  "dependencies": {
+    "jspdf": "^4.2.1"
+  }
+}

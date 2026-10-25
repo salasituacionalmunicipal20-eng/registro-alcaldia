@@ -1,6 +1,6 @@
 {
   "name": "sala-situacional-escritorio",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cliente de escritorio para la Sala Situacional de la Alcaldia de Cristobal Rojas.",
   "main": "main.js",
   "author": {
@@ -16,8 +16,8 @@
     "pack": "electron-builder --dir"
   },
   "devDependencies": {
-    "electron": "^33.0.0",
-    "electron-builder": "^25.1.8"
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0"
   },
   "build": {
     "appId": "ve.gob.cristobalrojas.salasituacional",
@@ -37,7 +37,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.ico",
@@ -51,9 +53,14 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Sala Situacional",
-      "installerLanguages": ["es_ES"],
+      "installerLanguages": [
+        "es_ES"
+      ],
       "language": "1034",
       "deleteAppDataOnUninstall": false
     }
+  },
+  "overrides": {
+    "tar@<7.5.21": "^7.5.21"
   }
 }

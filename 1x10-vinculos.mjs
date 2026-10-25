@@ -1,6 +1,6 @@
-import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-import {getDatabase,ref,get,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js';
-import {getApp} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import {getAuth,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {getDatabase,ref,get,onValue,runTransaction} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+import {getApp} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import {SISTEMAS_1X10,consolidarPersonas} from './asistencia-centros-datos.mjs?v=20261016-integracion';
 import {coincideBusqueda1x10,nombreSector1x10} from './1x10-resultados-fuentes.mjs?v=20261016-global';
 

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Resultados Caminata y Carrera Navideña 5K</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="caminata-navidena-5k-crud.css?v=20261023-crud" />
     <script src="autofresh.js"></script>
@@ -190,9 +190,9 @@
         import {iniciarCrudNavidad} from './caminata-navidena-5k-crud.mjs?v=20261023-crud2';
         import {crearPlanillasPDF,mostrarPlanillasPDF,crearPlanillasPorLotes} from "./caminata-navidena-5k-pdf.mjs?v=20261023-numero-grande";
         import {ordenarGrupos as ordenarInscripciones,documentoParticipante,numeroParticipante,EVENTO,TALLAS,ETIQUETAS_EVENTO,filasEvento,rellenarCamposEvento,rellenarNotas,NOTAS} from './caminata-navidena-5k-datos.mjs?v=20261020-numeros';
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, child, get, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+        import { getDatabase, ref, child, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
         import { dibujarHeaderPDF, dibujarFooterPDF } from "./pdf-header.js";
 
         const firebaseConfig={apiKey:"AIzaSyCEqiu5ypPSGbS6nzju6VZtd2RIRYRDmGU",authDomain:"alcaldia-admin.firebaseapp.com",databaseURL:"https://alcaldia-admin-default-rtdb.firebaseio.com",projectId:"alcaldia-admin",storageBucket:"alcaldia-admin.firebasestorage.app",messagingSenderId:"945828226894",appId:"1:945828226894:web:0efeebeb270357e6f5201f",measurementId:"G-P4QSQR0XGE"};

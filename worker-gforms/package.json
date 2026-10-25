@@ -1,5 +1,8 @@
 {
   "name": "formularios-google",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "undici@>=7.0.0 <7.30.1": "^7.30.1"
+  }
 }
