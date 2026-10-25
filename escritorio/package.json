@@ -1,6 +1,6 @@
 {
   "name": "sala-situacional-escritorio",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Cliente de escritorio para la Sala Situacional de la Alcaldia de Cristobal Rojas.",
   "main": "main.js",
   "author": {
@@ -13,7 +13,8 @@
     "start": "electron .",
     "build": "electron-builder",
     "build:win": "electron-builder --win --x64",
-    "pack": "electron-builder --dir"
+    "pack": "electron-builder --dir",
+    "test": "node --test *.test.cjs"
   },
   "devDependencies": {
     "electron": "^45.0.0",
@@ -27,7 +28,8 @@
       "main.js",
       "preload.js",
       "renderer/**/*",
-      "package.json"
+      "package.json",
+      "seguridad.js"
     ],
     "directories": {
       "buildResources": "build",
@@ -58,6 +60,15 @@
       ],
       "language": "1034",
       "deleteAppDataOnUninstall": false
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "enableCookieEncryption": true,
+      "grantFileProtocolExtraPrivileges": false
     }
   },
   "overrides": {

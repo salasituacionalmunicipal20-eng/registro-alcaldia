@@ -3,6 +3,7 @@
 
 const { app, BrowserWindow, Menu, shell, dialog, session } = require('electron');
 const path = require('path');
+const { clasificarDestino, permisoPermitido } = require('./seguridad');
 
 const URL_PRODUCCION = 'https://salasituacional.alcaldiadecharallave.com/';
 const URL_PAGINA_OFFLINE = `file://${path.join(__dirname, 'renderer', 'sin-conexion.html')}`;
@@ -36,24 +37,21 @@ function crearVentana() {
     });
 
     ventanaPrincipal.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-            shell.openExternal(url);
+        if (clasificarDestino(url) !== 'bloqueado') {
+            shell.openExternal(url).catch(() => console.error('No se pudo abrir el enlace externo'));
         }
         return { action: 'deny' };
     });
 
-    ventanaPrincipal.webContents.on('will-navigate', (event, url) => {
-        const destino = new URL(url);
-        const origenPermitido = new URL(URL_PRODUCCION);
-        const esMismoHost = destino.host === origenPermitido.host;
-        const esFirebaseAuth = destino.host.endsWith('firebaseapp.com')
-            || destino.host.endsWith('google.com')
-            || destino.host.endsWith('googleapis.com');
-        if (!esMismoHost && !esFirebaseAuth) {
+    const controlarNavegacion = (event, url) => {
+        const destino = clasificarDestino(url);
+        if (destino !== 'interno') {
             event.preventDefault();
-            shell.openExternal(url);
+            if (destino === 'externo') shell.openExternal(url).catch(() => console.error('No se pudo abrir el enlace externo'));
         }
-    });
+    };
+    ventanaPrincipal.webContents.on('will-navigate', controlarNavegacion);
+    ventanaPrincipal.webContents.on('will-redirect', controlarNavegacion);
 
     ventanaPrincipal.webContents.on('did-fail-load', (_evt, codigo, descripcion, urlFallido) => {
         if (codigo === -3) return;
@@ -162,9 +160,9 @@ if (!lockSingleton) {
     });
 
     app.whenReady().then(() => {
-        session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-            const permitidos = ['geolocation', 'media', 'notifications', 'clipboard-read', 'clipboard-sanitized-write'];
-            callback(permitidos.includes(permission));
+        session.defaultSession.setPermissionCheckHandler((_contents, permiso, origen) => permisoPermitido(origen, permiso));
+        session.defaultSession.setPermissionRequestHandler((contents, permiso, callback, detalles) => {
+            callback(detalles?.isMainFrame !== false && permisoPermitido(detalles?.requestingUrl || contents.getURL(), permiso));
         });
         crearVentana();
     });
