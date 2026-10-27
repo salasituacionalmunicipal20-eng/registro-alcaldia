@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Juguetes del Municipio · Sala Situacional</title>
+  <link rel="stylesheet" href="juguetes-municipio.css">
+</head>
+<body>
+  <header class="cabecera"><div class="cabecera-interior"><div><span class="institucion">ALCALDÍA DE CRISTÓBAL ROJAS · SALA SITUACIONAL</span><h1>Juguetes del Municipio</h1><p>Planificación y distribución por comunidad</p></div><a class="volver" href="admin.html">← Volver al panel</a></div></header>
+  <main>
+    <p id="estado" class="aviso" role="status" aria-live="polite">Comprobando el acceso y cargando los registros…</p>
+    <div id="aplicacion" hidden>
+      <section class="resumen" aria-label="Resumen de niños registrados">
+        <div class="indicador"><span>Niños de 0 a 12 años</span><strong id="total-ninos">0</strong><small>con fecha de nacimiento válida</small></div>
+        <div class="indicador"><span>Niñas</span><strong id="total-ninas">0</strong><small>en el registro de habitantes</small></div>
+        <div class="indicador"><span>Niños</span><strong id="total-ninos-sexo">0</strong><small>en el registro de habitantes</small></div>
+        <div class="indicador"><span>Fechas por revisar</span><strong id="total-fechas">0</strong><small>personas de edad desconocida</small></div>
+      </section>
+      <nav class="pestanas" aria-label="Secciones del sistema">
+        <button type="button" class="activa" data-vista="ninos">Niños y regalos</button>
+        <button type="button" data-vista="movimientos">Recepción y salida</button>
+        <button type="button" data-vista="existencias">Existencias</button>
+        <button type="button" data-vista="entregas">Entregas por comunidad</button>
+      </nav>
+      <section id="vista-ninos" class="panel vista">
+        <div class="titulo-panel"><div><h2>Niños registrados</h2><p>Edades calculadas a la fecha de consulta. Los registros con fecha desconocida se revisan aparte.</p></div><button id="descargar" class="secundario" type="button">Descargar lista CSV</button></div>
+        <div class="filtros">
+          <label>Comuna<select id="f-comuna"><option value="">Todas</option></select></label>
+          <label>Comunidad<select id="f-comunidad"><option value="">Todas</option></select></label>
+          <label>Sexo<select id="f-sexo"><option value="">Todos</option><option value="femenino">Femenino</option><option value="masculino">Masculino</option><option value="otro">Sin especificar</option></select></label>
+          <label>Edad<select id="f-edad"><option value="">Todas</option><option>0 a 2</option><option>3 a 6</option><option>7 a 9</option><option>10 a 12</option><option value="revision">Fecha por revisar</option></select></label>
+          <label class="busqueda">Buscar por nombre<input id="f-buscar" type="search" placeholder="Nombre o apellido"></label>
+        </div>
+        <p id="conteo-lista" class="nota"></p>
+        <div class="tabla-contenedor tabla-personas"><table><thead><tr><th>Nombre</th><th>Sexo y edad</th><th>Comuna y comunidad</th><th>Dirección</th><th>Regalo previsto</th><th></th></tr></thead><tbody id="lista-ninos"></tbody></table></div>
+        <h3>Resumen de la selección</h3>
+        <p class="nota">Cantidad de niños y juguetes previstos por comunidad, sexo y rango de edad.</p>
+        <div class="tabla-contenedor"><table><thead><tr><th>Comuna y comunidad</th><th>Sexo</th><th>Rango de edad</th><th>Niños</th><th>Juguetes previstos</th></tr></thead><tbody id="resumen-ninos"></tbody></table></div>
+      </section>
+      <section id="vista-movimientos" class="panel vista" hidden>
+        <div class="titulo-panel"><div><h2>Registrar movimiento</h2><p>Registra cada tipo de juguete por separado. Las salidas se asignan a una comunidad.</p></div></div>
+        <form id="form-movimiento">
+          <div class="campos">
+            <label>Tipo de movimiento<select name="tipo" required><option value="recepcion">Recepción</option><option value="salida">Salida a comunidad</option></select></label>
+            <label>Código del juguete<input name="codigo" required maxlength="40" placeholder="Ej. MUNECA-01" pattern="[A-Za-z0-9_-]{1,40}" title="Letras, números, guion y guion bajo"></label>
+            <label class="ancho">Descripción del juguete<input name="descripcion" required maxlength="150" placeholder="Ej. Muñeca"></label>
+            <label>Cantidad<input name="cantidad" type="number" min="1" max="1000000" step="1" required></label>
+            <label>Presentación<select name="presentacion" required><option value="caja">Caja</option><option value="unidad">Unidad</option></select></label>
+            <label>Comuna de destino<select name="comuna"><option value="">Selecciona</option></select></label>
+            <label>Comunidad de destino<select name="comunidad"><option value="">Selecciona</option></select></label>
+            <label>Responsable del camión<input name="responsable" required maxlength="120"></label>
+            <label>Teléfono del responsable<input name="telefono_responsable" type="tel" required maxlength="40"></label>
+            <label>Dueño del camión<input name="dueno" required maxlength="120"></label>
+            <label>Teléfono del dueño<input name="telefono_dueno" type="tel" required maxlength="40"></label>
+          </div>
+          <p class="nota">Las cajas y unidades se controlan por separado. No se supone cuántos juguetes contiene cada caja.</p>
+          <button type="submit" class="principal">Guardar movimiento</button><p id="mensaje-movimiento" role="status" aria-live="polite"></p>
+        </form>
+        <h3>Movimientos registrados</h3><div class="tabla-contenedor"><table><thead><tr><th>Fecha y tipo</th><th>Juguete</th><th>Cantidad</th><th>Destino</th><th>Transporte</th></tr></thead><tbody id="lista-movimientos"></tbody></table></div>
+      </section>
+      <section id="vista-existencias" class="panel vista" hidden>
+        <div class="titulo-panel"><div><h2>Existencias disponibles</h2><p>Saldo de recepciones menos salidas, por código y presentación.</p></div></div>
+        <div class="tabla-contenedor"><table><thead><tr><th>Código</th><th>Descripción</th><th>Cajas</th><th>Unidades</th></tr></thead><tbody id="lista-existencias"></tbody></table></div>
+      </section>
+      <section id="vista-entregas" class="panel vista" hidden>
+        <div class="titulo-panel"><div><h2>Entregas por comunidad</h2><p>Detalle de las salidas registradas para cada comunidad.</p></div><button id="descargar-entregas" class="secundario" type="button">Descargar entregas CSV</button></div>
+        <div class="filtros"><label>Comuna<select id="e-comuna"><option value="">Todas</option></select></label><label>Comunidad<select id="e-comunidad"><option value="">Todas</option></select></label></div>
+        <div class="tabla-contenedor"><table><thead><tr><th>Comuna y comunidad</th><th>Código y juguete</th><th>Entregado</th></tr></thead><tbody id="lista-entregas"></tbody></table></div>
+      </section>
+    </div>
+  </main>
+  <dialog id="dialogo-regalo"><form id="form-regalo"><div class="dialogo-cabecera"><div><span class="institucion">PLANIFICACIÓN</span><h2>Regalo previsto</h2><p id="nombre-regalo"></p></div><button type="button" id="cerrar-regalo" class="cerrar" aria-label="Cerrar">×</button></div><label>Cantidad de juguetes a recibir<input name="cantidad" type="number" min="0" max="1000" step="1" required></label><label>Tipo o descripción del regalo<input name="descripcion" maxlength="200" placeholder="Ej. Muñeca"></label><p class="nota">Es una asignación prevista; no registra una entrega ni descuenta existencias.</p><p id="mensaje-regalo" role="status"></p><button class="principal" type="submit">Guardar asignación</button></form></dialog>
+  <script type="module" src="juguetes-municipio.mjs"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "rules": {
+    "juguetes_municipio": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin') && newData.exists()",
+      "inventario": {
+        "$codigo": {
+          ".validate": "$codigo.matches(/^[A-Z0-9_-]{1,40}$/) && newData.hasChildren(['descripcion', 'caja', 'unidad'])",
+          "descripcion": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 150" },
+          "caja": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0" },
+          "unidad": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0" },
+          "$otro": { ".validate": false }
+        }
+      },
+      "movimientos": {
+        "$id": {
+          ".validate": "newData.hasChildren(['id', 'tipo', 'codigo', 'descripcion', 'cantidad', 'presentacion', 'responsable', 'telefono_responsable', 'dueno', 'telefono_dueno', 'fecha', 'usuario']) && newData.child('id').val() === $id && (newData.child('tipo').val() === 'recepcion' || newData.child('tipo').val() === 'salida') && (newData.child('presentacion').val() === 'caja' || newData.child('presentacion').val() === 'unidad') && newData.child('cantidad').isNumber() && newData.child('cantidad').val() > 0 && newData.child('cantidad').val() <= 1000000 && newData.child('cantidad').val() % 1 === 0 && (newData.child('tipo').val() !== 'salida' || (newData.child('comuna').isString() && newData.child('comuna').val().length > 0 && newData.child('comunidad').isString() && newData.child('comunidad').val().length > 0))"
+        }
+      },
+      "asignaciones": {
+        "$habitanteId": {
+          ".validate": "newData.hasChildren(['cantidad', 'fecha', 'usuario']) && newData.child('cantidad').isNumber() && newData.child('cantidad').val() >= 0 && newData.child('cantidad').val() <= 1000 && newData.child('cantidad').val() % 1 === 0 && (newData.child('cantidad').val() === 0 || (newData.child('descripcion').isString() && newData.child('descripcion').val().length > 0))"
+        }
+      },
+      "$otro": { ".validate": false }
+    }
+  }
+}

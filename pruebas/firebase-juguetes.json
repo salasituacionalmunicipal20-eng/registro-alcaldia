@@ -1,0 +1,4 @@
+{
+  "database": { "rules": "juguetes-reglas-emulador.json" },
+  "emulators": { "database": { "host": "127.0.0.1", "port": 19050 }, "ui": { "enabled": false } }
+}
