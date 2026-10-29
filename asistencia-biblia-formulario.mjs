@@ -13,3 +13,4 @@ form.addEventListener('submit',async e=>{e.preventDefault();if(!db||!form.report
  $('enviar').disabled=true;mensaje.className='mensaje';mensaje.textContent='Guardando asistencia…';
  try{await set(push(ref(db,'asistencia_biblia')),{nombre,apellido,cedula,telefono,comunidad,edad,fecha_registro:serverTimestamp()});form.reset();mensaje.className='mensaje exito';mensaje.textContent='Tu asistencia fue registrada correctamente.';mensaje.focus();}catch{mensaje.className='mensaje error';mensaje.textContent='No se pudo confirmar el registro. Revisa tu conexión antes de volver a intentarlo.';}finally{$('enviar').disabled=false;}
 });
+if(db){mensaje.textContent='';$('enviar').disabled=false;}
