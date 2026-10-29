@@ -1,5 +1,20 @@
 {
   "rules": {
+    "asistencia_biblia": {
+      ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
+      "$id": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['nombre','apellido','cedula','telefono','comunidad','edad','fecha_registro'])",
+        "nombre": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 80" },
+        "apellido": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 80" },
+        "cedula": { ".validate": "newData.isString() && newData.val().matches(/^[VE]?[0-9]{4,9}$/)" },
+        "telefono": { ".validate": "newData.isString() && newData.val().length >= 7 && newData.val().length <= 20 && newData.val().matches(/^[0-9+() .-]+$/)" },
+        "comunidad": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 120" },
+        "edad": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 120 && newData.val() % 1 === 0" },
+        "fecha_registro": { ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 60000" },
+        "$other": { ".validate": false }
+      }
+    },
     "juguetes_municipio": {
       ".read": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin')",
       ".write": "auth != null && (auth.token.email === 'carlos.admin@alcaldia.com' || root.child('operadores').child(auth.uid).child('rol').val() === 'admin') && newData.exists()",
